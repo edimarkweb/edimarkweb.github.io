@@ -503,6 +503,11 @@ function createTextareaEditor(textarea) {
         getScrollerElement() {
             return textarea;
         },
+        scrollTo(left = 0, top = 0) {
+            textarea.scrollLeft = Math.max(0, left);
+            textarea.scrollTop = Math.max(0, top);
+            syncScroll();
+        },
         on(event, handler) {
             if (event === 'change' && typeof handler === 'function') {
                 changeHandlers.add(handler);
@@ -729,9 +734,29 @@ function switchTo(id) {
     });
 
     markdownEditor.setValue(doc.md);
+    if (typeof markdownEditor.setCursor === 'function') {
+        markdownEditor.setCursor({ line: 0, ch: 0 });
+    }
+    if (typeof markdownEditor.scrollTo === 'function') {
+        markdownEditor.scrollTo(0, 0);
+    } else if (typeof markdownEditor.getScrollerElement === 'function') {
+        const scroller = markdownEditor.getScrollerElement();
+        if (scroller) {
+            scroller.scrollTop = 0;
+            scroller.scrollLeft = 0;
+        }
+    }
     doc.md = markdownEditor.getValue();
     doc.lastSaved = normalizeNewlines(doc.lastSaved || doc.md);
     updateHtml();
+    const htmlOutputEl = document.getElementById('html-output');
+    if (htmlOutputEl) {
+        htmlOutputEl.scrollTop = 0;
+        htmlOutputEl.scrollLeft = 0;
+    }
+    if (htmlEditor && typeof htmlEditor.scrollTo === 'function') {
+        htmlEditor.scrollTo(0, 0);
+    }
     markdownEditor.focus();
     updateDirtyIndicator(id, doc.md !== doc.lastSaved);
 }
