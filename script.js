@@ -1550,7 +1550,6 @@ window.onload = () => {
                 const startMessage = getCopyStartMessage(action);
                 if (startMessage) {
                     updateExportStatus(startMessage);
-                    await yieldToUiThread();
                 }
                 try {
                     await handlePreviewCopyAction(action, { announce: false, updateState: false });
@@ -1745,7 +1744,6 @@ window.onload = () => {
             const startMessage = getCopyStartMessage(usableAction);
             if (startMessage) {
                 updateExportStatus(startMessage);
-                await yieldToUiThread();
             }
         }
         if (updateState) {
@@ -2205,7 +2203,6 @@ window.onload = () => {
         const startMessage = getCopyStartMessage('markdown');
         if (startMessage) {
             updateExportStatus(startMessage);
-            await yieldToUiThread();
         }
         try {
             await copyPlain(markdownEditor.getValue(), copyMdBtn);
@@ -2221,7 +2218,6 @@ window.onload = () => {
         const startMessage = getCopyStartMessage(action);
         if (startMessage) {
             updateExportStatus(startMessage);
-            await yieldToUiThread();
         }
         try {
             await handlePreviewCopyAction(action, { announce: false });
