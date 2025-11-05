@@ -40,6 +40,14 @@ let base64PandocWasm = null;
 let pandocInitialized = false;
 let initializationAttempts = 0;
 
+const MARKDOWN_MATH_EXTENSIONS = [
+  'markdown',
+  '+tex_math_dollars',
+  '+tex_math_single_backslash',
+  '+tex_math_double_backslash',
+  '+raw_tex',
+].join('');
+
 function translate(key, fallback = '') {
   const catalog = window.__edimarkTranslations;
   if (catalog && Object.prototype.hasOwnProperty.call(catalog, key)) {
@@ -224,7 +232,10 @@ async function exportDocument({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    const pandocArgs = `-f markdown -t ${normalizedFormat}`;
+    let pandocArgs = `-f ${MARKDOWN_MATH_EXTENSIONS} -t ${normalizedFormat}`;
+    if (normalizedFormat === 'odt') {
+      pandocArgs += ' --mathml';
+    }
     const resultadoBytes = await pandoc(pandocArgs, normalized, base64);
     if (iosTimer) clearTimeout(iosTimer);
 
@@ -258,7 +269,7 @@ async function generateHtml({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    let pandocArgs = '-f markdown -t html --mathjax';
+    let pandocArgs = `-f ${MARKDOWN_MATH_EXTENSIONS} -t html --mathjax`;
     if (standalone) {
       pandocArgs += ' -s';
     }
@@ -295,7 +306,7 @@ async function generateLatex({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    let pandocArgs = '-f markdown -t latex --no-highlight';
+    let pandocArgs = `-f ${MARKDOWN_MATH_EXTENSIONS} -t latex --no-highlight`;
     if (standalone) {
       pandocArgs = `-s ${pandocArgs}`;
     }
@@ -309,11 +320,20 @@ async function generateLatex({
   }
 }
 
+async function warmUpExporter() {
+  try {
+    await loadPandocWasm({}, true);
+  } catch (error) {
+    console.warn('No se pudo precargar Pandoc WASM:', error);
+  }
+}
+
 window.PandocExporter = {
   exportDocument,
   generateHtml,
   generateLatex,
   trimInlineMath,
+  warmUpExporter,
 };
 
-export { exportDocument, generateHtml, generateLatex, trimInlineMath };
+export { exportDocument, generateHtml, generateLatex, trimInlineMath, warmUpExporter };

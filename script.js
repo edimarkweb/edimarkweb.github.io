@@ -1049,66 +1049,98 @@ function saveCurrentDocument() {
     }
 }
 
+function snapshotDefaultButtonHtml(btn) {
+    if (!btn) return;
+    btn.dataset.defaultHtml = btn.innerHTML;
+}
+
+function restoreDefaultButtonHtml(btn, fallbackHtml) {
+    if (!btn) return;
+    const defaultHtml = typeof btn.dataset.defaultHtml === 'string' ? btn.dataset.defaultHtml : fallbackHtml;
+    if (typeof defaultHtml !== 'string') return;
+    btn.innerHTML = defaultHtml;
+    if (window.lucide) lucide.createIcons();
+}
+
 async function copyPlain(text, btn) {
-    const originalIcon = btn.innerHTML;
+    if (!btn) return;
+    const fallbackHtml = btn.innerHTML;
+    if (typeof btn.dataset.defaultHtml !== 'string') {
+        snapshotDefaultButtonHtml(btn);
+    }
     try {
         await navigator.clipboard.writeText(text);
         btn.innerHTML = '<i data-lucide="check" class="text-green-500"></i>';
     } catch (err) {
         console.error('No se pudo copiar:', err);
         btn.innerHTML = '<i data-lucide="x" class="text-red-500"></i>';
+        throw err;
     } finally {
         if (window.lucide) lucide.createIcons();
-        setTimeout(() => { btn.innerHTML = originalIcon; if (window.lucide) lucide.createIcons(); }, 2000);
+        setTimeout(() => restoreDefaultButtonHtml(btn, fallbackHtml), 2000);
     }
 }
 
 async function copyRich(html, btn) {
-  const originalIcon = btn.innerHTML;
-  try {
-    if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          'text/html' : new Blob([html], { type:'text/html'  }),
-          'text/plain': new Blob([html], { type:'text/plain' })
-        })
-      ]);
-    } else {
-      await navigator.clipboard.writeText(html);
+    if (!btn) return;
+    const fallbackHtml = btn.innerHTML;
+    if (typeof btn.dataset.defaultHtml !== 'string') {
+        snapshotDefaultButtonHtml(btn);
     }
-    btn.innerHTML = '<i data-lucide="check" class="text-green-500"></i>';
-  } catch (err) {
-    console.error('No se pudo copiar:', err);
-    btn.innerHTML = '<i data-lucide="x" class="text-red-500"></i>';
-  } finally {
-    if (window.lucide) lucide.createIcons();
-    setTimeout(() => { btn.innerHTML = originalIcon; if (window.lucide) lucide.createIcons(); }, 2000);
-  }
+    try {
+        if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
+            await navigator.clipboard.write([
+                new ClipboardItem({
+                    'text/html': new Blob([html], { type: 'text/html' }),
+                    'text/plain': new Blob([html], { type: 'text/plain' })
+                })
+            ]);
+        } else {
+            await navigator.clipboard.writeText(html);
+        }
+        btn.innerHTML = '<i data-lucide="check" class="text-green-500"></i>';
+    } catch (err) {
+        console.error('No se pudo copiar:', err);
+        btn.innerHTML = '<i data-lucide="x" class="text-red-500"></i>';
+        throw err;
+    } finally {
+        if (window.lucide) lucide.createIcons();
+        setTimeout(() => restoreDefaultButtonHtml(btn, fallbackHtml), 2000);
+    }
 }
 
 function showCopyFeedback(btn, success) {
-  if (!btn) return;
-  const originalContent = btn.innerHTML;
-  btn.innerHTML = success
-    ? '<i data-lucide="check" class="text-green-500"></i>'
-    : '<i data-lucide="x" class="text-red-500"></i>';
-  if (window.lucide) lucide.createIcons();
-  setTimeout(() => {
-    btn.innerHTML = originalContent;
+    if (!btn) return;
+    const fallbackHtml = btn.innerHTML;
+    if (typeof btn.dataset.defaultHtml !== 'string') {
+        snapshotDefaultButtonHtml(btn);
+    }
+    btn.innerHTML = success
+        ? '<i data-lucide="check" class="text-green-500"></i>'
+        : '<i data-lucide="x" class="text-red-500"></i>';
     if (window.lucide) lucide.createIcons();
-  }, 2000);
+    setTimeout(() => restoreDefaultButtonHtml(btn, fallbackHtml), 2000);
 }
 
 async function writeTextToClipboard(text) {
+  let lastError = null;
   if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-    await navigator.clipboard.writeText(text);
-    return;
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (err) {
+      lastError = err;
+    }
   }
+
   const tempTextarea = document.createElement('textarea');
   tempTextarea.value = text;
+  tempTextarea.setAttribute('aria-hidden', 'true');
   tempTextarea.style.position = 'fixed';
   tempTextarea.style.opacity = '0';
   tempTextarea.style.pointerEvents = 'none';
+  tempTextarea.style.top = '0';
+  tempTextarea.style.left = '0';
   document.body.appendChild(tempTextarea);
   try {
     tempTextarea.focus({ preventScroll: true });
@@ -1119,6 +1151,7 @@ async function writeTextToClipboard(text) {
   const success = document.execCommand('copy');
   document.body.removeChild(tempTextarea);
   if (!success) {
+    if (lastError) throw lastError;
     throw new Error('document.execCommand("copy") returned false');
   }
 }
@@ -1210,6 +1243,8 @@ window.onload = () => {
     const clearAllBtn = document.getElementById('clear-all-btn');
     const copyMdBtn = document.getElementById('copy-md-btn');
     const copyHtmlBtn = document.getElementById('copy-html-btn');
+    if (copyMdBtn) snapshotDefaultButtonHtml(copyMdBtn);
+    if (copyHtmlBtn) snapshotDefaultButtonHtml(copyHtmlBtn);
     let copyHtmlBtnLabel = copyHtmlBtn ? copyHtmlBtn.querySelector('.copy-html-btn-label') : null;
     const previewCopyContainer = document.getElementById('preview-copy-container');
     const previewCopyMenu = document.getElementById('preview-copy-menu');
@@ -1228,6 +1263,26 @@ window.onload = () => {
         'latex-preview': 'Copy LaTeX',
         'latex-full': 'Copy LaTeX (full document)'
     };
+
+    function getCopyStartMessage(action) {
+        if (action === 'latex-preview' || action === 'latex-full') {
+            return getTranslation('copy_preparing_latex', 'Generando LaTeX…');
+        }
+        if (action === 'markdown') {
+            return getTranslation('copy_preparing_markdown', 'Preparando Markdown para copiar…');
+        }
+        return getTranslation('copy_preparing_generic', 'Preparando contenido para copiar…');
+    }
+
+    function getCopySuccessMessage(action) {
+        if (action === 'markdown') {
+            return getTranslation('copy_markdown_done', 'Markdown copiado al portapapeles.');
+        }
+        if (action === 'html') {
+            return getTranslation('copy_html_done', 'HTML copiado al portapapeles.');
+        }
+        return null;
+    }
     function updateCopyButtonLabel(action) {
         if (!copyHtmlBtn) return;
         const labelEl = copyHtmlBtn.querySelector('.copy-html-btn-label');
@@ -1240,6 +1295,7 @@ window.onload = () => {
         copyHtmlBtn.setAttribute('title', label);
         copyHtmlBtn.setAttribute('aria-label', label);
         copyHtmlBtn.setAttribute('data-current-copy-action', action);
+        snapshotDefaultButtonHtml(copyHtmlBtn);
     }
 
     function updatePreviewCopyOptionStyles(action) {
@@ -1491,10 +1547,18 @@ window.onload = () => {
                 if (!action) return;
                 applyCopyActionState(action);
                 closePreviewCopyMenu();
+                const startMessage = getCopyStartMessage(action);
+                if (startMessage) {
+                    updateExportStatus(startMessage);
+                    await yieldToUiThread();
+                }
                 try {
-                    await handlePreviewCopyAction(action);
+                    await handlePreviewCopyAction(action, { announce: false, updateState: false });
                 } catch (err) {
                     console.error('No se pudo completar la acción de copiado:', err);
+                    if (action === 'html') {
+                        updateExportStatus(getTranslation('copy_error_message', 'No se pudo copiar el contenido.'));
+                    }
                 }
             });
         });
@@ -1549,7 +1613,9 @@ window.onload = () => {
             statusToastEl.setAttribute('aria-hidden', 'false');
             requestAnimationFrame(() => statusToastEl.classList.add('visible'));
 
-            const shouldAutoHide = !/[.…]$/.test(text);
+            const trimmed = text.trim();
+            const endsWithEllipsis = trimmed.endsWith('…') || trimmed.endsWith('...');
+            const shouldAutoHide = !endsWithEllipsis;
             if (shouldAutoHide) {
                 statusToastTimer = setTimeout(() => {
                     updateExportStatus('');
@@ -1564,6 +1630,21 @@ window.onload = () => {
                 statusToastTimer = null;
             }, 250);
         }
+    }
+
+    function waitForNextUiFrame() {
+        return new Promise((resolve) => {
+            if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+                window.requestAnimationFrame(() => resolve());
+            } else {
+                setTimeout(resolve, 16);
+            }
+        });
+    }
+
+    async function yieldToUiThread() {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        await waitForNextUiFrame();
     }
 
     function isExportMenuOpen() {
@@ -1620,7 +1701,6 @@ window.onload = () => {
 
     async function copyPreviewHtml() {
         if (!copyHtmlBtn) return;
-        updateExportStatus('');
         const isPreviewVisible = htmlOutput && htmlOutput.style.display !== 'none';
         const html = isPreviewVisible ? buildHtmlWithTex() : (htmlEditor ? htmlEditor.getValue() : '');
         await copyRich(html, copyHtmlBtn);
@@ -1659,11 +1739,22 @@ window.onload = () => {
         }
     }
 
-    async function handlePreviewCopyAction(action) {
+    async function handlePreviewCopyAction(action, { announce = true, updateState = true } = {}) {
         const usableAction = COPY_ACTIONS.includes(action) ? action : 'html';
-        applyCopyActionState(usableAction, { persist: false });
+        if (announce) {
+            const startMessage = getCopyStartMessage(usableAction);
+            if (startMessage) {
+                updateExportStatus(startMessage);
+                await yieldToUiThread();
+            }
+        }
+        if (updateState) {
+            applyCopyActionState(usableAction, { persist: false });
+        }
         if (usableAction === 'html') {
             await copyPreviewHtml();
+            const successMessage = getCopySuccessMessage('html');
+            if (successMessage) updateExportStatus(successMessage);
         } else if (usableAction === 'latex-preview') {
             await copyLatexFromPreview(false);
         } else if (usableAction === 'latex-full') {
@@ -1698,6 +1789,8 @@ window.onload = () => {
             exportMenuBtn.classList.add(...disableClasses);
         }
         closeExportMenu();
+        updateExportStatus(getTranslation('export_preparing_message', 'Preparando exportación…'));
+        await yieldToUiThread();
 
         try {
             const lowerFormat = String(format || '').toLowerCase();
@@ -1950,29 +2043,53 @@ window.onload = () => {
 
     // --- Gestión del tema (claro/oscuro) ---
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-    const storedTheme = localStorage.getItem('theme');
+    let manualThemeOverride = null;
 
     function applyTheme(theme) {
-      document.documentElement.classList.toggle('dark', theme === 'dark');
-      document.documentElement.style.colorScheme = theme;
-      localStorage.setItem('theme', theme);
-      const newEditorTheme = theme === 'dark' ? 'material-darker' : 'eclipse';
+      const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+      document.documentElement.classList.toggle('dark', normalizedTheme === 'dark');
+      document.documentElement.style.colorScheme = normalizedTheme;
+      const newEditorTheme = normalizedTheme === 'dark' ? 'material-darker' : 'eclipse';
       markdownEditor.setOption('theme', newEditorTheme);
       htmlEditor.setOption('theme', newEditorTheme);
-      const icon = theme === 'dark' ? 'moon' : 'sun';
+      const icon = normalizedTheme === 'dark' ? 'moon' : 'sun';
       themeToggleBtn.innerHTML = `<i data-lucide="${icon}"></i>`;
       if (window.lucide) lucide.createIcons();
     }
 
-    if (storedTheme) applyTheme(storedTheme);
-    else applyTheme(prefersDark.matches ? 'dark' : 'light');
+    function syncWithSystemTheme() {
+      if (manualThemeOverride) return;
+      applyTheme(prefersDark.matches ? 'dark' : 'light');
+    }
+
+    applyTheme(prefersDark.matches ? 'dark' : 'light');
+
     prefersDark.addEventListener('change', (e) => {
-      if (!localStorage.getItem('theme')) applyTheme(e.matches ? 'dark' : 'light');
+      if (!manualThemeOverride) {
+        applyTheme(e.matches ? 'dark' : 'light');
+      }
     });
-    themeToggleBtn.addEventListener('click', () => {
-      const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+    themeToggleBtn.addEventListener('click', (event) => {
+      if (event && event.altKey) {
+        manualThemeOverride = null;
+        syncWithSystemTheme();
+        return;
+      }
+      const isCurrentlyDark = document.documentElement.classList.contains('dark');
+      const newTheme = isCurrentlyDark ? 'light' : 'dark';
+      manualThemeOverride = newTheme;
       applyTheme(newTheme);
     });
+
+    if (window.PandocExporter && typeof window.PandocExporter.warmUpExporter === 'function') {
+      window.setTimeout(() => {
+        try {
+          window.PandocExporter.warmUpExporter();
+        } catch (err) {
+          console.warn('No se pudo precargar Pandoc:', err);
+        }
+      }, 1200);
+    }
 
     // --- Paneles redimensionables y diseño ---
     Split(['#markdown-panel', '#html-panel'], {
@@ -2084,14 +2201,36 @@ window.onload = () => {
         fileInput.value = '';
     });
 
-    copyMdBtn.addEventListener('click', () => copyPlain(markdownEditor.getValue(), copyMdBtn));
+    copyMdBtn.addEventListener('click', async () => {
+        const startMessage = getCopyStartMessage('markdown');
+        if (startMessage) {
+            updateExportStatus(startMessage);
+            await yieldToUiThread();
+        }
+        try {
+            await copyPlain(markdownEditor.getValue(), copyMdBtn);
+            const successMessage = getCopySuccessMessage('markdown');
+            if (successMessage) updateExportStatus(successMessage);
+        } catch (err) {
+            updateExportStatus(getTranslation('copy_error_message', 'No se pudo copiar el contenido.'));
+        }
+    });
     copyHtmlBtn.addEventListener('click', async () => {
-       closePreviewCopyMenu();
-       try {
-           await handlePreviewCopyAction(currentCopyAction);
-       } catch (err) {
-           console.error('No se pudo copiar el contenido:', err);
-       }
+        closePreviewCopyMenu();
+        const action = currentCopyAction;
+        const startMessage = getCopyStartMessage(action);
+        if (startMessage) {
+            updateExportStatus(startMessage);
+            await yieldToUiThread();
+        }
+        try {
+            await handlePreviewCopyAction(action, { announce: false });
+        } catch (err) {
+            console.error('No se pudo copiar el contenido:', err);
+            if (action === 'html') {
+                updateExportStatus(getTranslation('copy_error_message', 'No se pudo copiar el contenido.'));
+            }
+        }
     });
     
     printBtn.addEventListener('click', () => {
