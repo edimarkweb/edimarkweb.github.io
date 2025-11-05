@@ -1912,7 +1912,7 @@ window.onload = () => {
         document.body.appendChild(iframe);
         const doc = iframe.contentWindow.document;
         doc.open();
-        doc.write(`<!DOCTYPE html><html><head><title>Imprimir</title><script src="https://cdn.tailwindcss.com?plugins=typography"><\/script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"><style>body { margin: 1.5rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }<\/style></head><body class="prose max-w-none">${printContent}<od></html>`);
+        doc.write(`<!DOCTYPE html><html><head><title>Imprimir</title><script src="https://cdn.tailwindcss.com?plugins=typography"><\/script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"><style>body { margin: 1.5rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }<\/style></head><body class="prose max-w-none">${printContent}</body></html>`);
         doc.close();
         setTimeout(() => {
             iframe.contentWindow.print();
