@@ -58,7 +58,7 @@
   "replace_all_btn_title": "Substituír todo",
   "bold_btn_title": "Negriña (Ctrl+B)",
   "italic_btn_title": "Cursiva (Ctrl+I)",
-  "heading_btn_title": "Encabezado (Ctrl+1..4)",
+  "heading_btn_title": "Encabezado (Ctrl+1..6)",
   "heading1": "Título 1",
   "heading2": "Título 2",
   "heading3": "Título 3",
@@ -72,6 +72,12 @@
   "table_btn_title": "Táboa (Ctrl+Shift+T)",
   "latex_inline_btn_title": "Fórmula LaTeX (Ctrl+M)",
   "latex_block_btn_title": "Fórmula LaTeX bloque (Ctrl+Shift+M)",
+  "formula_menu_btn_title": "Inserir fórmula",
+  "formula_menu_btn_text": "Fórmulas",
+  "formula_inline_dollar": "$...$ (en liña)",
+  "formula_inline_paren": "\\(...\\) (en liña)",
+  "formula_block_dollar": "$$...$$ (bloque)",
+  "formula_block_bracket": "\\[...\\] (bloque)",
   "edicuatex_btn_title": "Crear fórmula con EdiCuaTeX",
   "edicuatex_popup_blocked": "Permite as xanelas emerxentes no teu navegador para usar EdiCuaTeX.",
   "desktop_window_popup_blocked": "Permite as xanelas emerxentes no teu navegador para abrir a xanela independente.",
@@ -103,5 +109,7 @@
   "image_alt_text_label": "Texto alternativo",
   "image_url_label": "URL da imaxe",
   "drop_title": "Solta aquí para abrir nunha nova lapela",
-  "drop_subtitle": "Ficheiros Markdown (.md, .markdown). Tamén podes soltar varios ficheiros."
+  "drop_subtitle": "Ficheiros Markdown (.md, .markdown). Tamén podes soltar varios ficheiros.",
+  "heading5": "Título 5",
+  "heading6": "Título 6"
 }

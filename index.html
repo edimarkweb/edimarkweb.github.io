@@ -1,67 +1,305 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EdiMarkWeb se ha mudado</title>
-  <meta http-equiv="refresh" content="0; url=https://edimarkweb.github.io/">
-  <link rel="canonical" href="https://edimarkweb.github.io/">
-  <style>
-    :root {
-      color-scheme: light dark;
-    }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f8fafc;
-      color: #0f172a;
-    }
-    body.dark {
-      background: #020617;
-      color: #e2e8f0;
-    }
-    main {
-      text-align: center;
-      max-width: 32rem;
-      padding: 2rem;
-    }
-    h1 {
-      font-size: clamp(1.75rem, 4vw, 2.5rem);
-      margin-bottom: 1rem;
-    }
-    p {
-      margin: 0 0 0.75rem;
-      line-height: 1.5;
-    }
-    a {
-      color: inherit;
-      text-decoration: underline;
-      font-weight: 600;
-    }
-  </style>
-  <script>
-    (function redirect() {
-      var target = 'https://edimarkweb.github.io/';
-      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        document.addEventListener('DOMContentLoaded', function () {
-          document.body.classList.add('dark');
-        });
-      }
-      if (window.location.href !== target) {
-        window.location.replace(target);
-      }
-    }());
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="color-scheme" content="light dark">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <title data-i18n-key="title">EdiMarkWeb: Editor Markdown &harr; HTML con LaTeX</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class'
+      };
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/turndown/7.1.1/turndown.min.js" defer></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" defer></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.523.0/dist/umd/lucide.min.js" defer></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/eclipse.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/material-darker.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/mode/overlay.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/search/searchcursor.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/xml/xml.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/javascript/javascript.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/css/css.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/htmlmixed/htmlmixed.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/markdown/markdown.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/gfm/gfm.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/edit/continuelist.min.js" defer></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/split.js/dist/split.min.js"></script>
+
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <main>
-    <h1>EdiMarkWeb se ha mudado</h1>
-    <p>Ahora alojamos la herramienta en <a href="https://edimarkweb.github.io/">https://edimarkweb.github.io/</a>.</p>
-    <p>Si la redirección automática no se produce, haz clic en el enlace anterior.</p>
-  </main>
+<body class="p-4 sm:p-6 md:p-8">
+
+<main id="main-container" class="max-w-7xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
+    <header class="p-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-4 dark:border-slate-700">
+        <div class="flex items-center gap-3">
+            <img src="logo_256.png" alt="Logo EdiMarkWeb" class="w-12 h-12">
+            <h1 data-i18n-key="h1" class="text-xl font-semibold text-slate-800 dark:text-slate-100">EdiMarkWeb</h1>
+        </div>
+        <div class="toolbar-actions flex items-center gap-1 sm:gap-2 flex-wrap">
+            <div class="toolbar-group flex items-center gap-1 sm:gap-2">
+                <div id="language-select-wrapper" class="select-trigger action-btn text-sm" aria-label="Seleccionar idioma">
+                  <i data-lucide="languages" class="select-trigger-icon"></i>
+                  <span id="language-select-label" class="select-trigger-label">Español</span>
+                  <i data-lucide="chevron-down" class="select-trigger-caret"></i>
+                  <select id="language-select" class="select-overlay" aria-label="Seleccionar idioma">
+                    <option value="es">Español</option>
+                    <option value="en">English</option>
+                    <option value="ca">Català</option>
+                    <option value="gl">Galego</option>
+                    <option value="eu">Euskara</option>
+                  </select>
+                </div>
+                <div id="font-size-select-wrapper" class="select-trigger action-btn text-sm" data-i18n-key="font_size_select_aria_label" aria-label="Tamaño de texto">
+                  <i data-lucide="type" class="select-trigger-icon"></i>
+                  <span id="font-size-select-label" class="select-trigger-label">Normal</span>
+                  <i data-lucide="chevron-down" class="select-trigger-caret"></i>
+                  <select id="font-size-select" class="select-overlay" aria-label="Tamaño de texto">
+                    <option value="14" data-i18n-key="font_size_small">Pequeño</option>
+                    <option value="16" data-i18n-key="font_size_normal">Normal</option>
+                    <option value="18" data-i18n-key="font_size_large">Grande</option>
+                    <option value="20" data-i18n-key="font_size_xlarge">Muy grande</option>
+                  </select>
+                </div>
+            </div>
+
+            <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
+
+            <div class="toolbar-group flex items-center gap-1 sm:gap-2">
+                <button id="theme-toggle-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="theme_toggle_btn_aria_label" aria-label="Cambiar tema"></button>
+                <button id="layout-toggle-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="layout_toggle_btn_title" title="Cambiar diseño (Ctrl+L)"><i data-lucide="layout"></i></button>
+                <button id="toggle-width-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="toggle_width_btn_title" title="Expandir / Contraer ancho"><i data-lucide="maximize"></i></button>
+                <button id="desktop-window-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="desktop_window_btn_title" title="Abrir como ventana independiente"><i data-lucide="app-window"></i></button>
+            </div>
+
+            <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
+
+            <div class="toolbar-group flex items-center gap-1 sm:gap-2">
+                <button id="open-file-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="open_file_btn_title" title="Abrir archivo"><i data-lucide="folder-open" class="text-blue-600"></i><span class="hidden sm:inline" data-i18n-key="open_file_btn_text">Abrir</span></button>
+                <input
+                  type="file"
+                  id="file-input"
+                  class="hidden"
+                  accept=".md,.markdown,text/markdown"
+                />
+                <button id="save-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="save_btn_title" title="Guardar archivo (Ctrl+S)"><i data-lucide="save" class="text-green-600"></i><span class="hidden sm:inline" data-i18n-key="save_btn_text">Guardar</span></button>
+                <div id="export-menu-container" class="relative">
+                  <button type="button" id="export-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="export_menu_btn_title" title="Exportar" aria-haspopup="true" aria-expanded="false"><i data-lucide="download" class="text-indigo-600"></i><span class="hidden sm:inline" data-i18n-key="export_menu_btn_text">Exportar</span><i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i></button>
+                  <div id="export-menu" class="hidden absolute right-0 mt-2 w-60 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="export-menu-btn">
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="docx" data-i18n-key="export_menu_option_docx" role="menuitem">DOCX (Microsoft Word)</button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="odt" data-i18n-key="export_menu_option_odt" role="menuitem">ODT (LibreOffice)</button>
+                    <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="html-download" data-i18n-key="export_menu_option_html_download" role="menuitem">HTML (descargar)</button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="html-copy" data-i18n-key="export_menu_option_html_copy" role="menuitem">HTML (copiar sin archivo)</button>
+                    <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-download" data-i18n-key="export_menu_option_latex_download" role="menuitem">LaTeX (descargar)</button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-download" data-i18n-key="export_menu_option_latex_full_download" role="menuitem">LaTeX documento completo</button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-copy" data-i18n-key="export_menu_option_latex_copy" role="menuitem">LaTeX (copiar sin archivo)</button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-copy" data-i18n-key="export_menu_option_latex_full_copy" role="menuitem">LaTeX documento completo (copiar)</button>
+                  </div>
+                </div>
+                <button id="print-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="print_btn_title" title="Imprimir (Ctrl+P)"><i data-lucide="printer" class="text-slate-600 dark:text-slate-400"></i></button>
+            </div>
+
+            <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
+
+            <div class="toolbar-group flex items-center gap-1 sm:gap-2">
+                <button id="open-search-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="open_search_btn_title" title="Buscar (Ctrl+F)"><i data-lucide="search" class="text-slate-600 dark:text-slate-400"></i></button>
+                <button id="help-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="help_btn_title" title="Manual de uso (Ctrl+H)" aria-label="Abrir manual"><i data-lucide="help-circle"></i></button>
+                <button id="clear-all-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="clear_all_btn_title" title="Borrar todo"><i data-lucide="trash-2" class="text-red-600"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <div class="p-4">
+        <p id="export-status" class="text-sm text-slate-600 dark:text-slate-300 mb-4 hidden" aria-live="polite"></p>
+        <div id="search-wrapper" class="hidden mb-4 p-2 bg-slate-50 border border-slate-200 rounded-lg dark:bg-slate-800 dark:border-slate-700">
+            <div class="flex flex-col gap-2">
+                <div class="flex items-center gap-2">
+                    <button id="toggle-replace-btn" class="toolbar-btn"><i data-lucide="chevron-right" class="w-4 h-4 transition-transform"></i></button>
+                    <input type="text" id="search-input" data-i18n-key="search_input_placeholder" placeholder="Buscar..." class="flex-grow bg-white dark:bg-slate-700 p-1 rounded-md border border-slate-300 dark:border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span id="search-matches-info" class="text-xs text-slate-500 dark:text-slate-400 w-20 text-center">0 / 0</span>
+                    <button id="search-prev-btn" class="toolbar-btn" data-i18n-key="search_prev_btn_title" title="Anterior (Mayús+Enter)"><i data-lucide="arrow-up"></i></button>
+                    <button id="search-next-btn" class="toolbar-btn" data-i18n-key="search_next_btn_title" title="Siguiente (Enter)"><i data-lucide="arrow-down"></i></button>
+                    <button id="close-search-btn" class="toolbar-btn" data-i18n-key="close_search_btn_title" title="Cerrar (Esc)"><i data-lucide="x"></i></button>
+                </div>
+                <div id="replace-row" class="hidden items-center gap-2">
+                    <div class="w-8"></div> <input type="text" id="replace-input" data-i18n-key="replace_input_placeholder" placeholder="Reemplazar con..." class="flex-grow bg-white dark:bg-slate-700 p-1 rounded-md border border-slate-300 dark:border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="replace-one-btn" class="toolbar-btn p-1" data-i18n-key="replace_one_btn_title" title="Reemplazar"><i data-lucide="replace"></i></button>
+                    <button id="replace-all-btn" class="toolbar-btn p-1" data-i18n-key="replace_all_btn_title" title="Reemplazar todo"><i data-lucide="replace-all"></i></button>
+                    <div class="w-8"></div> </div>
+            </div>
+        </div>
+        
+        <div id="toolbar" class="bg-slate-50 p-2 rounded-lg mb-4 flex flex-wrap items-center gap-2 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+             <div class="flex items-center gap-1">
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="bold" data-i18n-key="bold_btn_title" title="Negrita (Ctrl+B)"><i data-lucide="bold"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="italic" data-i18n-key="italic_btn_title" title="Cursiva (Ctrl+I)"><i data-lucide="italic"></i></button>
+                <div class="relative" id="heading-dropdown-container">
+                    <button id="heading-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="heading_btn_title" title="Encabezado (Ctrl+1..6)"><i data-lucide="heading-1"></i></button>
+                    <div id="heading-options" class="absolute z-10 -left-2 mt-2 w-40 bg-white rounded-md shadow-lg border border-slate-200 hidden dark:bg-slate-700 dark:border-slate-600">
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-600" data-format="heading-1" data-i18n-key="heading1">Título 1</button>
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-600" data-format="heading-2" data-i18n-key="heading2">Título 2</button>
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-600" data-format="heading-3" data-i18n-key="heading3">Título 3</button>
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-600" data-format="heading-4" data-i18n-key="heading4">Título 4</button>
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-600" data-format="heading-5" data-i18n-key="heading5">Título 5</button>
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-600" data-format="heading-6" data-i18n-key="heading6">Título 6</button>
+                    </div>
+                </div>
+            </div>
+            <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
+            <div class="flex items-center gap-1">
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="quote" data-i18n-key="quote_btn_title" title="Cita (Ctrl+Shift+Q)"><i data-lucide="quote"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="list-ul" data-i18n-key="ul_list_btn_title" title="Lista (Ctrl+Shift+L)"><i data-lucide="list"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="list-ol" data-i18n-key="ol_list_btn_title" title="Lista numerada (Ctrl+Shift+O)"><i data-lucide="list-ordered"></i></button>
+            </div>
+            <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
+            <div class="flex items-center gap-1">
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="code" data-i18n-key="code_btn_title" title="Código (Ctrl+`)"><i data-lucide="code-2"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="link" data-i18n-key="link_btn_title" title="Enlace (Ctrl+K)"><i data-lucide="link"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="image" data-i18n-key="image_btn_title" title="Imagen (Ctrl+Shift+I)"><i data-lucide="image"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="table" data-i18n-key="table_btn_title" title="Tabla (Ctrl+Shift+T)"><i data-lucide="table"></i></button>
+            </div>
+            <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
+            <div class="flex items-center gap-1">
+                <div class="relative" id="formula-dropdown-container">
+                    <button id="formula-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" title="Insertar fórmula" data-i18n-key="formula_menu_btn_title" aria-haspopup="true" aria-expanded="false">
+                        <i data-lucide="function-square"></i>
+                        <span class="hidden sm:inline" data-i18n-key="formula_menu_btn_text">Fórmulas</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
+                    </button>
+                    <div id="formula-options" class="absolute z-10 -left-2 mt-2 w-48 rounded-md border border-slate-200 bg-white shadow-lg hidden dark:border-slate-600 dark:bg-slate-700" role="menu" aria-labelledby="formula-btn">
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-600" data-format="latex-inline-dollar" data-i18n-key="formula_inline_dollar" role="menuitem">$...$ (en línea)</button>
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-600" data-format="latex-inline-paren" data-i18n-key="formula_inline_paren" role="menuitem">\(...\) (en línea)</button>
+                        <div class="my-1 border-t border-slate-200 dark:border-slate-600"></div>
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-600" data-format="latex-block-dollar" data-i18n-key="formula_block_dollar" role="menuitem">$$...$$ (bloque)</button>
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-600" data-format="latex-block-bracket" data-i18n-key="formula_block_bracket" role="menuitem">\[...\] (bloque)</button>
+                    </div>
+                </div>
+                <button id="open-edicuatex-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="edicuatex_btn_title" title="Crear fórmula con EdiCuaTeX"><i data-lucide="pen-square"></i></button>
+            </div>
+        </div>
+
+        <div class="flex items-center border-b border-slate-200 dark:border-slate-700">
+            <div id="tab-bar" role="tablist" class="flex-grow flex gap-1 overflow-x-auto"></div>
+            <button id="new-tab-btn" class="action-btn p-2" data-i18n-key="new_tab_btn_title" title="Nueva pestaña (Ctrl+T)"><i data-lucide="plus"></i></button>
+        </div>
+
+        <div id="editor-container" class="editor-wrapper pt-3">
+            <div id="markdown-panel" class="panel w-full md:w-1/2">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-lg font-medium text-slate-700 dark:text-slate-200" data-i18n-key="markdown_panel_title">Markdown</h2>
+                    <button id="copy-md-btn" class="copy-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="copy_md_btn_title" title="Copiar Markdown"><i data-lucide="copy"></i></button>
+                </div>
+                <textarea id="markdown-input"></textarea>
+            </div>
+            <div id="html-panel" class="panel w-full md:w-1/2">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 id="html-panel-title" class="text-lg font-medium text-slate-700 dark:text-slate-200" data-i18n-key="html_panel_title">Previsualización</h2>
+                    <div class="flex items-center gap-2">
+                        <button id="view-toggle-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="view_toggle_btn_title" title="Cambiar a vista de código"><i data-lucide="code-2"></i></button>
+                        <button id="copy-html-btn" class="copy-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="copy_html_btn_title" title="Copiar HTML"><i data-lucide="copy"></i></button>
+                    </div>
+                </div>
+                <div id="html-output" contenteditable="true" spellcheck="false" class="editor-pane w-full prose max-w-none"></div>
+                <textarea id="html-source-view" class="hidden"></textarea>
+            </div>
+        </div>
+    </div>
+</main>
+
+    <div id="table-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="table-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm dark:bg-slate-800">
+            <h3 id="table-modal-title" class="text-lg font-bold mb-4 text-slate-800 dark:text-slate-100" data-i18n-key="create_table_modal_title">Crear tabla</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="table-cols" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="columns_label">Columnas</label>
+                    <input type="number" id="table-cols" value="3" min="1" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                </div>
+                <div>
+                    <label for="table-rows" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="rows_label">Filas (de datos)</label>
+                    <input type="number" id="table-rows" value="2" min="1" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="cancel-table-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
+                <button id="create-table-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="create_btn">Crear</button>
+            </div>
+        </div>
+    </div>
+    <div id="clear-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="clear-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm dark:bg-slate-800">
+            <h3 id="clear-modal-title" class="text-lg font-bold mb-4 text-slate-800 dark:text-slate-100" data-i18n-key="clear_modal_title">
+              ¿Vaciar todo el contenido?
+            </h3>
+            <p class="text-sm text-slate-700 dark:text-slate-300 mb-4" data-i18n-key="clear_modal_text">
+              Se eliminará el documento actual y su copia automática guardada en el navegador.
+            </p>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="cancel-clear-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
+                <button id="confirm-clear-btn" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <span data-i18n-key="clear_btn">Borrar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="link-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="link-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm dark:bg-slate-800">
+            <h3 id="link-modal-title" class="text-lg font-bold mb-4 text-slate-800 dark:text-slate-100" data-i18n-key="insert_link_modal_title">Insertar enlace</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="link-text" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="link_text_label">Texto a mostrar</label>
+                    <input id="link-text" type="text" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                </div>
+                <div>
+                    <label for="link-url" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="link_url_label">URL</label>
+                    <input id="link-url" type="url" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="cancel-link-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
+                <button id="insert-link-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="insert_btn">Insertar</button>
+            </div>
+        </div>
+    </div>
+    <div id="image-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="image-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm dark:bg-slate-800">
+            <h3 id="image-modal-title" class="text-lg font-bold mb-4 text-slate-800 dark:text-slate-100" data-i18n-key="insert_image_modal_title">Insertar imagen</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="image-alt-text" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="image_alt_text_label">Texto alternativo</label>
+                    <input id="image-alt-text" type="text" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                </div>
+                <div>
+                    <label for="image-url" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="image_url_label">URL de la imagen</label>
+                    <input id="image-url" type="url" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="cancel-image-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
+                <button id="insert-image-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="insert_btn">Insertar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="pandoc-exporter.js"></script>
+    <script src="script.js" defer></script>
+    <script src="search.js" defer></script>
+    <script src="i18n.js" defer></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const languageSelect = document.getElementById('language-select');
+  const languageLabel = document.getElementById('language-select-label');
 
   const getPreferredLanguage = () => {
     const storedLang = localStorage.getItem('language');
@@ -7,6 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return storedLang;
     }
     return navigator.language.split('-')[0] || 'es';
+  };
+
+  const updateLanguageLabel = () => {
+    if (!languageSelect || !languageLabel) return;
+    const option = languageSelect.options[languageSelect.selectedIndex];
+    if (option) {
+      languageLabel.textContent = option.textContent.trim();
+    }
   };
 
   const setLanguage = async (lang) => {
@@ -40,11 +49,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.documentElement.lang = lang;
     localStorage.setItem('language', lang);
     languageSelect.value = lang;
+    updateLanguageLabel();
+    if (typeof window.__updateFontSizeLabel === 'function') {
+      window.__updateFontSizeLabel();
+    }
   };
 
   languageSelect.addEventListener('change', (event) => {
     setLanguage(event.target.value);
   });
+  languageSelect.addEventListener('change', updateLanguageLabel);
 
   setLanguage(getPreferredLanguage());
 });

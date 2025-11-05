@@ -887,16 +887,32 @@ function applyFormat(format) {
           }
           break;
         case 'latex-inline':
+        case 'latex-inline-dollar':
           if (hadSelection) markdownEditor.replaceSelection(`$${selectedText}$`, 'around');
           else {
             markdownEditor.replaceSelection('$$');
             markdownEditor.setCursor({ line: cursor.line, ch: cursor.ch + 1 });
           }
           break;
+        case 'latex-inline-paren':
+          if (hadSelection) markdownEditor.replaceSelection(`\\(${selectedText}\\)`, 'around');
+          else {
+            markdownEditor.replaceSelection('\\(\\)');
+            markdownEditor.setCursor({ line: cursor.line, ch: cursor.ch + 2 });
+          }
+          break;
         case 'latex-block':
+        case 'latex-block-bracket':
           if (hadSelection) markdownEditor.replaceSelection(`\n\\[\n${selectedText}\n\\]\n`, 'around');
           else {
             markdownEditor.replaceSelection('\n\\[\n\n\\]\n');
+            markdownEditor.setCursor({ line: cursor.line + 2, ch: 0 });
+          }
+          break;
+        case 'latex-block-dollar':
+          if (hadSelection) markdownEditor.replaceSelection(`\n$$\n${selectedText}\n$$\n`, 'around');
+          else {
+            markdownEditor.replaceSelection('\n$$\n\n$$\n');
             markdownEditor.setCursor({ line: cursor.line + 2, ch: 0 });
           }
           break;
@@ -905,6 +921,8 @@ function applyFormat(format) {
         case 'heading-2': newText = `\n## ${selectedText || 'Título 2'}\n`; break;
         case 'heading-3': newText = `\n### ${selectedText || 'Título 3'}\n`; break;
         case 'heading-4': newText = `\n#### ${selectedText || 'Título 4'}\n`; break;
+        case 'heading-5': newText = `\n##### ${selectedText || 'Título 5'}\n`; break;
+        case 'heading-6': newText = `\n###### ${selectedText || 'Título 6'}\n`; break;
         case 'quote': newText = `\n> ${selectedText || 'Cita'}\n`; break;
         case 'list-ul': 
             newText = hadSelection ? selectedText.split('\n').map(l => l.trim() ? `- ${l}` : '').join('\n') : '\n- ';
@@ -922,13 +940,6 @@ function applyFormat(format) {
 }
 
 function toggleTableModal(show) { document.getElementById('table-modal-overlay').style.display = show ? 'flex' : 'none'; }
-function toggleSaveModal(show) { 
-    const doc = docs.find(d => d.id === currentId);
-    if(doc) {
-        document.getElementById('filename').value = doc.name.replace(/\.(md|html)$/i, '');
-    }
-    document.getElementById('save-modal-overlay').style.display = show ? 'flex' : 'none'; 
-}
 function toggleClearModal(show) { document.getElementById('clear-modal-overlay').style.display = show ? 'flex' : 'none'; }
 
 function toggleLinkModal(show, presetText = '') {
@@ -958,6 +969,24 @@ function saveFile(filename, content, type) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
+}
+
+function saveCurrentDocument() {
+    const content = markdownEditor.getValue();
+    const doc = docs.find(d => d.id === currentId);
+    const rawName = doc && typeof doc.name === 'string' ? doc.name.trim() : '';
+    const cleanName = rawName.replace(/\.md$/i, '') || 'documento';
+    const filename = `${cleanName}.md`;
+    saveFile(filename, content, 'text/markdown;charset=utf-8');
+    if (doc) {
+        doc.name = cleanName;
+        doc.md = content;
+        doc.lastSaved = content;
+        const tabNameEl = document.querySelector(`.tab[data-id="${currentId}"] .tab-name`);
+        if (tabNameEl) tabNameEl.textContent = cleanName;
+        updateDirtyIndicator(currentId, false);
+        saveDocsList();
+    }
 }
 
 async function copyPlain(text, btn) {
@@ -1087,9 +1116,17 @@ window.onload = () => {
     const headingBtn = document.getElementById('heading-btn');
     const headingOptions = document.getElementById('heading-options');
     const headingDropdownContainer = document.getElementById('heading-dropdown-container');
+    const formulaDropdownContainer = document.getElementById('formula-dropdown-container');
+    const formulaBtn = document.getElementById('formula-btn');
+    const formulaOptions = document.getElementById('formula-options');
+    const formulaOptionButtons = formulaOptions ? Array.from(formulaOptions.querySelectorAll('[data-format]')) : [];
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
     const layoutToggleBtn = document.getElementById('layout-toggle-btn');
+    const languageSelectEl = document.getElementById('language-select');
+    const languageWrapper = document.getElementById('language-select-wrapper');
     const fontSizeSelect = document.getElementById('font-size-select');
+    const fontSizeWrapper = document.getElementById('font-size-select-wrapper');
+    const fontSizeLabel = document.getElementById('font-size-select-label');
     const newTabBtn = document.getElementById('new-tab-btn');
     const tabBar = document.getElementById('tab-bar');
     
@@ -1097,9 +1134,6 @@ window.onload = () => {
     const tableModalOverlay = document.getElementById('table-modal-overlay');
     const createTableBtn = document.getElementById('create-table-btn');
     const cancelTableBtn = document.getElementById('cancel-table-btn');
-    const saveModalOverlay = document.getElementById('save-modal-overlay');
-    const confirmSaveBtn = document.getElementById('confirm-save-btn');
-    const cancelSaveBtn = document.getElementById('cancel-save-btn');
     const clearModalOverlay = document.getElementById('clear-modal-overlay');
     const confirmClearBtn = document.getElementById('confirm-clear-btn');
     const cancelClearBtn = document.getElementById('cancel-clear-btn');
@@ -1112,6 +1146,69 @@ window.onload = () => {
     const openEdicuatexBtn = document.getElementById('open-edicuatex-btn');
     const exportStatusEl = document.getElementById('export-status');
 
+    const updateFontSizeLabel = () => {
+        if (!fontSizeSelect || !fontSizeLabel) return;
+        const option = fontSizeSelect.options[fontSizeSelect.selectedIndex];
+        if (option) fontSizeLabel.textContent = option.textContent.trim();
+    };
+    window.__updateFontSizeLabel = updateFontSizeLabel;
+
+    const attachSelectFocusHandlers = (selectEl, wrapper) => {
+        if (!selectEl || !wrapper) return;
+        selectEl.addEventListener('focus', () => wrapper.classList.add('select-focus'));
+        selectEl.addEventListener('blur', () => wrapper.classList.remove('select-focus'));
+    };
+    attachSelectFocusHandlers(languageSelectEl, languageWrapper);
+    attachSelectFocusHandlers(fontSizeSelect, fontSizeWrapper);
+
+    const closeFormulaOptions = () => {
+        if (formulaOptions) formulaOptions.classList.add('hidden');
+        if (formulaBtn) formulaBtn.setAttribute('aria-expanded', 'false');
+    };
+    const openFormulaOptions = () => {
+        if (!formulaOptions) return;
+        formulaOptions.classList.remove('hidden');
+        if (formulaBtn) formulaBtn.setAttribute('aria-expanded', 'true');
+        const firstBtn = formulaOptionButtons[0];
+        if (firstBtn) firstBtn.focus();
+    };
+
+    if (formulaBtn) {
+        formulaBtn.setAttribute('aria-expanded', 'false');
+        formulaBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!formulaOptions) return;
+            if (formulaOptions.classList.contains('hidden')) {
+                openFormulaOptions();
+            } else {
+                closeFormulaOptions();
+            }
+        });
+    }
+
+    if (formulaOptionButtons.length) {
+        formulaOptionButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                closeFormulaOptions();
+            });
+        });
+    }
+
+    document.addEventListener('click', (event) => {
+        if (!formulaDropdownContainer) return;
+        if (!formulaDropdownContainer.contains(event.target)) {
+            closeFormulaOptions();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeFormulaOptions();
+        }
+    });
+
+    if (window.lucide) lucide.createIcons();
     const params = new URLSearchParams(window.location.search);
     const desktopMode = params.get(DESKTOP_PARAM_KEY) === '1';
     const desktopSpawned = params.get(DESKTOP_SPAWNED_KEY) === '1';
@@ -1643,10 +1740,16 @@ window.onload = () => {
     applyLayout(currentLayout);
 
     // --- Tamaño de fuente ---
-    const savedFs = localStorage.getItem(FS_KEY) || 16;
-    fontSizeSelect.value = savedFs;
-    applyFontSize(savedFs);
-    fontSizeSelect.addEventListener('change', e => applyFontSize(e.target.value));
+    if (fontSizeSelect) {
+        const savedFs = localStorage.getItem(FS_KEY) || 16;
+        fontSizeSelect.value = savedFs;
+        applyFontSize(savedFs);
+        updateFontSizeLabel();
+        fontSizeSelect.addEventListener('change', e => {
+            applyFontSize(e.target.value);
+            updateFontSizeLabel();
+        });
+    }
 
     // --- Carga inicial de documentos y autoguardado ---
     const savedDocsList = JSON.parse(localStorage.getItem(DOCS_LIST_KEY) || '[]');
@@ -1678,6 +1781,9 @@ window.onload = () => {
             applyFormat(button.dataset.format);
             if (button.dataset.format.startsWith('heading-')) {
                 headingOptions.classList.add('hidden');
+            }
+            if (button.dataset.format.startsWith('latex-')) {
+                closeFormulaOptions();
             }
         }
     });
@@ -1776,28 +1882,9 @@ window.onload = () => {
     cancelTableBtn.addEventListener('click', () => toggleTableModal(false));
     tableModalOverlay.addEventListener('click', (e) => { if (e.target === tableModalOverlay) toggleTableModal(false); });
     
-    saveBtn.addEventListener('click', () => toggleSaveModal(true));
-    confirmSaveBtn.addEventListener('click', () => {
-        const filenameInput = document.getElementById('filename');
-        let filename = filenameInput.value || 'documento';
-        const isMd = document.getElementById('format-md').checked;
-        const extension = isMd ? '.md' : '.html';
-        if (!filename.endsWith(extension)) filename += extension;
-        const content = isMd ? markdownEditor.getValue() : `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${filename.replace(/\.(md|html)$/i, '')}</title><script src="https://cdn.tailwindcss.com?plugins=typography"><\/script><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script><style>body { margin: 2rem; } .prose { max-width: 80ch; margin: auto; } <\/style></head><body class="prose max-w-none">${buildHtmlWithTex()}</body></html>`;
-        saveFile(filename, content, isMd ? 'text/markdown;charset=utf-8' : 'text/html;charset=utf-8');
-        const doc = docs.find(d => d.id === currentId);
-        if (doc) {
-            const displayName = filename.replace(/\.(md|html)$/i, '');
-            doc.lastSaved = markdownEditor.getValue();
-            doc.name = displayName;
-            document.querySelector(`.tab[data-id="${currentId}"] .tab-name`).textContent = displayName;
-            updateDirtyIndicator(currentId, false);
-            saveDocsList();
-        }
-        toggleSaveModal(false);
-    });
-    cancelSaveBtn.addEventListener('click', () => toggleSaveModal(false));
-    saveModalOverlay.addEventListener('click', (e) => { if (e.target === saveModalOverlay) toggleSaveModal(false); });
+    if (saveBtn) {
+        saveBtn.addEventListener('click', saveCurrentDocument);
+    }
 
     clearAllBtn.addEventListener('click', () => toggleClearModal(true));
     confirmClearBtn.addEventListener('click', () => {
@@ -1844,7 +1931,25 @@ window.onload = () => {
     let ctrlPressed = false;
     let currentHoveredLink = null;
     
-    const shortcutMap = { 'b': 'bold', 'i': 'italic', '`': 'code', 'k': 'link', 'm': 'latex-inline', 'M': 'latex-block', 'Q': 'quote', 'L': 'list-ul', 'O': 'list-ol', 'T': 'table', 'I': 'image', '1': 'heading-1', '2': 'heading-2', '3': 'heading-3', '4': 'heading-4' };
+    const shortcutMap = {
+        'b': 'bold',
+        'i': 'italic',
+        '`': 'code',
+        'k': 'link',
+        'm': 'latex-inline-dollar',
+        'M': 'latex-block-bracket',
+        'Q': 'quote',
+        'L': 'list-ul',
+        'O': 'list-ol',
+        'T': 'table',
+        'I': 'image',
+        '1': 'heading-1',
+        '2': 'heading-2',
+        '3': 'heading-3',
+        '4': 'heading-4',
+        '5': 'heading-5',
+        '6': 'heading-6',
+    };
 
     document.addEventListener('keydown', e => {
         const accel = isMac ? e.metaKey : e.ctrlKey;
@@ -1868,13 +1973,14 @@ window.onload = () => {
                 case 'l': e.preventDefault(); layoutToggleBtn.click(); break;
                 case 'h': e.preventDefault(); openManualDoc(e.shiftKey); break;
             }
-            if (['=', '+', '-'].includes(e.key)) {
+            if (fontSizeSelect && ['=', '+', '-'].includes(e.key)) {
                 e.preventDefault();
                 const sizes = [14, 16, 18, 20];
                 let idx = sizes.indexOf(Number(fontSizeSelect.value));
                 idx = e.key === '-' ? Math.max(0, idx - 1) : Math.min(sizes.length - 1, idx + 1);
                 fontSizeSelect.value = sizes[idx];
                 applyFontSize(sizes[idx]);
+                updateFontSizeLabel();
             }
             const key = e.shiftKey ? e.key.toUpperCase() : e.key.toLowerCase();
             if (shortcutMap[key]) { e.preventDefault(); applyFormat(shortcutMap[key]); }

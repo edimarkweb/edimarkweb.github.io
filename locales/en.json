@@ -58,7 +58,7 @@
   "replace_all_btn_title": "Replace all",
   "bold_btn_title": "Bold (Ctrl+B)",
   "italic_btn_title": "Italic (Ctrl+I)",
-  "heading_btn_title": "Heading (Ctrl+1..4)",
+  "heading_btn_title": "Heading (Ctrl+1..6)",
   "heading1": "Heading 1",
   "heading2": "Heading 2",
   "heading3": "Heading 3",
@@ -72,6 +72,12 @@
   "table_btn_title": "Table (Ctrl+Shift+T)",
   "latex_inline_btn_title": "LaTeX formula (Ctrl+M)",
   "latex_block_btn_title": "LaTeX block formula (Ctrl+Shift+M)",
+  "formula_menu_btn_title": "Insert formula",
+  "formula_menu_btn_text": "Formulas",
+  "formula_inline_dollar": "$...$ (inline)",
+  "formula_inline_paren": "\\(...\\) (inline)",
+  "formula_block_dollar": "$$...$$ (block)",
+  "formula_block_bracket": "\\[...\\] (block)",
   "edicuatex_btn_title": "Create formula with EdiCuaTeX",
   "edicuatex_popup_blocked": "Allow pop-ups in your browser to use EdiCuaTeX.",
   "desktop_window_popup_blocked": "Allow pop-ups in your browser to open the standalone window.",
@@ -103,5 +109,7 @@
   "image_alt_text_label": "Alt text",
   "image_url_label": "Image URL",
   "drop_title": "Drop here to open in a new tab",
-  "drop_subtitle": "Markdown files (.md, .markdown). You can also drop multiple files."
+  "drop_subtitle": "Markdown files (.md, .markdown). You can also drop multiple files.",
+  "heading5": "Heading 5",
+  "heading6": "Heading 6"
 }

@@ -58,7 +58,7 @@
   "replace_all_btn_title": "Ordezkatu dena",
   "bold_btn_title": "Lodia (Ktrl+B)",
   "italic_btn_title": "Etzana (Ktrl+I)",
-  "heading_btn_title": "Goiburua (Ktrl+1..4)",
+  "heading_btn_title": "Goiburua (Ktrl+1..6)",
   "heading1": "1. goiburua",
   "heading2": "2. goiburua",
   "heading3": "3. goiburua",
@@ -72,6 +72,12 @@
   "table_btn_title": "Taula (Ktrl+Shift+T)",
   "latex_inline_btn_title": "LaTeX formula (Ktrl+M)",
   "latex_block_btn_title": "LaTeX bloke-formula (Ktrl+Shift+M)",
+  "formula_menu_btn_title": "Formula txertatu",
+  "formula_menu_btn_text": "Formulak",
+  "formula_inline_dollar": "$...$ (lerroan)",
+  "formula_inline_paren": "\\(...\\) (lerroan)",
+  "formula_block_dollar": "$$...$$ (blokean)",
+  "formula_block_bracket": "\\[...\\] (blokean)",
   "edicuatex_btn_title": "EdiCuaTeX bidez formula sortu",
   "edicuatex_popup_blocked": "EdiCuaTeX erabiltzeko, baimendu nabigatzaileko leiho gainerakorrak.",
   "desktop_window_popup_blocked": "Leiho independentea irekitzeko, baimendu nabigatzaileko leiho gainerakorrak.",
@@ -103,5 +109,7 @@
   "image_alt_text_label": "Testu alternatiboa",
   "image_url_label": "Irudiaren URLa",
   "drop_title": "Utzi hemen fitxa berri batean irekitzeko",
-  "drop_subtitle": "Markdown fitxategiak (.md, .markdown). Hainbat fitxategi ere utz ditzakezu."
+  "drop_subtitle": "Markdown fitxategiak (.md, .markdown). Hainbat fitxategi ere utz ditzakezu.",
+  "heading5": "5. goiburua",
+  "heading6": "6. goiburua"
 }

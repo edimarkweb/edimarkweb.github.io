@@ -58,7 +58,7 @@
   "replace_all_btn_title": "Reemplaçar-ho tot",
   "bold_btn_title": "Negreta (Ctrl+B)",
   "italic_btn_title": "Cursiva (Ctrl+I)",
-  "heading_btn_title": "Encapçalament (Ctrl+1..4)",
+  "heading_btn_title": "Encapçalament (Ctrl+1..6)",
   "heading1": "Títol 1",
   "heading2": "Títol 2",
   "heading3": "Títol 3",
@@ -72,6 +72,12 @@
   "table_btn_title": "Taula (Ctrl+Shift+T)",
   "latex_inline_btn_title": "Fórmula LaTeX (Ctrl+M)",
   "latex_block_btn_title": "Fórmula LaTeX bloc (Ctrl+Shift+M)",
+  "formula_menu_btn_title": "Insereix una fórmula",
+  "formula_menu_btn_text": "Fórmules",
+  "formula_inline_dollar": "$...$ (en línia)",
+  "formula_inline_paren": "\\(...\\) (en línia)",
+  "formula_block_dollar": "$$...$$ (bloc)",
+  "formula_block_bracket": "\\[...\\] (bloc)",
   "edicuatex_btn_title": "Crear fórmula amb EdiCuaTeX",
   "edicuatex_popup_blocked": "Permet les finestres emergents del navegador per utilitzar EdiCuaTeX.",
   "desktop_window_popup_blocked": "Permet les finestres emergents del navegador per obrir la finestra independent.",
@@ -103,5 +109,7 @@
   "image_alt_text_label": "Text alternatiu",
   "image_url_label": "URL de la imatge",
   "drop_title": "Deixa anar aquí per obrir en una nova pestanya",
-  "drop_subtitle": "Fitxers Markdown (.md, .markdown). També pots deixar anar diversos fitxers."
+  "drop_subtitle": "Fitxers Markdown (.md, .markdown). També pots deixar anar diversos fitxers.",
+  "heading5": "Títol 5",
+  "heading6": "Títol 6"
 }
