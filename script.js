@@ -869,16 +869,17 @@ function updateHtml() {
     isUpdating = true;
     const markdownText = markdownEditor.getValue();
     const htmlOutput = document.getElementById('html-output');
+    
+    const sanitizedText = markdownText.replace(/`/g, '\`').replace(/\\/g, '\\\\').replace(/\\\[/g, '\\\\[').replace(/\\\]/g, '\\\\\]').replace(/\\\(/g, '\\\\(').replace(/\\\)/g, '\\\\)');
+    
     if (window.marked) {
-        const rawHtml = marked.parse(markdownText);
+        const rawHtml = marked.parse(sanitizedText);
         htmlOutput.innerHTML = rawHtml;
 
         htmlOutput.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
-            if (!h.id) {
-                h.id = h.textContent.trim().toLowerCase()
-                    .replace(/\s+/g, '-')
-                    .replace(/[^\w\-áéíóúüñ]/g, '');
-            }
+          if (!h.id) {
+            h.id = h.textContent.trim().toLowerCase().replace(/\\s+/g,'-').replace(/[^\\w\\-áéíóúüñ]/g,'');
+          }
         });
 
         if (htmlEditor && !htmlEditor.hasFocus()) {
@@ -890,19 +891,16 @@ function updateHtml() {
         if (window.renderMathInElement) {
             renderMathInElement(htmlOutput, {
                 delimiters: [
-                    { left: '$$', right: '$$', display: true },
-                    { left: '\\[', right: '\\]', display: true },
-                    { left: '$', right: '$', display: false },
-                    { left: '\\(', right: '\\)', display: false }
-                ],
-                throwOnError: false
+                    {left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true},
+                    {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}
+                ], throwOnError: false
             });
         }
     } catch (error) { console.warn("KaTeX no está listo.", error); }
-
+    
     if (currentId) {
         const doc = docs.find(d => d.id === currentId);
-        if (doc) {
+        if(doc) {
             updateDirtyIndicator(currentId, markdownEditor.getValue() !== doc.lastSaved);
         }
     }
