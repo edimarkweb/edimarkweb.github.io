@@ -28,7 +28,7 @@
   "export_menu_option_latex_copy": "LaTeX (copy without file)",
   "export_menu_option_latex_full_copy": "LaTeX full document (copy)",
   "print_btn_title": "Print (Ctrl+P)",
-  "help_btn_title": "User manual (Ctrl+H)",
+  "help_btn_title": "EdiMarkWeb manual",
   "clear_all_btn_title": "Clear all",
   "no_content": "There is no content to export.",
   "docx_export_preparing": "Preparing DOCX, please wait...",

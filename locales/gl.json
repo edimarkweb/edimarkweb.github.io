@@ -28,7 +28,7 @@
   "export_menu_option_latex_copy": "LaTeX (copiar sen ficheiro)",
   "export_menu_option_latex_full_copy": "LaTeX documento completo (copiar)",
   "print_btn_title": "Imprimir (Ctrl+P)",
-  "help_btn_title": "Manual de uso (Ctrl+H)",
+  "help_btn_title": "Manual de EdiMarkWeb",
   "clear_all_btn_title": "Borrar todo",
   "no_content": "Non hai contido para exportar.",
   "docx_export_preparing": "Preparando DOCX, agarda...",
