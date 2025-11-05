@@ -869,26 +869,9 @@ function updateHtml() {
     isUpdating = true;
     const markdownText = markdownEditor.getValue();
     const htmlOutput = document.getElementById('html-output');
-    const placeholderMap = [
-        { pattern: /\\\(/g, token: 'EDIMARKESCLPAREN', value: '\\(' },
-        { pattern: /\\\)/g, token: 'EDIMARKESCRPAREN', value: '\\)' },
-        { pattern: /\\\[/g, token: 'EDIMARKESCLBRACKET', value: '\\[' },
-        { pattern: /\\\]/g, token: 'EDIMARKESCRBRACKET', value: '\\]' }
-    ];
-
-    let processedText = markdownText;
-    placeholderMap.forEach(({ pattern, token }) => {
-        processedText = processedText.replace(pattern, token);
-    });
-
     if (window.marked) {
-        const parsedHtml = marked.parse(processedText);
-        let restoredHtml = parsedHtml;
-        placeholderMap.forEach(({ token, value }) => {
-            const tokenRegex = new RegExp(token, 'g');
-            restoredHtml = restoredHtml.replace(tokenRegex, value);
-        });
-        htmlOutput.innerHTML = restoredHtml;
+        const rawHtml = marked.parse(markdownText);
+        htmlOutput.innerHTML = rawHtml;
 
         htmlOutput.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
             if (!h.id) {
@@ -899,7 +882,7 @@ function updateHtml() {
         });
 
         if (htmlEditor && !htmlEditor.hasFocus()) {
-            htmlEditor.setValue(restoredHtml);
+            htmlEditor.setValue(rawHtml);
         }
     }
 
