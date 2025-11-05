@@ -59,6 +59,7 @@ function createTextareaEditor(textarea) {
     wrapper.insertBefore(highlightLayer, textarea);
 
     const changeHandlers = new Set();
+    const cursorHandlers = new Set();
     const INDENT = '  ';
     let highlightMatches = [];
     let highlightCurrent = -1;
@@ -196,6 +197,16 @@ function createTextareaEditor(textarea) {
         syncScroll();
     }
 
+    function triggerCursorActivity() {
+        cursorHandlers.forEach(handler => {
+            try {
+                handler();
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    }
+
     function triggerChange() {
         renderHighlights();
         if (highlightQuery) {
@@ -214,6 +225,7 @@ function createTextareaEditor(textarea) {
                 console.error(err);
             }
         });
+        triggerCursorActivity();
     }
 
     function syncScroll() {
@@ -224,6 +236,7 @@ function createTextareaEditor(textarea) {
         const safeStart = clampOffset(start);
         const safeEnd = clampOffset(end);
         textarea.setSelectionRange(safeStart, safeEnd);
+        triggerCursorActivity();
     }
 
     function lineRangeForSelection(start, end) {
@@ -395,6 +408,21 @@ function createTextareaEditor(textarea) {
 
     textarea.addEventListener('scroll', syncScroll);
 
+    textarea.addEventListener('mouseup', () => {
+        requestAnimationFrame(triggerCursorActivity);
+    });
+
+    textarea.addEventListener('keyup', (e) => {
+        const navKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'];
+        if (navKeys.includes(e.key)) {
+            requestAnimationFrame(triggerCursorActivity);
+        }
+    });
+
+    textarea.addEventListener('select', () => {
+        requestAnimationFrame(triggerCursorActivity);
+    });
+
 
     function createSearchCursor(regex) {
         const flags = regex.flags.includes('g') ? regex.flags : `${regex.flags}g`;
@@ -509,48 +537,54 @@ function createTextareaEditor(textarea) {
             syncScroll();
         },
         on(event, handler) {
-            if (event === 'change' && typeof handler === 'function') {
+            if (typeof handler !== 'function') return;
+            if (event === 'change') {
                 changeHandlers.add(handler);
+            } else if (event === 'cursorActivity') {
+                cursorHandlers.add(handler);
             }
         },
         off(event, handler) {
-            if (event === 'change' && typeof handler === 'function') {
-        changeHandlers.delete(handler);
-    }
-    },
-    addOverlay() {},
-    removeOverlay() {
-        highlightMatches = [];
-        highlightCurrent = -1;
-        highlightQuery = '';
-        renderHighlights();
-    },
-    setHighlights(_ranges, currentIndex, query) {
-        const usableQuery = typeof query === 'string' ? query.trim() : '';
-        if (!usableQuery) {
+            if (typeof handler !== 'function') return;
+            if (event === 'change') {
+                changeHandlers.delete(handler);
+            } else if (event === 'cursorActivity') {
+                cursorHandlers.delete(handler);
+            }
+        },
+        addOverlay() {},
+        removeOverlay() {
             highlightMatches = [];
             highlightCurrent = -1;
             highlightQuery = '';
             renderHighlights();
-            return;
-        }
-        highlightQuery = usableQuery;
-        highlightMatches = computeHighlights(usableQuery);
-        if (highlightMatches.length < 1) {
-            highlightCurrent = -1;
+        },
+        setHighlights(_ranges, currentIndex, query) {
+            const usableQuery = typeof query === 'string' ? query.trim() : '';
+            if (!usableQuery) {
+                highlightMatches = [];
+                highlightCurrent = -1;
+                highlightQuery = '';
+                renderHighlights();
+                return;
+            }
+            highlightQuery = usableQuery;
+            highlightMatches = computeHighlights(usableQuery);
+            if (highlightMatches.length < 1) {
+                highlightCurrent = -1;
+                renderHighlights();
+                return;
+            }
+            const idx = typeof currentIndex === 'number' ? currentIndex : 0;
+            highlightCurrent = Math.min(Math.max(idx, 0), highlightMatches.length - 1);
             renderHighlights();
-            return;
-        }
-        const idx = typeof currentIndex === 'number' ? currentIndex : 0;
-        highlightCurrent = Math.min(Math.max(idx, 0), highlightMatches.length - 1);
-        renderHighlights();
-    },
-    clearHighlights() {
-        highlightMatches = [];
-        highlightCurrent = -1;
-        highlightQuery = '';
-        renderHighlights();
-    },
+        },
+        clearHighlights() {
+            highlightMatches = [];
+            highlightCurrent = -1;
+            highlightQuery = '';
+            renderHighlights();
+        },
         markText(from, to) {
             const start = posToOffset(from);
             const end = posToOffset(to);
@@ -2057,6 +2091,7 @@ window.onload = () => {
       htmlOutput.scrollTop = lineRatio * (htmlOutput.scrollHeight - htmlOutput.clientHeight);
     }
     markdownEditor.on('change', () => { requestAnimationFrame(() => { updateHtml(); syncFromMarkdown(); }); });
+    markdownEditor.on('cursorActivity', () => { requestAnimationFrame(syncFromMarkdown); });
     htmlOutput.addEventListener('click', e => {
       if (ctrlPressed && e.target.closest('a')) {
           const a = e.target.closest('a');
