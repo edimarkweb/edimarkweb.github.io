@@ -147,6 +147,44 @@ body.desktop-mode #main-container {
     color: #60a5fa; /* Tailwind blue-400 */
 }
 
+.status-toast {
+    position: fixed;
+    top: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 60;
+}
+
+.status-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.status-toast-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.95);
+    color: #0f172a;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+    font-size: 0.95rem;
+    font-weight: 500;
+    backdrop-filter: blur(6px);
+}
+
+.dark .status-toast-content {
+    background: rgba(15, 23, 42, 0.95);
+    color: #e2e8f0;
+    border-color: rgba(71, 85, 105, 0.6);
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.65);
+}
+
 
 .action-btn {
     display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem;

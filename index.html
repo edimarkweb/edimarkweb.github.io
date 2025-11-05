@@ -102,14 +102,8 @@
                   <div id="export-menu" class="hidden absolute right-0 mt-2 w-60 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="export-menu-btn">
                     <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="docx" data-i18n-key="export_menu_option_docx" role="menuitem">DOCX (Microsoft Word)</button>
                     <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="odt" data-i18n-key="export_menu_option_odt" role="menuitem">ODT (LibreOffice)</button>
-                    <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="html-download" data-i18n-key="export_menu_option_html_download" role="menuitem">HTML (descargar)</button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="html-copy" data-i18n-key="export_menu_option_html_copy" role="menuitem">HTML (copiar sin archivo)</button>
-                    <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-download" data-i18n-key="export_menu_option_latex_download" role="menuitem">LaTeX (descargar)</button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-download" data-i18n-key="export_menu_option_latex_full_download" role="menuitem">LaTeX documento completo</button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-copy" data-i18n-key="export_menu_option_latex_copy" role="menuitem">LaTeX (copiar sin archivo)</button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-copy" data-i18n-key="export_menu_option_latex_full_copy" role="menuitem">LaTeX documento completo (copiar)</button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="html-download" data-i18n-key="export_menu_option_html_download" role="menuitem">HTML (página web)</button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-download" data-i18n-key="export_menu_option_latex_full_download" role="menuitem">TEX (LaTeX)</button>
                   </div>
                 </div>
                 <button id="print-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="print_btn_title" title="Imprimir (Ctrl+P)"><i data-lucide="printer" class="text-slate-600 dark:text-slate-400"></i></button>
@@ -126,7 +120,11 @@
     </header>
 
     <div class="p-4">
-        <p id="export-status" class="text-sm text-slate-600 dark:text-slate-300 mb-4 hidden" aria-live="polite"></p>
+        <div id="status-toast" class="status-toast hidden" role="status" aria-live="assertive" aria-hidden="true">
+            <div class="status-toast-content">
+                <span id="status-toast-message"></span>
+            </div>
+        </div>
         <div id="search-wrapper" class="hidden mb-4 p-2 bg-slate-50 border border-slate-200 rounded-lg dark:bg-slate-800 dark:border-slate-700">
             <div class="flex flex-col gap-2">
                 <div class="flex items-center gap-2">
@@ -212,7 +210,20 @@
                     <h2 id="html-panel-title" class="text-lg font-medium text-slate-700 dark:text-slate-200" data-i18n-key="html_panel_title">Previsualización</h2>
                     <div class="flex items-center gap-2">
                         <button id="view-toggle-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="view_toggle_btn_title" title="Cambiar a vista de código"><i data-lucide="code-2"></i></button>
-                        <button id="copy-html-btn" class="copy-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="copy_html_btn_title" title="Copiar HTML"><i data-lucide="copy"></i></button>
+                        <div id="preview-copy-container" class="relative inline-flex items-center">
+                            <button type="button" id="copy-html-btn" class="action-btn flex items-center gap-2 px-3 py-2 focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="copy_html_btn_title" title="Copiar HTML">
+                                <i data-lucide="copy"></i>
+                                <span class="copy-html-btn-label hidden sm:inline" data-i18n-key="copy_html_btn_text">Copiar HTML</span>
+                            </button>
+                            <button type="button" id="copy-html-menu-toggle" class="action-btn p-2 ml-1 focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" aria-haspopup="true" aria-expanded="false" data-i18n-key="copy_menu_toggle_title" title="Opciones de copiado" aria-label="Opciones de copiado">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </button>
+                            <div id="preview-copy-menu" class="hidden absolute right-0 top-full mt-2 w-60 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="copy-html-menu-toggle">
+                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-copy-action="html" data-i18n-key="copy_menu_option_html" role="menuitemradio" aria-checked="false">Copiar HTML</button>
+                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover-bg-slate-700" data-copy-action="latex-preview" data-i18n-key="copy_menu_option_latex_preview" role="menuitemradio" aria-checked="false">Copiar LaTeX</button>
+                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-copy-action="latex-full" data-i18n-key="copy_menu_option_latex_full" role="menuitemradio" aria-checked="false">Copiar LaTeX (documento completo)</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="html-output" contenteditable="true" spellcheck="false" class="editor-pane w-full prose max-w-none"></div>

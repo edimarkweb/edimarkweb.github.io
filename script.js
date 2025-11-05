@@ -16,6 +16,7 @@ let edicuatexOrigin = null;
 let desktopWindow = null;
 let desktopWindowMonitor = null;
 const DESKTOP_SIZE_KEY = 'edimarkweb-desktop-size';
+const COPY_ACTION_KEY = 'edimarkweb-copy-action';
 
 function normalizeNewlines(str) {
     if (typeof str !== 'string' || str.length < 1) return typeof str === 'string' ? str : '';
@@ -1085,6 +1086,43 @@ async function copyRich(html, btn) {
   }
 }
 
+function showCopyFeedback(btn, success) {
+  if (!btn) return;
+  const originalContent = btn.innerHTML;
+  btn.innerHTML = success
+    ? '<i data-lucide="check" class="text-green-500"></i>'
+    : '<i data-lucide="x" class="text-red-500"></i>';
+  if (window.lucide) lucide.createIcons();
+  setTimeout(() => {
+    btn.innerHTML = originalContent;
+    if (window.lucide) lucide.createIcons();
+  }, 2000);
+}
+
+async function writeTextToClipboard(text) {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const tempTextarea = document.createElement('textarea');
+  tempTextarea.value = text;
+  tempTextarea.style.position = 'fixed';
+  tempTextarea.style.opacity = '0';
+  tempTextarea.style.pointerEvents = 'none';
+  document.body.appendChild(tempTextarea);
+  try {
+    tempTextarea.focus({ preventScroll: true });
+  } catch (_) {
+    tempTextarea.focus();
+  }
+  tempTextarea.select();
+  const success = document.execCommand('copy');
+  document.body.removeChild(tempTextarea);
+  if (!success) {
+    throw new Error('document.execCommand("copy") returned false');
+  }
+}
+
 function buildHtmlWithTex() {
   const htmlOutput = document.getElementById('html-output');
   const clone = htmlOutput.cloneNode(true);
@@ -1172,6 +1210,70 @@ window.onload = () => {
     const clearAllBtn = document.getElementById('clear-all-btn');
     const copyMdBtn = document.getElementById('copy-md-btn');
     const copyHtmlBtn = document.getElementById('copy-html-btn');
+    let copyHtmlBtnLabel = copyHtmlBtn ? copyHtmlBtn.querySelector('.copy-html-btn-label') : null;
+    const previewCopyContainer = document.getElementById('preview-copy-container');
+    const previewCopyMenu = document.getElementById('preview-copy-menu');
+    const previewCopyToggleBtn = document.getElementById('copy-html-menu-toggle');
+    const previewCopyOptionButtons = previewCopyMenu ? Array.from(previewCopyMenu.querySelectorAll('[data-copy-action]')) : [];
+    const COPY_ACTIONS = ['html', 'latex-preview', 'latex-full'];
+    let currentCopyAction = localStorage.getItem(COPY_ACTION_KEY);
+    if (!COPY_ACTIONS.includes(currentCopyAction)) currentCopyAction = 'html';
+    const copyActionLabelKeys = {
+        html: 'copy_menu_option_html',
+        'latex-preview': 'copy_menu_option_latex_preview',
+        'latex-full': 'copy_menu_option_latex_full'
+    };
+    const copyActionFallbackTexts = {
+        html: 'Copy HTML',
+        'latex-preview': 'Copy LaTeX',
+        'latex-full': 'Copy LaTeX (full document)'
+    };
+    function updateCopyButtonLabel(action) {
+        if (!copyHtmlBtn) return;
+        const labelEl = copyHtmlBtn.querySelector('.copy-html-btn-label');
+        if (!labelEl) return;
+        copyHtmlBtnLabel = labelEl;
+        const labelKey = copyActionLabelKeys[action] || copyActionLabelKeys.html;
+        const fallback = copyActionFallbackTexts[action] || copyActionFallbackTexts.html;
+        const label = getTranslation(labelKey, fallback);
+        copyHtmlBtnLabel.textContent = label;
+        copyHtmlBtn.setAttribute('title', label);
+        copyHtmlBtn.setAttribute('aria-label', label);
+        copyHtmlBtn.setAttribute('data-current-copy-action', action);
+    }
+
+    function updatePreviewCopyOptionStyles(action) {
+        if (!previewCopyOptionButtons.length) return;
+        previewCopyOptionButtons.forEach(btn => {
+            const isActive = btn.getAttribute('data-copy-action') === action;
+            btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
+            btn.classList.toggle('font-semibold', isActive);
+            btn.classList.toggle('bg-slate-100', isActive);
+            btn.classList.toggle('dark:bg-slate-700', isActive);
+        });
+    }
+
+    function applyCopyActionState(action, { persist = true } = {}) {
+        const usableAction = COPY_ACTIONS.includes(action) ? action : 'html';
+        currentCopyAction = usableAction;
+        if (persist) {
+            try {
+                localStorage.setItem(COPY_ACTION_KEY, usableAction);
+            } catch (err) {
+                console.warn('No se pudo guardar la acción de copiado por defecto:', err);
+            }
+        }
+        updateCopyButtonLabel(usableAction);
+        updatePreviewCopyOptionStyles(usableAction);
+    }
+
+    window.__updateCopyButtonLabel = () => {
+        updateCopyButtonLabel(currentCopyAction);
+        updatePreviewCopyOptionStyles(currentCopyAction);
+    };
+
+    applyCopyActionState(currentCopyAction, { persist: false });
+
     const headingBtn = document.getElementById('heading-btn');
     const headingOptions = document.getElementById('heading-options');
     const headingDropdownContainer = document.getElementById('heading-dropdown-container');
@@ -1203,7 +1305,9 @@ window.onload = () => {
     const insertImageBtn = document.getElementById('insert-image-btn');
     const cancelImageBtn = document.getElementById('cancel-image-btn');
     const openEdicuatexBtn = document.getElementById('open-edicuatex-btn');
-    const exportStatusEl = document.getElementById('export-status');
+    const statusToastEl = document.getElementById('status-toast');
+    const statusToastMessageEl = document.getElementById('status-toast-message');
+    let statusToastTimer = null;
 
     const updateFontSizeLabel = () => {
         if (!fontSizeSelect || !fontSizeLabel) return;
@@ -1360,6 +1464,51 @@ window.onload = () => {
         });
     }
 
+    if (previewCopyToggleBtn) {
+        previewCopyToggleBtn.setAttribute('aria-expanded', 'false');
+        previewCopyToggleBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            togglePreviewCopyMenu();
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        });
+        previewCopyToggleBtn.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                if (!isPreviewCopyMenuOpen()) openPreviewCopyMenu();
+                previewCopyOptionButtons[0]?.focus();
+            }
+        });
+    }
+
+    if (previewCopyOptionButtons.length) {
+        previewCopyOptionButtons.forEach((btn) => {
+            btn.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const action = btn.getAttribute('data-copy-action');
+                if (!action) return;
+                applyCopyActionState(action);
+                closePreviewCopyMenu();
+                try {
+                    await handlePreviewCopyAction(action);
+                } catch (err) {
+                    console.error('No se pudo completar la acción de copiado:', err);
+                }
+            });
+        });
+    }
+
+    if (previewCopyContainer) {
+        document.addEventListener('click', (event) => {
+            if (!isPreviewCopyMenuOpen()) return;
+            if (!previewCopyContainer.contains(event.target)) {
+                closePreviewCopyMenu();
+            }
+        }, { capture: true });
+    }
+
     if (exportMenuContainer) {
         document.addEventListener('click', (event) => {
             if (!isExportMenuOpen()) return;
@@ -1370,21 +1519,50 @@ window.onload = () => {
     }
 
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && isExportMenuOpen()) {
+        if (event.key !== 'Escape') return;
+        let handled = false;
+        if (isExportMenuOpen()) {
             closeExportMenu();
             if (exportMenuBtn) exportMenuBtn.focus();
+            handled = true;
         }
+        if (isPreviewCopyMenuOpen()) {
+            closePreviewCopyMenu();
+            if (previewCopyToggleBtn) previewCopyToggleBtn.focus();
+            handled = true;
+        }
+        if (handled) event.preventDefault();
     });
 
     function updateExportStatus(message) {
-        if (!exportStatusEl) return;
+        if (!statusToastEl || !statusToastMessageEl) return;
         const text = typeof message === 'string' ? message.trim() : '';
+
+        if (statusToastTimer) {
+            clearTimeout(statusToastTimer);
+            statusToastTimer = null;
+        }
+
         if (text) {
-            exportStatusEl.textContent = text;
-            exportStatusEl.classList.remove('hidden');
+            statusToastMessageEl.textContent = text;
+            statusToastEl.classList.remove('hidden');
+            statusToastEl.setAttribute('aria-hidden', 'false');
+            requestAnimationFrame(() => statusToastEl.classList.add('visible'));
+
+            const shouldAutoHide = !/[.…]$/.test(text);
+            if (shouldAutoHide) {
+                statusToastTimer = setTimeout(() => {
+                    updateExportStatus('');
+                }, 3200);
+            }
         } else {
-            exportStatusEl.textContent = '';
-            exportStatusEl.classList.add('hidden');
+            statusToastEl.classList.remove('visible');
+            statusToastEl.setAttribute('aria-hidden', 'true');
+            statusToastMessageEl.textContent = '';
+            statusToastTimer = setTimeout(() => {
+                statusToastEl.classList.add('hidden');
+                statusToastTimer = null;
+            }, 250);
         }
     }
 
@@ -1394,6 +1572,7 @@ window.onload = () => {
 
     function openExportMenu() {
         if (!exportMenu) return;
+        closePreviewCopyMenu();
         exportMenu.classList.remove('hidden');
         if (exportMenuBtn) exportMenuBtn.setAttribute('aria-expanded', 'true');
     }
@@ -1410,6 +1589,85 @@ window.onload = () => {
             closeExportMenu();
         } else {
             openExportMenu();
+        }
+    }
+
+    function isPreviewCopyMenuOpen() {
+        return previewCopyMenu && !previewCopyMenu.classList.contains('hidden');
+    }
+
+    function openPreviewCopyMenu() {
+        if (!previewCopyMenu) return;
+        closeExportMenu();
+        previewCopyMenu.classList.remove('hidden');
+        if (previewCopyToggleBtn) previewCopyToggleBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closePreviewCopyMenu() {
+        if (!previewCopyMenu) return;
+        previewCopyMenu.classList.add('hidden');
+        if (previewCopyToggleBtn) previewCopyToggleBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function togglePreviewCopyMenu() {
+        if (!previewCopyMenu) return;
+        if (isPreviewCopyMenuOpen()) {
+            closePreviewCopyMenu();
+        } else {
+            openPreviewCopyMenu();
+        }
+    }
+
+    async function copyPreviewHtml() {
+        if (!copyHtmlBtn) return;
+        updateExportStatus('');
+        const isPreviewVisible = htmlOutput && htmlOutput.style.display !== 'none';
+        const html = isPreviewVisible ? buildHtmlWithTex() : (htmlEditor ? htmlEditor.getValue() : '');
+        await copyRich(html, copyHtmlBtn);
+    }
+
+    async function copyLatexFromPreview(includePreamble) {
+        const exporter = window.PandocExporter;
+        if (!exporter || typeof exporter.generateLatex !== 'function') {
+            alert(getTranslation('export_error', 'Error durante la exportación.'));
+            return;
+        }
+        const rawMarkdown = markdownEditor && typeof markdownEditor.getValue === 'function'
+            ? markdownEditor.getValue()
+            : '';
+        const prepared = typeof exporter.trimInlineMath === 'function'
+            ? exporter.trimInlineMath(rawMarkdown)
+            : rawMarkdown;
+        if (!prepared.trim()) {
+            alert(getTranslation('no_content', 'No hay contenido para exportar.'));
+            updateExportStatus('');
+            return;
+        }
+        try {
+            const latexResult = await exporter.generateLatex({
+                markdown: rawMarkdown,
+                standalone: Boolean(includePreamble),
+                onStatus: updateExportStatus,
+            });
+            await writeTextToClipboard(latexResult);
+            showCopyFeedback(copyHtmlBtn, true);
+            updateExportStatus(getTranslation('latex_copy_done', 'LaTeX copiado al portapapeles.'));
+        } catch (err) {
+            updateExportStatus(getTranslation('latex_export_error', getTranslation('export_error', 'Error durante la exportación.')));
+            showCopyFeedback(copyHtmlBtn, false);
+            throw err;
+        }
+    }
+
+    async function handlePreviewCopyAction(action) {
+        const usableAction = COPY_ACTIONS.includes(action) ? action : 'html';
+        applyCopyActionState(usableAction, { persist: false });
+        if (usableAction === 'html') {
+            await copyPreviewHtml();
+        } else if (usableAction === 'latex-preview') {
+            await copyLatexFromPreview(false);
+        } else if (usableAction === 'latex-full') {
+            await copyLatexFromPreview(true);
         }
     }
 
@@ -1455,19 +1713,18 @@ window.onload = () => {
                         if (message) alert(message);
                     },
                 });
-            } else if (lowerFormat === 'html-download' || lowerFormat === 'html-copy') {
+            } else if (lowerFormat === 'html-download') {
                 if (typeof exporter.generateHtml !== 'function') {
                     console.warn('Función generateHtml no disponible');
                     updateExportStatus(getTranslation('export_error', 'Error durante la exportación.'));
                     return;
                 }
 
-                const standalone = lowerFormat === 'html-download';
                 let htmlResult;
                 try {
                     htmlResult = await exporter.generateHtml({
                         markdown: rawMarkdown,
-                        standalone,
+                        standalone: true,
                         onStatus: updateExportStatus,
                     });
                 } catch (err) {
@@ -1476,64 +1733,21 @@ window.onload = () => {
                     return;
                 }
 
-                if (standalone) {
-                    const htmlFilename = `${safeName}.html`;
-                    saveFile(htmlFilename, htmlResult, 'text/html;charset=utf-8');
-                    updateExportStatus(getTranslation('html_export_done', 'Exportación HTML completada.'));
-                } else {
-                    try {
-                        if (navigator.clipboard && window.ClipboardItem) {
-                            const htmlBlob = new Blob([htmlResult], { type: 'text/html' });
-                            const plainBlob = new Blob([htmlResult], { type: 'text/plain' });
-                            await navigator.clipboard.write([
-                                new ClipboardItem({
-                                    'text/html': htmlBlob,
-                                    'text/plain': plainBlob,
-                                }),
-                            ]);
-                        } else if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-                            await navigator.clipboard.writeText(htmlResult);
-                        } else {
-                            const tempTextarea = document.createElement('textarea');
-                            tempTextarea.value = htmlResult;
-                            tempTextarea.style.position = 'fixed';
-                            tempTextarea.style.opacity = '0';
-                            document.body.appendChild(tempTextarea);
-                            try {
-                                tempTextarea.focus();
-                                tempTextarea.select();
-                                const success = document.execCommand('copy');
-                                if (!success) {
-                                    throw new Error('document.execCommand returned false');
-                                }
-                            } finally {
-                                document.body.removeChild(tempTextarea);
-                            }
-                        }
-                        updateExportStatus(getTranslation('html_copy_done', 'HTML copiado al portapapeles.'));
-                    } catch (err) {
-                        console.error('No se pudo copiar HTML al portapapeles:', err);
-                        updateExportStatus(getTranslation('html_export_error', getTranslation('export_error', 'Error durante la exportación.')));
-                    }
-                }
-            } else if (
-                lowerFormat === 'latex-download' ||
-                lowerFormat === 'latex-full-download' ||
-                lowerFormat === 'latex-copy' ||
-                lowerFormat === 'latex-full-copy'
-            ) {
+                const htmlFilename = `${safeName}.html`;
+                saveFile(htmlFilename, htmlResult, 'text/html;charset=utf-8');
+                updateExportStatus(getTranslation('html_export_done', 'Exportación HTML completada.'));
+            } else if (lowerFormat === 'latex-full-download') {
                 if (typeof exporter.generateLatex !== 'function') {
                     console.warn('Función generateLatex no disponible');
                     updateExportStatus(getTranslation('export_error', 'Error durante la exportación.'));
                     return;
                 }
 
-                const standalone = lowerFormat === 'latex-full-download' || lowerFormat === 'latex-full-copy';
                 let latexResult;
                 try {
                     latexResult = await exporter.generateLatex({
                         markdown: rawMarkdown,
-                        standalone,
+                        standalone: true,
                         onStatus: updateExportStatus,
                     });
                 } catch (err) {
@@ -1542,37 +1756,9 @@ window.onload = () => {
                     return;
                 }
 
-                if (lowerFormat.endsWith('download')) {
-                    const latexFilename = `${safeName}.tex`;
-                    saveFile(latexFilename, latexResult, 'application/x-tex;charset=utf-8');
-                    updateExportStatus(getTranslation('latex_export_done', 'Exportación a LaTeX completada.'));
-                } else {
-                    try {
-                        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-                            await navigator.clipboard.writeText(latexResult);
-                        } else {
-                            const tempTextarea = document.createElement('textarea');
-                            tempTextarea.value = latexResult;
-                            tempTextarea.style.position = 'fixed';
-                            tempTextarea.style.opacity = '0';
-                            document.body.appendChild(tempTextarea);
-                            try {
-                                tempTextarea.focus();
-                                tempTextarea.select();
-                                const success = document.execCommand('copy');
-                                if (!success) {
-                                    throw new Error('document.execCommand returned false');
-                                }
-                            } finally {
-                                document.body.removeChild(tempTextarea);
-                            }
-                        }
-                        updateExportStatus(getTranslation('latex_copy_done', 'LaTeX copiado al portapapeles.'));
-                    } catch (err) {
-                        console.error('No se pudo copiar LaTeX al portapapeles:', err);
-                        updateExportStatus(getTranslation('latex_export_error', getTranslation('export_error', 'Error durante la exportación.')));
-                    }
-                }
+                const latexFilename = `${safeName}.tex`;
+                saveFile(latexFilename, latexResult, 'application/x-tex;charset=utf-8');
+                updateExportStatus(getTranslation('latex_export_done', 'Exportación a LaTeX completada.'));
             } else {
                 console.warn('Formato de exportación no soportado:', format);
                 updateExportStatus(getTranslation('export_error', 'Error durante la exportación.'));
@@ -1899,10 +2085,13 @@ window.onload = () => {
     });
 
     copyMdBtn.addEventListener('click', () => copyPlain(markdownEditor.getValue(), copyMdBtn));
-    copyHtmlBtn.addEventListener('click', () => {
-       const isPreview = htmlOutput.style.display !== 'none';
-       const html = isPreview ? buildHtmlWithTex() : htmlEditor.getValue();
-       copyRich(html, copyHtmlBtn);
+    copyHtmlBtn.addEventListener('click', async () => {
+       closePreviewCopyMenu();
+       try {
+           await handlePreviewCopyAction(currentCopyAction);
+       } catch (err) {
+           console.error('No se pudo copiar el contenido:', err);
+       }
     });
     
     printBtn.addEventListener('click', () => {
@@ -2060,7 +2249,8 @@ window.onload = () => {
 
     htmlOutput.addEventListener('mousemove', e => {
         const targetLink = e.target.closest('a');
-        if (ctrlPressed && targetLink) {
+        const accelPressed = e.ctrlKey || e.metaKey || ctrlPressed;
+        if (accelPressed && targetLink) {
             if (currentHoveredLink !== targetLink) {
                 if (currentHoveredLink) currentHoveredLink.classList.remove('ctrl-hover');
                 targetLink.classList.add('ctrl-hover');
@@ -2093,15 +2283,26 @@ window.onload = () => {
     markdownEditor.on('change', () => { requestAnimationFrame(() => { updateHtml(); syncFromMarkdown(); }); });
     markdownEditor.on('cursorActivity', () => { requestAnimationFrame(syncFromMarkdown); });
     htmlOutput.addEventListener('click', e => {
-      if (ctrlPressed && e.target.closest('a')) {
-          const a = e.target.closest('a');
-          const href = a.getAttribute('href') || '';
+      const accelPressed = e.ctrlKey || e.metaKey || ctrlPressed;
+      const linkEl = e.target.closest('a');
+      if (accelPressed && linkEl) {
+          const hrefAttr = linkEl.getAttribute('href') || '';
           e.preventDefault(); e.stopPropagation();
-          if (href.startsWith('#')) {
-              const target = htmlOutput.querySelector(href);
-              if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } else {
-              window.open(a.href, '_blank', 'noopener');
+          if (hrefAttr.startsWith('#')) {
+              let targetId = hrefAttr.slice(1);
+              try { targetId = decodeURIComponent(targetId); } catch (_) { /* ignore malformed URI */ }
+              const manualEscape = targetId.replace(/([ !"#$%&'()*+,./:;<=>?@\[\\\]^`{|}~])/g, '\\$1');
+              const selectorSafeId = (window.CSS && typeof CSS.escape === 'function') ? CSS.escape(targetId) : manualEscape;
+              let target = htmlOutput.querySelector(`#${selectorSafeId}`);
+              if (!target) target = document.getElementById(targetId);
+              if (target) {
+                  const containerRect = htmlOutput.getBoundingClientRect();
+                  const targetRect = target.getBoundingClientRect();
+                  const offset = targetRect.top - containerRect.top + htmlOutput.scrollTop;
+                  htmlOutput.scrollTo({ top: Math.max(0, offset - 16), behavior: 'smooth' });
+              }
+          } else if (linkEl.href) {
+              window.open(linkEl.href, '_blank', 'noopener');
           }
           return;
       }

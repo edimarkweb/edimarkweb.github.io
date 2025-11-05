@@ -53,6 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.__updateFontSizeLabel === 'function') {
       window.__updateFontSizeLabel();
     }
+    if (typeof window.__updateCopyButtonLabel === 'function') {
+      window.__updateCopyButtonLabel();
+    }
   };
 
   languageSelect.addEventListener('change', (event) => {
