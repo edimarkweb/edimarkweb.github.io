@@ -869,21 +869,37 @@ function updateHtml() {
     isUpdating = true;
     const markdownText = markdownEditor.getValue();
     const htmlOutput = document.getElementById('html-output');
-    
-    const processedText = markdownText;
-    
+    const placeholderMap = [
+        { pattern: /\\\(/g, token: '__EDIMARK_ESC_LPAREN__', value: '\\(' },
+        { pattern: /\\\)/g, token: '__EDIMARK_ESC_RPAREN__', value: '\\)' },
+        { pattern: /\\\[/g, token: '__EDIMARK_ESC_LBRACKET__', value: '\\[' },
+        { pattern: /\\\]/g, token: '__EDIMARK_ESC_RBRACKET__', value: '\\]' }
+    ];
+
+    let processedText = markdownText;
+    placeholderMap.forEach(({ pattern, token }) => {
+        processedText = processedText.replace(pattern, token);
+    });
+
     if (window.marked) {
-        const rawHtml = marked.parse(processedText);
-        htmlOutput.innerHTML = rawHtml;
+        const parsedHtml = marked.parse(processedText);
+        let restoredHtml = parsedHtml;
+        placeholderMap.forEach(({ token, value }) => {
+            const tokenRegex = new RegExp(token, 'g');
+            restoredHtml = restoredHtml.replace(tokenRegex, value);
+        });
+        htmlOutput.innerHTML = restoredHtml;
 
         htmlOutput.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
-          if (!h.id) {
-            h.id = h.textContent.trim().toLowerCase().replace(/\\s+/g,'-').replace(/[^\\w\\-áéíóúüñ]/g,'');
-          }
+            if (!h.id) {
+                h.id = h.textContent.trim().toLowerCase()
+                    .replace(/\s+/g, '-')
+                    .replace(/[^\w\-áéíóúüñ]/g, '');
+            }
         });
 
         if (htmlEditor && !htmlEditor.hasFocus()) {
-            htmlEditor.setValue(rawHtml);
+            htmlEditor.setValue(restoredHtml);
         }
     }
 
@@ -891,16 +907,19 @@ function updateHtml() {
         if (window.renderMathInElement) {
             renderMathInElement(htmlOutput, {
                 delimiters: [
-                    {left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true},
-                    {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}
-                ], throwOnError: false
+                    { left: '$$', right: '$$', display: true },
+                    { left: '\\[', right: '\\]', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false }
+                ],
+                throwOnError: false
             });
         }
     } catch (error) { console.warn("KaTeX no está listo.", error); }
-    
+
     if (currentId) {
         const doc = docs.find(d => d.id === currentId);
-        if(doc) {
+        if (doc) {
             updateDirtyIndicator(currentId, markdownEditor.getValue() !== doc.lastSaved);
         }
     }
