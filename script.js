@@ -870,10 +870,10 @@ function updateHtml() {
     const markdownText = markdownEditor.getValue();
     const htmlOutput = document.getElementById('html-output');
     
-    const sanitizedText = markdownText.replace(/`/g, '\`').replace(/\\/g, '\\\\').replace(/\\\[/g, '\\\\[').replace(/\\\]/g, '\\\\\]').replace(/\\\(/g, '\\\\(').replace(/\\\)/g, '\\\\)');
+    const processedText = markdownText;
     
     if (window.marked) {
-        const rawHtml = marked.parse(sanitizedText);
+        const rawHtml = marked.parse(processedText);
         htmlOutput.innerHTML = rawHtml;
 
         htmlOutput.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
