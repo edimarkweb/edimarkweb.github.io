@@ -870,10 +870,10 @@ function updateHtml() {
     const markdownText = markdownEditor.getValue();
     const htmlOutput = document.getElementById('html-output');
     const placeholderMap = [
-        { pattern: /\\\(/g, token: '__EDIMARK_ESC_LPAREN__', value: '\\(' },
-        { pattern: /\\\)/g, token: '__EDIMARK_ESC_RPAREN__', value: '\\)' },
-        { pattern: /\\\[/g, token: '__EDIMARK_ESC_LBRACKET__', value: '\\[' },
-        { pattern: /\\\]/g, token: '__EDIMARK_ESC_RBRACKET__', value: '\\]' }
+        { pattern: /\\\(/g, token: 'EDIMARKESCLPAREN', value: '\\(' },
+        { pattern: /\\\)/g, token: 'EDIMARKESCRPAREN', value: '\\)' },
+        { pattern: /\\\[/g, token: 'EDIMARKESCLBRACKET', value: '\\[' },
+        { pattern: /\\\]/g, token: 'EDIMARKESCRBRACKET', value: '\\]' }
     ];
 
     let processedText = markdownText;
