@@ -449,3 +449,66 @@ code {
   background-color: #333;
   color: #eee;
 }
+
+@media print {
+    @page {
+        margin: 18mm;
+    }
+    html, body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        height: auto !important;
+    }
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    body.desktop-mode {
+        padding: 0 !important;
+    }
+    #main-container {
+        max-width: none !important;
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+    header,
+    #toolbar,
+    #tab-bar,
+    #status-toast,
+    #markdown-panel,
+    .gutter {
+        display: none !important;
+    }
+    #editor-container {
+        display: block !important;
+        padding-top: 0 !important;
+    }
+    #html-panel {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+    #html-panel > .flex:first-child {
+        display: none !important;
+    }
+    .editor-pane,
+    #html-output {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        color: inherit !important;
+        padding: 0 !important;
+    }
+    .markdown-textarea,
+    .markdown-textarea-wrapper,
+    .CodeMirror {
+        display: none !important;
+    }
+}

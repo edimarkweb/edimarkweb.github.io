@@ -2230,18 +2230,14 @@ window.onload = () => {
     });
     
     printBtn.addEventListener('click', () => {
-        const printContent = document.getElementById('html-output').innerHTML;
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        const doc = iframe.contentWindow.document;
-        doc.open();
-        doc.write(`<!DOCTYPE html><html><head><title>Imprimir</title><script src="https://cdn.tailwindcss.com?plugins=typography"><\/script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"><style>body { margin: 1.5rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }<\/style></head><body class="prose max-w-none">${printContent}</body></html>`);
-        doc.close();
-        setTimeout(() => {
-            iframe.contentWindow.print();
-            document.body.removeChild(iframe);
-        }, 400);
+        const preview = document.getElementById('html-output');
+        if (preview) {
+            preview.scrollTop = 0;
+            preview.scrollLeft = 0;
+        }
+        if (typeof window.print === 'function') {
+            window.setTimeout(() => window.print(), 50);
+        }
     });
 
     // --- Eventos de los modales ---
