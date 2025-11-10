@@ -115,29 +115,35 @@ Puedes arrastrar la barra central para dar más espacio a cualquiera de los pane
 
 * **Abrir (`Ctrl+O`)**: Importa archivos `.md` o `.markdown`.
 * **Guardar (`Ctrl+S`)**: Descarga el documento actual en tu equipo.
-* **Copiar Markdown / HTML**: Usa los iconos de copiar para enviar el contenido al portapapeles (el botón confirma el resultado con un check).
+* **Copiar contenido**: El panel izquierdo incluye un botón para copiar el Markdown; en la vista previa puedes elegir qué se copiará (HTML renderizado o variantes LaTeX) desde el menú desplegable junto al icono de copia.
 * **Borrar todo**: Restablece el documento tras una confirmación.
 * **Cambiar tema / diseño / ancho**: Ajusta la interfaz a diferentes situaciones (pizarra digital, portátil, etc.).
 * **Manual**: Dispones de este documento siempre actualizado con `Ctrl+H`.
 
 ---
 
-## Exportar y compartir
+## Exportar
 
-El menú `Exportar` permite generar versiones listas para entregar o publicar:
+El menú `Exportar` permite descargar versiones listas para entregar o publicar:
 
-* **DOCX (Microsoft Word)**: Ideal para compartir con alumnado o colegas que usan Word.
-* **ODT (LibreOffice)**: Compatible con suites libres como LibreOffice o OnlyOffice.
-* **HTML**:
-  * *Descargar*: Genera un archivo HTML autónomo con estilos y fórmulas listos para alojar en la web.
-  * *Copiar sin archivo*: Envía el HTML al portapapeles para pegarlo en blogs, Moodle o servicios similares.
-  * *Copiar vista previa*: Duplica el HTML tal como aparece en pantalla, ideal para incrustar en webs estáticas.
-* **LaTeX**:
-  * *Fragmento*: Exporta solo el contenido editable en formato `.tex`.
-  * *Documento completo*: Envuelve el texto en una plantilla básica de LaTeX.
-  * Ambas opciones se pueden **descargar** o **copiar** directamente.
+* **DOCX (Microsoft Word)**: Ideal para compartir con alumnado o colegas que usan Word, y compatible con Google Docs.
+* **ODT (LibreOffice)**: Pensado para suites libres como LibreOffice u OnlyOffice.
+* **HTML (página web)**: Genera un archivo autónomo con estilos y fórmulas incrustadas, listo para alojar en la web.
+* **TEX (LaTeX)**: Crea un documento `.tex` completo con cabecera preparada para compilar.
 
 Durante la exportación, la barra superior muestra mensajes de estado (progreso, éxito o errores).
+
+---
+
+## Copiar y compartir sin descargar
+
+* **Copiar Markdown**: Botón directo en el panel izquierdo para enviar el texto fuente al portapapeles.
+* **Copiar desde la vista previa**: El botón de copia del panel derecho recuerda tu última elección entre:
+  * *Copiar HTML* (renderizado tal como lo ves).
+  * *Copiar LaTeX* (solo el fragmento actual).
+  * *Copiar LaTeX – documento completo* (incluye cabecera y entorno listos para compilar).
+
+Cada opción muestra una notificación de éxito y, cuando corresponde, prepara automáticamente el marcado LaTeX a partir de la vista previa renderizada.
 
 ---
 
