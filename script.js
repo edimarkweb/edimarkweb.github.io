@@ -1417,6 +1417,7 @@ window.onload = () => {
     const fontSizeSelect = document.getElementById('font-size-select');
     const fontSizeWrapper = document.getElementById('font-size-select-wrapper');
     const fontSizeLabel = document.getElementById('font-size-select-label');
+    const openEdicuatexBtn = document.getElementById('open-edicuatex-btn');
     const newTabBtn = document.getElementById('new-tab-btn');
     const tabBar = document.getElementById('tab-bar');
     headingOptionsEl = headingOptions;
@@ -1426,6 +1427,7 @@ window.onload = () => {
         const buttons = new Set(Array.from(toolbar.querySelectorAll('button[data-format]')));
         if (headingBtn) buttons.add(headingBtn);
         if (formulaBtn) buttons.add(formulaBtn);
+        if (openEdicuatexBtn) buttons.add(openEdicuatexBtn);
         return Array.from(buttons);
     })();
     setMarkdownControlsDisabled(false);
@@ -1443,7 +1445,6 @@ window.onload = () => {
     const imageModalOverlay = document.getElementById('image-modal-overlay');
     const insertImageBtn = document.getElementById('insert-image-btn');
     const cancelImageBtn = document.getElementById('cancel-image-btn');
-    const openEdicuatexBtn = document.getElementById('open-edicuatex-btn');
     const statusToastEl = document.getElementById('status-toast');
     const statusToastMessageEl = document.getElementById('status-toast-message');
     let statusToastTimer = null;
