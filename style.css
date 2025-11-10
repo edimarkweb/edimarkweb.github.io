@@ -136,6 +136,9 @@ body.desktop-mode #main-container {
 .dark .prose code { color: #e2e8f0; }
 .dark .prose blockquote { border-left-color: #475569; color: #94a3b8;}
 .dark .prose a { color: #93c5fd; }
+.dark .prose table thead th { color: #f8fafc; }
+.dark .prose table thead tr { border-bottom-color: #475569; }
+.dark .prose table tbody tr { border-bottom-color: #334155; }
 
 /* Estilo para enlaces con Ctrl/Cmd presionado */
 #html-output a.ctrl-hover {
@@ -198,6 +201,24 @@ body.desktop-mode #main-container {
 .action-btn:hover { background-color: #f1f5f9; color: #1e293b; }
 .dark .action-btn { color: #94a3b8; }
 .dark .action-btn:hover { background-color: #1e293b; color: #e2e8f0; }
+
+.panel-counter {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #475569;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(148, 163, 184, 0.12);
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+}
+.dark .panel-counter {
+    color: #cbd5f5;
+    border-color: rgba(148, 163, 184, 0.25);
+    background: rgba(30, 41, 59, 0.7);
+}
 .dark select.action-btn { background-color: #0f172a; }
 
 .select-trigger {
@@ -266,6 +287,19 @@ body.desktop-mode #main-container {
 .toolbar-btn:hover, .copy-btn:hover { background-color: #e2e8f0; color: #1e293b; }
 .dark .toolbar-btn, .dark .copy-btn { color: #94a3b8; }
 .dark .toolbar-btn:hover, .dark .copy-btn:hover { background-color: #334155; color: #e2e8f0; }
+.toolbar-btn[disabled], .toolbar-btn[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+    background-color: transparent !important;
+    color: #94a3b8 !important;
+}
+.dark .toolbar-btn[disabled], .dark .toolbar-btn[aria-disabled="true"] {
+    color: #64748b !important;
+}
+.toolbar-btn[disabled] i, .toolbar-btn[aria-disabled="true"] i {
+    opacity: 0.85;
+}
 
 .gutter { background-color: #f1f5f9; background-repeat: no-repeat; background-position: 50%; }
 .dark .gutter { background-color: #0f172a; }

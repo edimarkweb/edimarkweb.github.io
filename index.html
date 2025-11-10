@@ -201,7 +201,10 @@
             <div id="markdown-panel" class="panel w-full md:w-1/2">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-lg font-medium text-slate-700 dark:text-slate-200" data-i18n-key="markdown_panel_title">Markdown</h2>
-                    <button id="copy-md-btn" class="copy-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="copy_md_btn_title" title="Copiar Markdown"><i data-lucide="copy"></i></button>
+                    <div class="flex items-center gap-2">
+                        <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
+                        <button id="copy-md-btn" class="copy-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="copy_md_btn_title" title="Copiar Markdown"><i data-lucide="copy"></i></button>
+                    </div>
                 </div>
                 <textarea id="markdown-input"></textarea>
             </div>

@@ -27,6 +27,15 @@ let docs = [];
 let currentId = null;
 let currentLayout;
 let syncEnabled = true;
+let skipNextMarkdownSync = false;
+let skipNextCursorSync = false;
+let htmlEditorSyncScheduled = false;
+let markdownCharCounterEl = null;
+let skipNextHtmlEditorSync = false;
+let markdownControlsDisabled = false;
+let markdownControlButtons = [];
+let headingOptionsEl = null;
+let formulaOptionsEl = null;
 
 function getTranslation(key, fallback) {
     const catalog = window.__edimarkTranslations;
@@ -654,6 +663,30 @@ function createTextareaEditor(textarea) {
     };
 }
 
+function updateMarkdownCharCounter(sourceText) {
+    if (!markdownCharCounterEl) return;
+    const text = typeof sourceText === 'string' ? sourceText : '';
+    const count = text.length;
+    const singularLabel = getTranslation('char_counter_singular', 'carácter');
+    const pluralLabel = getTranslation('char_counter_plural', 'caracteres');
+    const unit = count === 1 ? singularLabel : pluralLabel;
+    markdownCharCounterEl.textContent = `${count.toLocaleString()} ${unit}`;
+}
+
+function setMarkdownControlsDisabled(disabled) {
+    if (markdownControlsDisabled === disabled) return;
+    markdownControlsDisabled = disabled;
+    markdownControlButtons.forEach(btn => {
+        if (!btn) return;
+        btn.toggleAttribute('disabled', disabled);
+        btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    });
+    if (disabled) {
+        if (headingOptionsEl) headingOptionsEl.classList.add('hidden');
+        if (formulaOptionsEl) formulaOptionsEl.classList.add('hidden');
+    }
+}
+
 // --- Funciones de gestión de pestañas y documentos ---
 function saveDocsList() {
     const docList = docs.map(d => ({id: d.id, name: d.name}));
@@ -870,6 +903,7 @@ function updateHtml() {
     isUpdating = true;
     const markdownText = markdownEditor.getValue();
     const htmlOutput = document.getElementById('html-output');
+    updateMarkdownCharCounter(markdownText);
     
     const sanitizedText = markdownText.replace(/`/g, '\`').replace(/\\/g, '\\\\').replace(/\\\[/g, '\\\\[').replace(/\\\]/g, '\\\\\]').replace(/\\\(/g, '\\\\(').replace(/\\\)/g, '\\\\)');
     
@@ -910,10 +944,44 @@ function updateHtml() {
 
 function updateMarkdown() {
     if (isUpdating) return;
-    isUpdating = true;
     const htmlOutput = document.getElementById('html-output');
+    if (!htmlOutput) return;
+    isUpdating = true;
+    const previewHtml = htmlOutput.innerHTML;
+    if (htmlEditor && !htmlEditor.hasFocus()) {
+        const currentHtml = htmlEditor.getValue();
+        if (currentHtml !== previewHtml) {
+            skipNextHtmlEditorSync = true;
+            htmlEditor.setValue(previewHtml);
+            const releaseHtmlSync = () => { skipNextHtmlEditorSync = false; };
+            if (typeof window.requestAnimationFrame === 'function') {
+                window.requestAnimationFrame(releaseHtmlSync);
+            } else {
+                setTimeout(releaseHtmlSync, 0);
+            }
+        }
+    }
     if (turndownService && !markdownEditor.hasFocus()) {
-        markdownEditor.setValue(turndownService.turndown(htmlOutput.innerHTML));
+        const markdownFromPreview = turndownService.turndown(previewHtml);
+        const currentMarkdown = markdownEditor.getValue();
+        if (currentMarkdown !== markdownFromPreview) {
+            skipNextMarkdownSync = true;
+            skipNextCursorSync = true;
+            markdownEditor.setValue(markdownFromPreview);
+            const releaseCursorSync = () => { skipNextCursorSync = false; };
+            if (typeof window.requestAnimationFrame === 'function') {
+                window.requestAnimationFrame(releaseCursorSync);
+            } else {
+                setTimeout(releaseCursorSync, 0);
+            }
+            updateMarkdownCharCounter(markdownFromPreview);
+        }
+    }
+    if (currentId) {
+        const doc = docs.find(d => d.id === currentId);
+        if (doc) {
+            updateDirtyIndicator(currentId, markdownEditor.getValue() !== doc.lastSaved);
+        }
     }
     isUpdating = false;
 }
@@ -1251,6 +1319,7 @@ window.onload = () => {
     const previewCopyToggleBtn = document.getElementById('copy-html-menu-toggle');
     const previewCopyOptionButtons = previewCopyMenu ? Array.from(previewCopyMenu.querySelectorAll('[data-copy-action]')) : [];
     const COPY_ACTIONS = ['html', 'latex-preview', 'latex-full'];
+    markdownCharCounterEl = document.getElementById('markdown-char-counter');
     let currentCopyAction = localStorage.getItem(COPY_ACTION_KEY);
     if (!COPY_ACTIONS.includes(currentCopyAction)) currentCopyAction = 'html';
     const copyActionLabelKeys = {
@@ -1346,6 +1415,16 @@ window.onload = () => {
     const fontSizeLabel = document.getElementById('font-size-select-label');
     const newTabBtn = document.getElementById('new-tab-btn');
     const tabBar = document.getElementById('tab-bar');
+    headingOptionsEl = headingOptions;
+    formulaOptionsEl = formulaOptions;
+    markdownControlButtons = (() => {
+        if (!toolbar) return [];
+        const buttons = new Set(Array.from(toolbar.querySelectorAll('button[data-format]')));
+        if (headingBtn) buttons.add(headingBtn);
+        if (formulaBtn) buttons.add(formulaBtn);
+        return Array.from(buttons);
+    })();
+    setMarkdownControlsDisabled(false);
     
     // --- Elementos de modales ---
     const tableModalOverlay = document.getElementById('table-modal-overlay');
@@ -2021,6 +2100,10 @@ window.onload = () => {
     const markdownTextarea = document.getElementById('markdown-input');
     markdownEditor = createTextareaEditor(markdownTextarea);
     markdownTextarea.focus();
+    if (markdownTextarea) {
+        markdownTextarea.addEventListener('focusin', () => setMarkdownControlsDisabled(false));
+    }
+    updateMarkdownCharCounter(markdownEditor.getValue());
 
     htmlEditor = CodeMirror.fromTextArea(document.getElementById('html-source-view'), {
         mode: 'htmlmixed', theme: 'eclipse', lineNumbers: true, lineWrapping: true
@@ -2239,6 +2322,14 @@ window.onload = () => {
             window.setTimeout(() => window.print(), 50);
         }
     });
+    if (htmlOutput) {
+        htmlOutput.addEventListener('focusin', () => setMarkdownControlsDisabled(true));
+        htmlOutput.addEventListener('focusout', (event) => {
+            const next = event.relatedTarget;
+            if (next && htmlOutput.contains(next)) return;
+            setMarkdownControlsDisabled(false);
+        });
+    }
 
     // --- Eventos de los modales ---
     createTableBtn.addEventListener('click', () => {
@@ -2411,8 +2502,50 @@ window.onload = () => {
       const lineRatio = markdownEditor.getCursor().line / Math.max(1, markdownEditor.lineCount() - 1);
       htmlOutput.scrollTop = lineRatio * (htmlOutput.scrollHeight - htmlOutput.clientHeight);
     }
-    markdownEditor.on('change', () => { requestAnimationFrame(() => { updateHtml(); syncFromMarkdown(); }); });
-    markdownEditor.on('cursorActivity', () => { requestAnimationFrame(syncFromMarkdown); });
+    markdownEditor.on('change', () => {
+      if (skipNextMarkdownSync) {
+        skipNextMarkdownSync = false;
+        return;
+      }
+      requestAnimationFrame(() => { updateHtml(); syncFromMarkdown(); });
+    });
+    markdownEditor.on('cursorActivity', () => {
+      if (skipNextCursorSync) return;
+      requestAnimationFrame(syncFromMarkdown);
+    });
+    let previewSyncScheduled = false;
+    function schedulePreviewSync() {
+      if (previewSyncScheduled) return;
+      previewSyncScheduled = true;
+      requestAnimationFrame(() => {
+        previewSyncScheduled = false;
+        updateMarkdown();
+      });
+    }
+    htmlOutput.addEventListener('input', schedulePreviewSync);
+    htmlOutput.addEventListener('paste', schedulePreviewSync);
+    function scheduleHtmlEditorSync({ force = false } = {}) {
+      if (htmlEditorSyncScheduled || skipNextHtmlEditorSync) return;
+      // Only mirror back to Markdown when the HTML editor is actively driving changes;
+      // this avoids jumping the Markdown view while the user is typing on the left panel.
+      const shouldSyncMarkdown = force || (htmlEditor && typeof htmlEditor.hasFocus === 'function' && htmlEditor.hasFocus());
+      htmlEditorSyncScheduled = true;
+      requestAnimationFrame(() => {
+        htmlEditorSyncScheduled = false;
+        const htmlOutputEl = document.getElementById('html-output');
+        if (!htmlOutputEl) return;
+        const editorHtml = htmlEditor.getValue();
+        if (htmlOutputEl.innerHTML !== editorHtml) {
+          htmlOutputEl.innerHTML = editorHtml;
+        }
+        if (!shouldSyncMarkdown) return;
+        updateMarkdown();
+        const totalLines = Math.max(1, htmlEditor.lineCount() - 1);
+        const lineRatio = totalLines > 0 ? htmlEditor.getCursor().line / totalLines : 0;
+        scrollMarkdownToRatio(lineRatio);
+      });
+    }
+    htmlEditor.on('change', () => scheduleHtmlEditorSync());
     htmlOutput.addEventListener('click', e => {
       const accelPressed = e.ctrlKey || e.metaKey || ctrlPressed;
       const linkEl = e.target.closest('a');
@@ -2441,14 +2574,7 @@ window.onload = () => {
       const ratio  = clickY / Math.max(1, htmlOutput.scrollHeight);
       scrollMarkdownToRatio(ratio);
     });
-    htmlEditor.getWrapperElement().addEventListener('mouseup', () => {
-      requestAnimationFrame(() => {
-        htmlOutput.innerHTML = htmlEditor.getValue();
-        updateMarkdown();
-        const lineRatio = htmlEditor.getCursor().line / Math.max(1, htmlEditor.lineCount() - 1);
-        scrollMarkdownToRatio(lineRatio);
-      });
-    });
+    htmlEditor.getWrapperElement().addEventListener('mouseup', () => scheduleHtmlEditorSync({ force: true }));
 
     if (typeof initSearch === 'function') {
         initSearch(markdownEditor, htmlEditor, () => currentLayout);
