@@ -1299,6 +1299,10 @@ window.onload = () => {
     const viewToggleBtn = document.getElementById('view-toggle-btn');
     const htmlPanelTitle = document.getElementById('html-panel-title');
     const toolbar = document.getElementById('toolbar');
+    const toolbarActionsEl = document.getElementById('toolbar-actions');
+    const mobileToolbarControls = document.getElementById('mobile-toolbar-controls');
+    const mobileActionsToggle = document.getElementById('mobile-actions-toggle');
+    const mobileFormatToggle = document.getElementById('mobile-format-toggle');
     const openFileBtn = document.getElementById('open-file-btn');
     const fileInput = document.getElementById('file-input');
     const saveBtn = document.getElementById('save-btn');
@@ -2329,6 +2333,63 @@ window.onload = () => {
             if (next && htmlOutput.contains(next)) return;
             setMarkdownControlsDisabled(false);
         });
+    }
+
+    // --- Controles móviles para despliegue de herramientas ---
+    const smallScreenQuery = window.matchMedia('(max-width: 768px)');
+    const collapsibleSections = [
+        { toggle: mobileActionsToggle, panel: toolbarActionsEl },
+        { toggle: mobileFormatToggle, panel: toolbar }
+    ];
+
+    function setMobileSectionExpanded(toggle, panel, expanded) {
+        if (!toggle || !panel) return;
+        toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        panel.classList.toggle('is-open', expanded);
+    }
+
+    function collapseOther(exceptToggle) {
+        collapsibleSections.forEach(({ toggle, panel }) => {
+            if (!toggle || toggle === exceptToggle) return;
+            setMobileSectionExpanded(toggle, panel, false);
+        });
+    }
+
+    function handleMobileToggle(toggle, panel) {
+        if (!toggle || !panel) return;
+        const currentlyExpanded = toggle.getAttribute('aria-expanded') === 'true';
+        const nextState = !currentlyExpanded;
+        setMobileSectionExpanded(toggle, panel, nextState);
+        if (nextState) {
+            collapseOther(toggle);
+            const focusable = panel.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusable && typeof focusable.focus === 'function') {
+                setTimeout(() => {
+                    focusable.focus();
+                }, 0);
+            }
+        }
+    }
+
+    function resetMobileSectionsOnDesktop(e) {
+        if (!e.matches) {
+            collapsibleSections.forEach(({ toggle, panel }) => setMobileSectionExpanded(toggle, panel, false));
+        }
+    }
+
+    if (mobileToolbarControls) {
+        if (mobileActionsToggle && toolbarActionsEl) {
+            mobileActionsToggle.addEventListener('click', () => handleMobileToggle(mobileActionsToggle, toolbarActionsEl));
+        }
+        if (mobileFormatToggle && toolbar) {
+            mobileFormatToggle.addEventListener('click', () => handleMobileToggle(mobileFormatToggle, toolbar));
+        }
+        if (typeof smallScreenQuery.addEventListener === 'function') {
+            smallScreenQuery.addEventListener('change', resetMobileSectionsOnDesktop);
+        } else if (typeof smallScreenQuery.addListener === 'function') {
+            smallScreenQuery.addListener(resetMobileSectionsOnDesktop);
+        }
+        resetMobileSectionsOnDesktop(smallScreenQuery);
     }
 
     // --- Eventos de los modales ---

@@ -50,7 +50,17 @@
             <img src="logo_256.png" alt="Logo EdiMarkWeb" class="w-12 h-12">
             <h1 data-i18n-key="h1" class="text-xl font-semibold text-slate-800 dark:text-slate-100">EdiMarkWeb</h1>
         </div>
-        <div class="toolbar-actions flex items-center gap-1 sm:gap-2 flex-wrap">
+        <div id="mobile-toolbar-controls">
+            <button id="mobile-actions-toggle" type="button" class="mobile-toolbar-btn" aria-expanded="false" aria-controls="toolbar-actions">
+                <i data-lucide="layout-grid"></i>
+                <span data-i18n-key="mobile_actions_toggle">Acciones</span>
+            </button>
+            <button id="mobile-format-toggle" type="button" class="mobile-toolbar-btn" aria-expanded="false" aria-controls="toolbar">
+                <i data-lucide="wand-2"></i>
+                <span data-i18n-key="mobile_format_toggle">Formato</span>
+            </button>
+        </div>
+        <div id="toolbar-actions" class="toolbar-actions flex items-center gap-1 sm:gap-2 flex-wrap">
             <div class="toolbar-group flex items-center gap-1 sm:gap-2">
                 <div id="language-select-wrapper" class="select-trigger action-btn text-sm" aria-label="Seleccionar idioma">
                   <i data-lucide="languages" class="select-trigger-icon"></i>

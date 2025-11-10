@@ -10,6 +10,8 @@
   "font_size_large": "Gran",
   "font_size_xlarge": "Molt gran",
   "layout_toggle_btn_title": "Canviar disseny (Ctrl+L)",
+  "mobile_actions_toggle": "Accions",
+  "mobile_format_toggle": "Formatació",
   "open_search_btn_title": "Cercar (Ctrl+F)",
   "open_file_btn_title": "Obrir fitxer",
   "open_file_btn_text": "Obrir",

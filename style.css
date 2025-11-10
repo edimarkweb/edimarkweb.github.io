@@ -14,6 +14,10 @@
 body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
 .dark body { background-color: #0f172a; }
 
+#mobile-toolbar-controls {
+    display: none;
+}
+
 body.desktop-mode {
     padding: 0 !important;
 }
@@ -374,10 +378,9 @@ body.desktop-mode #main-container {
        height: 40vh;
     }
     
-    /* Regla para que los botones de la cabecera salten de línea */
+    /* Ajustes del contenedor de acciones en cabecera */
     header > div:nth-child(2) {
-        flex-wrap: wrap;
-        justify-content: flex-end;
+        width: 100%;
     }
     
     /* Regla para que las pestañas también salten de línea */
@@ -389,6 +392,157 @@ body.desktop-mode #main-container {
     #tab-bar,
     #new-tab-btn {
         align-self: flex-start;
+    }
+
+    header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem 1.25rem;
+        gap: 0.75rem;
+    }
+
+    header > div:first-child {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 0.75rem;
+    }
+
+    header > div:first-child img {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    header h1 {
+        font-size: 1.1rem;
+    }
+
+    #mobile-toolbar-controls {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    #mobile-toolbar-controls button {
+        flex: 1 1 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.55rem 0.75rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        background-color: #f8fafc;
+        color: #0f172a;
+        font-weight: 600;
+        transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    .dark #mobile-toolbar-controls button {
+        background-color: #1e293b;
+        border-color: rgba(148, 163, 184, 0.25);
+        color: #e2e8f0;
+    }
+
+    #mobile-toolbar-controls button[aria-expanded="true"] {
+        background-color: #e0f2fe;
+        border-color: #38bdf8;
+        color: #0c4a6e;
+    }
+
+    .dark #mobile-toolbar-controls button[aria-expanded="true"] {
+        background-color: rgba(56, 189, 248, 0.18);
+        border-color: rgba(56, 189, 248, 0.55);
+        color: #bae6fd;
+    }
+
+    .toolbar-actions,
+    #toolbar {
+        display: none !important;
+    }
+
+    .toolbar-actions.is-open,
+    #toolbar.is-open {
+        display: grid !important;
+        padding: 0.65rem 0.5rem;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 0.75rem;
+        background-color: rgba(248, 250, 252, 0.95);
+        gap: 0.4rem;
+    }
+
+    .dark .toolbar-actions.is-open,
+    .dark #toolbar.is-open {
+        border-color: rgba(148, 163, 184, 0.25);
+        background-color: rgba(15, 23, 42, 0.9);
+    }
+
+    .toolbar-actions.is-open {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .toolbar-actions .toolbar-group {
+        display: contents !important;
+    }
+
+    .toolbar-actions .select-trigger,
+    .toolbar-actions #preview-copy-container,
+    .toolbar-actions #export-menu-container {
+        grid-column: span 2;
+        min-width: 0;
+    }
+
+    .toolbar-actions button,
+    .toolbar-actions .select-trigger {
+        justify-content: center;
+        padding: 0.45rem;
+        width: 100%;
+    }
+
+    .toolbar-actions #preview-copy-container {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.35rem;
+    }
+
+    .toolbar-divider {
+        display: none;
+    }
+
+    .action-btn,
+    .toolbar-btn {
+        min-width: 2.4rem;
+        min-height: 2.4rem;
+    }
+
+    #toolbar.is-open {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    #toolbar > div {
+        display: contents !important;
+    }
+
+    #toolbar .toolbar-btn,
+    #toolbar .action-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.35rem;
+    }
+
+    #toolbar .border-l {
+        display: none;
+    }
+
+    #toolbar .toolbar-btn i {
+        width: 1.05rem;
+        height: 1.05rem;
+    }
+
+    .panel-counter {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.5rem;
     }
 }
 /* --- FIN DE LAS CORRECCIONES PARA MÓVIL --- */

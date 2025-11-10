@@ -10,6 +10,8 @@
   "font_size_large": "Grande",
   "font_size_xlarge": "Muy grande",
   "layout_toggle_btn_title": "Cambiar diseño (Ctrl+L)",
+  "mobile_actions_toggle": "Acciones",
+  "mobile_format_toggle": "Formato",
   "open_search_btn_title": "Buscar (Ctrl+F)",
   "open_file_btn_title": "Abrir archivo",
   "open_file_btn_text": "Abrir",
