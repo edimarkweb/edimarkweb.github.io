@@ -6,6 +6,7 @@ Bienvenido/a a EdiMarkWeb, un editor de Markdown diseñado para docentes y cread
 
 ## Novedades destacadas
 
+- Edición dual: puedes trabajar tanto en Markdown como directamente en la vista previa HTML, siempre sincronizadas.
 - Menú de exportación con soporte para DOCX, ODT, HTML y LaTeX, incluyendo opciones de copia directa al portapapeles.
 - Buscador con reemplazo que resalta las coincidencias y acepta términos sin tildes ni distinción entre mayúsculas y minúsculas.
 - Selector de idioma y tamaño de letra para adaptar la interfaz a tu aula.
@@ -93,8 +94,8 @@ La búsqueda funciona tanto en la vista de Markdown como en la vista HTML según
 
 La zona de trabajo se divide en dos paneles redimensionables:
 
-* **Markdown** (izquierda): editor de texto con resaltado, numeración opcional y controles de copia.
-* **HTML / Previsualización** (derecha): muestra el resultado final. Usa el botón con el icono de código para alternar entre la previsualización rica y el código HTML generado.
+* **Markdown** (izquierda): editor de texto con resaltado, numeración opcional y controles de copia. Todo lo que escribas aquí se refleja de inmediato en el panel derecho.
+* **HTML / Previsualización** (derecha): muestra el resultado final y también permite editar el contenido directamente. Usa el botón con el icono de código para alternar entre la previsualización rica y el código HTML generado.
 * **Copiar contenido**: Botones específicos para copiar Markdown o el HTML generado (incluye fórmulas convertidas a LaTeX cuando copias HTML).
 
 Puedes arrastrar la barra central para dar más espacio a cualquiera de los paneles.
@@ -103,7 +104,8 @@ Puedes arrastrar la barra central para dar más espacio a cualquiera de los pane
 
 ## Previsualización interactiva
 
-* Haz clic en el panel derecho para editar directamente sobre el resultado si necesitas ajustes rápidos.
+* Haz clic en el panel derecho para editar directamente sobre el resultado: los cambios se sincronizan con el Markdown manteniendo el formato siempre que la edición sea compatible.
+* La vista previa admite selecciones, copiar y pegar, así como el uso de atajos básicos (Ctrl+B/I, encabezados, etc.) igual que el editor de Markdown.
 * Mantén pulsado `Ctrl` (o `Cmd` en macOS) y haz clic para abrir enlaces en una pestaña nueva del navegador.
 * Las fórmulas LaTeX se renderizan automáticamente con KaTeX; al editar vuelven a su sintaxis original.
 
@@ -129,6 +131,7 @@ El menú `Exportar` permite generar versiones listas para entregar o publicar:
 * **HTML**:
   * *Descargar*: Genera un archivo HTML autónomo con estilos y fórmulas listos para alojar en la web.
   * *Copiar sin archivo*: Envía el HTML al portapapeles para pegarlo en blogs, Moodle o servicios similares.
+  * *Copiar vista previa*: Duplica el HTML tal como aparece en pantalla, ideal para incrustar en webs estáticas.
 * **LaTeX**:
   * *Fragmento*: Exporta solo el contenido editable en formato `.tex`.
   * *Documento completo*: Envuelve el texto en una plantilla básica de LaTeX.
@@ -144,7 +147,7 @@ Arrastra uno o varios archivos `.md` o `.markdown` sobre la aplicación:
 
 * Verás un marco iluminado que confirma que puedes soltarlos.
 * Cada archivo se abrirá en su propia pestaña con el nombre original.
-* El contenido queda disponible offline gracias al autoguardado.
+* El contenido queda disponible offline gracias al autoguardado. También puedes arrastrar carpetas completas desde el explorador del sistema; cada archivo compatible se abrirá en su propia pestaña.
 
 ---
 
@@ -201,5 +204,3 @@ Si prefieres construirlas visualmente, selecciona el texto en el editor y abre *
 * **Exámenes y ejercicios**: Exporta a DOCX/ODT para imprimir o editar posteriormente.
 * **Plantillas reutilizables**: Guarda documentos como HTML autónomo para subirlos a Moodle, blogs o GitHub Pages.
 * **Trabajo del alumnado**: Invítales a redactar en Markdown; con el autoguardado no perderán sus avances.
-
-
