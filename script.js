@@ -23,6 +23,48 @@ function normalizeNewlines(str) {
     return str.replace(/\r\n?/g, '\n');
 }
 
+const MARKDOWN_ESCAPABLE_CHARS = new Set("!\"#$%&'()*+,./:;<=>?@[\\]^_`{|}~-");
+const MATH_PLACEHOLDER_PREFIX = '@@EDIMATH';
+const MATH_PLACEHOLDER_SUFFIX = '@@';
+
+function preserveMarkdownEscapes(text) {
+    if (typeof text !== 'string') return '';
+    let result = '';
+    for (let i = 0; i < text.length; i += 1) {
+        const char = text[i];
+        if (char === '\\') {
+            const next = text[i + 1];
+            if (next && MARKDOWN_ESCAPABLE_CHARS.has(next)) {
+                result += '\\' + next;
+                i += 1;
+                continue;
+            }
+        }
+        result += char;
+    }
+    return result;
+}
+
+function protectMathSegments(text) {
+    if (typeof text !== 'string' || text.length === 0) {
+        return { text: '', segments: [] };
+    }
+    const segments = [];
+    const pattern = /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$(?!\s)([^$]+?)\$/g;
+    const protectedText = text.replace(pattern, match => {
+        const placeholder = `${MATH_PLACEHOLDER_PREFIX}${segments.length}${MATH_PLACEHOLDER_SUFFIX}`;
+        segments.push(match);
+        return placeholder;
+    });
+    return { text: protectedText, segments };
+}
+
+function restoreMathSegments(content, segments) {
+    if (!content || !segments.length) return content;
+    const placeholderPattern = new RegExp(`${MATH_PLACEHOLDER_PREFIX}(\\d+)${MATH_PLACEHOLDER_SUFFIX}`, 'g');
+    return content.replace(placeholderPattern, (_, index) => segments[Number(index)] ?? '');
+}
+
 let docs = [];
 let currentId = null;
 let currentLayout;
@@ -905,11 +947,13 @@ function updateHtml() {
     const htmlOutput = document.getElementById('html-output');
     updateMarkdownCharCounter(markdownText);
     
-    const sanitizedText = markdownText.replace(/`/g, '\`').replace(/\\/g, '\\\\').replace(/\\\[/g, '\\\\[').replace(/\\\]/g, '\\\\\]').replace(/\\\(/g, '\\\\(').replace(/\\\)/g, '\\\\)');
+    const { text: markdownWithoutMath, segments: mathSegments } = protectMathSegments(markdownText);
+    const sanitizedText = preserveMarkdownEscapes(markdownWithoutMath);
     
     if (window.marked) {
-        const rawHtml = marked.parse(sanitizedText);
-        htmlOutput.innerHTML = rawHtml;
+        const parsedHtml = marked.parse(sanitizedText);
+        const restoredHtml = restoreMathSegments(parsedHtml, mathSegments);
+        htmlOutput.innerHTML = restoredHtml;
 
         htmlOutput.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
           if (!h.id) {
@@ -918,7 +962,14 @@ function updateHtml() {
         });
 
         if (htmlEditor && !htmlEditor.hasFocus()) {
-            htmlEditor.setValue(rawHtml);
+            skipNextHtmlEditorSync = true;
+            htmlEditor.setValue(restoredHtml);
+            const releaseHtmlSync = () => { skipNextHtmlEditorSync = false; };
+            if (typeof window.requestAnimationFrame === 'function') {
+                window.requestAnimationFrame(releaseHtmlSync);
+            } else {
+                setTimeout(releaseHtmlSync, 0);
+            }
         }
     }
 
