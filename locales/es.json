@@ -15,8 +15,10 @@
   "open_search_btn_title": "Buscar (Ctrl+F)",
   "open_file_btn_title": "Abrir archivo",
   "open_file_btn_text": "Abrir",
-  "import_latex_btn_title": "Importar LaTeX",
-  "import_latex_btn_text": "Importar LaTeX",
+  "import_file_btn_title": "Importar con Pandoc (LaTeX, DOCX, ODT, HTML)",
+  "import_file_btn_text": "Importar",
+  "import_latex_btn_title": "Pegar LaTeX",
+  "import_latex_btn_text": "Pegar LaTeX",
   "save_btn_title": "Guardar archivo (Ctrl+S)",
   "save_btn_text": "Guardar",
   "export_docx_btn_title": "Exportar a DOCX",
@@ -131,6 +133,10 @@
   "latex_import_done": "Conversión a Markdown completada.",
   "latex_import_error": "No se pudo convertir el LaTeX.",
   "latex_import_empty": "No hay contenido LaTeX para convertir.",
+  "import_file_status_preparing": "Importando con Pandoc...",
+  "import_file_success": "Importación completada.",
+  "import_file_error": "No se pudo importar el archivo.",
+  "import_file_unsupported": "Formato no soportado para importar.",
   "drop_title": "Suelta aquí para abrir en una pestaña nueva",
   "drop_subtitle": "Archivos Markdown (.md, .markdown). También puedes soltar varios."
 }

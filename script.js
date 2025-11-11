@@ -84,6 +84,17 @@ let latexImportTextarea = null;
 let latexImportStatusEl = null;
 let latexImportConvertBtn = null;
 let latexImportCancelBtn = null;
+const BINARY_IMPORT_FORMATS = new Set(['docx', 'odt']);
+const IMPORT_EXTENSION_MAP = new Map([
+    ['tex', 'latex'],
+    ['latex', 'latex'],
+    ['ltx', 'latex'],
+    ['docx', 'docx'],
+    ['odt', 'odt'],
+    ['html', 'html'],
+    ['htm', 'html'],
+    ['xhtml', 'html'],
+]);
 
 function getTranslation(key, fallback) {
     const catalog = window.__edimarkTranslations;
@@ -1221,6 +1232,89 @@ function saveCurrentDocument() {
     }
 }
 
+function detectImportFormat(file) {
+    if (!file) return null;
+    const name = typeof file.name === 'string' ? file.name.toLowerCase() : '';
+    const extension = name.includes('.') ? name.split('.').pop() : '';
+    if (extension && IMPORT_EXTENSION_MAP.has(extension)) {
+        return IMPORT_EXTENSION_MAP.get(extension);
+    }
+    const mime = (file.type || '').toLowerCase();
+    if (mime.includes('wordprocessingml')) return 'docx';
+    if (mime.includes('opendocument')) return 'odt';
+    if (mime.includes('html')) return 'html';
+    if (mime.includes('tex')) return 'latex';
+    return null;
+}
+
+function readFileForImport(file, format) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(reader.error || new Error('file_read_error'));
+        reader.onload = () => resolve(reader.result);
+        if (BINARY_IMPORT_FORMATS.has(format)) {
+            reader.readAsArrayBuffer(file);
+        } else {
+            reader.readAsText(file, 'utf-8');
+        }
+    });
+}
+
+function getSafeDocumentName(filename, fallback = 'documento') {
+    if (typeof filename !== 'string' || !filename.trim()) return fallback;
+    return filename.replace(/\.[^.]+$/, '').trim() || fallback;
+}
+
+async function importFileWithPandoc(file) {
+    const format = detectImportFormat(file);
+    const showStatus = typeof updateExportStatus === 'function';
+    if (!format) {
+        if (showStatus) {
+            updateExportStatus(getTranslation('import_file_unsupported', 'Formato no soportado para importar.'));
+        }
+        return;
+    }
+    if (!window.PandocExporter || typeof window.PandocExporter.importToMarkdown !== 'function') {
+        if (showStatus) {
+            updateExportStatus(getTranslation('import_file_error', 'No se pudo importar el archivo.'));
+        }
+        return;
+    }
+    let payload;
+    try {
+        payload = await readFileForImport(file, format);
+    } catch (error) {
+        console.error('No se pudo leer el archivo para importar:', error);
+        if (showStatus) {
+            updateExportStatus(getTranslation('import_file_error', 'No se pudo importar el archivo.'));
+        }
+        return;
+    }
+    try {
+        if (showStatus) {
+            updateExportStatus(getTranslation('import_file_status_preparing', 'Importando con Pandoc...'));
+        }
+        const markdown = await window.PandocExporter.importToMarkdown({
+            data: payload,
+            sourceFormat: format,
+            onStatus: showStatus ? updateExportStatus : undefined,
+        });
+        const docName = getSafeDocumentName(file.name);
+        const createdDoc = newDoc(docName, markdown);
+        if (createdDoc) {
+            updateDirtyIndicator(createdDoc.id, false);
+        }
+        if (showStatus) {
+            updateExportStatus(getTranslation('import_file_success', 'Importación completada.'));
+        }
+    } catch (error) {
+        console.error('Error durante la importación con Pandoc:', error);
+        if (showStatus) {
+            updateExportStatus(getTranslation('import_file_error', 'No se pudo importar el archivo.'));
+        }
+    }
+}
+
 function snapshotDefaultButtonHtml(btn) {
     if (!btn) return;
     btn.dataset.defaultHtml = btn.innerHTML;
@@ -1522,6 +1616,8 @@ window.onload = () => {
     const fontSizeWrapper = document.getElementById('font-size-select-wrapper');
     const fontSizeLabel = document.getElementById('font-size-select-label');
     const openEdicuatexBtn = document.getElementById('open-edicuatex-btn');
+    const importFileBtn = document.getElementById('import-file-btn');
+    const importFileInput = document.getElementById('import-file-input');
     const newTabBtn = document.getElementById('new-tab-btn');
     const tabBar = document.getElementById('tab-bar');
     headingOptionsEl = headingOptions;
@@ -2436,6 +2532,15 @@ window.onload = () => {
         reader.readAsText(file);
         fileInput.value = '';
     });
+    if (importFileBtn && importFileInput) {
+        importFileBtn.addEventListener('click', () => importFileInput.click());
+        importFileInput.addEventListener('change', async (event) => {
+            const file = event.target.files && event.target.files[0];
+            importFileInput.value = '';
+            if (!file) return;
+            await importFileWithPandoc(file);
+        });
+    }
 
     copyMdBtn.addEventListener('click', async () => {
         const startMessage = getCopyStartMessage('markdown');

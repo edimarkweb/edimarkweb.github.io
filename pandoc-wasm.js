@@ -13,7 +13,7 @@ import {
   PreopenDirectory,
 } from "https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.3.0/dist/index.js";
 
-export async function pandoc(args_str, in_str, base64Wasm) {
+export async function pandoc(args_str, inputData, base64Wasm) {
   const bytes = Uint8Array.from(atob(base64Wasm), c => c.charCodeAt(0));
 
   const args = ["pandoc.wasm", "+RTS", "-H64m", "-RTS"];
@@ -57,7 +57,17 @@ export async function pandoc(args_str, in_str, base64Wasm) {
 
   const args_ptr = instance.exports.malloc(args_str.length);
   new TextEncoder().encodeInto(args_str, new Uint8Array(instance.exports.memory.buffer, args_ptr, args_str.length));
-  in_file.data = new TextEncoder().encode(in_str);
+  let inputBytes;
+  if (typeof inputData === 'string') {
+    inputBytes = new TextEncoder().encode(inputData);
+  } else if (inputData instanceof Uint8Array) {
+    inputBytes = inputData;
+  } else if (inputData instanceof ArrayBuffer) {
+    inputBytes = new Uint8Array(inputData);
+  } else {
+    inputBytes = new Uint8Array();
+  }
+  in_file.data = inputBytes;
   instance.exports.wasm_main(args_ptr, args_str.length);
   return new Uint8Array(out_file.data);
 }

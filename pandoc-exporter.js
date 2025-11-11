@@ -47,6 +47,7 @@ const MARKDOWN_MATH_EXTENSIONS = [
   '+tex_math_double_backslash',
   '+raw_tex',
 ].join('');
+const MARKDOWN_NO_AUTO_IDENTIFIERS = `${MARKDOWN_MATH_EXTENSIONS}-auto_identifiers`;
 
 function translate(key, fallback = '') {
   const catalog = window.__edimarkTranslations;
@@ -134,6 +135,23 @@ function trimInlineMath(content) {
   return content.replace(/\$(\s*)([^$\n]+?)(\s*)\$(?!\$)/g, (_match, _p1, expr) => {
     return `$${expr}$`;
   });
+}
+
+function stripPandocHeadingIds(markdown) {
+  if (typeof markdown !== 'string' || !markdown.includes('{#')) {
+    return markdown;
+  }
+  return markdown.replace(/\s*\{#[^}]+\}/g, '');
+}
+
+function sanitizeLatexInput(latex) {
+  if (typeof latex !== 'string' || latex.length === 0) {
+    return latex;
+  }
+  let sanitized = latex.replace(/\\label\{[^}]*\}/g, '');
+  sanitized = sanitized.replace(/\\protect\\hypertarget\{[^}]*\}\{([^}]*)\}/g, '$1');
+  sanitized = sanitized.replace(/\\hypertarget\{[^}]*\}\{([^}]*)\}/g, '$1');
+  return sanitized;
 }
 
 async function readResponseAsText(response, gzip, throttled = false) {
@@ -292,7 +310,7 @@ async function exportDocument({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    let pandocArgs = `-f ${MARKDOWN_MATH_EXTENSIONS} -t ${normalizedFormat}`;
+    let pandocArgs = `-f ${MARKDOWN_NO_AUTO_IDENTIFIERS} -t ${normalizedFormat}`;
     if (normalizedFormat === 'odt') {
       pandocArgs += ' --mathml';
     }
@@ -329,7 +347,7 @@ async function generateHtml({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    let pandocArgs = `-f ${MARKDOWN_MATH_EXTENSIONS} -t html --mathjax`;
+    let pandocArgs = `-f ${MARKDOWN_NO_AUTO_IDENTIFIERS} -t html --mathjax`;
     if (standalone) {
       pandocArgs += ' -s';
     }
@@ -366,7 +384,7 @@ async function generateLatex({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    let pandocArgs = `-f ${MARKDOWN_MATH_EXTENSIONS} -t latex --no-highlight`;
+    let pandocArgs = `-f ${MARKDOWN_NO_AUTO_IDENTIFIERS} -t latex --no-highlight`;
     if (standalone) {
       pandocArgs = `-s ${pandocArgs}`;
     }
@@ -395,14 +413,85 @@ async function convertLatexToMarkdown({
   try {
     const metadata = extractLatexMetadata(normalizedLatex);
     const base64 = await loadPandocWasm({ onStatus });
-    const pandocArgs = `-f latex -t ${MARKDOWN_MATH_EXTENSIONS} --wrap=preserve`;
-    const resultadoBytes = await pandoc(pandocArgs, normalizedLatex, base64);
+    const sanitizedLatex = sanitizeLatexInput(normalizedLatex);
+    const pandocArgs = `-f latex -t ${MARKDOWN_NO_AUTO_IDENTIFIERS} --wrap=preserve`;
+    const resultadoBytes = await pandoc(pandocArgs, sanitizedLatex, base64);
     let markdownResult = new TextDecoder().decode(resultadoBytes);
     markdownResult = ensureMarkdownTitle(markdownResult, metadata);
+    markdownResult = stripPandocHeadingIds(markdownResult);
     triggerStatus(onStatus, 'latex_import_done', 'Conversión a Markdown completada.');
     return trimInlineMath(normalizeNewlines(markdownResult));
   } catch (error) {
     triggerStatus(onStatus, 'latex_import_error', 'No se pudo convertir el LaTeX.');
+    throw error;
+  }
+}
+
+const IMPORT_FORMATS = {
+  latex: { from: 'latex', binary: false },
+  docx: { from: 'docx', binary: true },
+  odt: { from: 'odt', binary: true },
+  html: { from: 'html', binary: false },
+};
+
+function normalizeImportData(data, { binary }) {
+  if (binary) {
+    if (data instanceof Uint8Array) return data;
+    if (data instanceof ArrayBuffer) return new Uint8Array(data);
+    if (typeof data === 'string') return new TextEncoder().encode(data);
+    return new Uint8Array();
+  }
+  if (typeof data === 'string') return normalizeNewlines(data);
+  if (data instanceof Uint8Array) {
+    return normalizeNewlines(new TextDecoder().decode(data));
+  }
+  if (data instanceof ArrayBuffer) {
+    return normalizeNewlines(new TextDecoder().decode(new Uint8Array(data)));
+  }
+  return '';
+}
+
+async function importToMarkdown({
+  data,
+  sourceFormat = 'latex',
+  onStatus = () => {},
+} = {}) {
+  const config = IMPORT_FORMATS[sourceFormat];
+  if (!config) {
+    throw new Error(`Unsupported import format: ${sourceFormat}`);
+  }
+  const normalizedInput = normalizeImportData(data, config);
+  let preparedInput = normalizedInput;
+  let latexSourceForMetadata = null;
+  if (config.from === 'latex') {
+    const latexString = typeof normalizedInput === 'string'
+      ? normalizedInput
+      : new TextDecoder().decode(normalizedInput);
+    latexSourceForMetadata = latexString;
+    preparedInput = sanitizeLatexInput(latexString);
+  }
+  if ((typeof normalizedInput === 'string' && !normalizedInput.trim()) ||
+      (normalizedInput instanceof Uint8Array && normalizedInput.length === 0)) {
+    const message = translate('no_content', 'No hay contenido para exportar.');
+    throw new Error(message || 'No content');
+  }
+
+  triggerStatus(onStatus, 'import_file_status_preparing', 'Importando con Pandoc...');
+
+  try {
+    const base64 = await loadPandocWasm({ onStatus });
+    let pandocArgs = `-f ${config.from} -t ${MARKDOWN_NO_AUTO_IDENTIFIERS} --wrap=preserve`;
+    const resultadoBytes = await pandoc(pandocArgs, preparedInput, base64);
+    let markdownResult = new TextDecoder().decode(resultadoBytes);
+    if (sourceFormat === 'latex') {
+      const metadata = extractLatexMetadata(latexSourceForMetadata || '');
+      markdownResult = ensureMarkdownTitle(markdownResult, metadata);
+    }
+    markdownResult = stripPandocHeadingIds(markdownResult);
+    triggerStatus(onStatus, 'import_file_success', 'Importación completada.');
+    return trimInlineMath(normalizeNewlines(markdownResult));
+  } catch (error) {
+    triggerStatus(onStatus, 'import_file_error', 'No se pudo importar el archivo.');
     throw error;
   }
 }
@@ -420,8 +509,9 @@ window.PandocExporter = {
   generateHtml,
   generateLatex,
   convertLatexToMarkdown,
+  importToMarkdown,
   trimInlineMath,
   warmUpExporter,
 };
 
-export { exportDocument, generateHtml, generateLatex, convertLatexToMarkdown, trimInlineMath, warmUpExporter };
+export { exportDocument, generateHtml, generateLatex, convertLatexToMarkdown, importToMarkdown, trimInlineMath, warmUpExporter };
