@@ -56,62 +56,38 @@
             </button>
         </div>
         <div id="toolbar-actions" class="toolbar-actions flex items-center gap-1 sm:gap-2 flex-wrap">
-            <div class="toolbar-group flex items-center gap-1 sm:gap-2">
-                <div id="language-select-wrapper" class="select-trigger action-btn text-sm" aria-label="Seleccionar idioma">
-                  <i data-lucide="languages" class="select-trigger-icon"></i>
-                  <span id="language-select-label" class="select-trigger-label">Español</span>
-                  <i data-lucide="chevron-down" class="select-trigger-caret"></i>
-                  <select id="language-select" class="select-overlay" aria-label="Seleccionar idioma">
-                    <option value="es">Español</option>
-                    <option value="en">English</option>
-                    <option value="ca">Català</option>
-                    <option value="gl">Galego</option>
-                    <option value="eu">Euskara</option>
-                  </select>
+            <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="file-controls-group">
+                <div id="actions-menu-container" class="relative">
+                  <button type="button" id="actions-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="actions_menu_btn_title" title="Archivo" aria-haspopup="true" aria-expanded="false">
+                    <i data-lucide="folder" class="text-slate-700 dark:text-slate-300"></i>
+                    <span class="hidden sm:inline" data-i18n-key="actions_menu_btn_text">Archivo</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
+                  </button>
+                  <div id="actions-menu" class="hidden absolute left-0 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="actions-menu-btn">
+                    <button type="button" id="open-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-i18n-key="open_file_btn_text" role="menuitem">
+                      <i data-lucide="folder-open" class="w-4 h-4 text-blue-600"></i>
+                      Abrir
+                    </button>
+                    <button type="button" id="save-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-i18n-key="save_btn_text" role="menuitem">
+                      <i data-lucide="save" class="w-4 h-4 text-green-600"></i>
+                      Guardar
+                    </button>
+                    <button type="button" id="import-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-i18n-key="import_file_btn_text" role="menuitem">
+                      <i data-lucide="upload" class="w-4 h-4 text-amber-600"></i>
+                      Importar
+                    </button>
+                    <button type="button" id="latex-import-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-i18n-key="import_latex_btn_text" role="menuitem" aria-keyshortcuts="Control+Shift+V">
+                      <i data-lucide="file-text" class="w-4 h-4 text-purple-600"></i>
+                      Pegar LaTeX
+                    </button>
+                    <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+                    <button type="button" id="export-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" aria-haspopup="true" aria-expanded="false">
+                      <i data-lucide="download" class="w-4 h-4 text-indigo-600"></i>
+                      <span data-i18n-key="export_menu_btn_text">Exportar</span>
+                    </button>
+                  </div>
                 </div>
-                <div id="font-size-select-wrapper" class="select-trigger action-btn text-sm" data-i18n-key="font_size_select_aria_label" aria-label="Tamaño de texto">
-                  <i data-lucide="type" class="select-trigger-icon"></i>
-                  <span id="font-size-select-label" class="select-trigger-label">Normal</span>
-                  <i data-lucide="chevron-down" class="select-trigger-caret"></i>
-                  <select id="font-size-select" class="select-overlay" aria-label="Tamaño de texto">
-                    <option value="14" data-i18n-key="font_size_small">Pequeño</option>
-                    <option value="16" data-i18n-key="font_size_normal">Normal</option>
-                    <option value="18" data-i18n-key="font_size_large">Grande</option>
-                    <option value="20" data-i18n-key="font_size_xlarge">Muy grande</option>
-                  </select>
-                </div>
-            </div>
-
-            <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
-
-            <div class="toolbar-group flex items-center gap-1 sm:gap-2">
-                <button id="theme-toggle-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="theme_toggle_btn_aria_label" aria-label="Cambiar tema"></button>
-                <button id="layout-toggle-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="layout_toggle_btn_title" title="Cambiar diseño (Ctrl+L)"><i data-lucide="layout"></i></button>
-                <button id="toggle-width-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="toggle_width_btn_title" title="Expandir / Contraer ancho"><i data-lucide="maximize"></i></button>
-                <button id="desktop-window-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="desktop_window_btn_title" title="Abrir como ventana independiente"><i data-lucide="app-window"></i></button>
-            </div>
-
-            <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
-
-            <div class="toolbar-group flex items-center gap-1 sm:gap-2">
-                <button id="open-file-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="open_file_btn_title" title="Abrir archivo"><i data-lucide="folder-open" class="text-blue-600"></i><span class="hidden sm:inline" data-i18n-key="open_file_btn_text">Abrir</span></button>
-                <input
-                  type="file"
-                  id="file-input"
-                  class="hidden"
-                  accept=".md,.markdown,text/markdown"
-                />
-                <button id="import-file-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="import_file_btn_title" title="Importar con Pandoc (LaTeX, DOCX, ODT, HTML)"><i data-lucide="upload" class="text-amber-600"></i><span class="hidden sm:inline" data-i18n-key="import_file_btn_text">Importar</span></button>
-                <input
-                  type="file"
-                  id="import-file-input"
-                  class="hidden"
-                  accept=".tex,.latex,.ltx,.docx,.odt,.html,.htm,.xhtml,text/html,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text"
-                />
-                <button id="latex-import-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="import_latex_btn_title" title="Importar LaTeX"><i data-lucide="file-text" class="text-purple-600"></i><span class="hidden sm:inline" data-i18n-key="import_latex_btn_text">Importar LaTeX</span></button>
-                <button id="save-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="save_btn_title" title="Guardar archivo (Ctrl+S)"><i data-lucide="save" class="text-green-600"></i><span class="hidden sm:inline" data-i18n-key="save_btn_text">Guardar</span></button>
                 <div id="export-menu-container" class="relative">
-                  <button type="button" id="export-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="export_menu_btn_title" title="Exportar" aria-haspopup="true" aria-expanded="false"><i data-lucide="download" class="text-indigo-600"></i><span class="hidden sm:inline" data-i18n-key="export_menu_btn_text">Exportar</span><i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i></button>
                   <div id="export-menu" class="hidden absolute right-0 mt-2 w-60 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="export-menu-btn">
                     <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="docx" data-i18n-key="export_menu_option_docx" role="menuitem">DOCX (Microsoft Word)</button>
                     <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="odt" data-i18n-key="export_menu_option_odt" role="menuitem">ODT (LibreOffice)</button>
@@ -119,8 +95,69 @@
                     <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-download" data-i18n-key="export_menu_option_latex_full_download" role="menuitem">TEX (LaTeX)</button>
                   </div>
                 </div>
+            </div>
+            <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="latex-print-group">
                 <button id="print-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="print_btn_title" title="Imprimir (Ctrl+P)"><i data-lucide="printer" class="text-slate-600 dark:text-slate-400"></i></button>
             </div>
+            <div class="toolbar-group flex items-center gap-1 sm:gap-2">
+                <div id="settings-menu-container" class="relative">
+                  <button type="button" id="settings-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="settings_menu_btn_title" title="Configuración" aria-haspopup="true" aria-expanded="false">
+                    <i data-lucide="sliders" class="text-slate-700 dark:text-slate-300"></i>
+                    <span class="hidden sm:inline" data-i18n-key="settings_menu_btn_text">Configuración</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
+                  </button>
+                  <div id="settings-menu" class="hidden absolute left-0 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="settings-menu-btn">
+                    <div class="px-3 py-2">
+                      <label for="language-select" class="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1" data-i18n-key="language_select_label">Idioma</label>
+                      <div id="language-select-wrapper" class="select-trigger action-btn text-sm w-full justify-between">
+                        <span id="language-select-label" class="select-trigger-label">Español</span>
+                        <i data-lucide="chevron-down" class="select-trigger-caret"></i>
+                        <select id="language-select" class="select-overlay" aria-label="Seleccionar idioma">
+                          <option value="es">Español</option>
+                          <option value="en">English</option>
+                          <option value="ca">Català</option>
+                          <option value="gl">Galego</option>
+                          <option value="eu">Euskara</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="px-3 pb-3">
+                      <label for="font-size-select" class="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1" data-i18n-key="font_size_select_label">Tamaño de texto</label>
+                      <div id="font-size-select-wrapper" class="select-trigger action-btn text-sm w-full justify-between" data-i18n-key="font_size_select_aria_label" aria-label="Tamaño de texto">
+                        <span id="font-size-select-label" class="select-trigger-label">Normal</span>
+                        <i data-lucide="chevron-down" class="select-trigger-caret"></i>
+                        <select id="font-size-select" class="select-overlay" aria-label="Tamaño de texto">
+                          <option value="14" data-i18n-key="font_size_small">Pequeño</option>
+                          <option value="16" data-i18n-key="font_size_normal">Normal</option>
+                          <option value="18" data-i18n-key="font_size_large">Grande</option>
+                          <option value="20" data-i18n-key="font_size_xlarge">Muy grande</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+            <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
+
+            <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="view-controls-group">
+                <button id="theme-toggle-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="theme_toggle_btn_aria_label" aria-label="Cambiar tema"></button>
+                <button id="layout-toggle-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="layout_toggle_btn_title" title="Cambiar diseño (Ctrl+L)"><i data-lucide="layout"></i></button>
+                <button id="toggle-width-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="toggle_width_btn_title" title="Expandir / Contraer ancho"><i data-lucide="maximize"></i></button>
+                <button id="desktop-window-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="desktop_window_btn_title" title="Abrir como ventana independiente"><i data-lucide="app-window"></i></button>
+            </div>
+
+            <input
+              type="file"
+              id="file-input"
+              class="hidden"
+              accept=".md,.markdown,text/markdown"
+            />
+            <input
+              type="file"
+              id="import-file-input"
+              class="hidden"
+              accept=".tex,.latex,.ltx,.docx,.odt,.html,.htm,.xhtml,text/html,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text"
+            />
 
             <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
 

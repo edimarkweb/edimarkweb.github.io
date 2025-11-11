@@ -1618,6 +1618,12 @@ window.onload = () => {
     const openEdicuatexBtn = document.getElementById('open-edicuatex-btn');
     const importFileBtn = document.getElementById('import-file-btn');
     const importFileInput = document.getElementById('import-file-input');
+    const actionsMenuContainer = document.getElementById('actions-menu-container');
+    const actionsMenuBtn = document.getElementById('actions-menu-btn');
+    const actionsMenu = document.getElementById('actions-menu');
+    const settingsMenuContainer = document.getElementById('settings-menu-container');
+    const settingsMenuBtn = document.getElementById('settings-menu-btn');
+    const settingsMenu = document.getElementById('settings-menu');
     const newTabBtn = document.getElementById('new-tab-btn');
     const tabBar = document.getElementById('tab-bar');
     headingOptionsEl = headingOptions;
@@ -1853,11 +1859,43 @@ window.onload = () => {
         });
     }
 
+    if (actionsMenuBtn) {
+        actionsMenuBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            toggleActionsMenu();
+        });
+    }
+
+    if (settingsMenuBtn) {
+        settingsMenuBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            toggleSettingsMenu();
+        });
+    }
+
     if (previewCopyContainer) {
         document.addEventListener('click', (event) => {
             if (!isPreviewCopyMenuOpen()) return;
             if (!previewCopyContainer.contains(event.target)) {
                 closePreviewCopyMenu();
+            }
+        }, { capture: true });
+    }
+
+    if (actionsMenuContainer) {
+        document.addEventListener('click', (event) => {
+            if (!isActionsMenuOpen()) return;
+            if (!actionsMenuContainer.contains(event.target)) {
+                closeActionsMenu();
+            }
+        }, { capture: true });
+    }
+
+    if (settingsMenuContainer) {
+        document.addEventListener('click', (event) => {
+            if (!isSettingsMenuOpen()) return;
+            if (!settingsMenuContainer.contains(event.target)) {
+                closeSettingsMenu();
             }
         }, { capture: true });
     }
@@ -1884,8 +1922,74 @@ window.onload = () => {
             if (previewCopyToggleBtn) previewCopyToggleBtn.focus();
             handled = true;
         }
+        if (isActionsMenuOpen()) {
+            closeActionsMenu();
+            if (actionsMenuBtn) actionsMenuBtn.focus();
+            handled = true;
+        }
+        if (isSettingsMenuOpen()) {
+            closeSettingsMenu();
+            if (settingsMenuBtn) settingsMenuBtn.focus();
+            handled = true;
+        }
         if (handled) event.preventDefault();
     });
+
+    function isActionsMenuOpen() {
+        return actionsMenu && !actionsMenu.classList.contains('hidden');
+    }
+
+    function openActionsMenu() {
+        if (!actionsMenu) return;
+        closeExportMenu();
+        closePreviewCopyMenu();
+        closeSettingsMenu();
+        actionsMenu.classList.remove('hidden');
+        if (actionsMenuBtn) actionsMenuBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeActionsMenu() {
+        if (!actionsMenu) return;
+        actionsMenu.classList.add('hidden');
+        if (actionsMenuBtn) actionsMenuBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleActionsMenu() {
+        if (!actionsMenu) return;
+        if (isActionsMenuOpen()) {
+            closeActionsMenu();
+        } else {
+            openActionsMenu();
+        }
+    }
+
+    function isSettingsMenuOpen() {
+        return settingsMenu && !settingsMenu.classList.contains('hidden');
+    }
+
+    function openSettingsMenu() {
+        if (!settingsMenu) return;
+        closeActionsMenu();
+        closeExportMenu();
+        closePreviewCopyMenu();
+        settingsMenu.classList.remove('hidden');
+        if (settingsMenuBtn) settingsMenuBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeSettingsMenu() {
+        if (!settingsMenu) return;
+        settingsMenu.classList.add('hidden');
+        if (settingsMenuBtn) settingsMenuBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleSettingsMenu() {
+        if (!settingsMenu) return;
+        if (isSettingsMenuOpen()) {
+            closeSettingsMenu();
+        } else {
+            openSettingsMenu();
+        }
+    }
 
     function updateExportStatus(message) {
         if (!statusToastEl || !statusToastMessageEl) return;
@@ -1983,6 +2087,8 @@ window.onload = () => {
     function openExportMenu() {
         if (!exportMenu) return;
         closePreviewCopyMenu();
+        closeActionsMenu();
+        closeSettingsMenu();
         exportMenu.classList.remove('hidden');
         if (exportMenuBtn) exportMenuBtn.setAttribute('aria-expanded', 'true');
     }
@@ -2009,6 +2115,8 @@ window.onload = () => {
     function openPreviewCopyMenu() {
         if (!previewCopyMenu) return;
         closeExportMenu();
+        closeActionsMenu();
+        closeSettingsMenu();
         previewCopyMenu.classList.remove('hidden');
         if (previewCopyToggleBtn) previewCopyToggleBtn.setAttribute('aria-expanded', 'true');
     }
@@ -2519,7 +2627,11 @@ window.onload = () => {
         if (window.lucide) lucide.createIcons();
     });
     
-    openFileBtn.addEventListener('click', () => fileInput.click());
+    openFileBtn.addEventListener('click', () => {
+        closeActionsMenu();
+        closeSettingsMenu();
+        fileInput.click();
+    });
     fileInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -2533,7 +2645,11 @@ window.onload = () => {
         fileInput.value = '';
     });
     if (importFileBtn && importFileInput) {
-        importFileBtn.addEventListener('click', () => importFileInput.click());
+        importFileBtn.addEventListener('click', () => {
+            closeActionsMenu();
+            closeSettingsMenu();
+            importFileInput.click();
+        });
         importFileInput.addEventListener('change', async (event) => {
             const file = event.target.files && event.target.files[0];
             importFileInput.value = '';
@@ -2573,6 +2689,8 @@ window.onload = () => {
     });
     
     printBtn.addEventListener('click', () => {
+        closeActionsMenu();
+        closeSettingsMenu();
         const preview = document.getElementById('html-output');
         if (preview) {
             preview.scrollTop = 0;
@@ -2650,7 +2768,11 @@ window.onload = () => {
 
     // --- Eventos de los modales ---
     if (latexImportBtn) {
-        latexImportBtn.addEventListener('click', () => toggleLatexImportModal(true));
+    latexImportBtn.addEventListener('click', () => {
+        closeActionsMenu();
+        closeSettingsMenu();
+        toggleLatexImportModal(true);
+    });
     }
     if (latexImportCancelBtn) {
         latexImportCancelBtn.addEventListener('click', () => {
@@ -2698,7 +2820,11 @@ window.onload = () => {
     tableModalOverlay.addEventListener('click', (e) => { if (e.target === tableModalOverlay) toggleTableModal(false); });
     
     if (saveBtn) {
-        saveBtn.addEventListener('click', saveCurrentDocument);
+        saveBtn.addEventListener('click', () => {
+            closeActionsMenu();
+            closeSettingsMenu();
+            saveCurrentDocument();
+        });
     }
 
     clearAllBtn.addEventListener('click', () => toggleClearModal(true));
@@ -2787,6 +2913,18 @@ window.onload = () => {
                 case 'p': e.preventDefault(); printBtn.click(); break;
                 case 'l': e.preventDefault(); layoutToggleBtn.click(); break;
                 case 'h': e.preventDefault(); openManualDoc(e.shiftKey); break;
+                case 'v':
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        if (latexImportBtn) {
+                            latexImportBtn.click();
+                        } else {
+                            closeActionsMenu();
+                            closeSettingsMenu();
+                            toggleLatexImportModal(true);
+                        }
+                    }
+                    break;
             }
             if (fontSizeSelect && ['=', '+', '-'].includes(e.key)) {
                 e.preventDefault();

@@ -17,6 +17,7 @@ EdiMarkWeb es un potente editor Markdown basado en la web, diseñado para estudi
 *   **Resaltado de sintaxis**: Los bloques de código se resaltan para una mejor legibilidad.
 *   **Modo claro/oscuro**: Cambie entre temas claros y oscuros para su comodidad.
 *   **Diseño personalizable**: Ajuste los paneles del editor y de vista previa, cambie el tamaño de la fuente y abra la app en una ventana independiente.
+*   **Menú Archivo unificado**: Un único botón agrupa Abrir (`Ctrl+O`), Importar mediante Pandoc, Pegar LaTeX (`Ctrl+Mayús+V`), Guardar (`Ctrl+S`) y el submenú Exportar con DOCX, ODT, HTML y TEX.
 *   **Autoguardado y copia rápida**: Cada documento se guarda localmente de forma automática y dispone de botones para copiar Markdown o HTML listos para pegar.
 *   **Arrastrar y soltar archivos**: Abra rápidamente archivos `.md` arrastrándolos y soltándolos en el editor.
 *   **Exportación multiformato**: Genere con un clic versiones en DOCX, ODT, HTML autónomo o LaTeX (fragmento o documento completo), listas para descargar o copiar al portapapeles.
@@ -27,6 +28,12 @@ EdiMarkWeb es un potente editor Markdown basado en la web, diseñado para estudi
 ## Cómo usar
 
 Simplemente abra `index.html` en su navegador web para comenzar a usar EdiMarkWeb. Puede escribir en Markdown, editar el HTML renderizado o alternar entre las vistas según prefiera. Para obtener una guía detallada sobre todas las características y atajos de teclado, consulte el [Manual de usuario](manual.md).
+
+Atajos esenciales:
+
+* `Ctrl+O` / `Cmd+O` — Abrir un archivo Markdown desde el menú Archivo.
+* `Ctrl+S` / `Cmd+S` — Guardar el documento actual.
+* `Ctrl+Shift+V` / `Cmd+Shift+V` — Abrir el modal **Pegar LaTeX** del menú Archivo para convertir documentos LaTeX completos.
 
 ## Tecnologías
 

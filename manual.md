@@ -47,19 +47,15 @@ Trabaja con varios documentos a la vez, cada uno en su propia pestaña.
 
 ## Barra superior de controles
 
-La barra junto al logotipo agrupa las opciones globales de la aplicación:
+La barra junto al logotipo agrupa las opciones globales de la aplicación y ahora concentra todas las acciones de archivo en un único botón desplegable:
 
-* **Idioma**: Cambia entre Español, English, Català, Galego o Euskara.
-* **Tamaño de letra**: Ajusta la ergonomía del editor (Pequeño, Normal, Grande, Muy grande).
-* **Tema claro/oscuro**: Alterna el esquema de colores con un clic.
-* **Diseño (Ctrl+L)**: Cambia entre vista dividida, solo Markdown o solo HTML.
-* **Ancho expandido**: Usa el botón con el icono de maximizar para que la interfaz ocupe todo el ancho disponible.
-* **Ventana independiente**: Abre EdiMarkWeb en una ventana aparte que recuerda el tamaño que elijas.
-* **Abrir / Guardar**: Gestiona archivos `.md` de tu equipo con los botones de carpeta y disquete.
-* **Exportar**: Despliega el menú para convertir el documento a otros formatos (ver sección dedicada).
-* **Imprimir (Ctrl+P)**: Genera una vista preparada para impresión con tu estilo actual.
-* **Buscar (Ctrl+F)** y **Manual (Ctrl+H)**: Abren el panel de búsqueda o este manual.
-* **Borrar todo**: Limpia el documento actual (con confirmación previa).
+* **Archivo**: abre un menú con `Abrir (Ctrl+O)`, `Importar` mediante Pandoc, `Pegar LaTeX (Ctrl+Mayús+V)` para pegar documentos completos, `Guardar (Ctrl+S)` y el submenú **Exportar** con DOCX, ODT, HTML o TEX. Así no hay iconos duplicados y siempre encontrarás los comandos de gestión en el mismo lugar.
+* **Idioma y tamaño de letra**: selecciona el idioma de la interfaz y el tamaño base del texto sin salir del flujo de trabajo.
+* **Tema claro/oscuro** y **Diseño (Ctrl+L)**: ajustan el aspecto visual (tema, distribución de paneles) en un solo clic.
+* **Ancho expandido** y **Ventana independiente**: amplían la superficie útil o lanzan EdiMarkWeb en una ventana separada para modo escritorio.
+* **Imprimir (Ctrl+P)**: genera una vista preparada para papel o PDF con los estilos actuales.
+* **Buscar (Ctrl+F)** y **Manual (Ctrl+H)**: abren el buscador avanzado o este mismo documento.
+* **Borrar todo**: limpia por completo el documento activo tras pedir confirmación.
 
 ---
 
@@ -124,7 +120,7 @@ Puedes arrastrar la barra central para dar más espacio a cualquiera de los pane
 
 ## Exportar
 
-El menú `Exportar` permite descargar versiones listas para entregar o publicar:
+Abre el botón **Archivo** y selecciona `Exportar` para descargar versiones listas para entregar o publicar:
 
 * **DOCX (Microsoft Word)**: Ideal para compartir con alumnado o colegas que usan Word, y compatible con Google Docs.
 * **ODT (LibreOffice)**: Pensado para suites libres como LibreOffice u OnlyOffice.
@@ -173,6 +169,7 @@ Arrastra uno o varios archivos `.md` o `.markdown` sobre la aplicación:
 | Cerrar pestaña | `Ctrl` + `W` | `Cmd` + `W` |
 | Guardar | `Ctrl` + `S` | `Cmd` + `S` |
 | Abrir archivo | `Ctrl` + `O` | `Cmd` + `O` |
+| Pegar LaTeX (abrir modal) | `Ctrl` + `Shift` + `V` | `Cmd` + `Shift` + `V` |
 | **Interfaz** | | |
 | Cambiar diseño | `Ctrl` + `L` | `Cmd` + `L` |
 | Buscar | `Ctrl` + `F` | `Cmd` + `F` |
