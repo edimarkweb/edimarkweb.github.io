@@ -68,6 +68,66 @@ function escapeHtmlEntities(str) {
     .replace(/>/g, '&gt;');
 }
 
+function extractBracedContent(source, command) {
+  if (typeof source !== 'string' || !command) return null;
+  const regex = new RegExp(`\\\\${command}\\s*\\{`, 'i');
+  const match = regex.exec(source);
+  if (!match) return null;
+  let idx = match.index + match[0].length;
+  let depth = 1;
+  while (idx < source.length) {
+    const char = source[idx];
+    if (char === '\\') {
+      idx += 2;
+      continue;
+    }
+    if (char === '{') {
+      depth += 1;
+    } else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return source.slice(match.index + match[0].length, idx);
+      }
+    }
+    idx += 1;
+  }
+  return null;
+}
+
+function extractLatexMetadata(latex) {
+  const normalized = typeof latex === 'string' ? latex : '';
+  const title = extractBracedContent(normalized, 'title');
+  const hasMakeTitle = /\\maketitle\b/.test(normalized);
+  return {
+    title: title ? title.trim() : '',
+    hasMakeTitle,
+  };
+}
+
+function ensureMarkdownTitle(markdown, { title, hasMakeTitle }) {
+  if (!title || !hasMakeTitle) return markdown;
+  const sanitizedTitle = title.replace(/\s+/g, ' ').trim();
+  if (!sanitizedTitle) return markdown;
+  const lines = markdown.split(/\r?\n/);
+  const firstContentIndex = lines.findIndex(line => line.trim() !== '');
+  if (firstContentIndex !== -1) {
+    const firstLine = lines[firstContentIndex];
+    if (/^#{1,6}\s+/.test(firstLine)) {
+      return markdown;
+    }
+  }
+  const insertion = [`# ${sanitizedTitle}`, ''];
+  if (firstContentIndex === -1) {
+    return insertion.join('\n');
+  }
+  const updated = [
+    ...lines.slice(0, firstContentIndex),
+    ...insertion,
+    ...lines.slice(firstContentIndex),
+  ];
+  return updated.join('\n');
+}
+
 // Matches the inline math trim used in MDAITex.
 function trimInlineMath(content) {
   if (typeof content !== 'string') return '';
@@ -320,6 +380,33 @@ async function generateLatex({
   }
 }
 
+async function convertLatexToMarkdown({
+  latex = '',
+  onStatus = () => {},
+} = {}) {
+  const normalizedLatex = normalizeNewlines(latex || '');
+  if (!normalizedLatex.trim()) {
+    const message = translate('no_content', 'No hay contenido para exportar.');
+    throw new Error(message || 'No content');
+  }
+
+  triggerStatus(onStatus, 'latex_import_preparing', 'Convirtiendo LaTeX a Markdown...');
+
+  try {
+    const metadata = extractLatexMetadata(normalizedLatex);
+    const base64 = await loadPandocWasm({ onStatus });
+    const pandocArgs = `-f latex -t ${MARKDOWN_MATH_EXTENSIONS} --wrap=preserve`;
+    const resultadoBytes = await pandoc(pandocArgs, normalizedLatex, base64);
+    let markdownResult = new TextDecoder().decode(resultadoBytes);
+    markdownResult = ensureMarkdownTitle(markdownResult, metadata);
+    triggerStatus(onStatus, 'latex_import_done', 'Conversión a Markdown completada.');
+    return trimInlineMath(normalizeNewlines(markdownResult));
+  } catch (error) {
+    triggerStatus(onStatus, 'latex_import_error', 'No se pudo convertir el LaTeX.');
+    throw error;
+  }
+}
+
 async function warmUpExporter() {
   try {
     await loadPandocWasm({}, true);
@@ -332,8 +419,9 @@ window.PandocExporter = {
   exportDocument,
   generateHtml,
   generateLatex,
+  convertLatexToMarkdown,
   trimInlineMath,
   warmUpExporter,
 };
 
-export { exportDocument, generateHtml, generateLatex, trimInlineMath, warmUpExporter };
+export { exportDocument, generateHtml, generateLatex, convertLatexToMarkdown, trimInlineMath, warmUpExporter };

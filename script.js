@@ -78,6 +78,12 @@ let markdownControlsDisabled = false;
 let markdownControlButtons = [];
 let headingOptionsEl = null;
 let formulaOptionsEl = null;
+let latexImportInProgress = false;
+let latexImportModalOverlay = null;
+let latexImportTextarea = null;
+let latexImportStatusEl = null;
+let latexImportConvertBtn = null;
+let latexImportCancelBtn = null;
 
 function getTranslation(key, fallback) {
     const catalog = window.__edimarkTranslations;
@@ -1139,6 +1145,53 @@ function toggleImageModal(show, presetText = '') {
     }
 }
 
+function toggleLatexImportModal(show) {
+    if (!latexImportModalOverlay) return;
+    latexImportModalOverlay.style.display = show ? 'flex' : 'none';
+    if (show) {
+        if (latexImportTextarea) {
+            latexImportTextarea.value = '';
+            setTimeout(() => latexImportTextarea.focus(), 0);
+        }
+        setLatexImportStatus('');
+    } else if (!latexImportInProgress) {
+        if (latexImportTextarea) latexImportTextarea.value = '';
+        setLatexImportStatus('');
+    }
+}
+
+function setLatexImportStatus(message = '', { isError = false } = {}) {
+    if (!latexImportStatusEl) return;
+    const text = typeof message === 'string' ? message.trim() : '';
+    if (!latexImportStatusEl.dataset.defaultClasses) {
+        latexImportStatusEl.dataset.defaultClasses = latexImportStatusEl.className;
+    }
+    latexImportStatusEl.className = latexImportStatusEl.dataset.defaultClasses;
+    latexImportStatusEl.textContent = text;
+    if (text && isError) {
+        latexImportStatusEl.classList.add('text-red-600', 'dark:text-red-400');
+    }
+}
+
+function setLatexImportBusy(isBusy) {
+    if (!latexImportConvertBtn) return;
+    latexImportConvertBtn.disabled = Boolean(isBusy);
+    latexImportConvertBtn.classList.toggle('opacity-60', Boolean(isBusy));
+    latexImportConvertBtn.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+    const labelEl = latexImportConvertBtn.querySelector('[data-i18n-key="latex_import_convert_btn"]') || latexImportConvertBtn.querySelector('.latex-import-btn-label');
+    if (labelEl) {
+        if (!labelEl.dataset.defaultText) {
+            labelEl.dataset.defaultText = labelEl.textContent;
+        }
+        if (isBusy) {
+            labelEl.textContent = getTranslation('latex_import_busy_label', 'Un momento, importando…');
+        } else {
+            const fallback = getTranslation('latex_import_convert_btn', labelEl.dataset.defaultText || 'Convertir a Markdown');
+            labelEl.textContent = fallback;
+        }
+    }
+}
+
 function saveFile(filename, content, type) {
     const blob = new Blob([content], { type });
     const a = document.createElement('a');
@@ -1496,6 +1549,12 @@ window.onload = () => {
     const imageModalOverlay = document.getElementById('image-modal-overlay');
     const insertImageBtn = document.getElementById('insert-image-btn');
     const cancelImageBtn = document.getElementById('cancel-image-btn');
+    const latexImportBtn = document.getElementById('latex-import-btn');
+    latexImportModalOverlay = document.getElementById('latex-import-modal-overlay');
+    latexImportTextarea = document.getElementById('latex-import-input');
+    latexImportStatusEl = document.getElementById('latex-import-status');
+    latexImportConvertBtn = document.getElementById('latex-import-convert-btn');
+    latexImportCancelBtn = document.getElementById('latex-import-cancel-btn');
     const statusToastEl = document.getElementById('status-toast');
     const statusToastMessageEl = document.getElementById('status-toast-message');
     let statusToastTimer = null;
@@ -1763,6 +1822,46 @@ window.onload = () => {
                 statusToastEl.classList.add('hidden');
                 statusToastTimer = null;
             }, 250);
+        }
+    }
+
+    async function handleLatexImportConversion() {
+        if (latexImportInProgress) return;
+        if (!latexImportTextarea) return;
+        const latexSource = normalizeNewlines(latexImportTextarea.value || '');
+        if (!latexSource.trim()) {
+            setLatexImportStatus(getTranslation('latex_import_empty', 'No hay contenido LaTeX para convertir.'), { isError: true });
+            latexImportTextarea.focus();
+            return;
+        }
+        if (!window.PandocExporter || typeof window.PandocExporter.convertLatexToMarkdown !== 'function') {
+            setLatexImportStatus(getTranslation('latex_import_error', 'No se pudo convertir el LaTeX.'), { isError: true });
+            return;
+        }
+        latexImportInProgress = true;
+        setLatexImportBusy(true);
+        setLatexImportStatus(getTranslation('latex_import_preparing', 'Convirtiendo LaTeX a Markdown...'));
+        try {
+            const markdown = await window.PandocExporter.convertLatexToMarkdown({
+                latex: latexSource,
+                onStatus: (statusMessage) => {
+                    if (typeof statusMessage === 'string' && statusMessage.trim()) {
+                        setLatexImportStatus(statusMessage.trim());
+                    }
+                },
+            });
+            const normalized = normalizeNewlines(markdown || '');
+            markdownEditor.setValue(normalized);
+            updateMarkdownCharCounter(normalized);
+            toggleLatexImportModal(false);
+            markdownEditor.focus();
+            updateExportStatus(getTranslation('latex_import_done', 'Conversión a Markdown completada.'));
+        } catch (error) {
+            console.error('No se pudo convertir LaTeX a Markdown:', error);
+            setLatexImportStatus(getTranslation('latex_import_error', 'No se pudo convertir el LaTeX.'), { isError: true });
+        } finally {
+            latexImportInProgress = false;
+            setLatexImportBusy(false);
         }
     }
 
@@ -2445,6 +2544,34 @@ window.onload = () => {
     }
 
     // --- Eventos de los modales ---
+    if (latexImportBtn) {
+        latexImportBtn.addEventListener('click', () => toggleLatexImportModal(true));
+    }
+    if (latexImportCancelBtn) {
+        latexImportCancelBtn.addEventListener('click', () => {
+            if (latexImportInProgress) return;
+            toggleLatexImportModal(false);
+        });
+    }
+    if (latexImportModalOverlay) {
+        latexImportModalOverlay.addEventListener('click', (event) => {
+            if (event.target === latexImportModalOverlay && !latexImportInProgress) {
+                toggleLatexImportModal(false);
+            }
+        });
+    }
+    if (latexImportTextarea) {
+        latexImportTextarea.addEventListener('keydown', (event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                event.preventDefault();
+                handleLatexImportConversion();
+            }
+        });
+    }
+    if (latexImportConvertBtn) {
+        latexImportConvertBtn.addEventListener('click', handleLatexImportConversion);
+    }
+
     createTableBtn.addEventListener('click', () => {
         const cols = parseInt(document.getElementById('table-cols').value, 10) || 2;
         const rows = parseInt(document.getElementById('table-rows').value, 10) || 1;
