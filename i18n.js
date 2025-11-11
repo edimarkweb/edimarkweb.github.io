@@ -56,6 +56,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.__updateCopyButtonLabel === 'function') {
       window.__updateCopyButtonLabel();
     }
+    if (typeof window.__updateCharCounterLabel === 'function') {
+      window.__updateCharCounterLabel();
+    }
   };
 
   languageSelect.addEventListener('change', (event) => {

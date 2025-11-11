@@ -12,6 +12,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/turndown/7.1.1/turndown.min.js" defer></script>
+    <script src="vendor/turndown-plugin-gfm.js" defer></script>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous" defer></script>
@@ -64,21 +65,21 @@
                     <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
                   </button>
                   <div id="actions-menu" class="hidden absolute left-0 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="actions-menu-btn">
-                    <button type="button" id="open-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-i18n-key="open_file_btn_text" role="menuitem">
+                    <button type="button" id="open-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
                       <i data-lucide="folder-open" class="w-4 h-4 text-blue-600"></i>
-                      Abrir
+                      <span data-i18n-key="open_file_btn_text">Abrir</span>
                     </button>
-                    <button type="button" id="save-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-i18n-key="save_btn_text" role="menuitem">
+                    <button type="button" id="save-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover-bg-slate-700" role="menuitem">
                       <i data-lucide="save" class="w-4 h-4 text-green-600"></i>
-                      Guardar
+                      <span data-i18n-key="save_btn_text">Guardar</span>
                     </button>
-                    <button type="button" id="import-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-i18n-key="import_file_btn_text" role="menuitem">
+                    <button type="button" id="import-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
                       <i data-lucide="upload" class="w-4 h-4 text-amber-600"></i>
-                      Importar
+                      <span data-i18n-key="import_file_btn_text">Importar</span>
                     </button>
-                    <button type="button" id="latex-import-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-i18n-key="import_latex_btn_text" role="menuitem" aria-keyshortcuts="Control+Shift+V">
+                    <button type="button" id="latex-import-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+Shift+V">
                       <i data-lucide="file-text" class="w-4 h-4 text-purple-600"></i>
-                      Pegar LaTeX
+                      <span data-i18n-key="import_latex_btn_text">Pegar LaTeX</span>
                     </button>
                     <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
                     <button type="button" id="export-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" aria-haspopup="true" aria-expanded="false">

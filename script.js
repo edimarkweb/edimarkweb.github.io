@@ -10,6 +10,9 @@ const FS_KEY = 'edimarkweb-fontsize';
 const EDICUATEX_BASE_URL = 'https://jjdeharo.github.io/edicuatex/index.html';
 const DESKTOP_PARAM_KEY = 'desktop';
 const DESKTOP_SPAWNED_KEY = 'desktop_spawned';
+const TABLE_SANITIZE_ATTRS = ['style', 'width', 'height', 'border', 'cellspacing', 'cellpadding', 'align', 'valign', 'bgcolor', 'role', 'class', 'id'];
+const WORD_STYLE_REGEX = /(font|color|mso|line-height|letter-spacing|word-spacing|background|text-align)/i;
+const TEXT_NODE = typeof Node !== 'undefined' ? Node.TEXT_NODE : 3;
 
 let edicuatexWindow = null;
 let edicuatexOrigin = null;
@@ -21,6 +24,69 @@ const COPY_ACTION_KEY = 'edimarkweb-copy-action';
 function normalizeNewlines(str) {
     if (typeof str !== 'string' || str.length < 1) return typeof str === 'string' ? str : '';
     return str.replace(/\r\n?/g, '\n');
+}
+
+function removeAttributes(node, attrs) {
+    if (!node || typeof node.removeAttribute !== 'function' || !Array.isArray(attrs)) return;
+    attrs.forEach(attr => node.removeAttribute(attr));
+}
+
+function unwrapElement(el) {
+    if (!el || !el.parentNode) return;
+    const parent = el.parentNode;
+    while (el.firstChild) {
+        parent.insertBefore(el.firstChild, el);
+    }
+    parent.removeChild(el);
+}
+
+function cleanWordTables(container) {
+    if (!container || typeof container.querySelectorAll !== 'function') return;
+    const tables = container.querySelectorAll('table');
+    tables.forEach((table) => {
+        removeAttributes(table, TABLE_SANITIZE_ATTRS);
+        table.querySelectorAll('colgroup, col').forEach((col) => col.remove());
+        table.querySelectorAll('thead, tbody, tfoot').forEach((section) => unwrapElement(section));
+        table.querySelectorAll('tr, td, th').forEach((cell) => {
+            removeAttributes(cell, TABLE_SANITIZE_ATTRS);
+            cell.querySelectorAll('p').forEach((p) => unwrapElement(p));
+            cell.querySelectorAll('font').forEach((fontEl) => unwrapElement(fontEl));
+            cell.querySelectorAll('span').forEach((spanEl) => {
+                const hasStructuralAttr = spanEl.getAttribute('class') || spanEl.getAttribute('id') || (spanEl.dataset && Object.keys(spanEl.dataset).length);
+                if (hasStructuralAttr) return;
+                const style = spanEl.getAttribute('style') || '';
+                if (!style || WORD_STYLE_REGEX.test(style)) {
+                    unwrapElement(spanEl);
+                }
+            });
+            cell.childNodes.forEach((node) => {
+                if (node.nodeType === TEXT_NODE) {
+                    node.textContent = node.textContent.replace(/\u00A0/g, ' ');
+                }
+            });
+        });
+        const firstRow = table.querySelector('tr');
+        if (firstRow) {
+            Array.from(firstRow.children).forEach((cell) => {
+                if (cell.nodeName === 'TH') return;
+                const th = document.createElement('th');
+                removeAttributes(th, TABLE_SANITIZE_ATTRS);
+                th.innerHTML = cell.innerHTML;
+                cell.replaceWith(th);
+            });
+        }
+    });
+}
+
+function sanitizeHtmlForMarkdown(html) {
+    if (typeof html !== 'string' || !html.trim()) return html;
+    if (!html.toLowerCase().includes('<table')) {
+        return html.replace(/\u00A0/g, ' ');
+    }
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    cleanWordTables(container);
+    return container.innerHTML.replace(/\u00A0/g, ' ');
 }
 
 const MARKDOWN_ESCAPABLE_CHARS = new Set("!\"#$%&'()*+,./:;<=>?@[\\]^_`{|}~-");
@@ -731,6 +797,10 @@ function updateMarkdownCharCounter(sourceText) {
     const unit = count === 1 ? singularLabel : pluralLabel;
     markdownCharCounterEl.textContent = `${count.toLocaleString()} ${unit}`;
 }
+window.__updateCharCounterLabel = () => {
+    const currentValue = markdownEditor ? markdownEditor.getValue() : '';
+    updateMarkdownCharCounter(currentValue);
+};
 
 function setMarkdownControlsDisabled(disabled) {
     if (markdownControlsDisabled === disabled) return;
@@ -1030,7 +1100,8 @@ function updateMarkdown() {
         }
     }
     if (turndownService && !markdownEditor.hasFocus()) {
-        const markdownFromPreview = turndownService.turndown(previewHtml);
+        const normalizedPreview = sanitizeHtmlForMarkdown(previewHtml);
+        const markdownFromPreview = turndownService.turndown(normalizedPreview);
         const currentMarkdown = markdownEditor.getValue();
         if (currentMarkdown !== markdownFromPreview) {
             skipNextMarkdownSync = true;
@@ -2454,6 +2525,19 @@ window.onload = () => {
     // --- Inicialización de librerías ---
     if (window.TurndownService) {
         turndownService = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+        if (window.turndownPluginGfm) {
+            if (typeof window.turndownPluginGfm.gfm === 'function') {
+                turndownService.use(window.turndownPluginGfm.gfm);
+            } else {
+                const gfmExtras = ['tables', 'strikethrough', 'taskListItems'];
+                gfmExtras.forEach((pluginName) => {
+                    const plugin = window.turndownPluginGfm[pluginName];
+                    if (typeof plugin === 'function') {
+                        turndownService.use(plugin);
+                    }
+                });
+            }
+        }
     }
 
     const markdownTextarea = document.getElementById('markdown-input');
