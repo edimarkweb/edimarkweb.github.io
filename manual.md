@@ -2,33 +2,38 @@
 
 # Manual de EdiMarkWeb
 
-Bienvenido/a a EdiMarkWeb, un editor de Markdown diseñado para docentes y creadores de contenido que necesitan trabajar rápido, exportar a varios formatos y añadir matemáticas con LaTeX sin complicaciones. Todo funciona directamente en el navegador y los documentos se guardan de forma segura en tu equipo.
+Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para docentes y creadores de contenido que necesitan trabajar rápido, exportar a varios formatos y añadir matemáticas con LaTeX sin complicaciones. Todo funciona directamente en el navegador y los documentos se guardan de forma segura en tu equipo.
 
 ## Novedades destacadas
 
 - Edición dual: puedes trabajar tanto en Markdown como directamente en la vista previa HTML, siempre sincronizadas.
-- Menú de exportación con soporte para DOCX, ODT, HTML y LaTeX, incluyendo opciones de copia directa al portapapeles.
+- Menú de exportación y de importación con soporte para DOCX, ODT, HTML y LaTeX, incluyendo opciones de copia directa al portapapeles.
 - Buscador con reemplazo que resalta las coincidencias y acepta términos sin tildes ni distinción entre mayúsculas y minúsculas.
 - Selector de idioma y tamaño de letra para adaptar la interfaz a tu aula.
 - Botones para ampliar el ancho de trabajo o abrir la aplicación en una ventana independiente (modo escritorio).
 - Menú de fórmulas renovado y acceso directo a EdiCuaTeX para construir expresiones complejas.
 - Apertura de múltiples archivos Markdown arrastrándolos al editor (cada uno en su pestaña).
 
-## Índice
+## Vídeos
+Los siguientes vídeos **sin audio y de reproducción continua** muestran algunas acciones comunes.
 
-* [Novedades destacadas](#novedades-destacadas)
-* [Gestión de documentos (pestañas)](#gestión-de-documentos-pestañas)
-* [Barra superior de controles](#barra-superior-de-controles)
-* [Barra de herramientas](#barra-de-herramientas)
-* [Buscar y reemplazar](#buscar-y-reemplazar)
-* [Interfaz principal](#interfaz-principal)
-* [Previsualización interactiva](#previsualización-interactiva)
-* [Acciones principales](#acciones-principales)
-* [Exportar y compartir](#exportar-y-compartir)
-* [Arrastrar y soltar archivos](#arrastrar-y-soltar-archivos)
-* [Atajos de teclado](#atajos-de-teclado)
-* [Ejemplos de fórmulas con LaTeX](#ejemplos-de-fórmulas-con-latex)
-* [Ideas para docentes](#ideas-para-docentes)
+### Copiar directamente el contenido del chat
+Podemos copiar el resultado de cualquier chat y pegarlo en EdiMarkWeb para modificar, guardar o exportar. Esto lo podemos hacer con cualquier chatbot, excepto con ChatGPT que requiere un paso adicional (ver abajo).
+
+![Copiar directamente el contenido del chat](imagenes/googledocs.gif)
+
+### ChatGPT
+ChatGPT ha dejado de utilizar LaTeX estándar, por lo que se le tiene que pedir las fórmulas en una caja Markdown. Además, en el vídeo aparece cómo exportar en DOCX y cómo subir a Google Drive:
+![ChatGPT y Google](imagenes/chatgpt_google.gif)
+
+### Escribir fórmulas en EdiMarkweb
+
+![Escribir fórmulas en EdiMarkweb](imagenes/formulas.gif)
+
+### LaTeX creado con Gemini
+Cuando hacemos un canvas le podemos pedir a Gemini que haga un PDF. Este PDF utiliza código LaTeX que podremos pegar directamente en EdiMarkWeb.
+
+![Escribir fórmulas en EdiMarkweb](imagenes/gemini_pdf.gif)
 
 ---
 
