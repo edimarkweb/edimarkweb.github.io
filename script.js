@@ -151,6 +151,7 @@ let latexImportTextarea = null;
 let latexImportStatusEl = null;
 let latexImportConvertBtn = null;
 let latexImportCancelBtn = null;
+let suppressNextTabClick = false;
 const BINARY_IMPORT_FORMATS = new Set(['docx', 'odt']);
 const IMPORT_EXTENSION_MAP = new Map([
     ['tex', 'latex'],
@@ -821,6 +822,112 @@ function setMarkdownControlsDisabled(disabled) {
 function saveDocsList() {
     const docList = docs.map(d => ({id: d.id, name: d.name}));
     localStorage.setItem(DOCS_LIST_KEY, JSON.stringify(docList));
+}
+
+function syncDocsOrderWithTabs(tabBar) {
+    if (!tabBar) return;
+    const orderedTabs = Array.from(tabBar.querySelectorAll('.tab'));
+    if (!orderedTabs.length) return;
+    const positions = new Map();
+    orderedTabs.forEach((tab, index) => positions.set(tab.dataset.id, index));
+    docs.sort((a, b) => {
+        const posA = positions.has(a.id) ? positions.get(a.id) : Number.MAX_SAFE_INTEGER;
+        const posB = positions.has(b.id) ? positions.get(b.id) : Number.MAX_SAFE_INTEGER;
+        return posA - posB;
+    });
+    saveDocsList();
+}
+
+function initializeTabDragAndDrop(tabBar) {
+    if (!tabBar || typeof window.PointerEvent === 'undefined') return;
+    const state = {
+        tab: null,
+        pointerId: null,
+        startX: 0,
+        dragging: false
+    };
+    const DRAG_THRESHOLD = 6;
+
+    const cleanup = () => {
+        if (!state.tab) return;
+        try { state.tab.releasePointerCapture(state.pointerId); } catch (_) {}
+        state.tab.classList.remove('is-dragging');
+        state.tab.removeAttribute('aria-grabbed');
+        state.tab.removeEventListener('pointermove', handlePointerMove);
+        state.tab.removeEventListener('pointerup', handlePointerUp);
+        state.tab.removeEventListener('pointercancel', handlePointerUp);
+        state.tab = null;
+        state.pointerId = null;
+        state.dragging = false;
+    };
+
+    const reorderTabsAt = (clientX) => {
+        if (!state.tab) return;
+        const tabs = Array.from(tabBar.querySelectorAll('.tab'));
+        const draggingTab = state.tab;
+        let insertBefore = null;
+        for (const tab of tabs) {
+            if (tab === draggingTab) continue;
+            const rect = tab.getBoundingClientRect();
+            if (clientX < rect.left + rect.width / 2) {
+                insertBefore = tab;
+                break;
+            }
+        }
+        if (insertBefore) {
+            if (draggingTab !== insertBefore && draggingTab.nextSibling !== insertBefore) {
+                tabBar.insertBefore(draggingTab, insertBefore);
+            }
+        } else if (draggingTab !== tabBar.lastElementChild) {
+            tabBar.appendChild(draggingTab);
+        }
+    };
+
+    const handlePointerMove = (event) => {
+        if (!state.tab || event.pointerId !== state.pointerId) return;
+        const delta = Math.abs(event.clientX - state.startX);
+        if (!state.dragging && delta > DRAG_THRESHOLD) {
+            state.dragging = true;
+            state.tab.classList.add('is-dragging');
+            state.tab.setAttribute('aria-grabbed', 'true');
+        }
+        if (!state.dragging) return;
+        event.preventDefault();
+        reorderTabsAt(event.clientX);
+    };
+
+    const handlePointerUp = (event) => {
+        if (!state.tab || event.pointerId !== state.pointerId) return;
+        const wasDragging = state.dragging;
+        cleanup();
+        if (wasDragging) {
+            suppressNextTabClick = true;
+            const release = () => { suppressNextTabClick = false; };
+            if (typeof window.requestAnimationFrame === 'function') {
+                window.requestAnimationFrame(release);
+            } else {
+                setTimeout(release, 0);
+            }
+            syncDocsOrderWithTabs(tabBar);
+        }
+    };
+
+    const handlePointerDown = (event) => {
+        if (tabBar.querySelectorAll('.tab').length < 2) return;
+        const tab = event.target.closest('.tab');
+        if (!tab || event.target.closest('.tab-close')) return;
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        state.tab = tab;
+        state.pointerId = event.pointerId;
+        state.startX = event.clientX;
+        state.dragging = false;
+        try { tab.setPointerCapture(event.pointerId); } catch (_) {}
+        tab.addEventListener('pointermove', handlePointerMove);
+        tab.addEventListener('pointerup', handlePointerUp);
+        tab.addEventListener('pointercancel', handlePointerUp);
+    };
+
+    tabBar.addEventListener('pointerdown', handlePointerDown);
 }
 
 function startRename(tab) {
@@ -1699,6 +1806,7 @@ window.onload = () => {
     const settingsMenu = document.getElementById('settings-menu');
     const newTabBtn = document.getElementById('new-tab-btn');
     const tabBar = document.getElementById('tab-bar');
+    initializeTabDragAndDrop(tabBar);
     headingOptionsEl = headingOptions;
     formulaOptionsEl = formulaOptions;
     markdownControlButtons = (() => {
@@ -2725,6 +2833,12 @@ window.onload = () => {
     newTabBtn.addEventListener('click', () => newDoc());
     helpBtn.addEventListener('click', (e) => openManualDoc(e.ctrlKey || e.metaKey));
     tabBar.addEventListener('click', (e) => {
+        if (suppressNextTabClick) {
+            suppressNextTabClick = false;
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
         const tab = e.target.closest('.tab');
         const closeBtn = e.target.closest('.tab-close');
         if (closeBtn && tab) { e.stopPropagation(); closeDoc(tab.dataset.id); } 
