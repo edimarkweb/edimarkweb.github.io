@@ -37,7 +37,7 @@
 }
 
 #main-container.focus-mode #workspace-shell {
-    padding-top: 0.25rem;
+    padding-top: 0;
 }
 
 #main-container.focus-mode #editor-container {
@@ -61,6 +61,19 @@
 
 #main-container.focus-mode {
     --editor-viewport-offset: 13rem;
+    min-height: calc(100vh - 2rem); /* body p-4 => 1rem arriba + 1rem abajo */
+}
+
+@media (min-width: 640px) {
+    #main-container.focus-mode {
+        min-height: calc(100vh - 3rem); /* sm:p-6 => 1.5rem */
+    }
+}
+
+@media (min-width: 768px) {
+    #main-container.focus-mode {
+        min-height: calc(100vh - 4rem); /* md:p-8 => 2rem */
+    }
 }
 
 body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
@@ -87,7 +100,10 @@ body.desktop-mode #main-container {
 }
 
 .editor-wrapper { display: flex; }
-.panel { min-width: 280px; }
+.panel {
+    min-width: 280px;
+    overflow: hidden;
+}
 
 .CodeMirror, .editor-pane, .markdown-textarea {
     height: calc(100vh - var(--editor-viewport-offset)); /* Ajustado para la zona de pestañas y búsqueda */
