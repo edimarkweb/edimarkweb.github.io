@@ -100,6 +100,7 @@
   "edicuatex_popup_blocked": "Activa las ventanas emergentes en tu navegador para usar EdiCuaTeX.",
   "desktop_window_popup_blocked": "Activa las ventanas emergentes en tu navegador para abrir la ventana independiente.",
   "new_tab_btn_title": "Nueva pestaña (Ctrl+T)",
+  "focus_mode_toggle_title": "Maximizar área de edición",
   "markdown_panel_title": "Markdown",
   "copy_md_btn_title": "Copiar Markdown",
   "html_panel_title": "Previsualización",

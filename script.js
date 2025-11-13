@@ -7,6 +7,7 @@ const AUTOSAVE_KEY_PREFIX = 'edimarkweb-autosave';
 const DOCS_LIST_KEY = 'edimarkweb-docslist';
 const LAYOUT_KEY = 'edimarkweb-layout';
 const FS_KEY = 'edimarkweb-fontsize';
+const FOCUS_MODE_KEY = 'edimarkweb-focus-mode';
 const EDICUATEX_BASE_URL = 'https://jjdeharo.github.io/edicuatex/index.html';
 const DESKTOP_PARAM_KEY = 'desktop';
 const DESKTOP_SPAWNED_KEY = 'desktop_spawned';
@@ -1568,6 +1569,7 @@ window.onload = () => {
     const viewToggleBtn = document.getElementById('view-toggle-btn');
     const htmlPanelTitle = document.getElementById('html-panel-title');
     const toolbar = document.getElementById('toolbar');
+    const focusModeToggleBtn = document.getElementById('focus-mode-toggle');
     const toolbarActionsEl = document.getElementById('toolbar-actions');
     const mobileToolbarControls = document.getElementById('mobile-toolbar-controls');
     const mobileActionsToggle = document.getElementById('mobile-actions-toggle');
@@ -1708,6 +1710,40 @@ window.onload = () => {
         return Array.from(buttons);
     })();
     setMarkdownControlsDisabled(false);
+
+    const readFocusModePreference = () => {
+        try {
+            return localStorage.getItem(FOCUS_MODE_KEY) === '1';
+        } catch (err) {
+            return false;
+        }
+    };
+
+    const persistFocusModePreference = (enabled) => {
+        try {
+            localStorage.setItem(FOCUS_MODE_KEY, enabled ? '1' : '0');
+        } catch (err) {
+            console.warn('No se pudo guardar el modo foco:', err);
+        }
+    };
+
+    const applyFocusModeState = (enabled) => {
+        if (!mainContainer) return;
+        mainContainer.classList.toggle('focus-mode', enabled);
+        if (focusModeToggleBtn) {
+            focusModeToggleBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+        }
+    };
+
+    applyFocusModeState(readFocusModePreference());
+
+    if (focusModeToggleBtn && mainContainer) {
+        focusModeToggleBtn.addEventListener('click', () => {
+            const nextState = !mainContainer.classList.contains('focus-mode');
+            applyFocusModeState(nextState);
+            persistFocusModePreference(nextState);
+        });
+    }
     
     // --- Elementos de modales ---
     const tableModalOverlay = document.getElementById('table-modal-overlay');

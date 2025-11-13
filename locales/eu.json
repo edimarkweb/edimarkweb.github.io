@@ -98,6 +98,7 @@
   "edicuatex_popup_blocked": "EdiCuaTeX erabiltzeko, baimendu nabigatzaileko leiho gainerakorrak.",
   "desktop_window_popup_blocked": "Leiho independentea irekitzeko, baimendu nabigatzaileko leiho gainerakorrak.",
   "new_tab_btn_title": "Fitxa berria (Ktrl+T)",
+  "focus_mode_toggle_title": "Editatzeko eremua maximizatu",
   "markdown_panel_title": "Markdown",
   "copy_md_btn_title": "Kopiatu Markdown",
   "html_panel_title": "Aurrebista",

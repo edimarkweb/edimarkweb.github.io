@@ -170,7 +170,7 @@
         </div>
     </header>
 
-    <div class="p-4">
+    <div id="workspace-shell" class="p-4">
         <div id="status-toast" class="status-toast hidden" role="status" aria-live="assertive" aria-hidden="true">
             <div class="status-toast-content">
                 <span id="status-toast-message"></span>
@@ -243,9 +243,12 @@
             </div>
         </div>
 
-        <div class="flex items-center border-b border-slate-200 dark:border-slate-700">
+        <div class="flex items-center border-b border-slate-200 dark:border-slate-700 gap-1">
             <div id="tab-bar" role="tablist" class="flex-grow flex gap-1 overflow-x-auto"></div>
-            <button id="new-tab-btn" class="action-btn p-2" data-i18n-key="new_tab_btn_title" title="Nueva pestaña (Ctrl+T)"><i data-lucide="plus"></i></button>
+            <button id="new-tab-btn" class="action-btn p-2" type="button" data-i18n-key="new_tab_btn_title" title="Nueva pestaña (Ctrl+T)"><i data-lucide="plus"></i></button>
+            <button id="focus-mode-toggle" class="action-btn p-2" type="button" aria-pressed="false" data-i18n-key="focus_mode_toggle_title" title="Maximizar área de edición">
+                <i data-lucide="chevrons-up" class="toggle-icon"></i>
+            </button>
         </div>
 
         <div id="editor-container" class="editor-wrapper pt-3">

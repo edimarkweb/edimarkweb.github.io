@@ -8,8 +8,60 @@
 }
 /* --- FIN: Estilos para expandir --- */
 
+/* Focus mode */
+#main-container > header,
+#toolbar {
+    max-height: 480px;
+    transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease, transform 0.3s ease, border-width 0.3s ease;
+}
+
+#toolbar {
+    max-height: 360px;
+}
+
+#focus-mode-toggle .toggle-icon {
+    transition: transform 0.25s ease;
+}
+
+#main-container.focus-mode > header,
+#main-container.focus-mode #toolbar {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-width: 0;
+    transform: translateY(-0.75rem);
+    overflow: hidden;
+    pointer-events: none;
+}
+
+#main-container.focus-mode #workspace-shell {
+    padding-top: 0.25rem;
+}
+
+#main-container.focus-mode #editor-container {
+    padding-top: 0;
+}
+
+#workspace-shell,
+#editor-container {
+    transition: padding 0.3s ease;
+}
+
+#main-container.focus-mode #focus-mode-toggle .toggle-icon {
+    transform: rotate(180deg);
+}
+
 /* Estilos personalizados */
-:root { --fs-base: 16px; } /* Valor por defecto para el tamaño de fuente */
+:root {
+    --fs-base: 16px;
+    --editor-viewport-offset: 22rem;
+} /* Valor por defecto para el tamaño de fuente */
+
+#main-container.focus-mode {
+    --editor-viewport-offset: 13rem;
+}
 
 body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
 .dark body { background-color: #0f172a; }
@@ -38,7 +90,7 @@ body.desktop-mode #main-container {
 .panel { min-width: 280px; }
 
 .CodeMirror, .editor-pane, .markdown-textarea {
-    height: calc(100vh - 22rem); /* Ajustado para la arra de pestañas y búsqueda */
+    height: calc(100vh - var(--editor-viewport-offset)); /* Ajustado para la zona de pestañas y búsqueda */
     border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
     font-size: var(--fs-base); /* Usa la variable CSS para el tamaño */

@@ -98,6 +98,7 @@
   "edicuatex_popup_blocked": "Permite as xanelas emerxentes no teu navegador para usar EdiCuaTeX.",
   "desktop_window_popup_blocked": "Permite as xanelas emerxentes no teu navegador para abrir a xanela independente.",
   "new_tab_btn_title": "Nova lapela (Ctrl+T)",
+  "focus_mode_toggle_title": "Maximizar área de edición",
   "markdown_panel_title": "Markdown",
   "copy_md_btn_title": "Copiar Markdown",
   "html_panel_title": "Previsualización",

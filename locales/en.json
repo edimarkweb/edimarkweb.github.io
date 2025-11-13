@@ -98,6 +98,7 @@
   "edicuatex_popup_blocked": "Allow pop-ups in your browser to use EdiCuaTeX.",
   "desktop_window_popup_blocked": "Allow pop-ups in your browser to open the standalone window.",
   "new_tab_btn_title": "New tab (Ctrl+T)",
+  "focus_mode_toggle_title": "Toggle focus mode",
   "markdown_panel_title": "Markdown",
   "copy_md_btn_title": "Copy Markdown",
   "html_panel_title": "Preview",

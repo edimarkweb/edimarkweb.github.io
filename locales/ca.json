@@ -98,6 +98,7 @@
   "edicuatex_popup_blocked": "Permet les finestres emergents del navegador per utilitzar EdiCuaTeX.",
   "desktop_window_popup_blocked": "Permet les finestres emergents del navegador per obrir la finestra independent.",
   "new_tab_btn_title": "Nova pestanya (Ctrl+T)",
+  "focus_mode_toggle_title": "Maximitza l'àrea d'edició",
   "markdown_panel_title": "Markdown",
   "copy_md_btn_title": "Copiar Markdown",
   "html_panel_title": "Previsualització",
