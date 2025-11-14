@@ -212,3 +212,9 @@ Si prefieres construirlas visualmente, selecciona el texto en el editor y abre *
 * **Exámenes y ejercicios**: Exporta a DOCX/ODT para imprimir o editar posteriormente.
 * **Plantillas reutilizables**: Guarda documentos como HTML autónomo para subirlos a Moodle, blogs o GitHub Pages.
 * **Trabajo del alumnado**: Invítales a redactar en Markdown; con el autoguardado no perderán sus avances.
+
+---
+
+## Licencia y contribuciones
+
+EdiMarkWeb es software libre bajo la [GNU Affero General Public License v3.0](LICENSE). Esto significa que puedes usar la aplicación en tu aula, adaptarla y desplegarla en servidores propios, siempre que compartas cualquier mejora bajo la misma licencia y ofrezcas el código a quienes usen tu versión. Si detectas un problema o quieres proponer cambios, abre una incidencia en [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) o envía un pull request.

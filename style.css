@@ -3,6 +3,34 @@
     transition: max-width 0.5s ease-in-out;
 }
 
+.site-footer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #475569;
+    margin: 1.5rem auto 0;
+    max-width: 48rem;
+    line-height: 1.5;
+}
+
+.dark .site-footer {
+    color: #cbd5f5;
+}
+
+.site-footer a {
+    color: #2563eb;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+}
+
+.dark .site-footer a {
+    color: #93c5fd;
+}
+
+.site-footer a:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
 #main-container.is-expanded {
     max-width: 98%;
 }
