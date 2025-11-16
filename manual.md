@@ -20,7 +20,6 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 
 - El texto Markdown o sin formato se inserta en el panel izquierdo respetando exactamente la posición del cursor.
 - El contenido enriquecido (HTML, DOCX, pegado desde el navegador, etc.) se vuelve a calcular en el panel derecho y, al mismo tiempo, se genera el Markdown correspondiente para mantener ambas vistas sincronizadas.
-- Las imágenes pegadas se transforman en `data:image` y el editor las oculta de forma compacta para que no ocupen espacio, pero puedes consultarlas o copiarlas desde el panel de “Imágenes base64 ocultas”.
 
 Esto elimina la necesidad de pasos intermedios: copia desde tu origen favorito y haz clic en **Pegar** para seguir editando sin interrupciones.
 
