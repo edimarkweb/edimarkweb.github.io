@@ -781,6 +781,12 @@ code {
         display: block !important;
         padding-top: 0 !important;
     }
+    #workspace-shell {
+        padding: 0 !important;
+    }
+    #workspace-shell > :not(#editor-container) {
+        display: none !important;
+    }
     #html-panel {
         display: block !important;
         width: 100% !important;
@@ -803,6 +809,10 @@ code {
     .markdown-textarea,
     .markdown-textarea-wrapper,
     .CodeMirror {
+        display: none !important;
+    }
+    footer,
+    .site-footer {
         display: none !important;
     }
 }
