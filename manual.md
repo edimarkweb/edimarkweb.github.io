@@ -14,6 +14,16 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 - Menú de fórmulas renovado y acceso directo a EdiCuaTeX para construir expresiones complejas.
 - Apertura de múltiples archivos Markdown arrastrándolos al editor (cada uno en su pestaña).
 
+## ¡Pega cualquier contenido!
+
+> **Importante:** ahora puedes pegar **cualquier objeto desde el portapapeles**: texto plano, fragmentos de Word o LibreOffice, HTML completo, fórmulas generadas por un chatbot e incluso imágenes copiadas directamente. Usa `Ctrl+V`/`Cmd+V` o el botón de la barra de herramientas con el icono de portapapeles (`Pegar`) y EdiMarkWeb colocará automáticamente el contenido en el panel adecuado:
+
+- El texto Markdown o sin formato se inserta en el panel izquierdo respetando exactamente la posición del cursor.
+- El contenido enriquecido (HTML, DOCX, pegado desde el navegador, etc.) se vuelve a calcular en el panel derecho y, al mismo tiempo, se genera el Markdown correspondiente para mantener ambas vistas sincronizadas.
+- Las imágenes pegadas se transforman en `data:image` y el editor las oculta de forma compacta para que no ocupen espacio, pero puedes consultarlas o copiarlas desde el panel de “Imágenes base64 ocultas”.
+
+Esto elimina la necesidad de pasos intermedios: copia desde tu origen favorito y haz clic en **Pegar** para seguir editando sin interrupciones.
+
 ## Vídeos
 Los siguientes vídeos **sin audio y de reproducción continua** muestran algunas acciones comunes.
 

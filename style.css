@@ -228,6 +228,113 @@ body.desktop-mode #main-container {
 .markdown-textarea-highlights.markdown-textarea-dark mark.current {
     background-color: rgba(14, 165, 233, 0.5);
 }
+.base64-hidden-container {
+    margin-top: 0.75rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 0.85rem;
+    padding: 0.85rem;
+    background-color: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.base64-hidden-container.hidden,
+[hidden] {
+    display: none !important;
+}
+.dark .base64-hidden-container {
+    background-color: #0f172a;
+    border-color: #334155;
+}
+.base64-hidden-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.base64-hidden-title {
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 0.15rem;
+}
+.dark .base64-hidden-title {
+    color: #e2e8f0;
+}
+.base64-hidden-count-text,
+.base64-hidden-hint {
+    font-size: 0.875rem;
+    color: #475569;
+}
+.dark .base64-hidden-count-text,
+.dark .base64-hidden-hint {
+    color: #94a3b8;
+}
+.base64-hidden-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.base64-hidden-item {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    background-color: #fff;
+}
+.dark .base64-hidden-item {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+.base64-hidden-item h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+    color: #0f172a;
+}
+.dark .base64-hidden-item h4 {
+    color: #e2e8f0;
+}
+.base64-hidden-item p {
+    font-size: 0.85rem;
+    color: #475569;
+    margin: 0.15rem 0 0;
+}
+.dark .base64-hidden-item p {
+    color: #cbd5f5;
+}
+.base64-hidden-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+.base64-hidden-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid transparent;
+    background-color: #e0f2fe;
+    color: #0369a1;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.base64-hidden-btn:hover {
+    background-color: #bae6fd;
+}
+.dark .base64-hidden-btn {
+    background-color: #1d4ed8;
+    color: #e0f2fe;
+    border-color: #1e3a8a;
+}
+.dark .base64-hidden-btn:hover {
+    background-color: #2563eb;
+}
 
 .editor-pane { padding: 1rem; overflow-y: auto; background-color: #ffffff; }
 .dark .editor-pane { background-color: #1e293b; color: #cbd5e1; }
