@@ -72,10 +72,16 @@ function cleanWordTables(container) {
     tables.forEach((table) => {
         removeAttributes(table, TABLE_SANITIZE_ATTRS);
         table.querySelectorAll('colgroup, col').forEach((col) => col.remove());
-        table.querySelectorAll('thead, tbody, tfoot').forEach((section) => unwrapElement(section));
+        table.querySelectorAll('thead').forEach((section) => unwrapElement(section));
         table.querySelectorAll('tr, td, th').forEach((cell) => {
             removeAttributes(cell, TABLE_SANITIZE_ATTRS);
             cell.querySelectorAll('p').forEach((p) => unwrapElement(p));
+            cell.querySelectorAll('br').forEach((br) => {
+                const className = (br.getAttribute('class') || '').toLowerCase();
+                if (!className || className.includes('trailingbreak')) {
+                    br.remove();
+                }
+            });
             cell.querySelectorAll('font').forEach((fontEl) => unwrapElement(fontEl));
             cell.querySelectorAll('span').forEach((spanEl) => {
                 const hasStructuralAttr = spanEl.getAttribute('class') || spanEl.getAttribute('id') || (spanEl.dataset && Object.keys(spanEl.dataset).length);
