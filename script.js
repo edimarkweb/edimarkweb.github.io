@@ -118,7 +118,6 @@ function sanitizeHtmlForMarkdown(html) {
 const MARKDOWN_ESCAPABLE_CHARS = new Set("!\"#$%&'()*+,./:;<=>?@[\\]^_`{|}~-");
 const MATH_PLACEHOLDER_PREFIX = '@@EDIMATH';
 const MATH_PLACEHOLDER_SUFFIX = '@@';
-const INLINE_MATH_DELIMITERS = ['\\(', '\\)', '\\[', '\\]', '$$', '\\begin{', '\\end{'];
 
 function preserveMarkdownEscapes(text) {
     if (typeof text !== 'string') return '';
@@ -205,17 +204,6 @@ function normalizeMathEscapes(markdown) {
 function normalizeNumberedListEscapes(markdown) {
     if (typeof markdown !== 'string' || markdown.indexOf('\\.') === -1) return markdown;
     return markdown.replace(/(\d)\\\.(?=\s)/g, '$1.');
-}
-
-function hasInlineMathDelimiters(text) {
-    if (typeof text !== 'string' || text.length === 0) return false;
-    return INLINE_MATH_DELIMITERS.some(token => text.includes(token));
-}
-
-function lostInlineMathDelimiters(original, converted) {
-    if (!original) return false;
-    if (!converted) return true;
-    return INLINE_MATH_DELIMITERS.some(token => original.includes(token) && !converted.includes(token));
 }
 
 function estimateBase64Bytes(data) {
@@ -465,13 +453,10 @@ function convertHtmlSnippetToMarkdown(html, plain) {
     const sanitized = typeof html === 'string' ? sanitizeHtmlForMarkdown(html) : '';
     if (turndownService && sanitized && sanitized.trim()) {
         try {
-            const md = turndownService.turndown(sanitized);
-            if (md && md.trim()) {
-                const mathNormalized = normalizeMathEscapes(md);
+            const mdRaw = turndownService.turndown(sanitized);
+            if (mdRaw && mdRaw.trim()) {
+                const mathNormalized = normalizeMathEscapes(mdRaw);
                 const markdownResult = normalizeNumberedListEscapes(mathNormalized);
-                if (plainNormalized && hasInlineMathDelimiters(plainNormalized) && lostInlineMathDelimiters(plainNormalized, markdownResult)) {
-                    return plainNormalized;
-                }
                 return markdownResult;
             }
         } catch (err) {
