@@ -195,6 +195,15 @@
         </div>
         
         <div id="toolbar" class="bg-slate-50 p-2 rounded-lg mb-4 flex flex-wrap items-center gap-2 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+            <div class="flex items-center gap-1">
+                <button id="undo-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="undo_btn_title" title="Deshacer (Ctrl+Z)">
+                    <i data-lucide="rotate-ccw"></i>
+                </button>
+                <button id="redo-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="redo_btn_title" title="Rehacer (Ctrl+Shift+Z)">
+                    <i data-lucide="rotate-cw"></i>
+                </button>
+            </div>
+            <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
              <div class="flex items-center gap-1">
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="bold" data-i18n-key="bold_btn_title" title="Negrita (Ctrl+B)"><i data-lucide="bold"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="italic" data-i18n-key="italic_btn_title" title="Cursiva (Ctrl+I)"><i data-lucide="italic"></i></button>

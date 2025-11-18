@@ -3,6 +3,8 @@ let turndownService;
 let isUpdating = false;
 let syncLock = false; // Evita ReferenceError de código legado
 let markdownEditor, htmlEditor;
+let undoButtonEl = null;
+let redoButtonEl = null;
 const AUTOSAVE_KEY_PREFIX = 'edimarkweb-autosave';
 const DOCS_LIST_KEY = 'edimarkweb-docslist';
 const LAYOUT_KEY = 'edimarkweb-layout';
@@ -915,6 +917,10 @@ function createTextareaEditor(textarea) {
     let highlightMatches = [];
     let highlightCurrent = -1;
     let highlightQuery = '';
+    const HISTORY_LIMIT = 200;
+    const historyStack = [];
+    let historyIndex = -1;
+    let suppressHistory = false;
 
     function normalizeTextareaContent() {
         const value = textarea.value;
@@ -1048,6 +1054,75 @@ function createTextareaEditor(textarea) {
         syncScroll();
     }
 
+    function captureHistorySnapshot() {
+        return {
+            value: normalizeNewlines(textarea.value || ''),
+            selectionStart: textarea.selectionStart,
+            selectionEnd: textarea.selectionEnd,
+            scrollTop: textarea.scrollTop,
+            scrollLeft: textarea.scrollLeft
+        };
+    }
+
+    function pushHistorySnapshot(force = false) {
+        if (suppressHistory) return;
+        const snapshot = captureHistorySnapshot();
+        const last = historyStack[historyIndex];
+        const valueChanged = !last || last.value !== snapshot.value;
+        if (!force && !valueChanged) {
+            if (last) {
+                last.selectionStart = snapshot.selectionStart;
+                last.selectionEnd = snapshot.selectionEnd;
+                last.scrollTop = snapshot.scrollTop;
+                last.scrollLeft = snapshot.scrollLeft;
+            }
+            return;
+        }
+        if (historyIndex < historyStack.length - 1) {
+            historyStack.splice(historyIndex + 1);
+        }
+        historyStack.push(snapshot);
+        if (historyStack.length > HISTORY_LIMIT) {
+            historyStack.shift();
+            historyIndex -= 1;
+        }
+        historyIndex = historyStack.length - 1;
+        updateUndoRedoButtons();
+    }
+
+    function applyHistorySnapshot(index) {
+        const snapshot = historyStack[index];
+        if (!snapshot) return false;
+        suppressHistory = true;
+        textarea.value = snapshot.value || '';
+        textarea.scrollTop = snapshot.scrollTop || 0;
+        textarea.scrollLeft = snapshot.scrollLeft || 0;
+        const start = typeof snapshot.selectionStart === 'number' ? snapshot.selectionStart : 0;
+        const end = typeof snapshot.selectionEnd === 'number' ? snapshot.selectionEnd : start;
+        setSelectionRange(start, end);
+        triggerChange();
+        suppressHistory = false;
+        return true;
+    }
+
+    function moveHistory(delta) {
+        const targetIndex = historyIndex + delta;
+        if (targetIndex < 0 || targetIndex >= historyStack.length) return false;
+        historyIndex = targetIndex;
+        const applied = applyHistorySnapshot(targetIndex);
+        if (applied) {
+            updateUndoRedoButtons();
+        }
+        return applied;
+    }
+
+    function resetHistoryStack() {
+        historyStack.length = 0;
+        historyIndex = -1;
+        pushHistorySnapshot(true);
+        updateUndoRedoButtons();
+    }
+
     function triggerCursorActivity() {
         cursorHandlers.forEach(handler => {
             try {
@@ -1077,6 +1152,7 @@ function createTextareaEditor(textarea) {
             }
         });
         triggerCursorActivity();
+        pushHistorySnapshot();
     }
 
     function syncScroll() {
@@ -1241,6 +1317,16 @@ function createTextareaEditor(textarea) {
     }
 
     textarea.addEventListener('keydown', (e) => {
+        const accel = e.ctrlKey || e.metaKey;
+        if (accel && !e.altKey && e.key.toLowerCase() === 'z') {
+            e.preventDefault();
+            if (e.shiftKey) {
+                moveHistory(1);
+            } else {
+                moveHistory(-1);
+            }
+            return;
+        }
         if (e.key === 'Tab') {
             e.preventDefault();
             handleTab(e);
@@ -1323,6 +1409,7 @@ function createTextareaEditor(textarea) {
     }
 
     renderHighlights();
+    resetHistoryStack();
 
     return {
         isPlainTextarea: true,
@@ -1500,6 +1587,21 @@ function createTextareaEditor(textarea) {
         },
         operation(fn) {
             if (typeof fn === 'function') fn();
+        },
+        undo() {
+            return moveHistory(-1);
+        },
+        redo() {
+            return moveHistory(1);
+        },
+        canUndo() {
+            return historyIndex > 0;
+        },
+        canRedo() {
+            return historyIndex >= 0 && historyIndex < historyStack.length - 1;
+        },
+        clearHistory() {
+            resetHistoryStack();
         }
     };
 }
@@ -1595,6 +1697,20 @@ function setMarkdownControlsDisabled(disabled) {
     if (disabled) {
         if (headingOptionsEl) headingOptionsEl.classList.add('hidden');
         if (formulaOptionsEl) formulaOptionsEl.classList.add('hidden');
+    }
+    updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons() {
+    const undoAvailable = Boolean(markdownEditor && typeof markdownEditor.canUndo === 'function' && markdownEditor.canUndo());
+    const redoAvailable = Boolean(markdownEditor && typeof markdownEditor.canRedo === 'function' && markdownEditor.canRedo());
+    if (undoButtonEl) {
+        undoButtonEl.toggleAttribute('disabled', !undoAvailable);
+        undoButtonEl.setAttribute('aria-disabled', undoAvailable ? 'false' : 'true');
+    }
+    if (redoButtonEl) {
+        redoButtonEl.toggleAttribute('disabled', !redoAvailable);
+        redoButtonEl.setAttribute('aria-disabled', redoAvailable ? 'false' : 'true');
     }
 }
 
@@ -1831,6 +1947,10 @@ function switchTo(id) {
             scroller.scrollLeft = 0;
         }
     }
+    if (typeof markdownEditor.clearHistory === 'function') {
+        markdownEditor.clearHistory();
+    }
+    updateUndoRedoButtons();
     doc.md = markdownEditor.getValue();
     doc.lastSaved = normalizeNewlines(doc.lastSaved || doc.md);
     updateHtml();
@@ -1869,6 +1989,10 @@ function closeDoc(id) {
         } else {
             currentId = null;
             markdownEditor.setValue('');
+            if (typeof markdownEditor.clearHistory === 'function') {
+                markdownEditor.clearHistory();
+            }
+            updateUndoRedoButtons();
             updateHtml();
         }
     }
@@ -2598,6 +2722,8 @@ window.onload = () => {
 
     applyCopyActionState(currentCopyAction, { persist: false });
 
+    undoButtonEl = document.getElementById('undo-btn');
+    redoButtonEl = document.getElementById('redo-btn');
     const headingBtn = document.getElementById('heading-btn');
     const headingOptions = document.getElementById('heading-options');
     const headingDropdownContainer = document.getElementById('heading-dropdown-container');
@@ -2634,6 +2760,24 @@ window.onload = () => {
         if (openEdicuatexBtn) buttons.add(openEdicuatexBtn);
         return Array.from(buttons);
     })();
+    if (undoButtonEl) {
+        undoButtonEl.addEventListener('click', () => {
+            if (markdownEditor && typeof markdownEditor.undo === 'function') {
+                markdownEditor.undo();
+                markdownEditor.focus();
+                updateUndoRedoButtons();
+            }
+        });
+    }
+    if (redoButtonEl) {
+        redoButtonEl.addEventListener('click', () => {
+            if (markdownEditor && typeof markdownEditor.redo === 'function') {
+                markdownEditor.redo();
+                markdownEditor.focus();
+                updateUndoRedoButtons();
+            }
+        });
+    }
     setMarkdownControlsDisabled(false);
 
     const readFocusModePreference = () => {
@@ -3524,6 +3668,7 @@ window.onload = () => {
     if (markdownEditor) {
         updateMarkdownCharCounter(markdownEditor.getValue());
     }
+    updateUndoRedoButtons();
     captureMarkdownSelectionFromTextarea();
     document.addEventListener('paste', handleEditorPaste, true);
 
@@ -3776,6 +3921,21 @@ window.onload = () => {
             const next = event.relatedTarget;
             if (next && htmlOutput.contains(next)) return;
             setMarkdownControlsDisabled(false);
+        });
+        htmlOutput.addEventListener('keydown', (event) => {
+            if (!markdownEditor) return;
+            const accel = event.ctrlKey || event.metaKey;
+            if (!accel || event.altKey) return;
+            if (event.key.toLowerCase() !== 'z') return;
+            event.preventDefault();
+            if (event.shiftKey) {
+                if (typeof markdownEditor.redo === 'function') {
+                    markdownEditor.redo();
+                }
+            } else if (typeof markdownEditor.undo === 'function') {
+                markdownEditor.undo();
+            }
+            updateUndoRedoButtons();
         });
     }
 
@@ -4056,6 +4216,7 @@ window.onload = () => {
       htmlOutput.scrollTop = lineRatio * (htmlOutput.scrollHeight - htmlOutput.clientHeight);
     }
     markdownEditor.on('change', () => {
+      updateUndoRedoButtons();
       if (skipNextMarkdownSync) {
         skipNextMarkdownSync = false;
         return;

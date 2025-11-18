@@ -72,6 +72,8 @@
   "replace_input_placeholder": "Substituír por...",
   "replace_one_btn_title": "Substituír",
   "replace_all_btn_title": "Substituír todo",
+  "undo_btn_title": "Desfacer (Ctrl+Z)",
+  "redo_btn_title": "Refacer (Ctrl+Shift+Z)",
   "bold_btn_title": "Negriña (Ctrl+B)",
   "italic_btn_title": "Cursiva (Ctrl+I)",
   "heading_btn_title": "Encabezado (Ctrl+1..6)",

@@ -72,6 +72,8 @@
   "replace_input_placeholder": "Ordezkatu honekin...",
   "replace_one_btn_title": "Ordezkatu",
   "replace_all_btn_title": "Ordezkatu dena",
+  "undo_btn_title": "Desegin (Ktrl+Z)",
+  "redo_btn_title": "Berregin (Ktrl+Shift+Z)",
   "bold_btn_title": "Lodia (Ktrl+B)",
   "italic_btn_title": "Etzana (Ktrl+I)",
   "heading_btn_title": "Goiburua (Ktrl+1..6)",

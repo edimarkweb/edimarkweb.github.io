@@ -72,6 +72,8 @@
   "replace_input_placeholder": "Replace with...",
   "replace_one_btn_title": "Replace",
   "replace_all_btn_title": "Replace all",
+  "undo_btn_title": "Undo (Ctrl+Z)",
+  "redo_btn_title": "Redo (Ctrl+Shift+Z)",
   "bold_btn_title": "Bold (Ctrl+B)",
   "italic_btn_title": "Italic (Ctrl+I)",
   "heading_btn_title": "Heading (Ctrl+1..6)",

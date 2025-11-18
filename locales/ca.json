@@ -72,6 +72,8 @@
   "replace_input_placeholder": "Reemplaçar amb...",
   "replace_one_btn_title": "Reemplaçar",
   "replace_all_btn_title": "Reemplaçar-ho tot",
+  "undo_btn_title": "Desfer (Ctrl+Z)",
+  "redo_btn_title": "Refer (Ctrl+Shift+Z)",
   "bold_btn_title": "Negreta (Ctrl+B)",
   "italic_btn_title": "Cursiva (Ctrl+I)",
   "heading_btn_title": "Encapçalament (Ctrl+1..6)",
