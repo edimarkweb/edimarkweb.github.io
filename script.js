@@ -118,6 +118,7 @@ function sanitizeHtmlForMarkdown(html) {
 const MARKDOWN_ESCAPABLE_CHARS = new Set("!\"#$%&'()*+,./:;<=>?@[\\]^_`{|}~-");
 const MATH_PLACEHOLDER_PREFIX = '@@EDIMATH';
 const MATH_PLACEHOLDER_SUFFIX = '@@';
+const INLINE_MATH_DELIMITERS = ['\\(', '\\)', '\\[', '\\]', '$$', '\\begin{', '\\end{'];
 
 function preserveMarkdownEscapes(text) {
     if (typeof text !== 'string') return '';
@@ -161,11 +162,41 @@ function normalizeMathEscapes(markdown) {
     if (typeof markdown !== 'string' || !markdown.includes('\\')) return markdown;
     const { text: contentWithoutMath, segments } = protectMathSegments(markdown);
     if (!segments.length) return markdown;
+    const mathDelimiters = [
+        { open: '\\[', close: '\\]' },
+        { open: '\\(', close: '\\)' },
+        { open: '$$', close: '$$' },
+        { open: '$', close: '$' }
+    ];
+
     const normalizedSegments = segments.map(segment => {
         let updated = segment.replace(/\\\\([A-Za-z])/g, '\\$1');
         updated = updated.replace(/\\([_^])/g, '$1');
         updated = updated.replace(/\\([-+*/=\\.])/g, '$1');
         updated = updated.replace(/\\(\d)/g, '$1');
+        for (const { open, close } of mathDelimiters) {
+            if (updated.startsWith(open) && updated.endsWith(close) && updated.length > open.length + close.length) {
+                const body = updated.slice(open.length, updated.length - close.length);
+                const chars = Array.from(body);
+                let i = 0;
+                const result = [];
+                while (i < chars.length) {
+                    const ch = chars[i];
+                    if (ch === '\\' && i + 1 < chars.length && (chars[i + 1] === '[' || chars[i + 1] === ']')) {
+                        const prev = chars.slice(Math.max(0, i - 5), i).join('');
+                        if (!/(?:\\begin|\\end)$/.test(prev)) {
+                            result.push(chars[i + 1]);
+                            i += 2;
+                            continue;
+                        }
+                    }
+                    result.push(ch);
+                    i += 1;
+                }
+                updated = `${open}${result.join('')}${close}`;
+                break;
+            }
+        }
         return updated;
     });
     return restoreMathSegments(contentWithoutMath, normalizedSegments);
@@ -174,6 +205,17 @@ function normalizeMathEscapes(markdown) {
 function normalizeNumberedListEscapes(markdown) {
     if (typeof markdown !== 'string' || markdown.indexOf('\\.') === -1) return markdown;
     return markdown.replace(/(\d)\\\.(?=\s)/g, '$1.');
+}
+
+function hasInlineMathDelimiters(text) {
+    if (typeof text !== 'string' || text.length === 0) return false;
+    return INLINE_MATH_DELIMITERS.some(token => text.includes(token));
+}
+
+function lostInlineMathDelimiters(original, converted) {
+    if (!original) return false;
+    if (!converted) return true;
+    return INLINE_MATH_DELIMITERS.some(token => original.includes(token) && !converted.includes(token));
 }
 
 function estimateBase64Bytes(data) {
@@ -419,20 +461,25 @@ function isPasteTargetWithinEditors(target) {
 }
 
 function convertHtmlSnippetToMarkdown(html, plain) {
+    const plainNormalized = typeof plain === 'string' && plain ? normalizeNewlines(plain) : '';
     const sanitized = typeof html === 'string' ? sanitizeHtmlForMarkdown(html) : '';
     if (turndownService && sanitized && sanitized.trim()) {
         try {
             const md = turndownService.turndown(sanitized);
             if (md && md.trim()) {
                 const mathNormalized = normalizeMathEscapes(md);
-                return normalizeNumberedListEscapes(mathNormalized);
+                const markdownResult = normalizeNumberedListEscapes(mathNormalized);
+                if (plainNormalized && hasInlineMathDelimiters(plainNormalized) && lostInlineMathDelimiters(plainNormalized, markdownResult)) {
+                    return plainNormalized;
+                }
+                return markdownResult;
             }
         } catch (err) {
             console.warn('No se pudo convertir HTML a Markdown:', err);
         }
     }
-    if (plain && plain.trim()) {
-        return normalizeNewlines(plain);
+    if (plainNormalized) {
+        return plainNormalized;
     }
     return '';
 }
