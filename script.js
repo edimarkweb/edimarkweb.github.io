@@ -164,11 +164,16 @@ function normalizeMathEscapes(markdown) {
     const normalizedSegments = segments.map(segment => {
         let updated = segment.replace(/\\\\([A-Za-z])/g, '\\$1');
         updated = updated.replace(/\\([_^])/g, '$1');
-        updated = updated.replace(/\\([-+*/=])/g, '$1');
+        updated = updated.replace(/\\([-+*/=\\.])/g, '$1');
         updated = updated.replace(/\\(\d)/g, '$1');
         return updated;
     });
     return restoreMathSegments(contentWithoutMath, normalizedSegments);
+}
+
+function normalizeNumberedListEscapes(markdown) {
+    if (typeof markdown !== 'string' || markdown.indexOf('\\.') === -1) return markdown;
+    return markdown.replace(/(\d)\\\.(?=\s)/g, '$1.');
 }
 
 function estimateBase64Bytes(data) {
@@ -418,7 +423,10 @@ function convertHtmlSnippetToMarkdown(html, plain) {
     if (turndownService && sanitized && sanitized.trim()) {
         try {
             const md = turndownService.turndown(sanitized);
-            if (md && md.trim()) return normalizeMathEscapes(md);
+            if (md && md.trim()) {
+                const mathNormalized = normalizeMathEscapes(md);
+                return normalizeNumberedListEscapes(mathNormalized);
+            }
         } catch (err) {
             console.warn('No se pudo convertir HTML a Markdown:', err);
         }
