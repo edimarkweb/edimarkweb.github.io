@@ -18,6 +18,7 @@ const BASE64_PLACEHOLDER_PREFIX = '__EDIMARK_B64_';
 const BASE64_PLACEHOLDER_REGEX = new RegExp(`${BASE64_PLACEHOLDER_PREFIX}\\d+__`, 'g');
 const BASE64_IMAGE_REGEX = /!\[([^\]]*?)\]\(\s*(data:image\/([a-zA-Z0-9.+-]+);base64,)([^)\s]+)([^)]*)\)/g;
 const BASE64_TEST_REGEX = /data:image\/[a-zA-Z0-9.+-]+;base64,/i;
+const SIMPLE_TEXT_HTML_TAGS = new Set(['p', 'div', 'span', 'br']);
 
 let edicuatexWindow = null;
 let edicuatexOrigin = null;
@@ -163,6 +164,8 @@ function normalizeMathEscapes(markdown) {
     const normalizedSegments = segments.map(segment => {
         let updated = segment.replace(/\\\\([A-Za-z])/g, '\\$1');
         updated = updated.replace(/\\([_^])/g, '$1');
+        updated = updated.replace(/\\([-+*/=])/g, '$1');
+        updated = updated.replace(/\\(\d)/g, '$1');
         return updated;
     });
     return restoreMathSegments(contentWithoutMath, normalizedSegments);
@@ -332,6 +335,25 @@ function hasMeaningfulHtmlContent(html) {
     return /<([a-z][\w-]*)(\s|>)/i.test(cleaned);
 }
 
+function isPlainTextClipboardHtml(fragment) {
+    if (typeof fragment !== 'string' || fragment.trim().length === 0) return false;
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return false;
+    const container = document.createElement('div');
+    container.innerHTML = fragment;
+    const elements = container.querySelectorAll('*');
+    if (elements.length === 0) return false;
+    for (const element of elements) {
+        const tagName = element.tagName ? element.tagName.toLowerCase() : '';
+        if (!SIMPLE_TEXT_HTML_TAGS.has(tagName)) {
+            return false;
+        }
+        if (element.attributes && element.attributes.length > 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 function classifyClipboardDataPayload(clipboardData) {
     if (!clipboardData || typeof clipboardData.getData !== 'function') return null;
     const plain = clipboardData.getData('text/plain') || '';
@@ -341,11 +363,18 @@ function classifyClipboardDataPayload(clipboardData) {
     const hasFiles = files.length > 0;
     const hasRtf = clipboardData.types && Array.from(clipboardData.types).some(type => String(type).toLowerCase() === 'text/rtf');
     const isRichHtml = hasMeaningfulHtmlContent(rawHtml);
-    if (hasFiles || hasRtf || isRichHtml) {
+    const htmlLooksPlain = htmlFragment && isPlainTextClipboardHtml(htmlFragment);
+    if (hasFiles || hasRtf) {
+        return { target: 'html', html: htmlFragment, plain, files };
+    }
+    if (isRichHtml && (!htmlLooksPlain || !plain)) {
         return { target: 'html', html: htmlFragment, plain, files };
     }
     if (plain) {
         return { target: 'markdown', plain };
+    }
+    if (htmlFragment) {
+        return { target: 'html', html: htmlFragment, plain, files };
     }
     return null;
 }
