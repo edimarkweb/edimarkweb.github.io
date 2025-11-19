@@ -142,7 +142,6 @@
 
             <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="view-controls-group">
                 <button id="theme-toggle-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="theme_toggle_btn_aria_label" aria-label="Cambiar tema"></button>
-                <button id="layout-toggle-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="layout_toggle_btn_title" title="Cambiar diseño (Ctrl+L)"><i data-lucide="layout"></i></button>
                 <button id="toggle-width-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="toggle_width_btn_title" title="Expandir / Contraer ancho"><i data-lucide="maximize"></i></button>
                 <button id="desktop-window-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="desktop_window_btn_title" title="Abrir como ventana independiente"><i data-lucide="app-window"></i></button>
             </div>
@@ -266,6 +265,9 @@
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-lg font-medium text-slate-700 dark:text-slate-200" data-i18n-key="markdown_panel_title">Markdown</h2>
                     <div class="flex items-center gap-2">
+                        <button id="markdown-layout-btn" type="button" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="markdown_panel_layout_maximize" title="Maximizar panel Markdown" aria-pressed="false">
+                            <i data-lucide="arrow-right"></i>
+                        </button>
                         <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
                         <button id="copy-md-btn" class="copy-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="copy_md_btn_title" title="Copiar Markdown"><i data-lucide="copy"></i></button>
                     </div>
@@ -286,6 +288,9 @@
                 <div class="flex justify-between items-center mb-2">
                     <h2 id="html-panel-title" class="text-lg font-medium text-slate-700 dark:text-slate-200" data-i18n-key="html_panel_title">Previsualización</h2>
                     <div class="flex items-center gap-2">
+                        <button id="html-layout-btn" type="button" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="preview_panel_layout_maximize" title="Maximizar panel de previsualización" aria-pressed="false">
+                            <i data-lucide="arrow-left"></i>
+                        </button>
                         <button id="view-toggle-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="view_toggle_btn_title" title="Cambiar a vista de código"><i data-lucide="code-2"></i></button>
                         <div id="preview-copy-container" class="relative inline-flex items-center">
                             <button type="button" id="copy-html-btn" class="action-btn flex items-center gap-2 px-3 py-2 focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="copy_html_btn_title" title="Copiar HTML">

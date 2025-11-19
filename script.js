@@ -2530,9 +2530,8 @@ function applyLayout(layout) {
   const mdPanel = document.getElementById('markdown-panel');
   const htmlPanel = document.getElementById('html-panel');
   const gutters = document.querySelectorAll('.gutter');
-  const layoutToggleBtn = document.getElementById('layout-toggle-btn');
-  
-  layoutToggleBtn.setAttribute('aria-pressed', layout !== 'dual');
+  const markdownLayoutBtn = document.getElementById('markdown-layout-btn');
+  const htmlLayoutBtn = document.getElementById('html-layout-btn');
 
   switch (layout) {
     case 'md':
@@ -2554,15 +2553,41 @@ function applyLayout(layout) {
       mdPanel.style.width = '50%';
       htmlPanel.style.width = '50%';
   }
-  
-  const iconMap = { dual: 'layout', md: 'align-left', html: 'align-right' };
-  layoutToggleBtn.innerHTML = `<i data-lucide="${iconMap[layout]}"></i>`;
+
+  const mdIsFull = layout === 'md';
+  const htmlIsFull = layout === 'html';
+  if (markdownLayoutBtn) {
+    const mdKey = mdIsFull ? 'markdown_panel_layout_restore' : 'markdown_panel_layout_maximize';
+    markdownLayoutBtn.setAttribute('aria-pressed', mdIsFull ? 'true' : 'false');
+    markdownLayoutBtn.setAttribute('data-i18n-key', mdKey);
+    markdownLayoutBtn.title = getTranslation(mdKey, mdIsFull ? 'Restaurar panel Markdown' : 'Maximizar panel Markdown');
+    const mdIcon = mdIsFull ? 'arrow-left-right' : 'arrow-right';
+    markdownLayoutBtn.innerHTML = `<i data-lucide="${mdIcon}"></i>`;
+  }
+  if (htmlLayoutBtn) {
+    const htmlKey = htmlIsFull ? 'preview_panel_layout_restore' : 'preview_panel_layout_maximize';
+    htmlLayoutBtn.setAttribute('aria-pressed', htmlIsFull ? 'true' : 'false');
+    htmlLayoutBtn.setAttribute('data-i18n-key', htmlKey);
+    htmlLayoutBtn.title = getTranslation(htmlKey, htmlIsFull ? 'Restaurar panel de previsualización' : 'Maximizar panel de previsualización');
+    const htmlIcon = htmlIsFull ? 'arrow-left-right' : 'arrow-left';
+    htmlLayoutBtn.innerHTML = `<i data-lucide="${htmlIcon}"></i>`;
+  }
   if(window.lucide) lucide.createIcons();
 
   setTimeout(() => {
     if (layout !== 'html') markdownEditor.refresh();
     if (layout !== 'md') htmlEditor.refresh();
   }, 10);
+}
+
+function cycleLayout(step = 1) {
+  const layouts = ['dual', 'md', 'html'];
+  if (!layouts.includes(currentLayout)) {
+    currentLayout = 'dual';
+  }
+  const idx = layouts.indexOf(currentLayout);
+  const nextIdx = (idx + step + layouts.length) % layouts.length;
+  applyLayout(layouts[nextIdx]);
 }
 
 function applyFontSize(px) {
@@ -2583,6 +2608,8 @@ window.onload = () => {
     document.addEventListener('selectionchange', captureHtmlSelection);
     const viewToggleBtn = document.getElementById('view-toggle-btn');
     const htmlPanelTitle = document.getElementById('html-panel-title');
+    const markdownLayoutBtn = document.getElementById('markdown-layout-btn');
+    const htmlLayoutBtn = document.getElementById('html-layout-btn');
     const toolbar = document.getElementById('toolbar');
     const focusModeToggleBtn = document.getElementById('focus-mode-toggle');
     const toolbarActionsEl = document.getElementById('toolbar-actions');
@@ -2732,7 +2759,6 @@ window.onload = () => {
     const formulaOptions = document.getElementById('formula-options');
     const formulaOptionButtons = formulaOptions ? Array.from(formulaOptions.querySelectorAll('[data-format]')) : [];
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
-    const layoutToggleBtn = document.getElementById('layout-toggle-btn');
     const languageSelectEl = document.getElementById('language-select');
     const languageWrapper = document.getElementById('language-select-wrapper');
     const fontSizeSelect = document.getElementById('font-size-select');
@@ -3826,11 +3852,16 @@ window.onload = () => {
         else if (tab) { switchTo(tab.dataset.id); }
     });
 
-    layoutToggleBtn.addEventListener('click', () => {
-      const layouts = ['dual', 'md', 'html'];
-      const next = layouts[(layouts.indexOf(currentLayout) + 1) % layouts.length];
-      applyLayout(next);
-    });
+    if (markdownLayoutBtn) {
+      markdownLayoutBtn.addEventListener('click', () => {
+        applyLayout(currentLayout === 'md' ? 'dual' : 'md');
+      });
+    }
+    if (htmlLayoutBtn) {
+      htmlLayoutBtn.addEventListener('click', () => {
+        applyLayout(currentLayout === 'html' ? 'dual' : 'html');
+      });
+    }
 
     viewToggleBtn.addEventListener('click', () => {
         const isPreviewVisible = htmlOutput.style.display !== 'none';
@@ -4141,7 +4172,7 @@ window.onload = () => {
             switch (e.key.toLowerCase()) {
                 case 's': e.preventDefault(); saveBtn.click(); break;
                 case 'p': e.preventDefault(); printBtn.click(); break;
-                case 'l': e.preventDefault(); layoutToggleBtn.click(); break;
+                case 'l': e.preventDefault(); cycleLayout(); break;
                 case 'h': e.preventDefault(); openManualDoc(e.shiftKey); break;
                 case 'v':
                     if (e.shiftKey) {
