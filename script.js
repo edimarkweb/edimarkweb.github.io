@@ -2157,7 +2157,8 @@ function updateMarkdown() {
     const canUpdateMarkdown = !markdownEditor.hasFocus() || forceMarkdownUpdate;
     if (turndownService && canUpdateMarkdown) {
         const normalizedPreview = sanitizeHtmlForMarkdown(previewHtml);
-        const markdownFromPreview = turndownService.turndown(normalizedPreview);
+        let markdownFromPreview = turndownService.turndown(normalizedPreview);
+        markdownFromPreview = normalizeMathEscapes(markdownFromPreview);
         const currentMarkdown = markdownEditor.getValue();
         if (currentMarkdown !== markdownFromPreview) {
             skipNextMarkdownSync = true;
@@ -4011,11 +4012,6 @@ window.onload = () => {
     });
     if (htmlOutput) {
         htmlOutput.addEventListener('focusin', () => setMarkdownControlsDisabled(true));
-        htmlOutput.addEventListener('focusout', (event) => {
-            const next = event.relatedTarget;
-            if (next && htmlOutput.contains(next)) return;
-            setMarkdownControlsDisabled(false);
-        });
         htmlOutput.addEventListener('keydown', (event) => {
             if (!markdownEditor) return;
             const accel = event.ctrlKey || event.metaKey;
