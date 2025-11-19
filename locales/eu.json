@@ -17,6 +17,7 @@
   "settings_menu_btn_title": "Ezarpenak",
   "settings_menu_btn_text": "Ezarpenak",
   "language_select_label": "Hizkuntza",
+  "markdown_controls_disabled_hint": "Markdown panelean testua editatuz aldatu formatua.",
   "markdown_panel_layout_maximize": "Markdown panela maximizatu",
   "markdown_panel_layout_restore": "Markdown panela leheneratu",
   "preview_panel_layout_maximize": "Aurrebista panela maximizatu",

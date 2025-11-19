@@ -17,6 +17,7 @@
   "settings_menu_btn_title": "Configuració",
   "settings_menu_btn_text": "Configuració",
   "language_select_label": "Idioma",
+  "markdown_controls_disabled_hint": "Edita el text al panell Markdown per modificar el format.",
   "markdown_panel_layout_maximize": "Maximitzar el panell Markdown",
   "markdown_panel_layout_restore": "Restaurar el panell Markdown",
   "preview_panel_layout_maximize": "Maximitzar el panell de previsualització",

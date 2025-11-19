@@ -494,17 +494,26 @@ body.desktop-mode #main-container {
 .toolbar-btn:hover, .copy-btn:hover { background-color: #e2e8f0; color: #1e293b; }
 .dark .toolbar-btn, .dark .copy-btn { color: #94a3b8; }
 .dark .toolbar-btn:hover, .dark .copy-btn:hover { background-color: #334155; color: #e2e8f0; }
-.toolbar-btn[disabled], .toolbar-btn[aria-disabled="true"] {
+.toolbar-btn[disabled] {
     opacity: 0.45;
     cursor: not-allowed;
     pointer-events: none;
     background-color: transparent !important;
     color: #94a3b8 !important;
 }
-.dark .toolbar-btn[disabled], .dark .toolbar-btn[aria-disabled="true"] {
+.toolbar-btn[aria-disabled="true"], .toolbar-btn[data-controls-disabled="true"] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background-color: transparent !important;
+    color: #94a3b8 !important;
+}
+.toolbar-btn[data-controls-disabled="true"] {
+    pointer-events: auto;
+}
+.dark .toolbar-btn[disabled], .dark .toolbar-btn[aria-disabled="true"], .dark .toolbar-btn[data-controls-disabled="true"] {
     color: #64748b !important;
 }
-.toolbar-btn[disabled] i, .toolbar-btn[aria-disabled="true"] i {
+.toolbar-btn[disabled] i, .toolbar-btn[aria-disabled="true"] i, .toolbar-btn[data-controls-disabled="true"] i {
     opacity: 0.85;
 }
 

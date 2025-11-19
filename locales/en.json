@@ -17,6 +17,7 @@
   "settings_menu_btn_title": "Settings",
   "settings_menu_btn_text": "Settings",
   "language_select_label": "Language",
+  "markdown_controls_disabled_hint": "Edit the text in the Markdown panel to change the formatting.",
   "markdown_panel_layout_maximize": "Maximize Markdown panel",
   "markdown_panel_layout_restore": "Restore Markdown panel",
   "preview_panel_layout_maximize": "Maximize preview panel",

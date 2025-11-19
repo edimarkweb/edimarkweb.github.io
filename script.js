@@ -1689,10 +1689,53 @@ window.__updateCharCounterLabel = () => {
 function setMarkdownControlsDisabled(disabled) {
     if (markdownControlsDisabled === disabled) return;
     markdownControlsDisabled = disabled;
+    const disabledHint = getTranslation(
+        'markdown_controls_disabled_hint',
+        'Edita el texto en el panel Markdown para modificar el formato.'
+    );
     markdownControlButtons.forEach(btn => {
         if (!btn) return;
-        btn.toggleAttribute('disabled', disabled);
-        btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+        if (disabled) {
+            btn.setAttribute('data-controls-disabled', 'true');
+        } else {
+            btn.removeAttribute('data-controls-disabled');
+        }
+        if (disabled) {
+            btn.setAttribute('aria-disabled', 'true');
+        } else {
+            btn.removeAttribute('aria-disabled');
+        }
+        if (disabled) {
+            if (typeof btn.dataset.disabledHintOriginalTitle === 'undefined') {
+                const originalTitle = btn.getAttribute('title');
+                btn.dataset.disabledHintOriginalTitle = originalTitle !== null ? originalTitle : '';
+            }
+            if (typeof btn.dataset.disabledHintOriginalAria === 'undefined') {
+                const originalAria = btn.getAttribute('aria-label');
+                btn.dataset.disabledHintOriginalAria = originalAria !== null ? originalAria : '';
+            }
+            btn.setAttribute('title', disabledHint);
+            btn.setAttribute('aria-label', disabledHint);
+        } else {
+            if (typeof btn.dataset.disabledHintOriginalTitle !== 'undefined') {
+                const originalTitle = btn.dataset.disabledHintOriginalTitle;
+                if (originalTitle) {
+                    btn.setAttribute('title', originalTitle);
+                } else {
+                    btn.removeAttribute('title');
+                }
+                delete btn.dataset.disabledHintOriginalTitle;
+            }
+            if (typeof btn.dataset.disabledHintOriginalAria !== 'undefined') {
+                const originalAria = btn.dataset.disabledHintOriginalAria;
+                if (originalAria) {
+                    btn.setAttribute('aria-label', originalAria);
+                } else {
+                    btn.removeAttribute('aria-label');
+                }
+                delete btn.dataset.disabledHintOriginalAria;
+            }
+        }
     });
     if (disabled) {
         if (headingOptionsEl) headingOptionsEl.classList.add('hidden');
@@ -2097,7 +2140,7 @@ function updateMarkdown() {
     const htmlOutput = document.getElementById('html-output');
     if (!htmlOutput) return;
     isUpdating = true;
-    const previewHtml = htmlOutput.innerHTML;
+    const previewHtml = buildHtmlWithTex();
     if (htmlEditor && !htmlEditor.hasFocus()) {
         const currentHtml = htmlEditor.getValue();
         if (currentHtml !== previewHtml) {
@@ -2894,6 +2937,10 @@ window.onload = () => {
     if (formulaBtn) {
         formulaBtn.setAttribute('aria-expanded', 'false');
         formulaBtn.addEventListener('click', (event) => {
+            if (formulaBtn.dataset.controlsDisabled === 'true') {
+                event.preventDefault();
+                return;
+            }
             event.preventDefault();
             event.stopPropagation();
             if (!formulaOptions) return;
@@ -2986,7 +3033,13 @@ window.onload = () => {
     }
 
     if (openEdicuatexBtn) {
-        openEdicuatexBtn.addEventListener('click', openEdicuatex);
+        openEdicuatexBtn.addEventListener('click', (event) => {
+            if (openEdicuatexBtn.dataset.controlsDisabled === 'true') {
+                event.preventDefault();
+                return;
+            }
+            openEdicuatex(event);
+        });
     }
 
     if (exportMenuBtn) {
@@ -3815,6 +3868,11 @@ window.onload = () => {
     // --- Eventos de la barra de herramientas ---
     toolbar.addEventListener('click', (e) => {
         const button = e.target.closest('button');
+        if (button && button.dataset.controlsDisabled === 'true') {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
         if (button && button.dataset.format) {
             applyFormat(button.dataset.format);
             if (button.dataset.format.startsWith('heading-')) {
@@ -3827,6 +3885,10 @@ window.onload = () => {
     });
     
     headingBtn.addEventListener('click', (e) => {
+        if (headingBtn.dataset.controlsDisabled === 'true') {
+            e.preventDefault();
+            return;
+        }
         e.stopPropagation();
         headingOptions.classList.toggle('hidden');
     });
