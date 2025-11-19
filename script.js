@@ -126,6 +126,12 @@ function sanitizeHtmlForMarkdown(html) {
 const MARKDOWN_ESCAPABLE_CHARS = new Set("!\"#$%&'()*+,./:;<=>?@[\\]^_`{|}~-");
 const MATH_PLACEHOLDER_PREFIX = '@@EDIMATH';
 const MATH_PLACEHOLDER_SUFFIX = '@@';
+const MATH_DELIMITERS = [
+    { open: '\\[', close: '\\]' },
+    { open: '\\(', close: '\\)' },
+    { open: '$$', close: '$$' },
+    { open: '$', close: '$' }
+];
 
 function preserveMarkdownEscapes(text) {
     if (typeof text !== 'string') return '';
@@ -165,23 +171,62 @@ function restoreMathSegments(content, segments) {
     return content.replace(placeholderPattern, (_, index) => segments[Number(index)] ?? '');
 }
 
+function parseMathSegmentInfo(segment) {
+    if (typeof segment !== 'string' || segment.length === 0) return null;
+    for (const { open, close } of MATH_DELIMITERS) {
+        if (segment.startsWith(open) && segment.endsWith(close)) {
+            return {
+                open,
+                close,
+                type: (open === '$$' || open === '\\[') ? 'display' : 'inline'
+            };
+        }
+    }
+    return null;
+}
+
+function annotateRenderedMath(container, mathSegments) {
+    if (!container || typeof container.querySelectorAll !== 'function') return;
+    const displayQueue = [];
+    const inlineQueue = [];
+    if (Array.isArray(mathSegments) && mathSegments.length) {
+        for (const segment of mathSegments) {
+            const meta = parseMathSegmentInfo(segment);
+            if (!meta) continue;
+            const payload = { ...meta, source: segment };
+            if (payload.type === 'display') displayQueue.push(payload);
+            else inlineQueue.push(payload);
+        }
+    }
+    const applyMeta = (node, meta) => {
+        if (!meta) {
+            node.removeAttribute('data-edimath-open');
+            node.removeAttribute('data-edimath-close');
+            node.removeAttribute('data-edimath-source');
+            return;
+        }
+        node.dataset.edimathOpen = meta.open;
+        node.dataset.edimathClose = meta.close;
+        node.dataset.edimathSource = meta.source;
+    };
+    const displayNodes = Array.from(container.querySelectorAll('.katex-display'));
+    displayNodes.forEach(node => applyMeta(node, displayQueue.shift() || null));
+    const inlineNodes = Array.from(container.querySelectorAll('span.katex'))
+        .filter(node => !node.closest('.katex-display'));
+    inlineNodes.forEach(node => applyMeta(node, inlineQueue.shift() || null));
+}
+
 function normalizeMathEscapes(markdown) {
     if (typeof markdown !== 'string' || !markdown.includes('\\')) return markdown;
     const { text: contentWithoutMath, segments } = protectMathSegments(markdown);
     if (!segments.length) return markdown;
-    const mathDelimiters = [
-        { open: '\\[', close: '\\]' },
-        { open: '\\(', close: '\\)' },
-        { open: '$$', close: '$$' },
-        { open: '$', close: '$' }
-    ];
 
     const normalizedSegments = segments.map(segment => {
         let updated = segment.replace(/\\\\([A-Za-z])/g, '\\$1');
         updated = updated.replace(/\\([_^])/g, '$1');
         updated = updated.replace(/\\([-+*/=\\.])/g, '$1');
         updated = updated.replace(/\\(\d)/g, '$1');
-        for (const { open, close } of mathDelimiters) {
+        for (const { open, close } of MATH_DELIMITERS) {
             if (updated.startsWith(open) && updated.endsWith(close) && updated.length > open.length + close.length) {
                 const body = updated.slice(open.length, updated.length - close.length);
                 const chars = Array.from(body);
@@ -2123,6 +2168,7 @@ function updateHtml() {
                     {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}
                 ], throwOnError: false
             });
+            annotateRenderedMath(htmlOutput, mathSegments);
         }
     } catch (error) { console.warn("KaTeX no está listo.", error); }
     
@@ -2156,8 +2202,10 @@ function updateMarkdown() {
     }
     const canUpdateMarkdown = !markdownEditor.hasFocus() || forceMarkdownUpdate;
     if (turndownService && canUpdateMarkdown) {
-        const normalizedPreview = sanitizeHtmlForMarkdown(previewHtml);
-        let markdownFromPreview = turndownService.turndown(normalizedPreview);
+        const sanitizedPreview = sanitizeHtmlForMarkdown(previewHtml);
+        const { text: previewWithoutMath, segments: previewMathSegments } = protectMathSegments(sanitizedPreview);
+        let markdownFromPreview = turndownService.turndown(previewWithoutMath);
+        markdownFromPreview = restoreMathSegments(markdownFromPreview, previewMathSegments);
         markdownFromPreview = normalizeMathEscapes(markdownFromPreview);
         const currentMarkdown = markdownEditor.getValue();
         if (currentMarkdown !== markdownFromPreview) {
@@ -2553,16 +2601,28 @@ async function writeTextToClipboard(text) {
 
 function buildHtmlWithTex() {
   const htmlOutput = document.getElementById('html-output');
+  if (!htmlOutput) return '';
   const clone = htmlOutput.cloneNode(true);
-  clone.querySelectorAll('.katex-display').forEach(div => {
-    const tex = div.querySelector('annotation[encoding="application/x-tex"]')?.textContent || '';
-    div.replaceWith(document.createTextNode(`\n\\[\n${tex}\n\\]\n`));
-  });
-  clone.querySelectorAll('span.katex').forEach(span => {
-    if (span.closest('.katex-display')) return;
-    const tex = span.querySelector('annotation[encoding="application/x-tex"]')?.textContent || '';
-    span.replaceWith(document.createTextNode(`$${tex}$`));
-  });
+  const inlineFallback = tex => `$${tex}$`;
+  const displayFallback = tex => `\n\\[\n${tex}\n\\]\n`;
+  const replaceNode = (node, fallbackBuilder) => {
+    const tex = node.querySelector('annotation[encoding="application/x-tex"]')?.textContent || '';
+    const dataset = node.dataset || {};
+    let replacement = '';
+    if (dataset.edimathSource) {
+      replacement = dataset.edimathSource;
+    } else if (dataset.edimathOpen && dataset.edimathClose) {
+      replacement = `${dataset.edimathOpen}${tex}${dataset.edimathClose}`;
+    } else {
+      replacement = fallbackBuilder(tex);
+    }
+    node.replaceWith(document.createTextNode(replacement));
+  };
+  const displayNodes = Array.from(clone.querySelectorAll('.katex-display'));
+  displayNodes.forEach(node => replaceNode(node, displayFallback));
+  const inlineNodes = Array.from(clone.querySelectorAll('span.katex'))
+    .filter(node => !node.closest('.katex-display'));
+  inlineNodes.forEach(node => replaceNode(node, inlineFallback));
   return clone.innerHTML;
 }
 
