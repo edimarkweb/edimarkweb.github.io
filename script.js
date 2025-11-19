@@ -2653,7 +2653,7 @@ window.onload = () => {
         'latex-full': 'copy_menu_option_latex_full'
     };
     const copyActionFallbackTexts = {
-        html: 'Copy HTML',
+        html: 'Copy',
         'latex-preview': 'Copy LaTeX',
         'latex-full': 'Copy LaTeX (full document)'
     };
@@ -2711,8 +2711,9 @@ window.onload = () => {
         const fallback = copyActionFallbackTexts[action] || copyActionFallbackTexts.html;
         const label = getTranslation(labelKey, fallback);
         copyHtmlBtnLabel.textContent = label;
-        copyHtmlBtn.setAttribute('title', label);
-        copyHtmlBtn.setAttribute('aria-label', label);
+        const titleText = getTranslation('copy_html_btn_title', 'Copiar HTML');
+        copyHtmlBtn.setAttribute('title', titleText);
+        copyHtmlBtn.setAttribute('aria-label', titleText);
         copyHtmlBtn.setAttribute('data-current-copy-action', action);
         snapshotDefaultButtonHtml(copyHtmlBtn);
     }
