@@ -7,6 +7,7 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
     const replaceInput = document.getElementById('replace-input');
     const closeSearchBtn = document.getElementById('close-search-btn');
     const openSearchBtn = document.getElementById('open-search-btn');
+    const regexToggleBtn = document.getElementById('search-regex-toggle-btn');
     const nextBtn = document.getElementById('search-next-btn');
     const prevBtn = document.getElementById('search-prev-btn');
     const matchesInfo = document.getElementById('search-matches-info');
@@ -21,6 +22,8 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         currentIndex: -1,
         activeEditor: null,
         queryRegex: null,
+        regexMode: false,
+        invalidRegex: false,
         overlay: null,
         currentMatchMarker: null
     };
@@ -53,6 +56,13 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         replaceRow.classList.toggle('hidden', !isHidden);
         replaceRow.classList.toggle('flex', isHidden);
         icon.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+    });
+
+    regexToggleBtn.addEventListener('click', () => {
+        state.regexMode = !state.regexMode;
+        updateRegexToggleState();
+        runSearch();
+        searchInput.focus();
     });
     
     document.addEventListener('keydown', (e) => {
@@ -99,20 +109,33 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         
         const query = searchInput.value;
         if (!query) {
+            state.invalidRegex = false;
             updateMatchesInfo();
             if (typeof editor.clearHighlights === 'function') editor.clearHighlights();
             return;
         }
 
-        state.queryRegex = buildCaseAccentInsensitiveRegex(query);
-        if (!state.queryRegex) return;
+        state.queryRegex = buildSearchRegex(query, state.regexMode);
+        if (!state.queryRegex) {
+            state.invalidRegex = true;
+            updateMatchesInfo();
+            if (typeof editor.clearHighlights === 'function') editor.clearHighlights();
+            return;
+        }
+        state.invalidRegex = false;
 
         state.overlay = createSearchOverlay(state.queryRegex);
         editor.addOverlay(state.overlay);
 
         const cursor = editor.getSearchCursor(state.queryRegex);
         while (cursor.findNext()) {
-            state.matches.push({ from: cursor.from(), to: cursor.to() });
+            const from = cursor.from();
+            const to = cursor.to();
+            state.matches.push({
+                from,
+                to,
+                text: getTextBetween(editor, from, to)
+            });
         }
 
         if (state.matches.length > 0) {
@@ -141,8 +164,8 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         
         const editor = state.activeEditor;
         const match = state.matches[state.currentIndex];
-        
-        editor.replaceRange(replaceInput.value, match.from, match.to);
+        const replacement = resolveReplacementText(match.text);
+        editor.replaceRange(replacement, match.from, match.to);
         
         runSearch();
     }
@@ -152,12 +175,14 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         if (!confirm(`¿Reemplazar todas las ${state.matches.length} coincidencias?`)) return;
 
         const editor = state.activeEditor;
-        const replaceText = replaceInput.value;
         
         editor.operation(() => {
             const cursor = editor.getSearchCursor(state.queryRegex);
             while (cursor.findNext()) {
-                cursor.replace(replaceText);
+                const from = cursor.from();
+                const to = cursor.to();
+                const matchText = getTextBetween(editor, from, to);
+                cursor.replace(resolveReplacementText(matchText));
             }
         });
         
@@ -184,7 +209,16 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
                 activeEditor.clearHighlights();
             }
         }
-        state = { matches: [], currentIndex: -1, activeEditor: null, queryRegex: null, overlay: null, currentMatchMarker: null };
+        state = {
+            ...state,
+            matches: [],
+            currentIndex: -1,
+            activeEditor: null,
+            queryRegex: null,
+            invalidRegex: false,
+            overlay: null,
+            currentMatchMarker: null
+        };
     }
 
     function highlightCurrentMatch() {
@@ -194,7 +228,7 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         const match = state.matches[state.currentIndex];
         const editor = state.activeEditor;
         if (typeof editor.setHighlights === 'function') {
-            editor.setHighlights(state.matches, state.currentIndex, searchInput.value);
+            editor.setHighlights(state.matches, state.currentIndex, state.queryRegex);
         }
         state.currentMatchMarker = editor.markText(match.from, match.to, { className: 'cm-search-current' });
         editor.scrollIntoView(match.from, 100);
@@ -202,6 +236,10 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
     }
 
     function updateMatchesInfo() {
+        if (state.invalidRegex) {
+            matchesInfo.textContent = getTranslation('search_invalid_regex', 'Regex no valida');
+            return;
+        }
         if (searchInput.value && state.matches.length > 0) {
             matchesInfo.textContent = `${state.currentIndex + 1} / ${state.matches.length}`;
         } else if (searchInput.value) {
@@ -211,27 +249,91 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         }
     }
 
+    function updateRegexToggleState() {
+        const label = state.regexMode
+            ? getTranslation('search_mode_regex_label', 'Regex')
+            : getTranslation('search_mode_literal_label', 'Texto');
+        regexToggleBtn.setAttribute('aria-pressed', String(state.regexMode));
+        regexToggleBtn.textContent = label;
+        regexToggleBtn.classList.toggle('bg-slate-200', state.regexMode);
+        regexToggleBtn.classList.toggle('text-slate-900', state.regexMode);
+        regexToggleBtn.classList.toggle('dark:bg-slate-600', state.regexMode);
+        regexToggleBtn.classList.toggle('dark:text-slate-50', state.regexMode);
+    }
+
     function buildCaseAccentInsensitiveRegex(text) {
         if (!text) return null;
-        // Escapa caracteres especiales de regex
         const escapedText = text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-        return new RegExp(escapedText, 'gi'); // 'g' para global, 'i' para insensible a mayúsculas
+        const accentInsensitiveSource = escapedText
+            .replace(/a/gi, match => match === 'A' ? '[AÀÁÂÄ]' : '[aàáâä]')
+            .replace(/e/gi, match => match === 'E' ? '[EÈÉÊË]' : '[eèéêë]')
+            .replace(/i/gi, match => match === 'I' ? '[IÌÍÎÏ]' : '[iìíîï]')
+            .replace(/o/gi, match => match === 'O' ? '[OÒÓÔÖ]' : '[oòóôö]')
+            .replace(/u/gi, match => match === 'U' ? '[UÙÚÛÜ]' : '[uùúûü]')
+            .replace(/n/gi, match => match === 'N' ? '[NÑ]' : '[nñ]');
+        return new RegExp(accentInsensitiveSource, 'gi');
+    }
+
+    function buildSearchRegex(text, regexMode) {
+        if (!text) return null;
+        if (!regexMode) {
+            return buildCaseAccentInsensitiveRegex(text);
+        }
+        try {
+            return new RegExp(text, 'gi');
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function getTextBetween(editor, from, to) {
+        if (!editor || typeof editor.getValue !== 'function') return '';
+        const content = editor.getValue();
+        const start = posToOffset(content, from);
+        const end = posToOffset(content, to);
+        return content.slice(start, end);
+    }
+
+    function posToOffset(content, pos) {
+        if (!pos) return 0;
+        const text = typeof content === 'string' ? content : '';
+        const targetLine = Math.max(0, pos.line || 0);
+        const targetCh = Math.max(0, pos.ch || 0);
+        let line = 0;
+        let offset = 0;
+        for (let i = 0; i < text.length; i += 1) {
+            if (line === targetLine) {
+                return Math.min(offset + targetCh, text.length);
+            }
+            if (text.charCodeAt(i) === 10) {
+                line += 1;
+                offset = i + 1;
+            }
+        }
+        if (line === targetLine) {
+            return Math.min(offset + targetCh, text.length);
+        }
+        return text.length;
+    }
+
+    function resolveReplacementText(matchText) {
+        const replacement = replaceInput.value;
+        if (!state.regexMode || !state.queryRegex) {
+            return replacement;
+        }
+        const flags = state.queryRegex.flags.replace(/g/g, '');
+        const singleMatchRegex = new RegExp(state.queryRegex.source, flags);
+        return String(matchText).replace(singleMatchRegex, replacement);
     }
 
     function createSearchOverlay(queryRegex) {
-        // La expresión regular para el overlay debe ser insensible a acentos
-        const accentInsensitiveSource = queryRegex.source
-            .replace(/a/gi, '[aàáâä]')
-            .replace(/e/gi, '[eèéêë]')
-            .replace(/i/gi, '[iìíîï]')
-            .replace(/o/gi, '[oòóôö]')
-            .replace(/u/gi, '[uùúûü]');
-        const accentInsensitiveRegex = new RegExp(accentInsensitiveSource, 'gi');
+        const flags = queryRegex.flags.includes('g') ? queryRegex.flags : `${queryRegex.flags}g`;
+        const overlayRegex = new RegExp(queryRegex.source, flags);
         
         return {
             token: function(stream) {
-                accentInsensitiveRegex.lastIndex = stream.pos;
-                const match = accentInsensitiveRegex.exec(stream.string);
+                overlayRegex.lastIndex = stream.pos;
+                const match = overlayRegex.exec(stream.string);
                 if (match && match.index == stream.pos) {
                     stream.pos += match[0].length || 1;
                     return "search-highlight";
@@ -243,4 +345,6 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
             }
         };
     }
+
+    updateRegexToggleState();
 }

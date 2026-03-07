@@ -961,11 +961,16 @@ function createTextareaEditor(textarea) {
     const INDENT = '  ';
     let highlightMatches = [];
     let highlightCurrent = -1;
-    let highlightQuery = '';
+    let highlightQuery = null;
     const HISTORY_LIMIT = 200;
     const historyStack = [];
     let historyIndex = -1;
     let suppressHistory = false;
+
+    function syncHighlightMetrics() {
+        const scrollbarWidth = Math.max(0, textarea.offsetWidth - textarea.clientWidth);
+        highlightLayer.style.right = `${scrollbarWidth}px`;
+    }
 
     function normalizeTextareaContent() {
         const value = textarea.value;
@@ -1052,11 +1057,18 @@ function createTextareaEditor(textarea) {
             .replace(/n/gi, match => match === 'N' ? '[NÑ]' : '[nñ]');
     }
 
-    function computeHighlights(query) {
-        if (!query) return [];
-        const source = buildAccentInsensitiveSource(query);
-        if (!source) return [];
-        const regex = new RegExp(source, 'gi');
+    function cloneRegexWithGlobal(regex) {
+        if (!(regex instanceof RegExp)) return null;
+        const flags = regex.flags.includes('g') ? regex.flags : `${regex.flags}g`;
+        return new RegExp(regex.source, flags);
+    }
+
+    function computeHighlights(queryOrRegex) {
+        if (!queryOrRegex) return [];
+        const regex = queryOrRegex instanceof RegExp
+            ? cloneRegexWithGlobal(queryOrRegex)
+            : new RegExp(buildAccentInsensitiveSource(queryOrRegex), 'gi');
+        if (!regex) return [];
         const text = textarea.value;
         const matches = [];
         let match;
@@ -1389,6 +1401,7 @@ function createTextareaEditor(textarea) {
     });
 
     textarea.addEventListener('scroll', syncScroll);
+    textarea.addEventListener('scroll', syncHighlightMetrics);
 
     textarea.addEventListener('mouseup', () => {
         requestAnimationFrame(triggerCursorActivity);
@@ -1404,6 +1417,8 @@ function createTextareaEditor(textarea) {
     textarea.addEventListener('select', () => {
         requestAnimationFrame(triggerCursorActivity);
     });
+
+    window.addEventListener('resize', syncHighlightMetrics);
 
 
     function createSearchCursor(regex) {
@@ -1453,6 +1468,7 @@ function createTextareaEditor(textarea) {
         };
     }
 
+    syncHighlightMetrics();
     renderHighlights();
     resetHistoryStack();
 
@@ -1539,15 +1555,17 @@ function createTextareaEditor(textarea) {
         removeOverlay() {
             highlightMatches = [];
             highlightCurrent = -1;
-            highlightQuery = '';
+            highlightQuery = null;
             renderHighlights();
         },
         setHighlights(_ranges, currentIndex, query) {
-            const usableQuery = typeof query === 'string' ? query.trim() : '';
+            const usableQuery = query instanceof RegExp
+                ? query
+                : (typeof query === 'string' ? query.trim() : '');
             if (!usableQuery) {
                 highlightMatches = [];
                 highlightCurrent = -1;
-                highlightQuery = '';
+                highlightQuery = null;
                 renderHighlights();
                 return;
             }
@@ -1565,7 +1583,7 @@ function createTextareaEditor(textarea) {
         clearHighlights() {
             highlightMatches = [];
             highlightCurrent = -1;
-            highlightQuery = '';
+            highlightQuery = null;
             renderHighlights();
         },
         markText(from, to) {
@@ -1612,7 +1630,14 @@ function createTextareaEditor(textarea) {
             const offset = posToOffset(pos);
             const previouslyFocused = document.activeElement;
             const hadFocus = previouslyFocused === textarea;
-            setSelectionRange(offset, offset);
+            const selectionStart = textarea.selectionStart;
+            const selectionEnd = textarea.selectionEnd;
+            const hasSelection = selectionStart !== selectionEnd;
+            if (hasSelection) {
+                setSelectionRange(selectionStart, selectionEnd);
+            } else {
+                setSelectionRange(offset, offset);
+            }
             if (hadFocus) {
                 textarea.focus({ preventScroll: false });
         } else if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
