@@ -157,5 +157,17 @@
   "import_file_error": "No se pudo importar el archivo.",
   "import_file_unsupported": "Formato no soportado para importar.",
   "drop_title": "Suelta aquí para abrir en una pestaña nueva",
-  "drop_subtitle": "Archivos Markdown (.md, .markdown). También puedes soltar varios."
+  "drop_subtitle": "Archivos Markdown (.md, .markdown). También puedes soltar varios.",
+  "footer_name": "EdiMarkWeb",
+  "footer_tagline": "Editor de textos Markdown.",
+  "footer_version": "Versión 2.7.13.",
+  "footer_author_prefix": "© 2025",
+  "footer_license_prefix": "Código bajo",
+  "footer_license_link": "licencia AGPL v3",
+  "footer_repo_link": "Proyecto en GitHub",
+  "footer_feedback_link": "Comentarios",
+  "footer_analytics_visits": "Visitas",
+  "footer_analytics_today": "Hoy",
+  "footer_privacy_link": "Privacidad",
+  "footer_privacy_notice": "Los archivos se procesan localmente en este navegador. Solo se recogen estadísticas de uso agregadas propias y no se envían archivos ni datos a terceros."
 }

@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="analytics-endpoint" content="https://bilateria.org/app/estadistica/edimarkweb/track.php">
+    <meta name="analytics-stats-url" content="https://bilateria.org/app/estadistica/edimarkweb/admin-stats.php">
+    <meta name="analytics-site-id" content="edimarkweb">
     <link rel="manifest" href="manifest.json">
     <meta name="color-scheme" content="light dark">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
@@ -317,13 +320,33 @@
 </main>
 
 <footer class="site-footer" aria-label="Información legal y del proyecto">
-    <p>
-        <strong>EdiMarkWeb</strong> - Editor de textos Markdown.<br>
-        <span>Versión 2.7.13.</span><br>
-        &copy; 2025 <a href="https://bilateria.es" target="_blank" rel="noreferrer noopener">Juan José de Haro</a> &middot;
-        Código bajo <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer noopener">licencia AGPL v3</a>.
-        <a href="https://github.com/edimarkweb/edimarkweb.github.io" target="_blank" rel="noreferrer noopener">Proyecto en GitHub</a>.
-        <a href="https://github.com/edimarkweb/edimarkweb.github.io/issues" target="_blank" rel="noreferrer noopener">Comentarios</a>.
+    <p class="site-footer-line">
+        <strong data-i18n-key="footer_name">EdiMarkWeb</strong>
+        <span data-i18n-key="footer_tagline">Editor de textos Markdown.</span>
+        <span class="site-footer-sep">·</span>
+        <span data-i18n-key="footer_version">Versión 2.7.13.</span>
+        <span class="site-footer-sep">·</span>
+        <span data-i18n-key="footer_author_prefix">© 2025</span>
+        <a href="https://bilateria.es" target="_blank" rel="noreferrer noopener">Juan José de Haro</a>
+    </p>
+    <p class="site-footer-line">
+        <span data-i18n-key="footer_license_prefix">Código bajo</span>
+        <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer noopener" data-i18n-key="footer_license_link">licencia AGPL v3</a>
+        <span class="site-footer-sep">·</span>
+        <a href="https://github.com/edimarkweb/edimarkweb.github.io" target="_blank" rel="noreferrer noopener" data-i18n-key="footer_repo_link">Proyecto en GitHub</a>
+        <span class="site-footer-sep">·</span>
+        <a href="https://github.com/edimarkweb/edimarkweb.github.io/issues" target="_blank" rel="noreferrer noopener" data-i18n-key="footer_feedback_link">Comentarios</a>
+        <span id="analyticsSummary" class="site-footer-analytics" hidden>
+            <span class="site-footer-sep">·</span>
+            <span data-i18n-key="footer_analytics_visits">Visitas</span> <strong id="analyticsTotalValue">-</strong>
+            <span class="site-footer-sep">·</span>
+            <span data-i18n-key="footer_analytics_today">Hoy</span> <strong id="analyticsTodayValue">-</strong>
+        </span>
+        <span class="site-footer-sep">·</span>
+        <span class="site-footer-flyout">
+            <a id="footerPrivacyToggle" href="#" data-i18n-key="footer_privacy_link">Privacidad</a>
+            <span id="footerPrivacyMessage" class="site-footer-flyout-box" hidden data-i18n-key="footer_privacy_notice">Los archivos se procesan localmente en este navegador. Solo se recogen estadísticas de uso agregadas propias y no se envían archivos ni datos a terceros.</span>
+        </span>
     </p>
 </footer>
 
@@ -435,6 +458,165 @@
     </div>
 
     <script type="module" src="pandoc-exporter.js"></script>
+    <script>
+    (function () {
+      var ANALYTICS_FALLBACK_ENDPOINT = 'https://bilateria.org/app/estadistica/edimarkweb/track.php';
+      var ANALYTICS_FALLBACK_STATS_URL = 'https://bilateria.org/app/estadistica/edimarkweb/admin-stats.php';
+      var ANALYTICS_VISIT_COOLDOWN_MS = 30 * 60 * 1000;
+
+      function getMetaContent(name) {
+        var node = document.querySelector('meta[name="' + name + '"]');
+        if (!node) return '';
+        return String(node.getAttribute('content') || '').trim();
+      }
+
+      function getAnalyticsConfig() {
+        return {
+          endpoint: getMetaContent('analytics-endpoint') || ANALYTICS_FALLBACK_ENDPOINT,
+          statsUrl: getMetaContent('analytics-stats-url') || ANALYTICS_FALLBACK_STATS_URL,
+          siteId: getMetaContent('analytics-site-id') || 'edimarkweb'
+        };
+      }
+
+      function getAnalyticsVisitStorageKey(siteId) {
+        return 'analytics:last-visit:' + siteId;
+      }
+
+      function shouldCountAnalyticsVisit(siteId) {
+        try {
+          var rawValue = window.localStorage.getItem(getAnalyticsVisitStorageKey(siteId)) || '';
+          var lastVisit = parseInt(rawValue, 10);
+          if (!isNaN(lastVisit) && Date.now() - lastVisit < ANALYTICS_VISIT_COOLDOWN_MS) return false;
+        } catch (err) {
+          return true;
+        }
+        return true;
+      }
+
+      function rememberAnalyticsVisit(siteId) {
+        try {
+          window.localStorage.setItem(getAnalyticsVisitStorageKey(siteId), String(Date.now()));
+        } catch (err) {}
+      }
+
+      function shouldTrackAnalytics() {
+        var protocol = String(window.location.protocol || '');
+        var host = String(window.location.hostname || '').toLowerCase();
+        if (protocol !== 'http:' && protocol !== 'https:') return false;
+        if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return false;
+        if (/\.local$/.test(host)) return false;
+        return true;
+      }
+
+      function updateAnalyticsSummary(data) {
+        var total = parseInt(data && data.total, 10);
+        var today = parseInt(data && data.today, 10);
+        var summary = document.getElementById('analyticsSummary');
+        var totalNode = document.getElementById('analyticsTotalValue');
+        var todayNode = document.getElementById('analyticsTodayValue');
+        if (!summary || isNaN(total) || isNaN(today)) return;
+        if (totalNode) totalNode.textContent = String(total);
+        if (todayNode) todayNode.textContent = String(today);
+        summary.hidden = false;
+      }
+
+      function loadAnalyticsSummary() {
+        if (!shouldTrackAnalytics()) return;
+        var cfg = getAnalyticsConfig();
+        if (!cfg.endpoint) return;
+
+        var callbackName = '__edimarkAnalytics_' + String(Date.now()) + '_' + String(Math.floor(Math.random() * 100000));
+        var pageParams = new URLSearchParams(window.location.search || '');
+        var query = new URLSearchParams();
+        var script = document.createElement('script');
+        var shouldCountVisit = shouldCountAnalyticsVisit(cfg.siteId);
+        var settled = false;
+        var timeoutId = 0;
+
+        function cleanup() {
+          if (settled) return;
+          settled = true;
+          if (timeoutId) window.clearTimeout(timeoutId);
+          try { delete window[callbackName]; } catch (err) { window[callbackName] = null; }
+          if (script && script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        query.set('site', cfg.siteId);
+        query.set('callback', callbackName);
+        query.set('page_url', window.location.href);
+        query.set('referrer', document.referrer || '');
+        if (!shouldCountVisit) query.set('summary_only', '1');
+
+        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(function (key) {
+          var value = String(pageParams.get(key) || '').trim();
+          if (value) query.set(key, value);
+        });
+
+        window[callbackName] = function (payload) {
+          try {
+            updateAnalyticsSummary(payload || {});
+            if (shouldCountVisit && payload && payload.ok) rememberAnalyticsVisit(cfg.siteId);
+          } finally {
+            cleanup();
+          }
+        };
+
+        script.async = true;
+        script.src = cfg.endpoint + (cfg.endpoint.indexOf('?') === -1 ? '?' : '&') + query.toString();
+        script.onerror = cleanup;
+        timeoutId = window.setTimeout(cleanup, 4000);
+        document.head.appendChild(script);
+      }
+
+      function initPrivacyFlyout() {
+        var toggle = document.getElementById('footerPrivacyToggle');
+        var message = document.getElementById('footerPrivacyMessage');
+        if (!(toggle instanceof HTMLAnchorElement) || !(message instanceof HTMLElement)) return;
+
+        function setOpen(open) {
+          message.hidden = !open;
+          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        toggle.addEventListener('click', function (event) {
+          event.preventDefault();
+          setOpen(message.hidden);
+        });
+
+        document.addEventListener('click', function (event) {
+          var target = event.target;
+          if (!(target instanceof Node)) return;
+          if (target === toggle || message.contains(target)) return;
+          setOpen(false);
+        });
+
+        document.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape') setOpen(false);
+        });
+
+        setOpen(false);
+      }
+
+      function scheduleAnalyticsLoad() {
+        if (!shouldTrackAnalytics()) return;
+        var run = function () { window.setTimeout(loadAnalyticsSummary, 0); };
+        if (typeof window.requestIdleCallback === 'function') {
+          window.requestIdleCallback(run, { timeout: 2500 });
+          return;
+        }
+        if (document.readyState === 'complete') {
+          window.setTimeout(run, 0);
+          return;
+        }
+        window.addEventListener('load', run, { once: true });
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        initPrivacyFlyout();
+        scheduleAnalyticsLoad();
+      });
+    })();
+    </script>
     <script src="script.js" defer></script>
     <script src="search.js" defer></script>
     <script src="i18n.js" defer></script>
