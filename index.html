@@ -336,12 +336,6 @@
         <a href="https://github.com/edimarkweb/edimarkweb.github.io" target="_blank" rel="noreferrer noopener" data-i18n-key="footer_repo_link">Proyecto en GitHub</a>
         <span class="site-footer-sep">·</span>
         <a href="https://github.com/edimarkweb/edimarkweb.github.io/issues" target="_blank" rel="noreferrer noopener" data-i18n-key="footer_feedback_link">Comentarios</a>
-        <span id="analyticsSummary" class="site-footer-analytics" hidden>
-            <span class="site-footer-sep">·</span>
-            <span data-i18n-key="footer_analytics_visits">Visitas</span> <strong id="analyticsTotalValue">-</strong>
-            <span class="site-footer-sep">·</span>
-            <span data-i18n-key="footer_analytics_today">Hoy</span> <strong id="analyticsTodayValue">-</strong>
-        </span>
         <span class="site-footer-sep">·</span>
         <span class="site-footer-flyout">
             <a id="footerPrivacyToggle" href="#" data-i18n-key="footer_privacy_link">Privacidad</a>
@@ -508,18 +502,6 @@
         return true;
       }
 
-      function updateAnalyticsSummary(data) {
-        var total = parseInt(data && data.total, 10);
-        var today = parseInt(data && data.today, 10);
-        var summary = document.getElementById('analyticsSummary');
-        var totalNode = document.getElementById('analyticsTotalValue');
-        var todayNode = document.getElementById('analyticsTodayValue');
-        if (!summary || isNaN(total) || isNaN(today)) return;
-        if (totalNode) totalNode.textContent = String(total);
-        if (todayNode) todayNode.textContent = String(today);
-        summary.hidden = false;
-      }
-
       function loadAnalyticsSummary() {
         if (!shouldTrackAnalytics()) return;
         var cfg = getAnalyticsConfig();
@@ -554,7 +536,6 @@
 
         window[callbackName] = function (payload) {
           try {
-            updateAnalyticsSummary(payload || {});
             if (shouldCountVisit && payload && payload.ok) rememberAnalyticsVisit(cfg.siteId);
           } finally {
             cleanup();
