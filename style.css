@@ -819,40 +819,6 @@ body.desktop-mode #main-container {
     pointer-events: none;
 }
 
-.drop-outline {
-    /* Borde visible estilo "marco" alrededor del viewport interior */
-    border-style: dashed;
-}
-
-.drop-ants {
-    /* Sutil patrón animado en el fondo del marco */
-    background-image:
-        repeating-linear-gradient(90deg, rgba(59,130,246,0.18) 0 12px, transparent 12px 24px),
-        repeating-linear-gradient(0deg,  rgba(59,130,246,0.18) 0 12px, transparent 12px 24px);
-    background-size: 16px 2px, 2px 16px;
-    background-position: 0 0, 0 0;
-    animation: drop-ants-move 12s linear infinite;
-}
-
-@keyframes drop-ants-move {
-    0%   { background-position: 0 0, 0 0; }
-    100% { background-position: 480px 0, 0 480px; }
-}
-
-.drop-hint {
-    text-shadow: 0 1px 2px rgba(0,0,0,0.25);
-}
-
-.drop-dim {
-    /* Capa que oscurece ligeramente toda la página */
-    background: rgba(2,6,23,0.22);
-    /* Efecto "por detrás" gracias al blur del fondo */
-    backdrop-filter: blur(2px);
-}
-.dark .drop-dim {
-    background: rgba(2,6,23,0.35);
-}
-
 /* Controles de búsqueda y modales: respetan el tema de la app */
 #search-input, #replace-input,
 [id$="-modal-overlay"] input[type="text"],

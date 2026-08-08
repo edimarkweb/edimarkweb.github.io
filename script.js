@@ -4490,28 +4490,27 @@ window.onload = () => {
   const backdrop = document.createElement('div');
   backdrop.id = 'drop-backdrop';
   backdrop.className = [
-    'fixed inset-0 hidden z-[45] drop-dim',
+    'fixed inset-0 hidden z-[45] bg-black/50',
     'flex items-center justify-center'
   ].join(' ');
 
   // Marco interior (no bloquea clics, solo visual)
   const frame = document.createElement('div');
   frame.className = [
-    'pointer-events-none relative',
-    'inset-0 w-[min(95vw,1100px)] h-[min(70vh,520px)]',
-    'rounded-2xl border-4 drop-outline border-blue-400/70 dark:border-blue-300/70',
-    'shadow-2xl drop-ants'
+    'pointer-events-none absolute inset-4',
+    'rounded-lg border-2 border-dashed border-white/50'
   ].join(' ');
 
   // Mensaje central con icono
   const center = document.createElement('div');
   center.className = 'absolute inset-0 grid place-content-center text-center';
+  // Mismo lenguaje visual que los modales de la aplicación.
   center.innerHTML = `
-    <div class="pointer-events-none px-6 py-5 rounded-xl bg-white/85 dark:bg-slate-900/80 ring-1 ring-slate-200 dark:ring-slate-700">
-      <div class="flex flex-col items-center gap-2">
-        <i data-lucide="arrow-down-to-line" class="w-14 h-14 text-slate-600 dark:text-slate-200"></i>
-        <p class="drop-hint text-lg font-semibold text-slate-800 dark:text-slate-100" data-i18n-key="drop_title">Suelta aquí para abrir en una pestaña nueva</p>
-        <p class="drop-hint text-sm text-slate-600 dark:text-slate-300" data-i18n-key="drop_subtitle">Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX. También puedes soltar varios.</p>
+    <div class="pointer-events-none bg-white p-6 rounded-lg shadow-xl max-w-md mx-4 dark:bg-slate-800">
+      <div class="flex flex-col items-center gap-3 text-center">
+        <i data-lucide="upload" class="w-10 h-10 text-indigo-600 dark:text-indigo-400"></i>
+        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100" data-i18n-key="drop_title">Suelta aquí para abrir en una pestaña nueva</h3>
+        <p class="text-sm text-slate-700 dark:text-slate-300" data-i18n-key="drop_subtitle">Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX. También puedes soltar varios.</p>
       </div>
     </div>
   `;
@@ -4536,13 +4535,14 @@ window.onload = () => {
   const tabBar = document.getElementById('tab-bar');
   const newTabBtn = document.getElementById('new-tab-btn');
 
+  // Resaltado estático: el mismo anillo que usan los controles al recibir foco.
   function addHalo() {
-    tabBar && tabBar.classList.add('ring-2','ring-blue-500','ring-offset-2','ring-offset-transparent','animate-pulse');
-    newTabBtn && newTabBtn.classList.add('ring-2','ring-blue-500','rounded-md','animate-pulse');
+    tabBar && tabBar.classList.add('ring-2','ring-blue-500','ring-offset-2','ring-offset-transparent');
+    newTabBtn && newTabBtn.classList.add('ring-2','ring-blue-500','rounded-md');
   }
   function removeHalo() {
-    tabBar && tabBar.classList.remove('ring-2','ring-blue-500','ring-offset-2','ring-offset-transparent','animate-pulse');
-    newTabBtn && newTabBtn.classList.remove('ring-2','ring-blue-500','rounded-md','animate-pulse');
+    tabBar && tabBar.classList.remove('ring-2','ring-blue-500','ring-offset-2','ring-offset-transparent');
+    newTabBtn && newTabBtn.classList.remove('ring-2','ring-blue-500','rounded-md');
   }
 
   // Eventos de arrastre globales
