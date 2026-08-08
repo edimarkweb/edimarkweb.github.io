@@ -3815,6 +3815,7 @@ window.onload = () => {
     }
 
     if (desktopWindowBtn) {
+        desktopWindowBtn.addEventListener('click', () => closeSettingsMenu());
         desktopWindowBtn.addEventListener('click', openDesktopWindow);
     }
 
@@ -3903,9 +3904,13 @@ window.onload = () => {
         mainContainer.classList.toggle('is-expanded');
         const isExpanded = mainContainer.classList.contains('is-expanded');
         const iconName = isExpanded ? 'minimize' : 'maximize';
-        // Se regenera el contenido del botón para que Lucide lo vuelva a procesar
-        toggleWidthBtn.innerHTML = `<i data-lucide="${iconName}"></i>`;
+        // Solo el icono: el botón lleva ahora su etiqueta de texto al lado.
+        const iconHost = toggleWidthBtn.querySelector('.width-icon');
+        if (iconHost) {
+            iconHost.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400"></i>`;
+        }
         lucide.createIcons();
+        closeSettingsMenu();
     });
     // --- FIN DE LA CORRECCIÓN ---
 
@@ -3920,10 +3925,28 @@ window.onload = () => {
       const newEditorTheme = normalizedTheme === 'dark' ? 'material-darker' : 'eclipse';
       markdownEditor.setOption('theme', newEditorTheme);
       htmlEditor.setOption('theme', newEditorTheme);
-      const icon = normalizedTheme === 'dark' ? 'moon' : 'sun';
-      themeToggleBtn.innerHTML = `<i data-lucide="${icon}"></i>`;
+      updateThemeToggleLabel(normalizedTheme);
+    }
+
+    // El botón vive en el menú Configuración y lleva etiqueta, así que solo se
+    // reemplaza el icono; el texto anuncia el tema al que se cambiará.
+    function updateThemeToggleLabel(theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light') {
+      if (!themeToggleBtn) return;
+      const isDark = theme === 'dark';
+      const iconHost = themeToggleBtn.querySelector('.theme-icon');
+      if (iconHost) {
+        iconHost.innerHTML = `<i data-lucide="${isDark ? 'moon' : 'sun'}" class="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400"></i>`;
+      }
+      const label = themeToggleBtn.querySelector('.theme-label');
+      if (label) {
+        label.textContent = isDark
+          ? getTranslation('theme_switch_to_light', 'Modo claro')
+          : getTranslation('theme_switch_to_dark', 'Modo oscuro');
+      }
       if (window.lucide) lucide.createIcons();
     }
+
+    window.__updateThemeToggleLabel = () => updateThemeToggleLabel();
 
     function syncWithSystemTheme() {
       if (manualThemeOverride) return;
@@ -3947,6 +3970,7 @@ window.onload = () => {
       const newTheme = isCurrentlyDark ? 'light' : 'dark';
       manualThemeOverride = newTheme;
       applyTheme(newTheme);
+      closeSettingsMenu();
     });
 
     if (window.PandocExporter && typeof window.PandocExporter.warmUpExporter === 'function') {

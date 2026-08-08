@@ -53,6 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.__localizeShortcutLabels === 'function') {
       window.__localizeShortcutLabels();
     }
+    if (typeof window.__updateThemeToggleLabel === 'function') {
+      window.__updateThemeToggleLabel();
+    }
     if (typeof window.__updateFontSizeLabel === 'function') {
       window.__updateFontSizeLabel();
     }
