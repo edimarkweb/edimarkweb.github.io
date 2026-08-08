@@ -88,21 +88,37 @@
                       <span data-i18n-key="save_btn_text">Guardar</span>
                       <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_save">Ctrl+S</span>
                     </button>
-                    <button type="button" id="export-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false">
-                      <i data-lucide="download" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                      <span data-i18n-key="export_menu_btn_text">Exportar</span>
-                      <i data-lucide="chevron-right" class="ml-auto w-4 h-4 opacity-60"></i>
-                    </button>
+                    <div id="export-menu-container" class="relative">
+                        <button type="button" id="export-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                          <i data-lucide="download" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                          <span data-i18n-key="export_menu_btn_text">Exportar</span>
+                          <i data-lucide="chevron-right" class="ml-auto w-4 h-4 opacity-60"></i>
+                        </button>
+                      <div id="export-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-60 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="export-menu-btn">
+                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="docx" role="menuitem">
+                          <i data-lucide="file-text" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                          <span data-i18n-key="export_menu_option_docx">DOCX (Microsoft Word)</span>
+                        </button>
+                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="odt" role="menuitem">
+                          <i data-lucide="file" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                          <span data-i18n-key="export_menu_option_odt">ODT (LibreOffice)</span>
+                        </button>
+                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="epub" role="menuitem">
+                          <i data-lucide="book-open" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                          <span data-i18n-key="export_menu_option_epub">EPUB (libro digital)</span>
+                        </button>
+                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="html-download" role="menuitem">
+                          <i data-lucide="globe" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                          <span data-i18n-key="export_menu_option_html_download">HTML (página web)</span>
+                        </button>
+                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-download" role="menuitem">
+                          <i data-lucide="sigma" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                          <span data-i18n-key="export_menu_option_latex_full_download">TEX (LaTeX)</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div id="export-menu-container" class="relative">
-                  <div id="export-menu" class="hidden absolute right-0 mt-2 w-60 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="export-menu-btn">
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="docx" data-i18n-key="export_menu_option_docx" role="menuitem">DOCX (Microsoft Word)</button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="odt" data-i18n-key="export_menu_option_odt" role="menuitem">ODT (LibreOffice)</button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="epub" data-i18n-key="export_menu_option_epub" role="menuitem">EPUB (libro digital)</button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="html-download" data-i18n-key="export_menu_option_html_download" role="menuitem">HTML (página web)</button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-download" data-i18n-key="export_menu_option_latex_full_download" role="menuitem">TEX (LaTeX)</button>
-                  </div>
                 </div>
             </div>
             <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="latex-print-group">
@@ -329,7 +345,7 @@
         <strong data-i18n-key="footer_name">EdiMarkWeb</strong>
         <span data-i18n-key="footer_tagline">Editor de textos Markdown.</span>
         <span class="site-footer-sep">·</span>
-        <span data-i18n-key="footer_version">Versión 2.7.22.</span>
+        <span data-i18n-key="footer_version">Versión 2.7.23.</span>
         <span class="site-footer-sep">·</span>
         <span data-i18n-key="footer_author_prefix">© 2025-2026</span>
         <a href="https://bilateria.es" target="_blank" rel="noreferrer noopener">Juan José de Haro</a>

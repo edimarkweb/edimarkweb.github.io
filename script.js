@@ -3311,6 +3311,7 @@ window.onload = () => {
 
     function closeActionsMenu() {
         if (!actionsMenu) return;
+        closeExportMenu();
         actionsMenu.classList.add('hidden');
         if (actionsMenuBtn) actionsMenuBtn.setAttribute('aria-expanded', 'false');
     }
@@ -3448,7 +3449,6 @@ window.onload = () => {
     function openExportMenu() {
         if (!exportMenu) return;
         closePreviewCopyMenu();
-        closeActionsMenu();
         closeSettingsMenu();
         exportMenu.classList.remove('hidden');
         if (exportMenuBtn) exportMenuBtn.setAttribute('aria-expanded', 'true');
@@ -3586,6 +3586,7 @@ window.onload = () => {
             exportMenuBtn.classList.add(...disableClasses);
         }
         closeExportMenu();
+        closeActionsMenu();
         updateExportStatus(getTranslation('export_preparing_message', 'Preparando exportación…'));
         await yieldToUiThread();
 
