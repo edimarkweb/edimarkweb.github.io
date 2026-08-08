@@ -149,13 +149,34 @@ function currentLanguage() {
   return window.__edimarkLang || document.documentElement.lang || 'es';
 }
 
-async function fetchAsDataUri(url) {
+/*
+  Presupuesto de imágenes incrustadas.
+
+  Pandoc dentro del WASM paga cada imagen muy caro: un GIF de 3 MB tarda unos
+  40 s en llegar al ODT, y el coste crece más deprisa que el tamaño, así que un
+  documento con varias imágenes grandes deja el navegador colgado. Por encima de
+  este presupuesto la imagen se omite y queda su texto alternativo, que es lo que
+  Pandoc haría por su cuenta pero sin la espera.
+*/
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const MAX_TOTAL_IMAGE_BYTES = 4 * 1024 * 1024;
+
+async function fetchImageBlob(url) {
   const response = await fetch(url, { mode: 'cors' });
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
+  // Si el servidor anuncia el tamaño, se descarta sin llegar a descargarla.
+  const announced = Number(response.headers.get('content-length'));
+  if (Number.isFinite(announced) && announced > MAX_IMAGE_BYTES) {
+    return { blob: null, size: announced };
+  }
   const blob = await response.blob();
-  return await new Promise((resolve, reject) => {
+  return { blob, size: blob.size };
+}
+
+function blobToDataUri(blob) {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(reader.error || new Error('read_failed'));
@@ -174,35 +195,51 @@ async function fetchAsDataUri(url) {
 async function inlineFetchableImages(markdown, { onStatus } = {}) {
   const urls = collectFetchableImageUrls(markdown);
   if (urls.length === 0) {
-    return { markdown, skipped: [] };
+    return { markdown, skipped: [], oversized: [] };
   }
 
   triggerStatus(onStatus, 'images_downloading', 'Descargando imágenes...');
 
-  const replacements = new Map();
-  const skipped = [];
-  const results = await Promise.all(urls.map(async (url) => {
+  const downloads = await Promise.all(urls.map(async (url) => {
     try {
-      return { url, dataUri: await fetchAsDataUri(url) };
+      return { url, ...(await fetchImageBlob(url)) };
     } catch (error) {
       console.warn(`No se pudo incrustar la imagen ${url}:`, error);
-      return { url, dataUri: null };
+      return { url, blob: null, size: 0 };
     }
   }));
 
-  for (const { url, dataUri } of results) {
-    if (dataUri) {
-      replacements.set(url, dataUri);
-    } else {
+  const replacements = new Map();
+  const skipped = [];
+  const oversized = [];
+  let usedBytes = 0;
+
+  // En orden de aparición, para que el presupuesto se gaste en las primeras.
+  for (const { url, blob, size } of downloads) {
+    if (!blob) {
+      // Sin blob por tamaño anunciado es «demasiado grande», no «no se pudo».
+      (size > MAX_IMAGE_BYTES ? oversized : skipped).push(url);
+      continue;
+    }
+    if (size > MAX_IMAGE_BYTES || usedBytes + size > MAX_TOTAL_IMAGE_BYTES) {
+      oversized.push(url);
+      continue;
+    }
+    try {
+      replacements.set(url, await blobToDataUri(blob));
+      usedBytes += size;
+    } catch (error) {
+      console.warn(`No se pudo leer la imagen ${url}:`, error);
       skipped.push(url);
     }
   }
 
+  const dropped = [...skipped, ...oversized];
   let prepared = replaceImageUrls(markdown, replacements);
-  if (skipped.length > 0) {
-    prepared = dropImagesByUrl(prepared, skipped);
+  if (dropped.length > 0) {
+    prepared = dropImagesByUrl(prepared, dropped);
   }
-  return { markdown: prepared, skipped };
+  return { markdown: prepared, skipped, oversized };
 }
 
 function stripPandocHeadingIds(markdown) {
@@ -384,13 +421,25 @@ async function exportDocument({
 
   triggerStatus(onStatus, config.preparingKey, config.preparingFallback);
 
-  const { markdown: withImages, skipped: skippedImages } = await inlineFetchableImages(normalized, { onStatus });
+  const {
+    markdown: withImages,
+    skipped: skippedImages,
+    oversized: oversizedImages,
+  } = await inlineFetchableImages(normalized, { onStatus });
   normalized = withImages;
   if (skippedImages.length > 0) {
     triggerNotification(
       onNotification,
       'images_not_embedded',
       'Algunas imágenes no se han podido descargar y se han omitido en el documento exportado.',
+    );
+  }
+  // Motivo distinto, mensaje distinto: aquí la imagen sí estaba disponible.
+  if (oversizedImages.length > 0) {
+    triggerNotification(
+      onNotification,
+      'images_too_large',
+      'Algunas imágenes son demasiado grandes para incrustarlas y se han omitido en el documento exportado. Se ha conservado su texto alternativo.',
     );
   }
 

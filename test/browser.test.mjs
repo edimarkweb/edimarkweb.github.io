@@ -483,3 +483,51 @@ test('buscar y reemplazar acierta con una imagen base64 plegada delante', async 
   // La imagen tiene que seguir entera tras el reemplazo.
   assert.match(await page.evaluate(() => markdownEditor.getValue()), /!\[img\]\(data:image\/png;base64,A{400}\)/);
 });
+
+/*
+  Presupuesto de imágenes incrustadas. Pandoc paga cada imagen muy caro dentro
+  del WASM —un GIF de 3 MB tarda unos 40 s en llegar al ODT— así que exportar el
+  manual, con 25 MB de GIF, dejaba el navegador colgado. Por encima del
+  presupuesto la imagen se omite y queda su texto alternativo.
+*/
+async function exportarConImagen(t, { bytes, nombre }) {
+  const context = await browser.newContext({ locale: 'es-ES' });
+  t.after(() => context.close());
+  await context.route(/pandoc\.b64(?:\.gz)?(?:\?.*)?$/, route => (
+    route.fulfill({ status: 200, contentType: 'text/plain', body: '' })
+  ));
+  const cuerpo = Buffer.alloc(bytes, 0x41);
+  await context.route(new RegExp(`${nombre}$`), route => route.fulfill({
+    status: 200,
+    contentType: 'image/gif',
+    headers: { 'content-length': String(cuerpo.length) },
+    body: cuerpo,
+  }));
+
+  const page = await context.newPage();
+  await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('.tab-name').first().waitFor();
+
+  // La exportación falla luego (pandoc.b64 está vacío), pero las imágenes se
+  // resuelven antes de cargar el módulo.
+  return page.evaluate(async (archivo) => {
+    const avisos = [];
+    await window.PandocExporter.exportDocument({
+      format: 'odt',
+      markdown: `# T\n\n![Diagrama](${archivo})\n`,
+      onNotification: mensaje => avisos.push(mensaje),
+    }).catch(() => {});
+    return avisos;
+  }, nombre);
+}
+
+test('una imagen enorme se omite en vez de colgar la exportación', async (t) => {
+  const avisos = await exportarConImagen(t, { bytes: 3 * 1024 * 1024, nombre: 'gigante.gif' });
+  assert.equal(avisos.length, 1, `avisos inesperados: ${JSON.stringify(avisos)}`);
+  assert.match(avisos[0], /demasiado grandes/);
+});
+
+test('una imagen normal se incrusta sin avisar de nada', async (t) => {
+  const avisos = await exportarConImagen(t, { bytes: 64 * 1024, nombre: 'pequena.gif' });
+  assert.deepEqual(avisos, [], 'una imagen dentro del presupuesto no debe avisar');
+});

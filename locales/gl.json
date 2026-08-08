@@ -68,6 +68,7 @@
   "images_downloading": "Descargando imaxes...",
   "images_extracting": "Extraendo imaxes...",
   "images_not_embedded": "Non se puideron descargar algunhas imaxes e omitíronse no documento exportado.",
+  "images_too_large": "Algunhas imaxes son demasiado grandes para incrustalas e omitíronse no documento exportado. Conservouse o seu texto alternativo.",
   "html_export_preparing": "Preparando HTML, agarda...",
   "html_export_done": "Exportación HTML completada.",
   "html_export_error": "Erro durante a exportación HTML.",

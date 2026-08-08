@@ -68,6 +68,7 @@
   "images_downloading": "Downloading images...",
   "images_extracting": "Extracting images...",
   "images_not_embedded": "Some images could not be downloaded and were left out of the exported document.",
+  "images_too_large": "Some images are too large to embed and have been left out of the exported document. Their alt text has been kept.",
   "html_export_preparing": "Preparing HTML, please wait...",
   "html_export_done": "HTML export completed.",
   "html_export_error": "Error during HTML export.",

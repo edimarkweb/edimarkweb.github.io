@@ -68,6 +68,7 @@
   "images_downloading": "Descarregant imatges...",
   "images_extracting": "Extraient imatges...",
   "images_not_embedded": "No s'han pogut descarregar algunes imatges i s'han omès en el document exportat.",
+  "images_too_large": "Algunes imatges són massa grans per incrustar-les i s’han omès al document exportat. S’ha conservat el seu text alternatiu.",
   "html_export_preparing": "Preparant HTML, espera...",
   "html_export_done": "Exportació HTML completada.",
   "html_export_error": "Error durant l'exportació HTML.",

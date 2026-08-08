@@ -68,6 +68,7 @@
   "images_downloading": "Irudiak deskargatzen...",
   "images_extracting": "Irudiak ateratzen...",
   "images_not_embedded": "Zenbait irudi ezin izan dira deskargatu eta esportatutako dokumentutik kanpo geratu dira.",
+  "images_too_large": "Irudi batzuk handiegiak dira kapsulatzeko eta esportatutako dokumentutik kanpo utzi dira. Haien testu alternatiboa mantendu da.",
   "html_export_preparing": "HTML prestatzen, itxaron...",
   "html_export_done": "HTML esportazioa osatu da.",
   "html_export_error": "Errorea HTML esportazioan.",
