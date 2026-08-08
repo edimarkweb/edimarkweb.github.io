@@ -1752,6 +1752,23 @@ function updateMarkdownCharCounter(sourceText) {
     const unit = count === 1 ? singularLabel : pluralLabel;
     markdownCharCounterEl.textContent = `${count.toLocaleString()} ${unit}`;
 }
+/*
+  Shortcut hints in the Archivo menu are written for Windows/Linux; on macOS the
+  same keys are ⌘ and ⇧. Runs after each translation pass, so it works whatever
+  wording the active locale uses for Shift.
+*/
+const IS_MAC = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
+
+window.__localizeShortcutLabels = () => {
+  if (!IS_MAC) return;
+  document.querySelectorAll('[data-shortcut]').forEach((element) => {
+    element.textContent = element.textContent
+      .replace(/Ctrl/gi, '\u2318')
+      .replace(/Mayús|Maiús|Shift|Maj/gi, '\u21e7')
+      .replace(/\+/g, '');
+  });
+};
+
 window.__updateCharCounterLabel = () => {
     const currentValue = markdownEditor ? markdownEditor.getValue() : '';
     updateMarkdownCharCounter(currentValue);

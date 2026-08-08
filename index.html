@@ -68,26 +68,30 @@
                     <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
                   </button>
                   <div id="actions-menu" class="hidden absolute left-0 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="actions-menu-btn">
-                    <button type="button" id="open-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
-                      <i data-lucide="folder-open" class="w-4 h-4 text-blue-600"></i>
+                    <button type="button" id="open-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+O">
+                      <i data-lucide="folder-open" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
                       <span data-i18n-key="open_file_btn_text">Abrir</span>
-                    </button>
-                    <button type="button" id="save-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover-bg-slate-700" role="menuitem">
-                      <i data-lucide="save" class="w-4 h-4 text-green-600"></i>
-                      <span data-i18n-key="save_btn_text">Guardar</span>
+                      <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_open">Ctrl+O</span>
                     </button>
                     <button type="button" id="import-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
-                      <i data-lucide="upload" class="w-4 h-4 text-amber-600"></i>
+                      <i data-lucide="upload" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
                       <span data-i18n-key="import_file_btn_text">Importar</span>
                     </button>
                     <button type="button" id="latex-import-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+Shift+V">
-                      <i data-lucide="file-text" class="w-4 h-4 text-purple-600"></i>
+                      <i data-lucide="file-text" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
                       <span data-i18n-key="import_latex_btn_text">Pegar LaTeX</span>
+                      <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_paste_latex">Ctrl+Mayús+V</span>
                     </button>
                     <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
-                    <button type="button" id="export-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" aria-haspopup="true" aria-expanded="false">
-                      <i data-lucide="download" class="w-4 h-4 text-indigo-600"></i>
+                    <button type="button" id="save-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+S">
+                      <i data-lucide="save" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                      <span data-i18n-key="save_btn_text">Guardar</span>
+                      <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_save">Ctrl+S</span>
+                    </button>
+                    <button type="button" id="export-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                      <i data-lucide="download" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
                       <span data-i18n-key="export_menu_btn_text">Exportar</span>
+                      <i data-lucide="chevron-right" class="ml-auto w-4 h-4 opacity-60"></i>
                     </button>
                   </div>
                 </div>
@@ -325,7 +329,7 @@
         <strong data-i18n-key="footer_name">EdiMarkWeb</strong>
         <span data-i18n-key="footer_tagline">Editor de textos Markdown.</span>
         <span class="site-footer-sep">·</span>
-        <span data-i18n-key="footer_version">Versión 2.7.21.</span>
+        <span data-i18n-key="footer_version">Versión 2.7.22.</span>
         <span class="site-footer-sep">·</span>
         <span data-i18n-key="footer_author_prefix">© 2025-2026</span>
         <a href="https://bilateria.es" target="_blank" rel="noreferrer noopener">Juan José de Haro</a>
