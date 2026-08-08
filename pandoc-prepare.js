@@ -85,6 +85,47 @@ export function extractMarkdownTitle(markdown) {
 }
 
 /*
+  Pandoc reads a `---` line that follows a blank line as the start of a YAML
+  metadata block, anywhere in the document. A Markdown file that uses `---` as
+  a thematic break therefore fails to convert with a YAML parse error, and the
+  conversion produces no output at all. Rewriting those breaks as `***` (same
+  rendering, no ambiguity) keeps such documents exportable.
+
+  Left untouched: `---` inside fenced code, a leading YAML metadata block, and
+  a `---` directly under text, which is a level-2 setext heading.
+*/
+export function normalizeThematicBreaks(markdown) {
+  if (typeof markdown !== 'string' || !markdown.includes('---')) return markdown || '';
+  const lines = markdown.split('\n');
+
+  let start = 0;
+  if (hasYamlFrontMatter(markdown)) {
+    while (start < lines.length && lines[start].trim() === '') start += 1;
+    start += 1;
+    while (start < lines.length && !['---', '...'].includes(lines[start].trim())) start += 1;
+    start += 1;
+  }
+
+  let fence = null;
+  for (let i = start; i < lines.length; i += 1) {
+    const fenceMatch = lines[i].match(/^\s{0,3}(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      const marker = fenceMatch[1][0];
+      if (fence === null) fence = marker;
+      else if (fence === marker) fence = null;
+      continue;
+    }
+    if (fence !== null) continue;
+    if (lines[i].trim() !== '---') continue;
+    // Text immediately above makes it a setext heading, not a break.
+    if (i > start && lines[i - 1].trim() !== '') continue;
+    lines[i] = lines[i].replace('---', '***');
+  }
+
+  return lines.join('\n');
+}
+
+/*
   EPUB requires a non-empty title and a language; without them Pandoc falls
   back to the temporary input filename ("in") and to en-US.
 

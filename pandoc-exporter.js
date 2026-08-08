@@ -7,6 +7,7 @@ import {
   MARKDOWN_READER_NO_AUTO_IDS,
   buildExportArgs,
   normalizeNewlines,
+  normalizeThematicBreaks,
   trimInlineMath,
   ensureEpubMetadata,
   collectRemoteImageUrls,
@@ -351,7 +352,7 @@ async function exportDocument({
     throw new Error(`Unsupported format: ${format}`);
   }
 
-  let normalized = normalizeNewlines(trimInlineMath(markdown || ''));
+  let normalized = normalizeThematicBreaks(normalizeNewlines(trimInlineMath(markdown || '')));
   if (!normalized.trim()) {
     const message = translate('no_content', 'No hay contenido para exportar.');
     throw new Error(message || 'No content');
@@ -424,7 +425,7 @@ async function generateHtml({
   onStatus = () => {},
   onNotification = () => {},
 } = {}) {
-  const normalized = normalizeNewlines(trimInlineMath(markdown || ''));
+  const normalized = normalizeThematicBreaks(normalizeNewlines(trimInlineMath(markdown || '')));
   if (!normalized.trim()) {
     const message = translate('no_content', 'No hay contenido para exportar.');
     throw new Error(message || 'No content');
@@ -464,7 +465,7 @@ async function generateLatex({
   standalone = false,
   onStatus = () => {},
 } = {}) {
-  const normalized = normalizeNewlines(trimInlineMath(markdown || ''));
+  const normalized = normalizeThematicBreaks(normalizeNewlines(trimInlineMath(markdown || '')));
   if (!normalized.trim()) {
     const message = translate('no_content', 'No hay contenido para exportar.');
     throw new Error(message || 'No content');

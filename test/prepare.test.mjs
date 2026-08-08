@@ -10,6 +10,7 @@ import {
   dropImagesByUrl,
   trimInlineMath,
   normalizeNewlines,
+  normalizeThematicBreaks,
 } from '../pandoc-prepare.js';
 
 test('hasYamlFrontMatter distingue metadatos de una línea horizontal', () => {
@@ -95,6 +96,32 @@ test('dropImagesByUrl conserva el texto alternativo de las imágenes omitidas', 
   assert.match(result, /^Diagrama$/m);
   assert.doesNotMatch(result, /ejemplo\.org/);
   assert.match(result, /!\[ok\]\(data:image\/gif/);
+});
+
+test('normalizeThematicBreaks convierte las rayas --- en ***', () => {
+  // Pandoc leería estos --- como el inicio de un bloque YAML y fallaría.
+  assert.equal(
+    normalizeThematicBreaks('# Uno\n\nTexto.\n\n---\n\n# Dos\n'),
+    '# Uno\n\nTexto.\n\n***\n\n# Dos\n',
+  );
+  assert.equal(normalizeThematicBreaks('---\n\n# Tras la raya\n'), '***\n\n# Tras la raya\n');
+});
+
+test('normalizeThematicBreaks respeta encabezados setext, código y front matter', () => {
+  // `---` pegado a un texto es un encabezado de nivel 2, no una raya.
+  assert.equal(normalizeThematicBreaks('Encabezado\n---\n\nTexto\n'), 'Encabezado\n---\n\nTexto\n');
+  assert.equal(
+    normalizeThematicBreaks('# T\n\n```yaml\n\n---\nclave: valor\n```\n'),
+    '# T\n\n```yaml\n\n---\nclave: valor\n```\n',
+  );
+  // El bloque de metadatos inicial debe conservarse íntegro.
+  assert.equal(
+    normalizeThematicBreaks('---\ntitle: X\n---\n\nTexto\n\n---\n\nFin\n'),
+    '---\ntitle: X\n---\n\nTexto\n\n***\n\nFin\n',
+  );
+  // Cuatro guiones no son ambiguos para Pandoc: se dejan como están.
+  assert.equal(normalizeThematicBreaks('Texto\n\n----\n\nMás\n'), 'Texto\n\n----\n\nMás\n');
+  assert.equal(normalizeThematicBreaks('Sin rayas\n'), 'Sin rayas\n');
 });
 
 test('trimInlineMath y normalizeNewlines siguen comportándose igual', () => {

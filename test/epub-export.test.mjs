@@ -17,11 +17,12 @@ import {
   ensureEpubMetadata,
   collectRemoteImageUrls,
   dropImagesByUrl,
+  normalizeThematicBreaks,
 } from '../pandoc-prepare.js';
 
 // Mirrors what exportDocument() sends for format 'epub'.
 function exportEpub(markdown, { fallbackTitle = 'documento', lang = 'es' } = {}) {
-  const prepared = ensureEpubMetadata(markdown, { fallbackTitle, lang });
+  const prepared = ensureEpubMetadata(normalizeThematicBreaks(markdown), { fallbackTitle, lang });
   const args = buildExportArgs('epub3', { mathml: true, titleFromHeading: prepared.titleFromHeading });
   return runPandoc(args, prepared.markdown);
 }
@@ -39,6 +40,18 @@ function assertValidEpub(result, label) {
   return entries;
 }
 
+/*
+  Reproduce el documento que motivó normalizeThematicBreaks: secciones separadas
+  por `---`, alguna de ellas seguida inmediatamente por texto en negrita. Pandoc
+  lee ese `---` como el delimitador de un bloque YAML y el `*` de la línea
+  siguiente como un alias, así que aborta la conversión entera.
+*/
+const CON_RAYAS = `# Catálogo\n\nIntroducción con *cursiva* y **negrita**.\n\n---\n\n${
+  Array.from({ length: 30 }, (_, i) =>
+    `## Sección ${i + 1}\n\n_Texto en cursiva._\n\n- punto uno\n- punto dos\n\n---\n${
+      i % 5 === 4 ? '**Destacado**: sin línea en blanco tras la raya.\n\n---\n' : ''}`,
+  ).join('\n')}`;
+
 const DOCUMENTS = {
   'texto simple': '# Título\n\nUn párrafo normal.\n',
   'acentos y emoji': '# Año 2026 — ñandú 🎓\n\nCafé, camión, ¿qué tal?\n',
@@ -53,6 +66,9 @@ const DOCUMENTS = {
   'imagen data URI': '# Imagen\n\n![a](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)\n',
   'sin encabezado': 'Solo un párrafo suelto, sin ningún encabezado.\n',
   'raya horizontal inicial': '---\n\n# Tras la raya\n\nTexto.\n',
+  // Documento largo con rayas --- entre secciones: Pandoc las leía como
+  // metadatos YAML y abortaba la conversión sin producir nada.
+  'rayas --- entre secciones': CON_RAYAS,
   'front matter propio': '---\ntitle: "Título propio"\nlang: gl\n---\n\n# Cuerpo\n\nTexto.\n',
 };
 
@@ -125,8 +141,44 @@ test('una imagen data URI acaba incrustada en el EPUB', { timeout: 180000 }, asy
   );
 });
 
+function textOf(entries) {
+  return [...entries.entries()]
+    .filter(([name]) => name.endsWith('.xhtml'))
+    .map(([, content]) => content.toString('utf8'))
+    .join('\n');
+}
+
+/*
+  Sin normalizar, un `---` que va tras una línea en blanco abre un bloque de
+  metadatos YAML. Si lo que sigue no es YAML válido, Pandoc aborta y no escribe
+  nada: exactamente el EPUB de 0 bytes que motivó esta prueba.
+*/
+test('las rayas --- sin normalizar abortan la conversión', { timeout: 180000 }, async () => {
+  const result = await runPandoc(buildExportArgs('epub3', { mathml: true }), CON_RAYAS);
+  assert.equal(result.bytes.length, 0, 'se esperaba un fallo de parseo YAML');
+  assert.ok(
+    result.stderr.some(line => line.includes('YAML')),
+    `stderr inesperado: ${result.stderr.join(' | ')}`,
+  );
+});
+
+test('tras normalizar no se pierde ninguna sección', { timeout: 180000 }, async () => {
+  const entries = assertValidEpub(await exportEpub(CON_RAYAS), 'documento con rayas');
+  const texto = textOf(entries);
+  for (const n of [1, 15, 30]) {
+    assert.ok(texto.includes(`Sección ${n}`), `falta la sección ${n} en el EPUB`);
+  }
+  assert.match(texto, /<hr\s*\/?>/, 'las rayas deberían seguir siendo líneas horizontales');
+});
+
+test('un encabezado setext sigue siendo un encabezado tras normalizar', { timeout: 180000 }, async () => {
+  const entries = assertValidEpub(await exportEpub('# Doc\n\nSubtítulo real\n---\n\nTexto.\n'), 'setext');
+  const chapter = [...entries.entries()].find(([name]) => name.includes('/text/ch'))[1].toString('utf8');
+  assert.match(chapter, /<h2[^>]*>Subtítulo real<\/h2>/);
+});
+
 test('DOCX y ODT siguen exportando correctamente', { timeout: 180000 }, async () => {
-  const markdown = '# Documento\n\nTexto con $a^2$ y una tabla.\n\n| a | b |\n|---|---|\n| 1 | 2 |\n';
+  const markdown = normalizeThematicBreaks('# Documento\n\nTexto con $a^2$ y una tabla.\n\n---\n\n| a | b |\n|---|---|\n| 1 | 2 |\n');
   for (const [format, mathml] of [['docx', false], ['odt', true]]) {
     const result = await runPandoc(buildExportArgs(format, { mathml }), markdown);
     assert.ok(
