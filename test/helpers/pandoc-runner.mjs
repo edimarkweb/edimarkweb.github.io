@@ -61,7 +61,7 @@ export async function runPandoc(argsString, input) {
 
   const argsPtr = instance.exports.malloc(argsString.length);
   new TextEncoder().encodeInto(argsString, new Uint8Array(instance.exports.memory.buffer, argsPtr, argsString.length));
-  inFile.data = new TextEncoder().encode(input);
+  inFile.data = typeof input === 'string' ? new TextEncoder().encode(input) : new Uint8Array(input);
 
   let threw = null;
   try {

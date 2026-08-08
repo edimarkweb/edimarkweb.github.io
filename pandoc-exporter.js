@@ -6,6 +6,8 @@ import { pandoc } from './pandoc-wasm.js';
 import {
   MARKDOWN_READER_NO_AUTO_IDS,
   buildExportArgs,
+  buildImportArgs,
+  stripEpubAnchorPrefixes,
   normalizeNewlines,
   normalizeThematicBreaks,
   trimInlineMath,
@@ -525,6 +527,7 @@ const IMPORT_FORMATS = {
   latex: { from: 'latex', binary: false },
   docx: { from: 'docx', binary: true },
   odt: { from: 'odt', binary: true },
+  epub: { from: 'epub', binary: true },
   html: { from: 'html', binary: false },
 };
 
@@ -574,12 +577,18 @@ async function importToMarkdown({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    let pandocArgs = `-f ${config.from} -t ${MARKDOWN_READER_NO_AUTO_IDS} --wrap=preserve`;
+    const pandocArgs = buildImportArgs(config.from);
     const resultadoBytes = await pandoc(pandocArgs, preparedInput, base64);
+    if (!resultadoBytes || resultadoBytes.length === 0) {
+      throw new Error('pandoc_empty_output');
+    }
     let markdownResult = new TextDecoder().decode(resultadoBytes);
     if (sourceFormat === 'latex') {
       const metadata = extractLatexMetadata(latexSourceForMetadata || '');
       markdownResult = ensureMarkdownTitle(markdownResult, metadata);
+    }
+    if (sourceFormat === 'epub') {
+      markdownResult = stripEpubAnchorPrefixes(markdownResult);
     }
     markdownResult = stripPandocHeadingIds(markdownResult);
     triggerStatus(onStatus, 'import_file_success', 'Importación completada.');

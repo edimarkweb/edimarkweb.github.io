@@ -11,6 +11,8 @@ import {
   trimInlineMath,
   normalizeNewlines,
   normalizeThematicBreaks,
+  buildImportArgs,
+  stripEpubAnchorPrefixes,
 } from '../pandoc-prepare.js';
 
 test('hasYamlFrontMatter distingue metadatos de una línea horizontal', () => {
@@ -122,6 +124,32 @@ test('normalizeThematicBreaks respeta encabezados setext, código y front matter
   // Cuatro guiones no son ambiguos para Pandoc: se dejan como están.
   assert.equal(normalizeThematicBreaks('Texto\n\n----\n\nMás\n'), 'Texto\n\n----\n\nMás\n');
   assert.equal(normalizeThematicBreaks('Sin rayas\n'), 'Sin rayas\n');
+});
+
+test('buildImportArgs limpia la salida solo al importar EPUB', () => {
+  const epub = buildImportArgs('epub');
+  for (const ext of ['-fenced_divs', '-native_divs', '-bracketed_spans', '-header_attributes', '-raw_html']) {
+    assert.ok(epub.includes(ext), `faltaba ${ext}`);
+  }
+  // Los formatos que ya funcionaban no cambian de comportamiento.
+  assert.equal(buildImportArgs('docx'), buildImportArgs('odt').replace('odt', 'docx'));
+  assert.doesNotMatch(buildImportArgs('docx'), /-fenced_divs/);
+});
+
+test('stripEpubAnchorPrefixes recorta el nombre del archivo interno', () => {
+  assert.equal(
+    stripEpubAnchorPrefixes('Ver [la sección](#ch001.xhtml_rutinas-de-pensamiento).'),
+    'Ver [la sección](#rutinas-de-pensamiento).',
+  );
+  assert.equal(
+    stripEpubAnchorPrefixes('[a](#text/ch012.xhtml_tema) y [b](#normal)'),
+    '[a](#tema) y [b](#normal)',
+  );
+  // Un enlace externo con .html en la ruta no debe tocarse.
+  assert.equal(
+    stripEpubAnchorPrefixes('[web](https://ejemplo.org/pagina.html)'),
+    '[web](https://ejemplo.org/pagina.html)',
+  );
 });
 
 test('trimInlineMath y normalizeNewlines siguen comportándose igual', () => {

@@ -26,6 +26,35 @@ export function buildExportArgs(pandocFormat, { mathml = false, titleFromHeading
   return args;
 }
 
+/*
+  Importing an EPUB with the default writer produces `:::` fenced divs, empty
+  `[]{#ch001.xhtml}` anchors and attribute-laden headings — structure that means
+  nothing once the text is back in the editor. Turning those extensions off
+  yields plain Markdown instead.
+*/
+const MARKDOWN_WRITER_PLAIN = [
+  MARKDOWN_READER_NO_AUTO_IDS,
+  '-fenced_divs',
+  '-native_divs',
+  '-bracketed_spans',
+  '-native_spans',
+  '-header_attributes',
+  '-link_attributes',
+  '-raw_html',
+].join('');
+
+export function buildImportArgs(fromFormat) {
+  const writer = fromFormat === 'epub' ? MARKDOWN_WRITER_PLAIN : MARKDOWN_READER_NO_AUTO_IDS;
+  return `-f ${fromFormat} -t ${writer} --wrap=preserve`;
+}
+
+// EPUB internal links carry the source file name (#ch001.xhtml_seccion), which
+// is meaningless outside the book.
+export function stripEpubAnchorPrefixes(markdown) {
+  if (typeof markdown !== 'string') return '';
+  return markdown.replace(/\(#[^)\s]*?\.x?html_/g, '(#');
+}
+
 export function normalizeNewlines(str) {
   return typeof str === 'string' ? str.replace(/\r\n?/g, '\n') : '';
 }

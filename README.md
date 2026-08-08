@@ -12,7 +12,7 @@ EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores t
 
 - **Edición dual sincronizada**: redacta en Markdown o modifica el HTML renderizado; ambos paneles se actualizan al instante.
 - **Pestañas ilimitadas con autoguardado**: trabaja con varios documentos a la vez; cada pestaña guarda una copia local para evitar pérdidas.
-- **Menú Archivo unificado**: abrir (`Ctrl+O`), importar vía Pandoc, pegar LaTeX (`Ctrl+Mayús+V`), guardar (`Ctrl+S`) y exportar a DOCX, ODT, EPUB, HTML autónomo o LaTeX completo.
+- **Menú Archivo unificado**: abrir (`Ctrl+O`), importar vía Pandoc (DOCX, ODT, EPUB, HTML, TEX), pegar LaTeX (`Ctrl+Mayús+V`), guardar (`Ctrl+S`) y exportar a DOCX, ODT, EPUB, HTML autónomo o LaTeX completo.
 - **Soporte matemático avanzado**: integración con KaTeX y acceso directo a EdiCuaTeX para insertar expresiones complejas.
 - **Panel de previsualización editable**: edita sobre el resultado final, copia HTML o genera variantes LaTeX desde un menú contextual.
 - **Búsqueda y reemplazo inteligente**: ignora tildes y mayúsculas, resalta coincidencias y ofrece navegación rápida.
@@ -32,7 +32,7 @@ Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pu
 
 ## Importación, exportación y copia rápida
 
-- **Importar**: abre Markdown locales, pega documentos LaTeX completos o convierte ficheros mediante Pandoc (DOCX, ODT, HTML, TEX).
+- **Importar**: abre Markdown locales, pega documentos LaTeX completos o convierte ficheros mediante Pandoc (DOCX, ODT, EPUB, HTML, TEX).
 - **Exportar**: genera descargas inmediatas en DOCX, ODT, EPUB (libro digital), HTML autónomo (con estilos y fórmulas incrustados) o LaTeX preparado para compilar.
 - **Copiar**: botones dedicados para copiar Markdown del panel izquierdo o seleccionar, desde el panel derecho, qué formato enviar al portapapeles.
 

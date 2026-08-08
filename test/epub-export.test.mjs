@@ -18,6 +18,8 @@ import {
   collectRemoteImageUrls,
   dropImagesByUrl,
   normalizeThematicBreaks,
+  buildImportArgs,
+  stripEpubAnchorPrefixes,
 } from '../pandoc-prepare.js';
 
 // Mirrors what exportDocument() sends for format 'epub'.
@@ -187,4 +189,45 @@ test('DOCX y ODT siguen exportando correctamente', { timeout: 180000 }, async ()
     );
     assert.equal(result.bytes[0], 0x50, `${format}: no parece un ZIP`);
   }
+});
+
+test('un EPUB se puede volver a importar como Markdown limpio', { timeout: 180000 }, async () => {
+  const original = [
+    '# Manual',
+    '',
+    'Ver el [índice](#seccion-uno).',
+    '',
+    '## Sección uno',
+    '',
+    'Texto con **negrita**, *cursiva* y $a^2+b^2$.',
+    '',
+    '- punto uno',
+    '- punto dos',
+    '',
+    '> una cita',
+    '',
+    '| a | b |',
+    '|---|---|',
+    '| 1 | 2 |',
+    '',
+  ].join('\n');
+
+  const exported = await exportEpub(original);
+  assertValidEpub(exported, 'ida y vuelta');
+
+  const imported = await runPandoc(buildImportArgs('epub'), exported.bytes);
+  assert.ok(imported.bytes.length > 0, `importación vacía: ${imported.stderr.join(' | ')}`);
+  const markdown = stripEpubAnchorPrefixes(new TextDecoder().decode(imported.bytes));
+
+  // Sin las extensiones desactivadas, Pandoc devolvería divs y anclas vacías.
+  assert.doesNotMatch(markdown, /^:::/m, 'no debería haber bloques :::');
+  assert.doesNotMatch(markdown, /\[\]\{#/, 'no debería haber anclas vacías');
+  assert.doesNotMatch(markdown, /\.xhtml/, 'no deberían quedar referencias al EPUB');
+
+  assert.match(markdown, /^# Manual$/m);
+  assert.match(markdown, /^## Sección uno$/m);
+  assert.match(markdown, /\*\*negrita\*\*/);
+  assert.match(markdown, /^- +punto uno$/m);
+  assert.match(markdown, /^> una cita$/m);
+  assert.match(markdown, /\(#seccion-uno\)/);
 });

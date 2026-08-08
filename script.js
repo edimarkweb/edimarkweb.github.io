@@ -913,13 +913,14 @@ let latexImportStatusEl = null;
 let latexImportConvertBtn = null;
 let latexImportCancelBtn = null;
 let suppressNextTabClick = false;
-const BINARY_IMPORT_FORMATS = new Set(['docx', 'odt']);
+const BINARY_IMPORT_FORMATS = new Set(['docx', 'odt', 'epub']);
 const IMPORT_EXTENSION_MAP = new Map([
     ['tex', 'latex'],
     ['latex', 'latex'],
     ['ltx', 'latex'],
     ['docx', 'docx'],
     ['odt', 'odt'],
+    ['epub', 'epub'],
     ['html', 'html'],
     ['htm', 'html'],
     ['xhtml', 'html'],
@@ -2444,6 +2445,7 @@ function detectImportFormat(file) {
     const mime = (file.type || '').toLowerCase();
     if (mime.includes('wordprocessingml')) return 'docx';
     if (mime.includes('opendocument')) return 'odt';
+    if (mime.includes('epub')) return 'epub';
     if (mime.includes('html')) return 'html';
     if (mime.includes('tex')) return 'latex';
     return null;
