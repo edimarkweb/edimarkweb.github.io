@@ -2911,7 +2911,6 @@ window.onload = () => {
     const formulaBtn = document.getElementById('formula-btn');
     const formulaOptions = document.getElementById('formula-options');
     const formulaOptionButtons = formulaOptions ? Array.from(formulaOptions.querySelectorAll('[data-format]')) : [];
-    const themeToggleBtn = document.getElementById('theme-toggle-btn');
     const languageSelectEl = document.getElementById('language-select');
     const languageWrapper = document.getElementById('language-select-wrapper');
     const fontSizeSelect = document.getElementById('font-size-select');
@@ -3111,6 +3110,10 @@ window.onload = () => {
     setupSettingsSubmenu({
         containerId: 'font-size-menu-container', buttonId: 'font-size-menu-btn',
         menuId: 'font-size-menu', selectId: 'font-size-select', attribute: 'data-font-size',
+    });
+    setupSettingsSubmenu({
+        containerId: 'theme-menu-container', buttonId: 'theme-menu-btn',
+        menuId: 'theme-menu', selectId: 'theme-select', attribute: 'data-theme',
     });
 
     if (POINTER_HAS_HOVER) {
@@ -4011,9 +4014,27 @@ window.onload = () => {
     });
     // --- FIN DE LA CORRECCIÓN ---
 
-    // --- Gestión del tema (claro/oscuro) ---
+    // --- Gestión del tema (sistema / claro / oscuro) ---
+    const THEME_KEY = 'edimarkweb-theme';
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-    let manualThemeOverride = null;
+    const themeSelect = document.getElementById('theme-select');
+    const themeMenuBtn = document.getElementById('theme-menu-btn');
+    const themeLabel = document.getElementById('theme-select-label');
+
+    function storedThemePreference() {
+        try {
+            const saved = localStorage.getItem(THEME_KEY);
+            return ['system', 'light', 'dark'].includes(saved) ? saved : 'system';
+        } catch (error) {
+            return 'system';
+        }
+    }
+
+    function currentThemePreference() {
+        return themeSelect && ['system', 'light', 'dark'].includes(themeSelect.value)
+            ? themeSelect.value
+            : 'system';
+    }
 
     function applyTheme(theme) {
       const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
@@ -4022,52 +4043,51 @@ window.onload = () => {
       const newEditorTheme = normalizedTheme === 'dark' ? 'material-darker' : 'eclipse';
       markdownEditor.setOption('theme', newEditorTheme);
       htmlEditor.setOption('theme', newEditorTheme);
-      updateThemeToggleLabel(normalizedTheme);
+      updateThemeMenuLabel();
     }
 
-    // El botón vive en el menú Configuración y lleva etiqueta, así que solo se
-    // reemplaza el icono; el texto anuncia el tema al que se cambiará.
-    function updateThemeToggleLabel(theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light') {
-      if (!themeToggleBtn) return;
-      const isDark = theme === 'dark';
-      const iconHost = themeToggleBtn.querySelector('.theme-icon');
-      if (iconHost) {
-        iconHost.innerHTML = `<i data-lucide="${isDark ? 'moon' : 'sun'}" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>`;
+    // El icono refleja la preferencia elegida (incluido "Sistema") y el texto
+    // de la derecha, su nombre traducido.
+    function updateThemeMenuLabel() {
+      const preference = currentThemePreference();
+      if (themeMenuBtn) {
+        const iconHost = themeMenuBtn.querySelector('.theme-icon');
+        const iconName = preference === 'system' ? 'monitor' : (preference === 'dark' ? 'moon' : 'sun');
+        if (iconHost) {
+          iconHost.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>`;
+        }
       }
-      const label = themeToggleBtn.querySelector('.theme-label');
-      if (label) {
-        label.textContent = isDark
-          ? getTranslation('theme_switch_to_light', 'Modo claro')
-          : getTranslation('theme_switch_to_dark', 'Modo oscuro');
+      if (themeLabel && themeSelect) {
+        const option = themeSelect.options[themeSelect.selectedIndex];
+        if (option) themeLabel.textContent = option.textContent.trim();
       }
       if (window.lucide) lucide.createIcons();
     }
 
-    window.__updateThemeToggleLabel = () => updateThemeToggleLabel();
+    window.__updateThemeToggleLabel = () => updateThemeMenuLabel();
 
-    function syncWithSystemTheme() {
-      if (manualThemeOverride) return;
+    function applyThemePreference(preference) {
+      const usable = ['system', 'light', 'dark'].includes(preference) ? preference : 'system';
+      try {
+        localStorage.setItem(THEME_KEY, usable);
+      } catch (error) {
+        // Sin almacenamiento la preferencia solo dura esta sesión.
+      }
+      applyTheme(usable === 'system' ? (prefersDark.matches ? 'dark' : 'light') : usable);
+    }
+
+    if (themeSelect) {
+      themeSelect.value = storedThemePreference();
+      themeSelect.addEventListener('change', () => applyThemePreference(themeSelect.value));
+      themeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    } else {
       applyTheme(prefersDark.matches ? 'dark' : 'light');
     }
 
-    applyTheme(prefersDark.matches ? 'dark' : 'light');
-
     prefersDark.addEventListener('change', (e) => {
-      if (!manualThemeOverride) {
+      if (currentThemePreference() === 'system') {
         applyTheme(e.matches ? 'dark' : 'light');
       }
-    });
-    themeToggleBtn.addEventListener('click', (event) => {
-      if (event && event.altKey) {
-        manualThemeOverride = null;
-        syncWithSystemTheme();
-        return;
-      }
-      const isCurrentlyDark = document.documentElement.classList.contains('dark');
-      const newTheme = isCurrentlyDark ? 'light' : 'dark';
-      manualThemeOverride = newTheme;
-      applyTheme(newTheme);
-      closeSettingsMenu();
     });
 
     if (window.PandocExporter && typeof window.PandocExporter.warmUpExporter === 'function') {

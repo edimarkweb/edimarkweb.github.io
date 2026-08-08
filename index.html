@@ -196,10 +196,33 @@
                       </select>
                     </div>
                     <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
-                    <button type="button" id="theme-toggle-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="theme_toggle_btn_aria_label" aria-label="Cambiar tema">
-                      <span class="theme-icon flex"><i data-lucide="sun" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i></span>
-                      <span class="theme-label" data-theme-label>Modo oscuro</span>
-                    </button>
+                    <div id="theme-menu-container" class="relative">
+                      <button type="button" id="theme-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false" data-i18n-key="theme_toggle_btn_aria_label" aria-label="Cambiar tema">
+                        <span class="theme-icon flex"><i data-lucide="monitor" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i></span>
+                        <span data-i18n-key="theme_menu_label">Tema</span>
+                        <span id="theme-select-label" class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500">Sistema</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 shrink-0 opacity-60"></i>
+                      </button>
+                      <div id="theme-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-48 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="theme-menu-btn">
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-theme="system">
+                        <span data-i18n-key="theme_option_system">Sistema</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-theme="light">
+                        <span data-i18n-key="theme_option_light">Claro</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-theme="dark">
+                        <span data-i18n-key="theme_option_dark">Oscuro</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
+                      </div>
+                      <select id="theme-select" class="hidden" aria-label="Modo">
+                        <option value="system" data-i18n-key="theme_option_system">Sistema</option>
+                        <option value="light" data-i18n-key="theme_option_light">Claro</option>
+                        <option value="dark" data-i18n-key="theme_option_dark">Oscuro</option>
+                      </select>
+                    </div>
                     <button type="button" id="toggle-width-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="toggle_width_btn_title" title="Expandir / Contraer ancho">
                       <span class="width-icon flex"><i data-lucide="maximize" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i></span>
                       <span data-i18n-key="toggle_width_btn_text">Ancho expandido</span>
@@ -401,7 +424,7 @@
         <strong data-i18n-key="footer_name">EdiMarkWeb</strong>
         <span data-i18n-key="footer_tagline">Editor de textos Markdown.</span>
         <span class="site-footer-sep">·</span>
-        <span data-i18n-key="footer_version">Versión 2.7.28.</span>
+        <span data-i18n-key="footer_version">Versión 2.7.29.</span>
         <span class="site-footer-sep">·</span>
         <span data-i18n-key="footer_author_prefix">© 2025-2026</span>
         <a href="https://bilateria.es" target="_blank" rel="noreferrer noopener">Juan José de Haro</a>
