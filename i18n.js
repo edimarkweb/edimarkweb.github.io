@@ -1,3 +1,9 @@
+let resolveLanguageReady;
+// The initial document cannot choose its translated manual until this settles.
+window.__edimarkLanguageReady = new Promise(resolve => {
+  resolveLanguageReady = resolve;
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   const languageSelect = document.getElementById('language-select');
   const languageLabel = document.getElementById('language-select-label');
@@ -75,5 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   languageSelect.addEventListener('change', updateLanguageLabel);
 
-  setLanguage(getPreferredLanguage());
+  setLanguage(getPreferredLanguage()).finally(() => {
+    resolveLanguageReady();
+  });
 });

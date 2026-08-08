@@ -2147,6 +2147,11 @@ function manualFileForLanguage() {
 }
 
 async function fetchManualMarkdown() {
+    // i18n.js publishes this promise before DOMContentLoaded, so the automatic
+    // first tab cannot race the asynchronous locale fetch.
+    if (window.__edimarkLanguageReady) {
+        await window.__edimarkLanguageReady;
+    }
     const candidates = [manualFileForLanguage(), 'manual.md'];
     for (const file of candidates) {
         try {
