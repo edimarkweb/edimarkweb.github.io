@@ -178,7 +178,7 @@
   "drop_unsupported": "Solo se pueden soltar archivos Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX.",
   "footer_name": "EdiMarkWeb",
   "footer_tagline": "Editor de textos Markdown.",
-  "footer_version": "Versión 2.7.29.",
+  "footer_version": "Versión 2.7.30.",
   "footer_author_prefix": "© 2025-2026",
   "footer_license_prefix": "Código bajo",
   "footer_license_link": "licencia AGPL v3",

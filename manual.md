@@ -9,8 +9,8 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 - Edición dual: puedes trabajar tanto en Markdown como directamente en la vista previa HTML, siempre sincronizadas.
 - Menú de exportación y de importación con soporte para DOCX, ODT, EPUB, HTML y LaTeX, incluyendo opciones de copia directa al portapapeles.
 - Buscador con reemplazo que resalta las coincidencias y acepta términos sin tildes ni distinción entre mayúsculas y minúsculas.
-- Selector de idioma y tamaño de letra para adaptar la interfaz a tu aula.
-- Botones para ampliar el ancho de trabajo o abrir la aplicación en una ventana independiente (modo escritorio).
+- Menú **Configuración** con el idioma, el tamaño de letra, el tema, el ancho de trabajo y la ventana independiente reunidos en un mismo sitio.
+- Tema de la interfaz con tres opciones —Sistema, Claro y Oscuro— que se recuerda entre sesiones.
 - Menú de fórmulas renovado y acceso directo a EdiCuaTeX para construir expresiones complejas.
 - Apertura de múltiples archivos arrastrándolos al editor (cada uno en su pestaña): Markdown y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo con Pandoc.
 
@@ -63,13 +63,18 @@ Trabaja con varios documentos a la vez, cada uno en su propia pestaña.
 
 La barra junto al logotipo agrupa las opciones globales de la aplicación y ahora concentra todas las acciones de archivo en un único botón desplegable:
 
-* **Archivo**: abre un menú con `Abrir (Ctrl+O)`, `Importar` mediante Pandoc, `Pegar LaTeX (Ctrl+Mayús+V)` para pegar documentos completos, `Guardar (Ctrl+S)` y el submenú **Exportar** con DOCX, ODT, EPUB, HTML o TEX. Así no hay iconos duplicados y siempre encontrarás los comandos de gestión en el mismo lugar.
-* **Idioma y tamaño de letra**: selecciona el idioma de la interfaz y el tamaño base del texto sin salir del flujo de trabajo.
-* **Tema claro/oscuro** y **Diseño (Ctrl+L)**: ajustan el aspecto visual (tema, distribución de paneles) en un solo clic.
-* **Ancho expandido** y **Ventana independiente**: amplían la superficie útil o lanzan EdiMarkWeb en una ventana separada para modo escritorio.
+* **Archivo**: reúne las acciones sobre el documento en dos grupos. Primero las que traen contenido —`Abrir (Ctrl+O)`, `Importar` y `Pegar LaTeX (Ctrl+Mayús+V)`— y después las que lo sacan: `Guardar (Ctrl+S)` y el submenú **Exportar**, que se despliega a la derecha con DOCX, ODT, EPUB, HTML y TEX. Cada opción muestra su atajo de teclado.
+* **Configuración**: agrupa todos los ajustes de la aplicación, cada uno con un submenú que indica el valor activo.
+  * **Idioma**: cambia el idioma de la interfaz.
+  * **Tamaño de texto**: pequeño, normal, grande o muy grande.
+  * **Tema**: `Sistema` sigue el del equipo y cambia con él; `Claro` y `Oscuro` lo fijan. La elección se recuerda la próxima vez que abras la aplicación.
+  * **Ancho expandido**: amplía la superficie de trabajo.
+  * **Ventana independiente**: abre EdiMarkWeb en una ventana propia, a modo de aplicación de escritorio.
 * **Imprimir (Ctrl+P)**: genera una vista preparada para papel o PDF con los estilos actuales.
 * **Buscar (Ctrl+F)** y **Manual (Ctrl+H)**: abren el buscador avanzado o este mismo documento.
 * **Borrar todo**: limpia por completo el documento activo tras pedir confirmación.
+
+El diseño de los paneles se cambia con `Ctrl+L` o con las flechas de las cabeceras de cada panel.
 
 ---
 
@@ -128,7 +133,7 @@ Puedes arrastrar la barra central para dar más espacio a cualquiera de los pane
 * **Guardar (`Ctrl+S`)**: Descarga el documento actual en tu equipo.
 * **Copiar contenido**: El panel izquierdo incluye un botón para copiar el Markdown; en la vista previa puedes elegir qué se copiará (HTML renderizado o variantes LaTeX) desde el menú desplegable junto al icono de copia.
 * **Borrar todo**: Restablece el documento tras una confirmación.
-* **Cambiar tema / diseño / ancho**: Ajusta la interfaz a diferentes situaciones (pizarra digital, portátil, etc.).
+* **Cambiar tema, diseño o ancho**: Desde el menú **Configuración** (tema y ancho) y con `Ctrl+L` (diseño de los paneles) adaptas la interfaz a cada situación: pizarra digital, portátil, etc.
 * **Manual**: Dispones de este documento siempre actualizado con `Ctrl+H`.
 
 ---

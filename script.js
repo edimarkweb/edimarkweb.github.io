@@ -2139,16 +2139,51 @@ function updateDirtyIndicator(id, isDirty) {
     }
 }
 
+// El manual existe en los cinco idiomas de la interfaz; el castellano hace de
+// respaldo si falta el archivo del idioma activo.
+function manualFileForLanguage() {
+    const lang = window.__edimarkLang || document.documentElement.lang || 'es';
+    return lang && lang !== 'es' ? `manual-${lang}.md` : 'manual.md';
+}
+
+async function fetchManualMarkdown() {
+    const candidates = [manualFileForLanguage(), 'manual.md'];
+    for (const file of candidates) {
+        try {
+            const response = await fetch(file);
+            if (response.ok) return await response.text();
+        } catch (error) {
+            console.warn(`No se pudo cargar ${file}:`, error);
+        }
+    }
+    return '# Manual\n\nError: No se pudo cargar el manual.';
+}
+
+// Al cambiar el idioma, el manual abierto se recarga en el nuevo, salvo que
+// tenga cambios sin guardar: en ese caso se respeta lo que haya escrito el usuario.
+window.__reloadManualForLanguage = () => {
+    const manualDoc = docs.find(d => d.name === 'Manual');
+    if (!manualDoc) return;
+    if (manualDoc.md !== manualDoc.lastSaved) return;
+    const wasActive = currentId === manualDoc.id;
+    fetchManualMarkdown().then((md) => {
+        const normalized = normalizeNewlines(md);
+        manualDoc.md = normalized;
+        manualDoc.lastSaved = normalized;
+        if (wasActive) switchTo(manualDoc.id);
+        updateDirtyIndicator(manualDoc.id, false);
+    });
+};
+
 function openManualDoc(forceReload = false) {
     const manualDoc = docs.find(d => d.name === 'Manual');
-    
+
     if (manualDoc && !forceReload) {
         switchTo(manualDoc.id);
         return;
     }
 
-    fetch('manual.md')
-        .then(r => r.ok ? r.text() : '# Manual\n\nError: No se pudo cargar el manual.')
+    fetchManualMarkdown()
         .then(md => {
             const normalized = normalizeNewlines(md);
             if (manualDoc && forceReload) {

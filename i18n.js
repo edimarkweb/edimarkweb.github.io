@@ -50,6 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('language', lang);
     languageSelect.value = lang;
     updateLanguageLabel();
+    if (typeof window.__reloadManualForLanguage === 'function') {
+      window.__reloadManualForLanguage();
+    }
     if (typeof window.__localizeShortcutLabels === 'function') {
       window.__localizeShortcutLabels();
     }
