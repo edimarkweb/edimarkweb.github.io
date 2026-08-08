@@ -7,6 +7,7 @@ let undoButtonEl = null;
 let redoButtonEl = null;
 const AUTOSAVE_KEY_PREFIX = 'edimarkweb-autosave';
 const DOCS_LIST_KEY = 'edimarkweb-docslist';
+const CORRUPT_DOCS_LIST_BACKUP_KEY = 'edimarkweb-docslist-corrupt-backup';
 const LAYOUT_KEY = 'edimarkweb-layout';
 const FS_KEY = 'edimarkweb-fontsize';
 const FOCUS_MODE_KEY = 'edimarkweb-focus-mode';
@@ -43,6 +44,75 @@ let htmlEditorWrapperEl = null;
 let savedHtmlSelection = null;
 let forceMarkdownUpdate = false;
 let lastMarkdownSelection = { start: null, end: null };
+let pendingStorageNotice = null;
+let storageNoticeHandler = null;
+const shownStorageNoticeKeys = new Set();
+
+function queueStorageNotice(notice) {
+    if (!notice || shownStorageNoticeKeys.has(notice.key)) return;
+    pendingStorageNotice = notice;
+    if (storageNoticeHandler) {
+        storageNoticeHandler(notice);
+        shownStorageNoticeKeys.add(notice.key);
+        pendingStorageNotice = null;
+    }
+}
+
+function isStorageQuotaError(error) {
+    return Boolean(error && (
+        error.name === 'QuotaExceededError'
+        || error.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+        || error.code === 22
+        || error.code === 1014
+    ));
+}
+
+function reportStorageFailure(error) {
+    const notice = isStorageQuotaError(error)
+        ? {
+            key: 'storage_quota_exceeded',
+            fallback: 'El almacenamiento local está lleno. Guarda el documento en un archivo para no perder los cambios.'
+        }
+        : {
+            key: 'storage_unavailable',
+            fallback: 'No se puede usar el almacenamiento local. Los cambios no se conservarán al cerrar la aplicación.'
+        };
+    const alreadyReported = shownStorageNoticeKeys.has(notice.key)
+        || pendingStorageNotice?.key === notice.key;
+    if (!alreadyReported) console.warn(notice.fallback, error);
+    queueStorageNotice(notice);
+}
+
+function safeLocalStorageGet(key, fallback = null) {
+    try {
+        const value = window.localStorage.getItem(key);
+        return value === null ? fallback : value;
+    } catch (error) {
+        reportStorageFailure(error);
+        return fallback;
+    }
+}
+
+function safeLocalStorageSet(key, value, { notify = true } = {}) {
+    try {
+        window.localStorage.setItem(key, value);
+        return true;
+    } catch (error) {
+        if (notify) reportStorageFailure(error);
+        else console.warn(`No se pudo guardar ${key}:`, error);
+        return false;
+    }
+}
+
+function safeLocalStorageRemove(key) {
+    try {
+        window.localStorage.removeItem(key);
+        return true;
+    } catch (error) {
+        reportStorageFailure(error);
+        return false;
+    }
+}
 
 function cloneSelection(selection) {
     if (!selection || typeof selection.start !== 'number' || typeof selection.end !== 'number') return null;
@@ -295,7 +365,8 @@ function buildBase64CollapsedState(text) {
             prefix,
             mime,
             approxBytes,
-            fallbackAlt: (alt || '').trim() || `Imagen ${counter}`
+            fallbackAlt: (alt || '').trim()
+                || formatTranslation('base64_image_default_alt', 'Imagen {number}', { number: counter })
         });
         return match.replace(data, placeholder);
     });
@@ -331,12 +402,17 @@ function updateBase64Ui(state) {
     const hasEntries = entries.length > 0;
     base64UiContainer.classList.toggle('hidden', !hasEntries);
     base64UiCountLabel.textContent = hasEntries
-        ? `${entries.length} ${entries.length === 1 ? 'imagen' : 'imágenes'}`
-        : '0 encontradas';
+        ? formatTranslation(
+            entries.length === 1 ? 'base64_count_singular' : 'base64_count_plural',
+            entries.length === 1 ? '{count} imagen' : '{count} imágenes',
+            { count: entries.length }
+        )
+        : getTranslation('base64_count_empty', '0 encontradas');
     base64UiList.innerHTML = '';
     entries.forEach(([placeholder, info], index) => {
         const context = findPlaceholderContext(placeholder);
-        const altText = (context && context.alt) || info.fallbackAlt || `Imagen ${index + 1}`;
+        const defaultAlt = formatTranslation('base64_image_default_alt', 'Imagen {number}', { number: index + 1 });
+        const altText = (context && context.alt) || info.fallbackAlt || defaultAlt;
         const typeLabel = info.mime ? info.mime.toUpperCase() : 'IMG';
         const sizeLabel = formatBytes(info.approxBytes);
         const item = document.createElement('div');
@@ -344,7 +420,7 @@ function updateBase64Ui(state) {
         item.setAttribute('role', 'listitem');
         const details = document.createElement('div');
         const titleEl = document.createElement('h4');
-        titleEl.textContent = altText || `Imagen ${index + 1}`;
+        titleEl.textContent = altText || defaultAlt;
         const metaEl = document.createElement('p');
         metaEl.textContent = `${typeLabel} · ${sizeLabel}`;
         details.append(titleEl, metaEl);
@@ -353,13 +429,15 @@ function updateBase64Ui(state) {
         const viewBtn = document.createElement('button');
         viewBtn.type = 'button';
         viewBtn.className = 'base64-hidden-btn';
-        viewBtn.textContent = 'Ver código';
+        viewBtn.textContent = getTranslation('base64_view_code_btn', 'Ver código');
         viewBtn.addEventListener('click', () => openBase64Modal(placeholder));
         actions.appendChild(viewBtn);
         item.append(details, actions);
         base64UiList.appendChild(item);
     });
 }
+
+window.__updateBase64UiLabels = () => updateBase64Ui(currentBase64State);
 
 function openBase64Modal(placeholder) {
     if (!base64ModalOverlayEl || !base64ModalTextarea || !base64ModalCopyBtn) return;
@@ -846,7 +924,7 @@ function classifyManualClipboardPayload(data) {
 async function handlePasteButtonClick(button) {
     if (!button || button.disabled) return;
     if (!navigator.clipboard) {
-        alert('Tu navegador no permite leer el portapapeles desde un botón. Usa Ctrl+V.');
+        alert(getTranslation('clipboard_button_unsupported', 'Tu navegador no permite leer el portapapeles desde un botón. Usa Ctrl+V.'));
         return;
     }
     const previousDisabled = button.disabled;
@@ -855,12 +933,12 @@ async function handlePasteButtonClick(button) {
     try {
         const clipboardContent = await readClipboardForButton();
         if (!clipboardContent) {
-            alert('No pude leer el portapapeles. Usa Ctrl+V como alternativa.');
+            alert(getTranslation('clipboard_read_error', 'No pude leer el portapapeles. Usa Ctrl+V como alternativa.'));
             return;
         }
         const payload = classifyManualClipboardPayload(clipboardContent);
         if (!payload) {
-            alert('El portapapeles está vacío o en un formato no soportado.');
+            alert(getTranslation('clipboard_empty_or_unsupported', 'El portapapeles está vacío o en un formato no soportado.'));
             return;
         }
         const markdownHadFocus = document.activeElement === markdownTextareaEl;
@@ -932,6 +1010,13 @@ function getTranslation(key, fallback) {
         return catalog[key];
     }
     return fallback;
+}
+
+function formatTranslation(key, fallback, values = {}) {
+    return Object.entries(values).reduce(
+        (message, [name, value]) => message.replaceAll(`{${name}}`, String(value)),
+        getTranslation(key, fallback)
+    );
 }
 
 function createTextareaEditor(textarea) {
@@ -1849,9 +1934,35 @@ function updateUndoRedoButtons() {
 }
 
 // --- Funciones de gestión de pestañas y documentos ---
+function loadSavedDocsList() {
+    const raw = safeLocalStorageGet(DOCS_LIST_KEY, '[]');
+    try {
+        const parsed = JSON.parse(raw);
+        const isValid = Array.isArray(parsed) && parsed.every(doc => (
+            doc
+            && typeof doc === 'object'
+            && typeof doc.id === 'string'
+            && doc.id.length > 0
+            && typeof doc.name === 'string'
+        ));
+        if (!isValid) throw new Error('invalid_docs_list');
+        return parsed;
+    } catch (error) {
+        console.warn('La lista de documentos guardada está dañada:', error);
+        const backupSaved = safeLocalStorageSet(CORRUPT_DOCS_LIST_BACKUP_KEY, raw);
+        queueStorageNotice({
+            key: 'storage_corrupt_recovered',
+            fallback: backupSaved
+                ? 'La lista de documentos guardada estaba dañada. Se inició una sesión nueva y se conservó una copia de respaldo.'
+                : 'La lista de documentos guardada estaba dañada. Se inició una sesión nueva.'
+        });
+        return [];
+    }
+}
+
 function saveDocsList() {
     const docList = docs.map(d => ({id: d.id, name: d.name}));
-    localStorage.setItem(DOCS_LIST_KEY, JSON.stringify(docList));
+    return safeLocalStorageSet(DOCS_LIST_KEY, JSON.stringify(docList));
 }
 
 function syncDocsOrderWithTabs(tabBar) {
@@ -1973,7 +2084,7 @@ function startRename(tab) {
     input.type = 'text';
     input.value = currentName;
     input.className = 'bg-white dark:bg-slate-800 border border-blue-500 rounded px-1 text-sm w-32';
-    input.setAttribute('aria-label', 'Nuevo nombre del documento');
+    input.setAttribute('aria-label', getTranslation('rename_document_aria_label', 'Nuevo nombre del documento'));
 
     tabNameSpan.style.display = 'none';
     if (closeBtn) closeBtn.style.display = 'none';
@@ -2017,10 +2128,11 @@ function startRename(tab) {
     input.addEventListener('keydown', handleKey);
 }
 
-function newDoc(name = 'Sin título', md = '') {
+function newDoc(name = '', md = '') {
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
     const normalizedMd = normalizeNewlines(md || '');
-    const newDoc = { id, name, md: normalizedMd, lastSaved: normalizedMd };
+    const documentName = name || getTranslation('untitled_document', 'Documento sin título');
+    const newDoc = { id, name: documentName, md: normalizedMd, lastSaved: normalizedMd };
     docs.push(newDoc);
     addTabElement(newDoc);
     switchTo(id);
@@ -2037,7 +2149,7 @@ function addTabElement({ id, name }) {
     tab.setAttribute('aria-selected', 'false');
     tab.innerHTML = `
         <span class="tab-name">${name}</span>
-        <span class="ml-1 text-red-500 tab-dirty hidden" title="Cambios sin guardar">●</span>
+        <span class="ml-1 text-red-500 tab-dirty hidden" title="${getTranslation('unsaved_changes_title', 'Cambios sin guardar')}">●</span>
         <i data-lucide="x" class="tab-close w-4 h-4 opacity-50 hover:opacity-100"></i>
     `;
     tabBar.appendChild(tab);
@@ -2107,13 +2219,17 @@ function closeDoc(id) {
     const doc = docs[docIndex];
     const isDirty = doc.md !== doc.lastSaved;
 
-    if (isDirty && !confirm(`¿Cerrar "${doc.name}" sin guardar los cambios?`)) {
+    if (isDirty && !confirm(formatTranslation(
+        'close_unsaved_confirm',
+        '¿Cerrar "{name}" sin guardar los cambios?',
+        { name: doc.name }
+    ))) {
         return;
     }
 
     docs.splice(docIndex, 1);
     document.querySelector(`.tab[data-id="${id}"]`).remove();
-    localStorage.removeItem(`${AUTOSAVE_KEY_PREFIX}-${id}`);
+    safeLocalStorageRemove(`${AUTOSAVE_KEY_PREFIX}-${id}`);
     saveDocsList();
 
     if (currentId === id) {
@@ -2376,13 +2492,13 @@ function applyFormat(format) {
           }
           break;
         
-        case 'heading-1': newText = `\n# ${selectedText || 'Título 1'}\n`; break;
-        case 'heading-2': newText = `\n## ${selectedText || 'Título 2'}\n`; break;
-        case 'heading-3': newText = `\n### ${selectedText || 'Título 3'}\n`; break;
-        case 'heading-4': newText = `\n#### ${selectedText || 'Título 4'}\n`; break;
-        case 'heading-5': newText = `\n##### ${selectedText || 'Título 5'}\n`; break;
-        case 'heading-6': newText = `\n###### ${selectedText || 'Título 6'}\n`; break;
-        case 'quote': newText = `\n> ${selectedText || 'Cita'}\n`; break;
+        case 'heading-1': newText = `\n# ${selectedText || formatTranslation('heading_placeholder', 'Título {level}', { level: 1 })}\n`; break;
+        case 'heading-2': newText = `\n## ${selectedText || formatTranslation('heading_placeholder', 'Título {level}', { level: 2 })}\n`; break;
+        case 'heading-3': newText = `\n### ${selectedText || formatTranslation('heading_placeholder', 'Título {level}', { level: 3 })}\n`; break;
+        case 'heading-4': newText = `\n#### ${selectedText || formatTranslation('heading_placeholder', 'Título {level}', { level: 4 })}\n`; break;
+        case 'heading-5': newText = `\n##### ${selectedText || formatTranslation('heading_placeholder', 'Título {level}', { level: 5 })}\n`; break;
+        case 'heading-6': newText = `\n###### ${selectedText || formatTranslation('heading_placeholder', 'Título {level}', { level: 6 })}\n`; break;
+        case 'quote': newText = `\n> ${selectedText || getTranslation('quote_placeholder', 'Cita')}\n`; break;
         case 'list-ul': 
             newText = hadSelection ? selectedText.split('\n').map(l => l.trim() ? `- ${l}` : '').join('\n') : '\n- ';
             break;
@@ -2716,7 +2832,7 @@ function buildHtmlWithTex() {
 function applyLayout(layout) {
   currentLayout = layout;
   syncEnabled = (layout === 'dual');
-  localStorage.setItem(LAYOUT_KEY, layout);
+  safeLocalStorageSet(LAYOUT_KEY, layout);
 
   const mdPanel = document.getElementById('markdown-panel');
   const htmlPanel = document.getElementById('html-panel');
@@ -2783,7 +2899,7 @@ function cycleLayout(step = 1) {
 
 function applyFontSize(px) {
   document.documentElement.style.setProperty('--fs-base', px + 'px');
-  localStorage.setItem(FS_KEY, px);
+  safeLocalStorageSet(FS_KEY, px);
   if (markdownEditor) markdownEditor.refresh();
   if (htmlEditor) htmlEditor.refresh();
 }
@@ -2836,7 +2952,7 @@ window.onload = () => {
     const previewCopyOptionButtons = previewCopyMenu ? Array.from(previewCopyMenu.querySelectorAll('[data-copy-action]')) : [];
     const COPY_ACTIONS = ['html', 'latex-preview', 'latex-full'];
     markdownCharCounterEl = document.getElementById('markdown-char-counter');
-    let currentCopyAction = localStorage.getItem(COPY_ACTION_KEY);
+    let currentCopyAction = safeLocalStorageGet(COPY_ACTION_KEY);
     if (!COPY_ACTIONS.includes(currentCopyAction)) currentCopyAction = 'html';
     const copyActionLabelKeys = {
         html: 'copy_menu_option_html',
@@ -2925,11 +3041,7 @@ window.onload = () => {
         const usableAction = COPY_ACTIONS.includes(action) ? action : 'html';
         currentCopyAction = usableAction;
         if (persist) {
-            try {
-                localStorage.setItem(COPY_ACTION_KEY, usableAction);
-            } catch (err) {
-                console.warn('No se pudo guardar la acción de copiado por defecto:', err);
-            }
+            safeLocalStorageSet(COPY_ACTION_KEY, usableAction);
         }
         updateCopyButtonLabel(usableAction);
         updatePreviewCopyOptionStyles(usableAction);
@@ -2999,19 +3111,11 @@ window.onload = () => {
     setMarkdownControlsDisabled(false);
 
     const readFocusModePreference = () => {
-        try {
-            return localStorage.getItem(FOCUS_MODE_KEY) === '1';
-        } catch (err) {
-            return false;
-        }
+        return safeLocalStorageGet(FOCUS_MODE_KEY) === '1';
     };
 
     const persistFocusModePreference = (enabled) => {
-        try {
-            localStorage.setItem(FOCUS_MODE_KEY, enabled ? '1' : '0');
-        } catch (err) {
-            console.warn('No se pudo guardar el modo foco:', err);
-        }
+        safeLocalStorageSet(FOCUS_MODE_KEY, enabled ? '1' : '0');
     };
 
     const applyFocusModeState = (enabled) => {
@@ -3557,6 +3661,20 @@ window.onload = () => {
         }
     }
 
+    storageNoticeHandler = notice => {
+        const showNotice = () => updateExportStatus(getTranslation(notice.key, notice.fallback));
+        if (window.__edimarkLanguageReady) {
+            window.__edimarkLanguageReady.then(showNotice);
+        } else {
+            showNotice();
+        }
+    };
+    if (pendingStorageNotice) {
+        const initialStorageNotice = pendingStorageNotice;
+        pendingStorageNotice = null;
+        queueStorageNotice(initialStorageNotice);
+    }
+
     async function handleLatexImportConversion() {
         if (latexImportInProgress) return;
         if (!latexImportTextarea) return;
@@ -3855,7 +3973,7 @@ window.onload = () => {
 
         const storedSize = (() => {
             try {
-                const raw = localStorage.getItem(DESKTOP_SIZE_KEY);
+                const raw = safeLocalStorageGet(DESKTOP_SIZE_KEY);
                 if (!raw) return null;
                 const parsed = JSON.parse(raw);
                 if (!parsed || typeof parsed.width !== 'number' || typeof parsed.height !== 'number') return null;
@@ -3918,13 +4036,13 @@ window.onload = () => {
                 desktopWindowMonitor = null;
                 desktopWindow = null;
             }
-            const storageFlag = localStorage.getItem(DESKTOP_SIZE_KEY);
+            const storageFlag = safeLocalStorageGet(DESKTOP_SIZE_KEY);
             if (!storageFlag && desktopWindow && !desktopWindow.closed) {
                 try {
                     const w = desktopWindow.outerWidth || desktopWindow.innerWidth;
                     const h = desktopWindow.outerHeight || desktopWindow.innerHeight;
                     if (w && h) {
-                        localStorage.setItem(DESKTOP_SIZE_KEY, JSON.stringify({ width: w, height: h }));
+                        safeLocalStorageSet(DESKTOP_SIZE_KEY, JSON.stringify({ width: w, height: h }));
                     }
                 } catch (err) {
                     console.warn('Error storing desktop size', err);
@@ -3939,7 +4057,7 @@ window.onload = () => {
                     const w = desktopWindow.outerWidth || desktopWindow.innerWidth;
                     const h = desktopWindow.outerHeight || desktopWindow.innerHeight;
                     if (w && h) {
-                        localStorage.setItem(DESKTOP_SIZE_KEY, JSON.stringify({ width: w, height: h }));
+                        safeLocalStorageSet(DESKTOP_SIZE_KEY, JSON.stringify({ width: w, height: h }));
                     }
                 } catch (err) {
                     console.warn('Error storing desktop size', err);
@@ -4062,12 +4180,8 @@ window.onload = () => {
     const themeLabel = document.getElementById('theme-select-label');
 
     function storedThemePreference() {
-        try {
-            const saved = localStorage.getItem(THEME_KEY);
-            return ['system', 'light', 'dark'].includes(saved) ? saved : 'system';
-        } catch (error) {
-            return 'system';
-        }
+        const saved = safeLocalStorageGet(THEME_KEY);
+        return ['system', 'light', 'dark'].includes(saved) ? saved : 'system';
     }
 
     function currentThemePreference() {
@@ -4108,11 +4222,7 @@ window.onload = () => {
 
     function applyThemePreference(preference) {
       const usable = ['system', 'light', 'dark'].includes(preference) ? preference : 'system';
-      try {
-        localStorage.setItem(THEME_KEY, usable);
-      } catch (error) {
-        // Sin almacenamiento la preferencia solo dura esta sesión.
-      }
+      safeLocalStorageSet(THEME_KEY, usable);
       applyTheme(usable === 'system' ? (prefersDark.matches ? 'dark' : 'light') : usable);
     }
 
@@ -4147,12 +4257,12 @@ window.onload = () => {
         gutterSize: 8,
         onDrag: () => { markdownEditor.refresh(); htmlEditor.refresh(); }
     });
-    currentLayout = localStorage.getItem(LAYOUT_KEY) || 'dual';
+    currentLayout = safeLocalStorageGet(LAYOUT_KEY, 'dual');
     applyLayout(currentLayout);
 
     // --- Tamaño de fuente ---
     if (fontSizeSelect) {
-        const savedFs = localStorage.getItem(FS_KEY) || 16;
+        const savedFs = safeLocalStorageGet(FS_KEY, 16);
         fontSizeSelect.value = savedFs;
         applyFontSize(savedFs);
         updateFontSizeLabel();
@@ -4163,10 +4273,10 @@ window.onload = () => {
     }
 
     // --- Carga inicial de documentos y autoguardado ---
-    const savedDocsList = JSON.parse(localStorage.getItem(DOCS_LIST_KEY) || '[]');
+    const savedDocsList = loadSavedDocsList();
     if (savedDocsList.length > 0) {
         savedDocsList.forEach(docInfo => {
-            const md = localStorage.getItem(`${AUTOSAVE_KEY_PREFIX}-${docInfo.id}`) || '';
+            const md = safeLocalStorageGet(`${AUTOSAVE_KEY_PREFIX}-${docInfo.id}`, '');
             const normalized = normalizeNewlines(md);
             docs.push({ ...docInfo, md: normalized, lastSaved: normalized });
             addTabElement(docInfo);
@@ -4181,7 +4291,7 @@ window.onload = () => {
             const content = markdownEditor.getValue();
             const doc = docs.find(d => d.id === currentId);
             if (doc) doc.md = content;
-            localStorage.setItem(`${AUTOSAVE_KEY_PREFIX}-${currentId}`, content);
+            safeLocalStorageSet(`${AUTOSAVE_KEY_PREFIX}-${currentId}`, content);
         }
     }, 3000);
 
@@ -4251,7 +4361,12 @@ window.onload = () => {
         cmWrapper.style.display = isPreviewVisible ? 'block' : 'none';
         htmlOutput.style.display = isPreviewVisible ? 'none' : 'block';
         if (isPreviewVisible) setTimeout(() => htmlEditor.refresh(), 1);
-        htmlPanelTitle.textContent = isPreviewVisible ? 'Código HTML' : 'Previsualización';
+        const panelTitleKey = isPreviewVisible ? 'html_code_panel_title' : 'html_panel_title';
+        htmlPanelTitle.setAttribute('data-i18n-key', panelTitleKey);
+        htmlPanelTitle.textContent = getTranslation(
+            panelTitleKey,
+            isPreviewVisible ? 'Código HTML' : 'Previsualización'
+        );
         viewToggleBtn.innerHTML = isPreviewVisible ? '<i data-lucide="eye"></i>' : '<i data-lucide="code-2"></i>';
         if (window.lucide) lucide.createIcons();
     });
@@ -4441,14 +4556,16 @@ window.onload = () => {
     createTableBtn.addEventListener('click', () => {
         const cols = parseInt(document.getElementById('table-cols').value, 10) || 2;
         const rows = parseInt(document.getElementById('table-rows').value, 10) || 1;
+        const headerLabel = getTranslation('table_header_placeholder', 'Cabecera');
+        const cellLabel = getTranslation('table_cell_placeholder', 'Celda');
         let tableMd = '\n|';
-        for (let i = 1; i <= cols; i++) tableMd += ` Cabecera ${i} |`;
+        for (let i = 1; i <= cols; i++) tableMd += ` ${headerLabel} ${i} |`;
         tableMd += '\n|';
         for (let i = 0; i < cols; i++) tableMd += '------------|';
         tableMd += '\n';
         for (let r = 0; r < rows; r++) {
             tableMd += '|';
-            for (let c = 0; c < cols; c++) tableMd += ' Celda      |';
+            for (let c = 0; c < cols; c++) tableMd += ` ${cellLabel}      |`;
             tableMd += '\n';
         }
         markdownEditor.replaceSelection(tableMd);
@@ -4840,7 +4957,7 @@ window.onload = () => {
         try {
           const content = ev.target?.result || '';
           const doc = (typeof newDoc === 'function')
-            ? newDoc(file.name || 'Sin título', content)
+            ? newDoc(file.name || getTranslation('untitled_document', 'Documento sin título'), content)
             : null;
 
           if (doc && typeof updateDirtyIndicator === 'function') {

@@ -172,7 +172,11 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
 
     function replaceAll() {
         if (state.matches.length < 1) return;
-        if (!confirm(`¿Reemplazar todas las ${state.matches.length} coincidencias?`)) return;
+        const message = getTranslation(
+            'replace_all_confirm',
+            '¿Reemplazar las {count} coincidencias?'
+        ).replaceAll('{count}', String(state.matches.length));
+        if (!confirm(message)) return;
 
         const editor = state.activeEditor;
         

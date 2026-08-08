@@ -11,7 +11,7 @@ import {
   File,
   ConsoleStdout,
   PreopenDirectory,
-} from "https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.3.0/dist/index.js";
+} from "https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.4.2/dist/index.js";
 
 export async function pandoc(args_str, inputData, base64Wasm) {
   const bytes = Uint8Array.from(atob(base64Wasm), c => c.charCodeAt(0));
