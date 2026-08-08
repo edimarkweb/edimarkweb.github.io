@@ -390,7 +390,7 @@ function findPlaceholderContext(placeholder) {
     const match = contextRegex.exec(displayValue);
     if (!match) return null;
     const snippet = match[1];
-    const altMatch = /!\[([^\\]]*?)]/.exec(snippet);
+    const altMatch = /!\[([^\]]*?)\]/.exec(snippet);
     const alt = altMatch ? altMatch[1] : '';
     return { snippet, alt };
 }
@@ -2147,11 +2147,18 @@ function addTabElement({ id, name }) {
     tab.dataset.id = id;
     tab.setAttribute('role', 'tab');
     tab.setAttribute('aria-selected', 'false');
-    tab.innerHTML = `
-        <span class="tab-name">${name}</span>
-        <span class="ml-1 text-red-500 tab-dirty hidden" title="${getTranslation('unsaved_changes_title', 'Cambios sin guardar')}">●</span>
-        <i data-lucide="x" class="tab-close w-4 h-4 opacity-50 hover:opacity-100"></i>
-    `;
+    // El nombre viene de un archivo abierto o importado: nunca como HTML.
+    const nameEl = document.createElement('span');
+    nameEl.className = 'tab-name';
+    nameEl.textContent = name;
+    const dirtyEl = document.createElement('span');
+    dirtyEl.className = 'ml-1 text-red-500 tab-dirty hidden';
+    dirtyEl.setAttribute('title', getTranslation('unsaved_changes_title', 'Cambios sin guardar'));
+    dirtyEl.textContent = '●';
+    const closeEl = document.createElement('i');
+    closeEl.setAttribute('data-lucide', 'x');
+    closeEl.className = 'tab-close w-4 h-4 opacity-50 hover:opacity-100';
+    tab.append(nameEl, dirtyEl, closeEl);
     tabBar.appendChild(tab);
     tab.addEventListener('dblclick', () => startRename(tab));
     if(window.lucide) lucide.createIcons();
@@ -2346,7 +2353,7 @@ function updateHtml() {
 
         htmlOutput.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
           if (!h.id) {
-            h.id = h.textContent.trim().toLowerCase().replace(/\\s+/g,'-').replace(/[^\\w\\-áéíóúüñ]/g,'');
+            h.id = h.textContent.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^\w\-áéíóúüñ]/g,'');
           }
         });
 
@@ -4074,7 +4081,9 @@ window.onload = () => {
 
     if (desktopWindowBtn) {
         desktopWindowBtn.addEventListener('click', () => closeSettingsMenu());
-        desktopWindowBtn.addEventListener('click', openDesktopWindow);
+        // Sin envolver, el MouseEvent llegaría como `autoLaunch` y silenciaría
+        // el aviso de ventana emergente bloqueada.
+        desktopWindowBtn.addEventListener('click', () => openDesktopWindow());
     }
 
     window.addEventListener('beforeunload', () => {

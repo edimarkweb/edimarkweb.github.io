@@ -6,6 +6,7 @@ import {
   extractMarkdownTitle,
   hasYamlFrontMatter,
   collectRemoteImageUrls,
+  collectFetchableImageUrls,
   replaceImageUrls,
   dropImagesByUrl,
   trimInlineMath,
@@ -15,8 +16,11 @@ import {
   stripEpubAnchorPrefixes,
   collectArchiveImagePaths,
   inlineArchiveImages,
+  prepareOdtForImport,
 } from '../pandoc-prepare.js';
 import { readZipEntries, mimeForPath } from '../zip-reader.js';
+import { createZip } from '../zip-writer.js';
+import { normalizeFormulaHrefs } from '../odt-formulas.js';
 import { extractOdtTableHeaders, restoreTableHeaders } from '../odt-tables.js';
 import { makeZip } from './helpers/make-zip.mjs';
 
@@ -191,6 +195,32 @@ test('collectArchiveImagePaths separa rutas internas de URLs y data URIs', () =>
   ]);
 });
 
+/*
+  Dentro del WASM no hay red ni sistema de archivos, así que una ruta relativa
+  se pierde igual que una URL remota: Pandoc avisa "Could not fetch resource" y
+  deja solo la descripción. El navegador puede resolver ambas.
+*/
+test('collectFetchableImageUrls recoge también las rutas relativas', () => {
+  const markdown = [
+    '![logo](logo_100px.png)',
+    '![gif](imagenes/formulas.gif)',
+    '![absoluta](/assets/portada.png)',
+    '![remota](https://ejemplo.org/x.png)',
+    '![incrustada](data:image/gif;base64,R0lGOD)',
+    '<img src="imagenes/otra.gif">',
+  ].join('\n\n');
+
+  assert.deepEqual(collectFetchableImageUrls(markdown), [
+    'logo_100px.png',
+    'imagenes/formulas.gif',
+    '/assets/portada.png',
+    'https://ejemplo.org/x.png',
+    'imagenes/otra.gif',
+  ]);
+  // La variante remota sigue existiendo para quien solo necesite esas.
+  assert.deepEqual(collectRemoteImageUrls(markdown), ['https://ejemplo.org/x.png']);
+});
+
 test('inlineArchiveImages saca las imágenes del archivo y las incrusta', async () => {
   const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4]);
   const zip = makeZip({
@@ -292,4 +322,64 @@ test('restoreTableHeaders no toca tablas que ya tienen encabezado ni descuadres'
 test('restoreTableHeaders escapa las barras verticales del encabezado', () => {
   const result = restoreTableHeaders('|     |\n|-----|\n| a   |\n', [['uno|dos']]);
   assert.match(result, /\| uno\\\|dos \|/);
+});
+
+/*
+  Reparación de las referencias de fórmula de un ODT.
+
+  El escritor ODT de Pandoc apunta a cada fórmula con una barra final
+  (`Formula-0/`) y su propio lector no resuelve esa forma: la fórmula se pierde
+  sin dejar rastro. LibreOffice usa `./Object 1`, que Pandoc sí lee, así que
+  solo fallan los ODT exportados por la propia aplicación.
+*/
+const FRAME_PANDOC = '<draw:frame draw:style-name="fr1" text:anchor-type="as-char">'
+  + '<draw:object xlink:href="Formula-0/" xlink:type="simple" /></draw:frame>';
+const FRAME_LIBREOFFICE = '<draw:frame draw:name="Objeto1" text:anchor-type="as-char">'
+  + '<draw:object xlink:href="./Object 1" xlink:type="simple"/>'
+  + '<draw:image xlink:href="./ObjectReplacements/Object 1"/></draw:frame>';
+
+test('normalizeFormulaHrefs quita la barra final que Pandoc no sabe resolver', () => {
+  const xml = `<office:text><text:p>Antes ${FRAME_PANDOC} después</text:p></office:text>`;
+  const { xml: patched, changed } = normalizeFormulaHrefs(xml);
+  assert.equal(changed, true);
+  assert.match(patched, /xlink:href="Formula-0"/);
+  assert.doesNotMatch(patched, /xlink:href="Formula-0\/"/);
+  // Nada más del marco puede alterarse.
+  assert.match(patched, /Antes <draw:frame[^>]*><draw:object[^>]*\/><\/draw:frame> después/);
+});
+
+test('normalizeFormulaHrefs no toca un ODT de LibreOffice ni las imágenes', () => {
+  const xml = `<office:text><text:p>${FRAME_LIBREOFFICE}</text:p></office:text>`;
+  const { xml: patched, changed } = normalizeFormulaHrefs(xml);
+  assert.equal(changed, false, 'Pandoc ya lee esta forma: no hay que reescribir nada');
+  assert.equal(patched, xml);
+});
+
+test('prepareOdtForImport reescribe el ODT y conserva el resto de entradas', async () => {
+  const contentXml = `<?xml version="1.0"?><office:document-content><office:body><office:text>`
+    + `<text:p>Fórmula ${FRAME_PANDOC} dentro</text:p></office:text></office:body></office:document-content>`;
+  const odt = createZip(new Map([
+    ['mimetype', 'application/vnd.oasis.opendocument.text'],
+    ['content.xml', contentXml],
+    ['Formula-0/content.xml', '<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>a</mi></math>'],
+    ['Pictures/1000.png', new Uint8Array([1, 2, 3])],
+  ]));
+
+  const bytes = await prepareOdtForImport(odt);
+  assert.notEqual(bytes, odt, 'debería reescribirse');
+
+  const entries = await readZipEntries(bytes);
+  // mimetype va primero en un ODT.
+  assert.equal([...entries.keys()][0], 'mimetype');
+  assert.deepEqual([...entries.get('Pictures/1000.png')], [1, 2, 3], 'las imágenes deben sobrevivir');
+  assert.match(new TextDecoder().decode(entries.get('Formula-0/content.xml')), /<math/);
+  assert.match(new TextDecoder().decode(entries.get('content.xml')), /xlink:href="Formula-0"/);
+});
+
+test('prepareOdtForImport devuelve el archivo intacto si no hay nada que reparar', async () => {
+  const odt = createZip(new Map([
+    ['mimetype', 'application/vnd.oasis.opendocument.text'],
+    ['content.xml', `<office:text><text:p>${FRAME_LIBREOFFICE}</text:p></office:text>`],
+  ]));
+  assert.equal(await prepareOdtForImport(odt), odt, 'no debería reescribirse');
 });

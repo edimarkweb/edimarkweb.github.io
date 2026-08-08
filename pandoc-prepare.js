@@ -1,5 +1,7 @@
 import { readZipEntries, mimeForPath, bytesToDataUri } from './zip-reader.js';
+import { createZip } from './zip-writer.js';
 import { extractOdtTableHeaders, restoreTableHeaders } from './odt-tables.js';
+import { normalizeFormulaHrefs } from './odt-formulas.js';
 
 /*
   Pure Markdown preparation helpers used by pandoc-exporter.js.
@@ -227,6 +229,19 @@ export function collectRemoteImageUrls(markdown) {
   return collectImageSources(markdown).filter(isRemote);
 }
 
+/*
+  Everything the browser has to resolve before handing the Markdown to Pandoc.
+
+  Inside the WASM there is neither network nor file system, so a relative path
+  (`imagenes/formulas.gif`, `/assets/logo.png`) fails exactly like a remote URL:
+  Pandoc warns "Could not fetch resource" and drops the image, keeping only its
+  description. The browser can fetch both against the page URL, so both belong
+  here. Only `data:` images are already self-contained.
+*/
+export function collectFetchableImageUrls(markdown) {
+  return collectImageSources(markdown).filter(url => url && !isEmbedded(url));
+}
+
 // Images Pandoc points at inside the uploaded archive (Pictures/…, media/…).
 export function collectArchiveImagePaths(markdown) {
   return collectImageSources(markdown).filter(url => !isRemote(url) && !isEmbedded(url));
@@ -306,6 +321,45 @@ export async function inlineArchiveImages(markdown, archiveBytes) {
   }
 
   return replacements.size > 0 ? replaceImageUrls(markdown, replacements) : markdown;
+}
+
+/*
+  Repairs the formula references of an ODT so Pandoc can read them.
+
+  Pandoc's ODT writer points at each embedded formula with a trailing slash
+  (`Formula-0/`) and its own reader cannot resolve that form, so re-importing a
+  document this app exported loses every formula. Rewriting the reference is
+  enough; Pandoc then converts the MathML itself.
+
+  Returns the untouched bytes when there is nothing to repair, so an ODT written
+  by LibreOffice — which Pandoc already reads correctly — never goes through the
+  rewrite.
+*/
+export async function prepareOdtForImport(archiveBytes) {
+  if (!archiveBytes || archiveBytes.length === 0) return archiveBytes;
+
+  let entries;
+  try {
+    entries = await readZipEntries(archiveBytes);
+  } catch (error) {
+    console.warn('No se pudo leer el ODT para reparar sus fórmulas:', error);
+    return archiveBytes;
+  }
+
+  const contentXml = entries.get('content.xml');
+  if (!contentXml) return archiveBytes;
+
+  const { xml, changed } = normalizeFormulaHrefs(new TextDecoder().decode(contentXml));
+  if (!changed) return archiveBytes;
+
+  const rebuilt = new Map();
+  // El mimetype tiene que ser la primera entrada de un ODT.
+  if (entries.has('mimetype')) rebuilt.set('mimetype', entries.get('mimetype'));
+  for (const [name, bytes] of entries) {
+    if (name === 'mimetype') continue;
+    rebuilt.set(name, name === 'content.xml' ? new TextEncoder().encode(xml) : bytes);
+  }
+  return createZip(rebuilt);
 }
 
 /*

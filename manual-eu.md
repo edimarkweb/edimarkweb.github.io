@@ -223,6 +223,35 @@ A = \begin{pmatrix}
 \end{pmatrix}
 $$
 
+### Beste mugatzaile batzuk
+
+`$...$` eta `$$...$$` ez ezik, LaTeX-en mugatzaileak ere erabil ditzakezu: \(E = mc^2\) lerroan, eta blokean:
+
+\[
+\nabla \cdot \vec{E} = \frac{\rho}{\varepsilon_0}
+\]
+
+### Batukariak, limiteak eta integralak
+
+Lehen $n$ zenbaki naturalen batura $\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$ da, eta integrala $\int_0^1 x^2\,dx = \frac{1}{3}$. $e$ zenbakia limite gisa definitzen da:
+
+$$
+e = \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^n
+$$
+
+### Ekuazio-sistemak
+
+$$
+\begin{cases}
+2x + y = 5 \\
+x - y = 1
+\end{cases}
+$$
+
+### Sinbolo solteak
+
+Greziar letrak ($\alpha$, $\beta$, $\Omega$), azpiindizeak ($H_2O$), konparazioak ($a \neq b$, $x \leq y$) eta multzoak ($\mathbb{R}$, $A \subseteq B$).
+
 Bisualki eraikitzea nahiago baduzu, hautatu testua editorean eta ireki **EdiCuaTeX**: formula automatikoki txertatuta itzuliko da.
 
 ---

@@ -87,7 +87,8 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         }
     }
 
-    searchInput.addEventListener('input', runSearch);
+    // Envuelto: el InputEvent no debe llegar como opciones de búsqueda.
+    searchInput.addEventListener('input', () => runSearch());
     nextBtn.addEventListener('click', findNext);
     prevBtn.addEventListener('click', findPrev);
     replaceOneBtn.addEventListener('click', replaceCurrent);
@@ -95,7 +96,7 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
 
     // --- Funciones del motor de búsqueda ---
 
-    function runSearch() {
+    function runSearch({ resumeFrom = null } = {}) {
         const editor = determineActiveEditor();
         if (!editor) {
             if (state.activeEditor && typeof state.activeEditor.clearHighlights === 'function') {
@@ -139,7 +140,7 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         }
 
         if (state.matches.length > 0) {
-            state.currentIndex = 0;
+            state.currentIndex = resumeFrom ? firstMatchIndexFrom(state.matches, resumeFrom) : 0;
             highlightCurrentMatch();
         } else if (typeof editor.clearHighlights === 'function') {
             editor.clearHighlights();
@@ -161,13 +162,16 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
     
     function replaceCurrent() {
         if (state.matches.length < 1 || state.currentIndex === -1) return;
-        
+
         const editor = state.activeEditor;
         const match = state.matches[state.currentIndex];
         const replacement = resolveReplacementText(match.text);
         editor.replaceRange(replacement, match.from, match.to);
-        
-        runSearch();
+
+        // Se reanuda por detrás del texto insertado: si el reemplazo vuelve a
+        // casar con la búsqueda (buscar "gato", reemplazar por "gatos"), volver
+        // siempre a la primera coincidencia dejaría el botón atascado en ella.
+        runSearch({ resumeFrom: positionAfterInsertion(match.from, replacement) });
     }
 
     function replaceAll() {
@@ -204,6 +208,29 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         return layout === 'md' ? mdEditor : htmlEditor;
     }
     
+    // Dónde queda el cursor tras insertar `text` en `from`.
+    function positionAfterInsertion(from, text) {
+        if (!from) return null;
+        const lines = String(text || '').split('\n');
+        if (lines.length === 1) {
+            return { line: from.line, ch: from.ch + lines[0].length };
+        }
+        return { line: from.line + lines.length - 1, ch: lines[lines.length - 1].length };
+    }
+
+    function comparePositions(a, b) {
+        if (!a || !b) return 0;
+        if (a.line !== b.line) return a.line - b.line;
+        return a.ch - b.ch;
+    }
+
+    // Primera coincidencia que empieza en `pos` o después; vuelve al principio
+    // si ya no queda ninguna por delante.
+    function firstMatchIndexFrom(matches, pos) {
+        const index = matches.findIndex(match => comparePositions(match.from, pos) >= 0);
+        return index === -1 ? 0 : index;
+    }
+
     function clearSearchState() {
         const { activeEditor, overlay, currentMatchMarker } = state;
         if (activeEditor) {

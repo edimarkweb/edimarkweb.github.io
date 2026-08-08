@@ -218,6 +218,35 @@ A = \begin{pmatrix}
 \end{pmatrix}
 $$
 
+### Otros delimitadores
+
+Además de `$...$` y `$$...$$`, puedes usar los delimitadores propios de LaTeX: \(E = mc^2\) en línea, y en bloque:
+
+\[
+\nabla \cdot \vec{E} = \frac{\rho}{\varepsilon_0}
+\]
+
+### Sumatorios, límites e integrales
+
+La suma de los $n$ primeros naturales es $\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$ y la integral $\int_0^1 x^2\,dx = \frac{1}{3}$. El número $e$ se define como un límite:
+
+$$
+e = \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^n
+$$
+
+### Sistemas de ecuaciones
+
+$$
+\begin{cases}
+2x + y = 5 \\
+x - y = 1
+\end{cases}
+$$
+
+### Símbolos sueltos
+
+Letras griegas ($\alpha$, $\beta$, $\Omega$), subíndices ($H_2O$), comparaciones ($a \neq b$, $x \leq y$) y conjuntos ($\mathbb{R}$, $A \subseteq B$).
+
 Si prefieres construirlas visualmente, selecciona el texto en el editor y abre **EdiCuaTeX**: la fórmula volverá insertada automáticamente.
 
 ---

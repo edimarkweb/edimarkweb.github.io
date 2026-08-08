@@ -13,15 +13,19 @@ import assert from 'node:assert/strict';
 
 import { runPandoc, readZipEntries } from './helpers/pandoc-runner.mjs';
 import {
+  MARKDOWN_READER_NO_AUTO_IDS,
   buildExportArgs,
   ensureEpubMetadata,
   collectRemoteImageUrls,
   dropImagesByUrl,
+  normalizeNewlines,
   normalizeThematicBreaks,
+  trimInlineMath,
   buildImportArgs,
   stripEpubAnchorPrefixes,
   inlineArchiveImages,
   restoreOdtTableHeaders,
+  prepareOdtForImport,
 } from '../pandoc-prepare.js';
 
 // Mirrors what exportDocument() sends for format 'epub'.
@@ -115,7 +119,7 @@ test('el título no se repite: hay portada solo si el cuerpo no lo muestra', { t
   );
 });
 
-test('una imagen remota sin resolver rompe la conversión (razón de inlineRemoteImages)', { timeout: 180000 }, async () => {
+test('una imagen remota sin resolver rompe la conversión (razón de inlineFetchableImages)', { timeout: 180000 }, async () => {
   const markdown = '# Con imagen\n\n![alt](https://ejemplo.org/foto.png)\n';
   const result = await exportEpub(markdown);
   assert.equal(result.bytes.length, 0, 'se esperaba que Pandoc fallara sin red');
@@ -303,3 +307,204 @@ for (const [label, exportFormat, importFormat] of [
     assert.match(markdown, /^\|\s*Nombre\s*\|\s*Edad\s*\|\s*Ciudad\s*\|/m, 'se perdió el encabezado');
   });
 }
+
+/*
+  Fórmulas. El manual las escribe con $…$ y $$…$$, y los botones de la barra
+  insertan además \(…\) y \[…\]: las cuatro variantes tienen que llegar al
+  documento exportado, no solo producir un archivo no vacío.
+*/
+const MATH_CASES = [
+  [
+    'dólares (como el manual)',
+    '## Fórmulas\n\nComo $ax^2 + bx + c = 0$, se utiliza:\n\n$$\nx = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\n$$\n',
+    /ax\^\{?2\}?/,
+  ],
+  [
+    'barra invertida',
+    '## Fórmulas\n\nEn línea \\(E = mc^2\\) y en bloque:\n\n\\[\n\\int_0^1 x^2\\,dx = \\frac{1}{3}\n\\]\n',
+    /mc\^\{?2\}?/,
+  ],
+];
+
+// Igual que exportDocument()/generateLatex()/generateHtml() antes de Pandoc.
+function prepareForExport(markdown) {
+  return normalizeThematicBreaks(normalizeNewlines(trimInlineMath(markdown)));
+}
+
+for (const [label, markdown, cuerpo] of MATH_CASES) {
+  test(`las fórmulas llegan a LaTeX: ${label}`, { timeout: 180000 }, async () => {
+    const args = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t latex --no-highlight`;
+    const result = await runPandoc(args, prepareForExport(markdown));
+    assert.ok(result.bytes.length > 0, `salida vacía: ${result.stderr.join(' | ')}`);
+    const tex = new TextDecoder().decode(result.bytes);
+    assert.match(tex, /\\\(|\\\[|\$/, 'sin delimitadores matemáticos');
+    assert.match(tex, cuerpo, `no aparece la fórmula:\n${tex}`);
+  });
+
+  test(`las fórmulas llegan a HTML: ${label}`, { timeout: 180000 }, async () => {
+    const args = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --mathjax -s`;
+    const result = await runPandoc(args, prepareForExport(markdown));
+    assert.ok(result.bytes.length > 0, `salida vacía: ${result.stderr.join(' | ')}`);
+    const html = new TextDecoder().decode(result.bytes);
+    assert.match(html, /class="math (inline|display)"/, 'sin marcado de fórmula');
+  });
+
+  test(`las fórmulas llegan a DOCX como OMML: ${label}`, { timeout: 180000 }, async () => {
+    const result = await runPandoc(buildExportArgs('docx', {}), prepareForExport(markdown));
+    assert.ok(result.bytes.length > 0, `DOCX vacío: ${result.stderr.join(' | ')}`);
+    const document = readZipEntries(result.bytes).get('word/document.xml').toString('utf8');
+    assert.match(document, /<m:oMath/, 'Word no recibiría una fórmula editable');
+  });
+
+  test(`las fórmulas llegan a ODT: ${label}`, { timeout: 180000 }, async () => {
+    const result = await runPandoc(buildExportArgs('odt', { mathml: true }), prepareForExport(markdown));
+    assert.ok(result.bytes.length > 0, `ODT vacío: ${result.stderr.join(' | ')}`);
+    const names = [...readZipEntries(result.bytes).keys()].join(' ');
+    assert.match(names, /Formula|Object/i, `sin objetos de fórmula: ${names}`);
+  });
+
+  test(`las fórmulas llegan al EPUB como MathML: ${label}`, { timeout: 180000 }, async () => {
+    const entries = assertValidEpub(await exportEpub(markdown), label);
+    const capitulos = [...entries.entries()]
+      .filter(([name]) => name.endsWith('.xhtml'))
+      .map(([, bytes]) => bytes.toString('utf8'))
+      .join('\n');
+    assert.match(capitulos, /<math/, 'sin MathML en el EPUB');
+  });
+}
+
+test('la ida y vuelta Markdown -> DOCX -> Markdown conserva las fórmulas', { timeout: 240000 }, async () => {
+  const [, markdown] = MATH_CASES[0];
+  const exported = await runPandoc(buildExportArgs('docx', {}), prepareForExport(markdown));
+  assert.ok(exported.bytes.length > 0, `DOCX vacío: ${exported.stderr.join(' | ')}`);
+
+  const imported = await runPandoc(buildImportArgs('docx'), exported.bytes);
+  assert.ok(imported.bytes.length > 0, `reimportación vacía: ${imported.stderr.join(' | ')}`);
+  const vuelta = trimInlineMath(normalizeNewlines(new TextDecoder().decode(imported.bytes)));
+
+  // Pandoc normaliza los exponentes (ax^2 -> ax^{2}); lo que importa es que la
+  // fórmula vuelva delimitada, no que sea idéntica carácter a carácter.
+  assert.match(vuelta, /\$ax\^\{?2\}? \+ bx \+ c = 0\$/, `en línea perdida:\n${vuelta}`);
+  assert.match(vuelta, /\$\$x = \\frac\{-? ?b \\pm \\sqrt\{b\^\{?2\}? ?-? ?4ac\}\}\{2a\}\$\$/, `bloque perdido:\n${vuelta}`);
+});
+
+/*
+  Razón de ser de inlineFetchableImages: una ruta relativa no rompe la
+  conversión como una URL remota, pero se pierde en silencio. El navegador tiene
+  que descargarla antes; aquí se documenta qué pasa si no lo hace.
+*/
+test('una ruta de imagen relativa se pierde si el navegador no la resuelve', { timeout: 180000 }, async () => {
+  const markdown = '# Con imagen\n\n![Diagrama](imagenes/formulas.gif)\n\nTexto final.\n';
+  const entries = assertValidEpub(await exportEpub(markdown), 'ruta relativa');
+  const chapter = [...entries.entries()].find(([name]) => name.includes('/text/ch'))[1].toString('utf8');
+  assert.match(chapter, /Diagrama/, 'solo sobrevive el texto alternativo');
+  assert.ok(
+    ![...entries.keys()].some(name => name.startsWith('EPUB/media/')),
+    'la imagen no debería haberse incrustado sin resolverla antes',
+  );
+});
+
+/*
+  Importación. Un documento con fórmulas que entra por DOCX, ODT, EPUB o LaTeX
+  tiene que volver al editor como matemáticas delimitadas, no como texto suelto.
+*/
+// ODT queda fuera: necesita el paso extra de prepareOdtFormulas y tiene su
+// propia prueba con el encadenado completo, más abajo.
+for (const [importFormat, exportFormat] of [['docx', 'docx'], ['epub', 'epub3']]) {
+  test(`importar ${importFormat.toUpperCase()} devuelve las fórmulas al editor`, { timeout: 240000 }, async () => {
+    const source = '# Mates\n\nEn línea $a^2+b^2=c^2$.\n\n$$\\int_0^1 x^2\\,dx = \\frac{1}{3}$$\n';
+    const prepared = exportFormat === 'epub3'
+      ? ensureEpubMetadata(prepareForExport(source), { fallbackTitle: 'mates', lang: 'es' })
+      : null;
+    const args = buildExportArgs(exportFormat, {
+      mathml: exportFormat !== 'docx',
+      titleFromHeading: prepared ? prepared.titleFromHeading : false,
+    });
+    const exported = await runPandoc(args, prepared ? prepared.markdown : prepareForExport(source));
+    assert.ok(exported.bytes.length > 0, `exportación vacía: ${exported.stderr.join(' | ')}`);
+
+    const imported = await runPandoc(buildImportArgs(importFormat), exported.bytes);
+    assert.ok(imported.bytes.length > 0, `importación vacía: ${imported.stderr.join(' | ')}`);
+    const markdown = trimInlineMath(normalizeNewlines(new TextDecoder().decode(imported.bytes)));
+
+    assert.match(markdown, /\$a\^\{?2\}? ?\+ ?b\^\{?2\}? ?= ?c\^\{?2\}?\$/, `en línea perdida:\n${markdown}`);
+    assert.match(markdown, /\\int_\{?0\}?\^\{?1\}?/, `integral perdida:\n${markdown}`);
+    assert.match(markdown, /\\frac\{1\}\{3\}/, `fracción perdida:\n${markdown}`);
+  });
+}
+
+test('importar LaTeX devuelve las fórmulas al editor', { timeout: 180000 }, async () => {
+  const latex = [
+    '\\documentclass{article}',
+    '\\begin{document}',
+    'En línea \\(E = mc^2\\) y en bloque:',
+    '\\[',
+    '\\int_0^1 x^2\\,dx = \\frac{1}{3}',
+    '\\]',
+    '\\end{document}',
+  ].join('\n');
+
+  const imported = await runPandoc(buildImportArgs('latex'), latex);
+  assert.ok(imported.bytes.length > 0, `importación vacía: ${imported.stderr.join(' | ')}`);
+  const markdown = trimInlineMath(normalizeNewlines(new TextDecoder().decode(imported.bytes)));
+
+  assert.match(markdown, /\$E = mc\^\{?2\}?\$/, `en línea perdida:\n${markdown}`);
+  assert.match(markdown, /\\int_\{?0\}?\^\{?1\}?/, `integral perdida:\n${markdown}`);
+  assert.match(markdown, /\\frac\{1\}\{3\}/, `fracción perdida:\n${markdown}`);
+});
+
+/*
+  Fórmulas al importar un ODT.
+
+  El escritor ODT de Pandoc referencia cada fórmula con una barra final
+  (`Formula-0/`) que su propio lector no resuelve, así que un ODT exportado por
+  la aplicación volvía sin sus fórmulas. prepareOdtForImport repara esa
+  referencia y Pandoc convierte el MathML por su cuenta.
+*/
+async function importOdt(markdown, { reparar = true } = {}) {
+  const exported = await runPandoc(buildExportArgs('odt', { mathml: true }), prepareForExport(markdown));
+  assert.ok(exported.bytes.length > 0, `ODT vacío: ${exported.stderr.join(' | ')}`);
+
+  const entrada = reparar ? await prepareOdtForImport(exported.bytes) : exported.bytes;
+  const imported = await runPandoc(buildImportArgs('odt'), entrada);
+  assert.ok(imported.bytes.length > 0, `importación vacía: ${imported.stderr.join(' | ')}`);
+  return {
+    markdown: trimInlineMath(normalizeNewlines(new TextDecoder().decode(imported.bytes))),
+    odt: exported.bytes,
+  };
+}
+
+test('importar un ODT exportado por la app recupera sus fórmulas', { timeout: 300000 }, async () => {
+  const source = '# Mates\n\nEn línea $a^2+b^2=c^2$ y sigue el texto.\n\n$$\\int_0^1 x^2\\,dx = \\frac{1}{3}$$\n\nFinal.\n';
+
+  // Sin reparar, Pandoc no encuentra ninguna de las dos fórmulas.
+  const { markdown: sinReparar } = await importOdt(source, { reparar: false });
+  assert.doesNotMatch(sinReparar, /a\^\{?2\}?/, `Pandoc ya resuelve la referencia; revisar la reparación:\n${sinReparar}`);
+
+  const { markdown } = await importOdt(source);
+  assert.match(markdown, /a\^\{?2\}? ?\+ ?b\^\{?2\}? ?= ?c\^\{?2\}?/, `en línea perdida:\n${markdown}`);
+  assert.match(markdown, /\\int/, `integral perdida:\n${markdown}`);
+  assert.match(markdown, /\\frac\{1\}\{3\}/, `fracción perdida:\n${markdown}`);
+  assert.match(markdown, /^Final\.$/m, 'el texto posterior debe seguir intacto');
+});
+
+test('las fórmulas conviven con tablas e imágenes al importar un ODT', { timeout: 300000 }, async () => {
+  const source = [
+    '# Mezcla',
+    '',
+    '| Nombre | Valor |',
+    '|--------|-------|',
+    '| pi     | 3.14  |',
+    '',
+    'Fórmula $E = mc^2$ junto a una imagen:',
+    '',
+    '![Diagrama](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)',
+    '',
+  ].join('\n');
+  const { markdown, odt } = await importOdt(source);
+
+  const conTablas = await restoreOdtTableHeaders(markdown, odt);
+  assert.match(conTablas, /E = mc\^\{?2\}?/, `fórmula perdida:\n${conTablas}`);
+  assert.match(conTablas, /\|\s*Nombre\s*\|\s*Valor\s*\|/, `encabezado de tabla perdido:\n${conTablas}`);
+  assert.match(conTablas, /!\[[^\]]*\]\(/, `imagen perdida:\n${conTablas}`);
+});

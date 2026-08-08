@@ -223,6 +223,35 @@ A = \begin{pmatrix}
 \end{pmatrix}
 $$
 
+### Altres delimitadors
+
+A més de `$...$` i `$$...$$`, pots fer servir els delimitadors propis de LaTeX: \(E = mc^2\) en línia, i en bloc:
+
+\[
+\nabla \cdot \vec{E} = \frac{\rho}{\varepsilon_0}
+\]
+
+### Sumatoris, límits i integrals
+
+La suma dels $n$ primers naturals és $\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$ i la integral $\int_0^1 x^2\,dx = \frac{1}{3}$. El nombre $e$ es defineix com un límit:
+
+$$
+e = \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^n
+$$
+
+### Sistemes d'equacions
+
+$$
+\begin{cases}
+2x + y = 5 \\
+x - y = 1
+\end{cases}
+$$
+
+### Símbols solts
+
+Lletres gregues ($\alpha$, $\beta$, $\Omega$), subíndexs ($H_2O$), comparacions ($a \neq b$, $x \leq y$) i conjunts ($\mathbb{R}$, $A \subseteq B$).
+
 Si prefereixes construir-les visualment, selecciona el text a l'editor i obre **EdiCuaTeX**: la fórmula tornarà inserida automàticament.
 
 ---

@@ -155,3 +155,218 @@ test('los controles base64 y de pegado se traducen', async (t) => {
   assert.equal(await page.locator('#close-base64-modal-btn').textContent(), 'Close');
   assert.equal(await page.locator('#base64-modal-text').getAttribute('aria-label'), 'Image base64 code');
 });
+
+test('los id de encabezado conservan palabras, guiones y dígitos', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(() => markdownEditor.setValue('# Mi Título Principal 2\n'));
+  await page.locator('#html-output h1').getByText('Mi Título Principal 2', { exact: true }).waitFor();
+  assert.equal(await page.locator('#html-output h1').getAttribute('id'), 'mi-título-principal-2');
+});
+
+test('un nombre de documento con marcado no se interpreta como HTML', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const hostileName = '<img src=x onerror="window.__injected = true">.md';
+  await page.evaluate(name => newDoc(name, 'contenido'), hostileName);
+
+  assert.equal(await page.locator('.tab-name').last().textContent(), hostileName);
+  assert.equal(await page.locator('.tab img').count(), 0);
+  assert.equal(await page.evaluate(() => window.__injected === true), false);
+});
+
+test('el texto alternativo se lee del Markdown que rodea al marcador base64', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(() => markdownEditor.setValue('![Mi imagen](data:image/png;base64,iVBORw0KGgo=)'));
+  const alt = await page.evaluate(() => {
+    const [placeholder] = currentBase64State.placeholders.keys();
+    return findPlaceholderContext(placeholder)?.alt;
+  });
+  assert.equal(alt, 'Mi imagen');
+});
+
+test('reemplazar una coincidencia avanza a la siguiente', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('gato gato');
+
+  await page.locator('#open-search-btn').click();
+  await page.locator('#toggle-replace-btn').click();
+  await page.locator('#search-input').fill('gato');
+  await page.locator('#replace-input').fill('gatos');
+  await page.locator('#search-matches-info').getByText('1 / 2', { exact: true }).waitFor();
+
+  // El reemplazo vuelve a casar con la búsqueda: sin reanudar por detrás del
+  // texto insertado, el botón se quedaría siempre en la primera coincidencia.
+  await page.locator('#replace-one-btn').click();
+  await page.locator('#search-matches-info').getByText('2 / 2', { exact: true }).waitFor();
+  assert.equal(await page.locator('#markdown-input').inputValue(), 'gatos gato');
+});
+
+test('avisa cuando el navegador bloquea la ventana independiente', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const dialogs = [];
+  page.on('dialog', dialog => {
+    dialogs.push(dialog.message());
+    dialog.dismiss();
+  });
+
+  await page.evaluate(() => {
+    window.open = () => null;
+    document.getElementById('desktop-window-btn').click();
+  });
+  await page.waitForFunction(() => true);
+
+  assert.equal(dialogs.length, 1);
+  assert.match(dialogs[0], /ventanas emergentes/);
+});
+
+/*
+  Fórmulas en la vista previa. Son KaTeX en el navegador, no pasan por Pandoc,
+  así que necesitan su propia comprobación: que se rendericen sin errores y que
+  la vuelta a Markdown conserve el delimitador con el que se escribieron.
+*/
+test('el manual renderiza sus fórmulas con KaTeX', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#html-output .katex').first().waitFor();
+  const render = await page.evaluate(() => {
+    // El manual cita `$...$` dentro de código en línea, y KaTeX no toca los
+    // <code>: ese texto literal no cuenta como fórmula sin renderizar.
+    const copia = document.getElementById('html-output').cloneNode(true);
+    copia.querySelectorAll('code, pre').forEach(node => node.remove());
+    const texto = copia.textContent;
+    return {
+      bloque: document.querySelectorAll('#html-output .katex-display').length,
+      linea: [...document.querySelectorAll('#html-output span.katex')]
+        .filter(node => !node.closest('.katex-display')).length,
+      errores: document.querySelectorAll('#html-output .katex-error').length,
+      dolaresSueltos: /\$[^$\n]+\$/.test(texto),
+      barrasSueltas: /\\[([][^)\]]*\\[)\]]/.test(texto),
+    };
+  });
+  assert.equal(render.errores, 0, 'KaTeX marcó alguna fórmula como errónea');
+  assert.ok(render.linea >= 8, `faltan fórmulas en línea: ${JSON.stringify(render)}`);
+  assert.ok(render.bloque >= 5, `faltan fórmulas de bloque: ${JSON.stringify(render)}`);
+  assert.equal(render.dolaresSueltos, false, 'quedó texto $...$ sin renderizar');
+  // Los delimitadores con barra no deben quedarse como texto plano.
+  assert.equal(render.barrasSueltas, false, 'quedó texto \\(...\\) sin renderizar');
+});
+
+test('los cuatro delimitadores se renderizan y sobreviven a la vuelta a Markdown', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const source = [
+    'En línea con dólar $a^2+b^2=c^2$ y con barra \\(E = mc^2\\).',
+    '',
+    '$$\\int_0^1 x^2\\,dx = \\frac{1}{3}$$',
+    '',
+    '\\[\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}\\]',
+    '',
+  ].join('\n');
+
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(md => markdownEditor.setValue(md), source);
+  await page.locator('#html-output .katex').first().waitFor();
+
+  const render = await page.evaluate(() => ({
+    bloque: document.querySelectorAll('#html-output .katex-display').length,
+    linea: [...document.querySelectorAll('#html-output span.katex')]
+      .filter(node => !node.closest('.katex-display')).length,
+    errores: document.querySelectorAll('#html-output .katex-error').length,
+  }));
+  assert.equal(render.errores, 0, 'KaTeX marcó alguna fórmula como errónea');
+  assert.equal(render.linea, 2, `fórmulas en línea: ${JSON.stringify(render)}`);
+  assert.equal(render.bloque, 2, `fórmulas de bloque: ${JSON.stringify(render)}`);
+
+  const vuelta = await page.evaluate(() => {
+    document.getElementById('html-output').focus();
+    forceMarkdownUpdate = true;
+    updateMarkdown();
+    return markdownEditor.getValue();
+  });
+  for (const fragmento of ['$a^2+b^2=c^2$', '\\(E = mc^2\\)', '$$\\int_0^1', '\\[\\sum_']) {
+    assert.ok(vuelta.includes(fragmento), `perdido ${fragmento} en:\n${vuelta}`);
+  }
+});
+
+/*
+  Dentro del WASM no hay red ni sistema de archivos: una ruta relativa se pierde
+  igual que una URL remota. El exportador tiene que descargarla antes, cosa que
+  aquí se comprueba contando las peticiones (la vista previa hace la primera).
+*/
+test('la exportación descarga las imágenes de rutas relativas', async (t) => {
+  const context = await browser.newContext({ locale: 'es-ES' });
+  t.after(() => context.close());
+  await context.route(/pandoc\.b64(?:\.gz)?(?:\?.*)?$/, route => (
+    route.fulfill({ status: 200, contentType: 'text/plain', body: '' })
+  ));
+
+  const gif = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+  let peticiones = 0;
+  await context.route(/imagen-relativa\.gif$/, (route) => {
+    peticiones += 1;
+    return route.fulfill({ status: 200, contentType: 'image/gif', body: gif });
+  });
+
+  const page = await context.newPage();
+  await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
+  await page.locator('.tab-name').first().waitFor();
+  await page.locator('#new-tab-btn').click();
+
+  const markdown = '# Con imagen\n\n![Diagrama](imagen-relativa.gif)\n';
+  await page.evaluate(md => markdownEditor.setValue(md), markdown);
+  await page.locator('#html-output img').waitFor();
+  assert.equal(peticiones, 1, 'la vista previa debería haber pedido la imagen una vez');
+
+  // La exportación falla después (pandoc.b64 está vacío en las pruebas), pero
+  // la descarga de imágenes ocurre antes de cargar el WASM.
+  await page.evaluate(md => window.PandocExporter
+    .exportDocument({ format: 'docx', markdown: md })
+    .catch(() => {}), markdown);
+
+  assert.equal(peticiones, 2, 'el exportador no descargó la imagen relativa');
+});
+
+/*
+  El manual existe en los cinco idiomas de la interfaz y las fórmulas son las
+  mismas en todos: un fallo de copia en uno solo pasaría inadvertido si solo se
+  comprobara el castellano.
+*/
+for (const [locale, lang] of [['es-ES', 'es'], ['en-US', 'en'], ['ca-ES', 'ca'], ['gl-ES', 'gl'], ['eu-ES', 'eu']]) {
+  test(`el manual en ${lang} renderiza todas sus fórmulas`, async (t) => {
+    const { context, page } = await openApp({ locale });
+    t.after(() => context.close());
+
+    await page.waitForFunction(esperado => document.documentElement.lang === esperado, lang);
+    await page.locator('#html-output .katex').first().waitFor();
+    const render = await page.evaluate(() => {
+      const copia = document.getElementById('html-output').cloneNode(true);
+      copia.querySelectorAll('code, pre').forEach(node => node.remove());
+      const texto = copia.textContent;
+      return {
+        bloque: document.querySelectorAll('#html-output .katex-display').length,
+        linea: [...document.querySelectorAll('#html-output span.katex')]
+          .filter(node => !node.closest('.katex-display')).length,
+        errores: document.querySelectorAll('#html-output .katex-error').length,
+        sinRenderizar: /\$[^$\n]+\$/.test(texto) || /\\[([][^)\]]*\\[)\]]/.test(texto),
+      };
+    });
+    assert.equal(render.errores, 0, `${lang}: KaTeX marcó alguna fórmula como errónea`);
+    assert.equal(render.sinRenderizar, false, `${lang}: quedó una fórmula sin renderizar`);
+    assert.ok(render.linea >= 8, `${lang}: faltan fórmulas en línea (${render.linea})`);
+    assert.ok(render.bloque >= 5, `${lang}: faltan fórmulas de bloque (${render.bloque})`);
+  });
+}

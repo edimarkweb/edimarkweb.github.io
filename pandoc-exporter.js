@@ -13,9 +13,11 @@ import {
   normalizeThematicBreaks,
   trimInlineMath,
   ensureEpubMetadata,
-  collectRemoteImageUrls,
+  extractMarkdownTitle,
+  collectFetchableImageUrls,
   inlineArchiveImages,
   restoreOdtTableHeaders,
+  prepareOdtForImport,
   replaceImageUrls,
   dropImagesByUrl,
 } from './pandoc-prepare.js';
@@ -65,7 +67,6 @@ const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 let base64PandocWasm = null;
 let pandocInitialized = false;
-let initializationAttempts = 0;
 
 
 function translate(key, fallback = '') {
@@ -163,14 +164,15 @@ async function fetchAsDataUri(url) {
 }
 
 /*
-  Pandoc runs without network access inside WASM, so a remote image aborts the
-  whole conversion and leaves an empty output file. Download the images here,
-  where the browser can reach them, and inline them as data URIs. Images that
-  cannot be fetched (CORS, 404) are replaced by their alt text so the export
-  still produces a valid document.
+  Pandoc runs inside WASM without network or file system, so any image it has to
+  resolve on its own is lost: a remote URL aborts the conversion and a relative
+  path (`imagenes/formulas.gif`) is silently replaced by its description.
+  Download both here, where the browser resolves them against the page URL, and
+  inline them as data URIs. Images that cannot be fetched (CORS, 404) fall back
+  to their alt text so the export still produces a valid document.
 */
-async function inlineRemoteImages(markdown, { onStatus } = {}) {
-  const urls = collectRemoteImageUrls(markdown);
+async function inlineFetchableImages(markdown, { onStatus } = {}) {
+  const urls = collectFetchableImageUrls(markdown);
   if (urls.length === 0) {
     return { markdown, skipped: [] };
   }
@@ -264,55 +266,62 @@ async function readResponseAsText(response, gzip, throttled = false) {
   return '';
 }
 
+// Recorre las fuentes en orden y devuelve el primer base64 que llegue entero.
+async function fetchPandocBase64() {
+  for (const source of PANDOC_WASM_SOURCES) {
+    try {
+      const response = await fetch(source.url, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const throttled = isIOS && !source.gzip;
+      const text = await readResponseAsText(response, source.gzip, throttled);
+      if (text) return text;
+    } catch (innerError) {
+      console.warn(`Fallo al cargar ${source.url}:`, innerError);
+    }
+  }
+  return '';
+}
+
+/*
+  El presupuesto de reintentos es por llamada, no de por vida: un precalentado
+  silencioso que falle no puede dejar sin exportación al resto de la sesión.
+  El resultado solo se guarda cuando es válido, así que un intento fallido
+  tampoco deja a medias el base64 que verá el siguiente.
+*/
 async function loadPandocWasm({ onStatus } = {}, silent = false) {
   if (base64PandocWasm && pandocInitialized) {
     return base64PandocWasm;
   }
 
-  if (initializationAttempts >= MAX_RETRIES) {
-    throw new Error('pandoc_init_max_retries');
-  }
-  initializationAttempts += 1;
-
   if (!silent && typeof onStatus === 'function') {
     onStatus(translate('initializing_pandoc', 'Inicializando Pandoc...'));
   }
 
-  try {
-    for (const source of PANDOC_WASM_SOURCES) {
-      try {
-        const response = await fetch(source.url, { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        const throttled = isIOS && !source.gzip;
-        const text = await readResponseAsText(response, source.gzip, throttled);
-        if (text) {
-          base64PandocWasm = text;
-          break;
-        }
-      } catch (innerError) {
-        console.warn(`Fallo al cargar ${source.url}:`, innerError);
+  let lastError = null;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
+    try {
+      const text = await fetchPandocBase64();
+      if (!text) {
+        throw new Error('pandoc_wasm_unavailable');
+      }
+      if (text.length < 1000) {
+        throw new Error('pandoc_wasm_invalid');
+      }
+      base64PandocWasm = text;
+      pandocInitialized = true;
+      return base64PandocWasm;
+    } catch (error) {
+      lastError = error;
+      console.error(`Error en carga WASM (intento ${attempt}):`, error);
+      if (attempt < MAX_RETRIES) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
-
-    if (!base64PandocWasm) {
-      throw new Error('pandoc_wasm_unavailable');
-    }
-    if (base64PandocWasm.length < 1000) {
-      throw new Error('pandoc_wasm_invalid');
-    }
-
-    pandocInitialized = true;
-    return base64PandocWasm;
-  } catch (error) {
-    console.error(`Error en carga WASM (intento ${initializationAttempts}):`, error);
-    if (initializationAttempts < MAX_RETRIES) {
-      await new Promise(resolve => setTimeout(resolve, 1000 * initializationAttempts));
-      return loadPandocWasm({ onStatus }, silent);
-    }
-    throw error;
   }
+
+  throw lastError || new Error('pandoc_wasm_unavailable');
 }
 
 function triggerStatus(onStatus, key, fallback, extra = '') {
@@ -375,7 +384,7 @@ async function exportDocument({
 
   triggerStatus(onStatus, config.preparingKey, config.preparingFallback);
 
-  const { markdown: withImages, skipped: skippedImages } = await inlineRemoteImages(normalized, { onStatus });
+  const { markdown: withImages, skipped: skippedImages } = await inlineFetchableImages(normalized, { onStatus });
   normalized = withImages;
   if (skippedImages.length > 0) {
     triggerNotification(
@@ -451,10 +460,14 @@ async function generateHtml({
     let htmlResult = new TextDecoder().decode(resultadoBytes);
 
     if (standalone) {
-      const titleMatch = normalized.match(/^#\s+(.*)/m);
-      const title = titleMatch ? titleMatch[1].trim() : translate('untitled_document', 'Documento sin título');
+      // extractMarkdownTitle salta el código cercado: un `# npm install` dentro
+      // de un bloque no es el título del documento.
+      const title = extractMarkdownTitle(normalized)
+        || translate('untitled_document', 'Documento sin título');
       if (title) {
-        htmlResult = htmlResult.replace(/<title>.*?<\/title>/i, `<title>${escapeHtmlEntities(title)}</title>`);
+        const replacement = `<title>${escapeHtmlEntities(title)}</title>`;
+        // Con una cadena, un título que contenga `$&` o `$'` se expandiría.
+        htmlResult = htmlResult.replace(/<title>.*?<\/title>/i, () => replacement);
       }
     }
 
@@ -515,6 +528,11 @@ async function convertLatexToMarkdown({
     const sanitizedLatex = sanitizeLatexInput(normalizedLatex);
     const pandocArgs = `-f latex -t ${MARKDOWN_WRITER} --wrap=preserve`;
     const resultadoBytes = await pandoc(pandocArgs, sanitizedLatex, base64);
+    // Pandoc deja el archivo de salida vacío en lugar de lanzar: sin esta
+    // comprobación, el documento abierto se sustituiría por el resultado vacío.
+    if (!resultadoBytes || resultadoBytes.length === 0) {
+      throw new Error('pandoc_empty_output');
+    }
     let markdownResult = new TextDecoder().decode(resultadoBytes);
     markdownResult = ensureMarkdownTitle(markdownResult, metadata);
     markdownResult = stripPandocHeadingIds(markdownResult);
@@ -580,6 +598,16 @@ async function importToMarkdown({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
+
+    /*
+      El escritor ODT de Pandoc referencia cada fórmula con una barra final que
+      su propio lector no resuelve, así que un ODT exportado por la aplicación
+      volvería sin sus fórmulas. Se repara la referencia antes de convertir.
+    */
+    if (sourceFormat === 'odt') {
+      preparedInput = await prepareOdtForImport(normalizedInput);
+    }
+
     const pandocArgs = buildImportArgs(config.from);
     const resultadoBytes = await pandoc(pandocArgs, preparedInput, base64);
     if (!resultadoBytes || resultadoBytes.length === 0) {

@@ -223,6 +223,35 @@ A = \begin{pmatrix}
 \end{pmatrix}
 $$
 
+### Other delimiters
+
+As well as `$...$` and `$$...$$`, you can use LaTeX's own delimiters: \(E = mc^2\) inline, and as a block:
+
+\[
+\nabla \cdot \vec{E} = \frac{\rho}{\varepsilon_0}
+\]
+
+### Sums, limits and integrals
+
+The sum of the first $n$ natural numbers is $\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$ and the integral $\int_0^1 x^2\,dx = \frac{1}{3}$. The number $e$ is defined as a limit:
+
+$$
+e = \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^n
+$$
+
+### Systems of equations
+
+$$
+\begin{cases}
+2x + y = 5 \\
+x - y = 1
+\end{cases}
+$$
+
+### Assorted symbols
+
+Greek letters ($\alpha$, $\beta$, $\Omega$), subscripts ($H_2O$), comparisons ($a \neq b$, $x \leq y$) and sets ($\mathbb{R}$, $A \subseteq B$).
+
 If you prefer to build them visually, select the text in the editor and open **EdiCuaTeX**: the formula will come back inserted automatically.
 
 ---
