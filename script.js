@@ -2872,8 +2872,9 @@ window.onload = () => {
             const isActive = btn.getAttribute('data-copy-action') === action;
             btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
             btn.classList.toggle('font-semibold', isActive);
-            btn.classList.toggle('bg-slate-100', isActive);
-            btn.classList.toggle('dark:bg-slate-700', isActive);
+            // Un fondo gris sería idéntico al de hover: la marca es un check.
+            const check = btn.querySelector('.copy-check');
+            if (check) check.classList.toggle('hidden', !isActive);
         });
     }
 
