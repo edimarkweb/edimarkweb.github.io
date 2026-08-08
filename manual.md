@@ -7,7 +7,7 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 ## Novedades destacadas
 
 - Edición dual: puedes trabajar tanto en Markdown como directamente en la vista previa HTML, siempre sincronizadas.
-- Menú de exportación y de importación con soporte para DOCX, ODT, HTML y LaTeX, incluyendo opciones de copia directa al portapapeles.
+- Menú de exportación y de importación con soporte para DOCX, ODT, EPUB, HTML y LaTeX, incluyendo opciones de copia directa al portapapeles.
 - Buscador con reemplazo que resalta las coincidencias y acepta términos sin tildes ni distinción entre mayúsculas y minúsculas.
 - Selector de idioma y tamaño de letra para adaptar la interfaz a tu aula.
 - Botones para ampliar el ancho de trabajo o abrir la aplicación en una ventana independiente (modo escritorio).
@@ -63,7 +63,7 @@ Trabaja con varios documentos a la vez, cada uno en su propia pestaña.
 
 La barra junto al logotipo agrupa las opciones globales de la aplicación y ahora concentra todas las acciones de archivo en un único botón desplegable:
 
-* **Archivo**: abre un menú con `Abrir (Ctrl+O)`, `Importar` mediante Pandoc, `Pegar LaTeX (Ctrl+Mayús+V)` para pegar documentos completos, `Guardar (Ctrl+S)` y el submenú **Exportar** con DOCX, ODT, HTML o TEX. Así no hay iconos duplicados y siempre encontrarás los comandos de gestión en el mismo lugar.
+* **Archivo**: abre un menú con `Abrir (Ctrl+O)`, `Importar` mediante Pandoc, `Pegar LaTeX (Ctrl+Mayús+V)` para pegar documentos completos, `Guardar (Ctrl+S)` y el submenú **Exportar** con DOCX, ODT, EPUB, HTML o TEX. Así no hay iconos duplicados y siempre encontrarás los comandos de gestión en el mismo lugar.
 * **Idioma y tamaño de letra**: selecciona el idioma de la interfaz y el tamaño base del texto sin salir del flujo de trabajo.
 * **Tema claro/oscuro** y **Diseño (Ctrl+L)**: ajustan el aspecto visual (tema, distribución de paneles) en un solo clic.
 * **Ancho expandido** y **Ventana independiente**: amplían la superficie útil o lanzan EdiMarkWeb en una ventana separada para modo escritorio.
@@ -138,6 +138,7 @@ Abre el botón **Archivo** y selecciona `Exportar` para descargar versiones list
 
 * **DOCX (Microsoft Word)**: Ideal para compartir con alumnado o colegas que usan Word, y compatible con Google Docs.
 * **ODT (LibreOffice)**: Pensado para suites libres como LibreOffice u OnlyOffice.
+* **EPUB (libro digital)**: Crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). El título se toma del primer encabezado de nivel 1 (o del nombre del documento) y el idioma, del seleccionado en la aplicación.
 * **HTML (página web)**: Genera un archivo autónomo con estilos y fórmulas incrustadas, listo para alojar en la web.
 * **TEX (LaTeX)**: Crea un documento `.tex` completo con cabecera preparada para compilar.
 

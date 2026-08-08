@@ -25,6 +25,17 @@ const FORMATS = {
     errorKey: 'odt_export_error',
     errorFallback: 'Error durante la exportación a ODT.',
   },
+  epub: {
+    pandocFormat: 'epub3',
+    mime: 'application/epub+zip',
+    defaultFilename: 'documento.epub',
+    preparingKey: 'epub_export_preparing',
+    preparingFallback: 'Preparando EPUB, espera...',
+    doneKey: 'epub_export_done',
+    doneFallback: 'Exportación a EPUB completada.',
+    errorKey: 'epub_export_error',
+    errorFallback: 'Error durante la exportación a EPUB.',
+  },
 };
 
 const PANDOC_WASM_SOURCES = [
@@ -127,6 +138,31 @@ function ensureMarkdownTitle(markdown, { title, hasMakeTitle }) {
     ...lines.slice(firstContentIndex),
   ];
   return updated.join('\n');
+}
+
+function escapeYamlValue(str) {
+  return String(str).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+// EPUB requires a non-empty title and a language, otherwise Pandoc falls back
+// to the temporary input filename ("in") and to en-US.
+function ensureEpubMetadata(markdown, fallbackTitle = '') {
+  if (/^\s*---\s*\n/.test(markdown)) {
+    return markdown;
+  }
+  const headingMatch = markdown.match(/^#\s+(.*)/m);
+  const rawTitle = headingMatch ? headingMatch[1].trim() : String(fallbackTitle || '').trim();
+  const title = rawTitle || translate('untitled_document', 'Documento sin título');
+  const lang = window.__edimarkLang || document.documentElement.lang || 'es';
+  const frontMatter = [
+    '---',
+    `title: "${escapeYamlValue(title)}"`,
+    `lang: ${escapeYamlValue(lang)}`,
+    '---',
+    '',
+    '',
+  ].join('\n');
+  return frontMatter + markdown;
 }
 
 // Matches the inline math trim used in MDAITex.
@@ -283,6 +319,7 @@ async function exportDocument({
   onStatus = () => {},
   onNotification = () => {},
   outputFilename,
+  documentTitle = '',
 } = {}) {
   const normalizedFormat = typeof format === 'string' ? format.toLowerCase() : 'docx';
   const config = FORMATS[normalizedFormat];
@@ -290,10 +327,13 @@ async function exportDocument({
     throw new Error(`Unsupported format: ${format}`);
   }
 
-  const normalized = normalizeNewlines(trimInlineMath(markdown || ''));
+  let normalized = normalizeNewlines(trimInlineMath(markdown || ''));
   if (!normalized.trim()) {
     const message = translate('no_content', 'No hay contenido para exportar.');
     throw new Error(message || 'No content');
+  }
+  if (normalizedFormat === 'epub') {
+    normalized = ensureEpubMetadata(normalized, documentTitle);
   }
 
   triggerStatus(onStatus, config.preparingKey, config.preparingFallback);
@@ -310,8 +350,8 @@ async function exportDocument({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    let pandocArgs = `-f ${MARKDOWN_NO_AUTO_IDENTIFIERS} -t ${normalizedFormat}`;
-    if (normalizedFormat === 'odt') {
+    let pandocArgs = `-f ${MARKDOWN_NO_AUTO_IDENTIFIERS} -t ${config.pandocFormat || normalizedFormat}`;
+    if (normalizedFormat === 'odt' || normalizedFormat === 'epub') {
       pandocArgs += ' --mathml';
     }
     const resultadoBytes = await pandoc(pandocArgs, normalized, base64);

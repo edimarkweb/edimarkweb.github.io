@@ -3572,13 +3572,14 @@ window.onload = () => {
 
         try {
             const lowerFormat = String(format || '').toLowerCase();
-            if (lowerFormat === 'docx' || lowerFormat === 'odt') {
+            if (lowerFormat === 'docx' || lowerFormat === 'odt' || lowerFormat === 'epub') {
                 const extension = lowerFormat;
                 const outputFilename = `${safeName}.${extension}`;
                 await exporter.exportDocument({
                     format: lowerFormat,
                     markdown: rawMarkdown,
                     outputFilename,
+                    documentTitle: safeName,
                     onStatus: updateExportStatus,
                     onNotification: (message) => {
                         if (message) alert(message);
@@ -3641,6 +3642,8 @@ window.onload = () => {
                 ? 'odt_export_error'
                 : lowerFormat === 'docx'
                     ? 'docx_export_error'
+                    : lowerFormat === 'epub'
+                    ? 'epub_export_error'
                     : lowerFormat.startsWith('html')
                         ? 'html_export_error'
                         : lowerFormat.startsWith('latex')
