@@ -3023,6 +3023,102 @@ window.onload = () => {
     };
     window.__updateFontSizeLabel = updateFontSizeLabel;
 
+    /*
+      Idioma y tamaño de texto se eligen desde submenús que cuelgan del menú
+      Configuración, igual que Exportar cuelga del menú Archivo. El <select>
+      original sigue existiendo oculto: es quien guarda el valor y dispara el
+      evento que ya escuchaban i18n.js y el resto del código.
+    */
+    const settingsSubmenus = [];
+
+    function closeSettingsSubmenus(except = null) {
+        settingsSubmenus.forEach(({ menu, button }) => {
+            if (menu === except) return;
+            menu.classList.add('hidden');
+            button.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function setupSettingsSubmenu({ containerId, buttonId, menuId, selectId, attribute }) {
+        const container = document.getElementById(containerId);
+        const button = document.getElementById(buttonId);
+        const menu = document.getElementById(menuId);
+        const select = document.getElementById(selectId);
+        if (!container || !button || !menu || !select) return;
+
+        const options = Array.from(menu.querySelectorAll(`[${attribute}]`));
+        settingsSubmenus.push({ menu, button });
+
+        const syncChecks = () => {
+            options.forEach((option) => {
+                const isActive = option.getAttribute(attribute) === select.value;
+                option.setAttribute('aria-checked', isActive ? 'true' : 'false');
+                option.classList.toggle('font-semibold', isActive);
+                const check = option.querySelector('.submenu-check');
+                if (check) check.classList.toggle('hidden', !isActive);
+            });
+        };
+
+        const open = () => {
+            closeSettingsSubmenus(menu);
+            syncChecks();
+            menu.classList.remove('hidden');
+            button.setAttribute('aria-expanded', 'true');
+        };
+        const close = () => {
+            menu.classList.add('hidden');
+            button.setAttribute('aria-expanded', 'false');
+        };
+
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (POINTER_HAS_HOVER || menu.classList.contains('hidden')) open();
+            else close();
+        });
+
+        if (POINTER_HAS_HOVER) {
+            let closeTimer;
+            container.addEventListener('mouseenter', () => {
+                clearTimeout(closeTimer);
+                open();
+            });
+            container.addEventListener('mouseleave', () => {
+                clearTimeout(closeTimer);
+                closeTimer = setTimeout(close, 250);
+            });
+        }
+
+        options.forEach((option) => {
+            option.addEventListener('click', (event) => {
+                event.preventDefault();
+                select.value = option.getAttribute(attribute);
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                syncChecks();
+                close();
+                closeSettingsMenu();
+            });
+        });
+
+        select.addEventListener('change', syncChecks);
+        syncChecks();
+    }
+
+    setupSettingsSubmenu({
+        containerId: 'language-menu-container', buttonId: 'language-menu-btn',
+        menuId: 'language-menu', selectId: 'language-select', attribute: 'data-lang',
+    });
+    setupSettingsSubmenu({
+        containerId: 'font-size-menu-container', buttonId: 'font-size-menu-btn',
+        menuId: 'font-size-menu', selectId: 'font-size-select', attribute: 'data-font-size',
+    });
+
+    if (POINTER_HAS_HOVER) {
+        document.querySelectorAll('#settings-menu > [role="menuitem"]').forEach((item) => {
+            item.addEventListener('mouseenter', () => closeSettingsSubmenus());
+        });
+    }
+
     const attachSelectFocusHandlers = (selectEl, wrapper) => {
         if (!selectEl || !wrapper) return;
         selectEl.addEventListener('focus', () => wrapper.classList.add('select-focus'));
@@ -3369,6 +3465,7 @@ window.onload = () => {
     }
 
     function closeSettingsMenu() {
+        closeSettingsSubmenus();
         if (!settingsMenu) return;
         settingsMenu.classList.add('hidden');
         if (settingsMenuBtn) settingsMenuBtn.setAttribute('aria-expanded', 'false');
@@ -3907,7 +4004,7 @@ window.onload = () => {
         // Solo el icono: el botón lleva ahora su etiqueta de texto al lado.
         const iconHost = toggleWidthBtn.querySelector('.width-icon');
         if (iconHost) {
-            iconHost.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400"></i>`;
+            iconHost.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>`;
         }
         lucide.createIcons();
         closeSettingsMenu();
@@ -3935,7 +4032,7 @@ window.onload = () => {
       const isDark = theme === 'dark';
       const iconHost = themeToggleBtn.querySelector('.theme-icon');
       if (iconHost) {
-        iconHost.innerHTML = `<i data-lucide="${isDark ? 'moon' : 'sun'}" class="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400"></i>`;
+        iconHost.innerHTML = `<i data-lucide="${isDark ? 'moon' : 'sun'}" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>`;
       }
       const label = themeToggleBtn.querySelector('.theme-label');
       if (label) {

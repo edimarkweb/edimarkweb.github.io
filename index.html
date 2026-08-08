@@ -126,44 +126,86 @@
                     <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
                   </button>
                   <div id="settings-menu" class="hidden absolute left-0 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="settings-menu-btn">
-                    <div class="px-3 py-2">
-                      <label for="language-select" class="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1" data-i18n-key="language_select_label">Idioma</label>
-                      <div id="language-select-wrapper" class="select-trigger action-btn text-sm w-full justify-between">
-                        <span id="language-select-label" class="select-trigger-label">Español</span>
-                        <i data-lucide="chevron-down" class="select-trigger-caret"></i>
-                        <select id="language-select" class="select-overlay" aria-label="Seleccionar idioma">
-                          <option value="es">Español</option>
-                          <option value="en">English</option>
-                          <option value="ca">Català</option>
-                          <option value="gl">Galego</option>
-                          <option value="eu">Euskara</option>
-                        </select>
+                    <div id="language-menu-container" class="relative">
+                      <button type="button" id="language-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                        <i data-lucide="languages" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                        <span data-i18n-key="language_select_label">Idioma</span>
+                        <span id="language-select-label" class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500">Español</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 shrink-0 opacity-60"></i>
+                      </button>
+                      <div id="language-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-48 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="language-menu-btn">
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="es">
+                        <span>Español</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="en">
+                        <span>English</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="ca">
+                        <span>Català</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="gl">
+                        <span>Galego</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="eu">
+                        <span>Euskara</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
                       </div>
+                      <select id="language-select" class="hidden" aria-label="Seleccionar idioma">
+                        <option value="es">Español</option>
+                        <option value="en">English</option>
+                        <option value="ca">Català</option>
+                        <option value="gl">Galego</option>
+                        <option value="eu">Euskara</option>
+                      </select>
                     </div>
-                    <div class="px-3 pb-3">
-                      <label for="font-size-select" class="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1" data-i18n-key="font_size_select_label">Tamaño de texto</label>
-                      <div id="font-size-select-wrapper" class="select-trigger action-btn text-sm w-full justify-between" data-i18n-key="font_size_select_aria_label" aria-label="Tamaño de texto">
-                        <span id="font-size-select-label" class="select-trigger-label">Normal</span>
-                        <i data-lucide="chevron-down" class="select-trigger-caret"></i>
-                        <select id="font-size-select" class="select-overlay" aria-label="Tamaño de texto">
-                          <option value="14" data-i18n-key="font_size_small">Pequeño</option>
-                          <option value="16" data-i18n-key="font_size_normal">Normal</option>
-                          <option value="18" data-i18n-key="font_size_large">Grande</option>
-                          <option value="20" data-i18n-key="font_size_xlarge">Muy grande</option>
-                        </select>
+                    <div id="font-size-menu-container" class="relative">
+                      <button type="button" id="font-size-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false" data-i18n-key="font_size_select_aria_label" aria-label="Tamaño de texto">
+                        <i data-lucide="type" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                        <span data-i18n-key="font_size_select_label">Tamaño de texto</span>
+                        <span id="font-size-select-label" class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500">Normal</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 shrink-0 opacity-60"></i>
+                      </button>
+                      <div id="font-size-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-48 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="font-size-menu-btn">
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="14">
+                        <span data-i18n-key="font_size_small">Pequeño</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="16">
+                        <span data-i18n-key="font_size_normal">Normal</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="18">
+                        <span data-i18n-key="font_size_large">Grande</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="20">
+                        <span data-i18n-key="font_size_xlarge">Muy grande</span>
+                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      </button>
                       </div>
+                      <select id="font-size-select" class="hidden" aria-label="Tamaño de texto">
+                        <option value="14" data-i18n-key="font_size_small">Pequeño</option>
+                        <option value="16" data-i18n-key="font_size_normal">Normal</option>
+                        <option value="18" data-i18n-key="font_size_large">Grande</option>
+                        <option value="20" data-i18n-key="font_size_xlarge">Muy grande</option>
+                      </select>
                     </div>
                     <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
                     <button type="button" id="theme-toggle-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="theme_toggle_btn_aria_label" aria-label="Cambiar tema">
-                      <span class="theme-icon flex"><i data-lucide="sun" class="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400"></i></span>
+                      <span class="theme-icon flex"><i data-lucide="sun" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i></span>
                       <span class="theme-label" data-theme-label>Modo oscuro</span>
                     </button>
                     <button type="button" id="toggle-width-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="toggle_width_btn_title" title="Expandir / Contraer ancho">
-                      <span class="width-icon flex"><i data-lucide="maximize" class="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400"></i></span>
+                      <span class="width-icon flex"><i data-lucide="maximize" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i></span>
                       <span data-i18n-key="toggle_width_btn_text">Ancho expandido</span>
                     </button>
                     <button type="button" id="desktop-window-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="desktop_window_btn_title" title="Abrir como ventana independiente">
-                      <i data-lucide="app-window" class="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400"></i>
+                      <i data-lucide="app-window" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
                       <span data-i18n-key="desktop_window_btn_text">Ventana independiente</span>
                     </button>
                   </div>
@@ -359,7 +401,7 @@
         <strong data-i18n-key="footer_name">EdiMarkWeb</strong>
         <span data-i18n-key="footer_tagline">Editor de textos Markdown.</span>
         <span class="site-footer-sep">·</span>
-        <span data-i18n-key="footer_version">Versión 2.7.27.</span>
+        <span data-i18n-key="footer_version">Versión 2.7.28.</span>
         <span class="site-footer-sep">·</span>
         <span data-i18n-key="footer_author_prefix">© 2025-2026</span>
         <a href="https://bilateria.es" target="_blank" rel="noreferrer noopener">Juan José de Haro</a>
