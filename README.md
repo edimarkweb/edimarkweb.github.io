@@ -72,6 +72,20 @@ npm install
 npm run build:css
 ```
 
+### Pruebas
+
+```bash
+npm install
+npm test          # rápido: preparación del Markdown (títulos, metadatos, imágenes)
+npm run test:export   # lento: convierte con el pandoc.wasm real y valida el EPUB/DOCX/ODT
+npm run test:all
+```
+
+`npm run test:export` carga el WASM de Pandoc incluido en el repositorio y comprueba que cada
+documento de muestra produce un archivo **no vacío** y con estructura válida. Pandoc señala sus
+fallos internos dejando la salida vacía en lugar de lanzar un error, así que estas pruebas son las
+que evitan que una exportación rota llegue al usuario como una descarga de 0 bytes.
+
 ## Tecnologías empleadas
 
 - **HTML5 / CSS3 / JavaScript** sin framework.

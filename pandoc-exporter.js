@@ -3,6 +3,16 @@
   Reuses the Pandoc WASM bridge from MDAITex (pandoc-wasm.js).
 */
 import { pandoc } from './pandoc-wasm.js';
+import {
+  MARKDOWN_READER_NO_AUTO_IDS,
+  buildExportArgs,
+  normalizeNewlines,
+  trimInlineMath,
+  ensureEpubMetadata,
+  collectRemoteImageUrls,
+  replaceImageUrls,
+  dropImagesByUrl,
+} from './pandoc-prepare.js';
 
 const FORMATS = {
   docx: {
@@ -51,14 +61,6 @@ let base64PandocWasm = null;
 let pandocInitialized = false;
 let initializationAttempts = 0;
 
-const MARKDOWN_MATH_EXTENSIONS = [
-  'markdown',
-  '+tex_math_dollars',
-  '+tex_math_single_backslash',
-  '+tex_math_double_backslash',
-  '+raw_tex',
-].join('');
-const MARKDOWN_NO_AUTO_IDENTIFIERS = `${MARKDOWN_MATH_EXTENSIONS}-auto_identifiers`;
 
 function translate(key, fallback = '') {
   const catalog = window.__edimarkTranslations;
@@ -66,10 +68,6 @@ function translate(key, fallback = '') {
     return catalog[key];
   }
   return fallback;
-}
-
-function normalizeNewlines(str) {
-  return typeof str === 'string' ? str.replace(/\r\n?/g, '\n') : '';
 }
 
 function escapeHtmlEntities(str) {
@@ -140,37 +138,63 @@ function ensureMarkdownTitle(markdown, { title, hasMakeTitle }) {
   return updated.join('\n');
 }
 
-function escapeYamlValue(str) {
-  return String(str).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+function currentLanguage() {
+  return window.__edimarkLang || document.documentElement.lang || 'es';
 }
 
-// EPUB requires a non-empty title and a language, otherwise Pandoc falls back
-// to the temporary input filename ("in") and to en-US.
-function ensureEpubMetadata(markdown, fallbackTitle = '') {
-  if (/^\s*---\s*\n/.test(markdown)) {
-    return markdown;
+async function fetchAsDataUri(url) {
+  const response = await fetch(url, { mode: 'cors' });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
   }
-  const headingMatch = markdown.match(/^#\s+(.*)/m);
-  const rawTitle = headingMatch ? headingMatch[1].trim() : String(fallbackTitle || '').trim();
-  const title = rawTitle || translate('untitled_document', 'Documento sin título');
-  const lang = window.__edimarkLang || document.documentElement.lang || 'es';
-  const frontMatter = [
-    '---',
-    `title: "${escapeYamlValue(title)}"`,
-    `lang: ${escapeYamlValue(lang)}`,
-    '---',
-    '',
-    '',
-  ].join('\n');
-  return frontMatter + markdown;
+  const blob = await response.blob();
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error || new Error('read_failed'));
+    reader.readAsDataURL(blob);
+  });
 }
 
-// Matches the inline math trim used in MDAITex.
-function trimInlineMath(content) {
-  if (typeof content !== 'string') return '';
-  return content.replace(/\$(\s*)([^$\n]+?)(\s*)\$(?!\$)/g, (_match, _p1, expr) => {
-    return `$${expr}$`;
-  });
+/*
+  Pandoc runs without network access inside WASM, so a remote image aborts the
+  whole conversion and leaves an empty output file. Download the images here,
+  where the browser can reach them, and inline them as data URIs. Images that
+  cannot be fetched (CORS, 404) are replaced by their alt text so the export
+  still produces a valid document.
+*/
+async function inlineRemoteImages(markdown, { onStatus } = {}) {
+  const urls = collectRemoteImageUrls(markdown);
+  if (urls.length === 0) {
+    return { markdown, skipped: [] };
+  }
+
+  triggerStatus(onStatus, 'images_downloading', 'Descargando imágenes...');
+
+  const replacements = new Map();
+  const skipped = [];
+  const results = await Promise.all(urls.map(async (url) => {
+    try {
+      return { url, dataUri: await fetchAsDataUri(url) };
+    } catch (error) {
+      console.warn(`No se pudo incrustar la imagen ${url}:`, error);
+      return { url, dataUri: null };
+    }
+  }));
+
+  for (const { url, dataUri } of results) {
+    if (dataUri) {
+      replacements.set(url, dataUri);
+    } else {
+      skipped.push(url);
+    }
+  }
+
+  let prepared = replaceImageUrls(markdown, replacements);
+  if (skipped.length > 0) {
+    prepared = dropImagesByUrl(prepared, skipped);
+  }
+  return { markdown: prepared, skipped };
 }
 
 function stripPandocHeadingIds(markdown) {
@@ -332,11 +356,28 @@ async function exportDocument({
     const message = translate('no_content', 'No hay contenido para exportar.');
     throw new Error(message || 'No content');
   }
+  let titleFromHeading = false;
   if (normalizedFormat === 'epub') {
-    normalized = ensureEpubMetadata(normalized, documentTitle);
+    const prepared = ensureEpubMetadata(normalized, {
+      fallbackTitle: documentTitle,
+      untitledLabel: translate('untitled_document', 'Documento sin título'),
+      lang: currentLanguage(),
+    });
+    normalized = prepared.markdown;
+    titleFromHeading = prepared.titleFromHeading;
   }
 
   triggerStatus(onStatus, config.preparingKey, config.preparingFallback);
+
+  const { markdown: withImages, skipped: skippedImages } = await inlineRemoteImages(normalized, { onStatus });
+  normalized = withImages;
+  if (skippedImages.length > 0) {
+    triggerNotification(
+      onNotification,
+      'images_not_embedded',
+      'Algunas imágenes no se han podido descargar y se han omitido en el documento exportado.',
+    );
+  }
 
   let iosTimer;
   if (isIOS) {
@@ -350,12 +391,18 @@ async function exportDocument({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    let pandocArgs = `-f ${MARKDOWN_NO_AUTO_IDENTIFIERS} -t ${config.pandocFormat || normalizedFormat}`;
-    if (normalizedFormat === 'odt' || normalizedFormat === 'epub') {
-      pandocArgs += ' --mathml';
-    }
+    const pandocArgs = buildExportArgs(config.pandocFormat || normalizedFormat, {
+      mathml: normalizedFormat === 'odt' || normalizedFormat === 'epub',
+      titleFromHeading,
+    });
     const resultadoBytes = await pandoc(pandocArgs, normalized, base64);
     if (iosTimer) clearTimeout(iosTimer);
+
+    // Pandoc reports internal failures by leaving the output file empty rather
+    // than by throwing, so never hand the user a zero-byte download.
+    if (!resultadoBytes || resultadoBytes.length === 0) {
+      throw new Error('pandoc_empty_output');
+    }
 
     const blob = new Blob([resultadoBytes], { type: config.mime });
     saveBlob(blob, outputFilename || config.defaultFilename);
@@ -387,11 +434,14 @@ async function generateHtml({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    let pandocArgs = `-f ${MARKDOWN_NO_AUTO_IDENTIFIERS} -t html --mathjax`;
+    let pandocArgs = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --mathjax`;
     if (standalone) {
       pandocArgs += ' -s';
     }
     const resultadoBytes = await pandoc(pandocArgs, normalized, base64);
+    if (!resultadoBytes || resultadoBytes.length === 0) {
+      throw new Error('pandoc_empty_output');
+    }
     let htmlResult = new TextDecoder().decode(resultadoBytes);
 
     if (standalone) {
@@ -424,11 +474,14 @@ async function generateLatex({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    let pandocArgs = `-f ${MARKDOWN_NO_AUTO_IDENTIFIERS} -t latex --no-highlight`;
+    let pandocArgs = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t latex --no-highlight`;
     if (standalone) {
       pandocArgs = `-s ${pandocArgs}`;
     }
     const resultadoBytes = await pandoc(pandocArgs, normalized, base64);
+    if (!resultadoBytes || resultadoBytes.length === 0) {
+      throw new Error('pandoc_empty_output');
+    }
     let latexResult = new TextDecoder().decode(resultadoBytes);
     latexResult = latexResult.replace(/^[ \t]*\\tightlist\s*$(\r?\n)?/gm, '');
     return latexResult;
@@ -454,7 +507,7 @@ async function convertLatexToMarkdown({
     const metadata = extractLatexMetadata(normalizedLatex);
     const base64 = await loadPandocWasm({ onStatus });
     const sanitizedLatex = sanitizeLatexInput(normalizedLatex);
-    const pandocArgs = `-f latex -t ${MARKDOWN_NO_AUTO_IDENTIFIERS} --wrap=preserve`;
+    const pandocArgs = `-f latex -t ${MARKDOWN_READER_NO_AUTO_IDS} --wrap=preserve`;
     const resultadoBytes = await pandoc(pandocArgs, sanitizedLatex, base64);
     let markdownResult = new TextDecoder().decode(resultadoBytes);
     markdownResult = ensureMarkdownTitle(markdownResult, metadata);
@@ -520,7 +573,7 @@ async function importToMarkdown({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    let pandocArgs = `-f ${config.from} -t ${MARKDOWN_NO_AUTO_IDENTIFIERS} --wrap=preserve`;
+    let pandocArgs = `-f ${config.from} -t ${MARKDOWN_READER_NO_AUTO_IDS} --wrap=preserve`;
     const resultadoBytes = await pandoc(pandocArgs, preparedInput, base64);
     let markdownResult = new TextDecoder().decode(resultadoBytes);
     if (sourceFormat === 'latex') {
