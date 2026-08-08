@@ -4,7 +4,7 @@
 
 This repository is a static web application. Core files live at the project root: `index.html` bootstraps the UI, `script.js` handles editor behavior, `search.js` powers find/replace, `i18n.js` loads translations, and `pandoc-exporter.js` / `pandoc-prepare.js` / `pandoc-wasm.js` manage import-export features. Styles are split between source (`tailwind.css`, `style.css`) and generated output (`tailwind.build.css`). Localized strings are stored in `locales/*.json`, image assets belong in `imagenes/`, and automated tests live in `test/`.
 
-`pandoc-prepare.js` holds the pure Markdown preparation logic (metadata, titles, image handling, Pandoc argument building) with no browser dependencies, so it can be unit tested outside a browser. Keep it that way: anything touching `window`, `document`, or `fetch` belongs in `pandoc-exporter.js`.
+`pandoc-prepare.js` holds the pure Markdown preparation logic (metadata, titles, image handling, Pandoc argument building) with no browser dependencies, so it can be unit tested outside a browser. `zip-reader.js` reads images out of the DOCX/ODT/EPUB archives on import, using DecompressionStream so it runs unchanged in both the browser and the tests. Keep it that way: anything touching `window`, `document`, or `fetch` belongs in `pandoc-exporter.js`.
 
 ## Build, Test, and Development Commands
 

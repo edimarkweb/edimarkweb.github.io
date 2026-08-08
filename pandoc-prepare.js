@@ -1,3 +1,5 @@
+import { readZipEntries, mimeForPath, bytesToDataUri } from './zip-reader.js';
+
 /*
   Pure Markdown preparation helpers used by pandoc-exporter.js.
 
@@ -44,7 +46,18 @@ const MARKDOWN_WRITER_PLAIN = [
 ].join('');
 
 export function buildImportArgs(fromFormat) {
-  const writer = fromFormat === 'epub' ? MARKDOWN_WRITER_PLAIN : MARKDOWN_READER_NO_AUTO_IDS;
+  let writer = MARKDOWN_READER_NO_AUTO_IDS;
+  if (fromFormat === 'epub') {
+    writer = MARKDOWN_WRITER_PLAIN;
+  } else if (fromFormat === 'docx' || fromFormat === 'odt') {
+    /*
+      By default images arrive as `![](x.png){width="8.876cm" ...}` and that
+      attribute block shows up as literal text in the preview. Dropping
+      link_attributes alone makes Pandoc fall back to a raw <img> tag, so
+      raw_html has to go with it to get a plain `![](x.png)`.
+    */
+    writer += '-link_attributes-raw_html';
+  }
   return `-f ${fromFormat} -t ${writer} --wrap=preserve`;
 }
 
@@ -188,12 +201,24 @@ export function ensureEpubMetadata(markdown, {
   };
 }
 
-const MD_IMAGE_RE = /!\[[^\]]*\]\(\s*<?(https?:\/\/[^\s<>)]+)>?[^)]*\)/g;
-const HTML_IMAGE_RE = /<img\b[^>]*?\ssrc\s*=\s*(["'])(https?:\/\/[^"']+)\1[^>]*>/gi;
+const MD_IMAGE_RE = /!\[[^\]]*\]\(\s*<?([^\s<>)]+)>?[^)]*\)/g;
+const HTML_IMAGE_RE = /<img\b[^>]*?\ssrc\s*=\s*(["'])([^"']+)\1[^>]*>/gi;
+
+const isRemote = url => /^https?:\/\//i.test(url);
+const isEmbedded = url => /^data:/i.test(url);
 
 // Remote images abort the Pandoc WASM run (it has no network), so callers must
 // resolve them before converting to DOCX/ODT/EPUB.
 export function collectRemoteImageUrls(markdown) {
+  return collectImageSources(markdown).filter(isRemote);
+}
+
+// Images Pandoc points at inside the uploaded archive (Pictures/…, media/…).
+export function collectArchiveImagePaths(markdown) {
+  return collectImageSources(markdown).filter(url => !isRemote(url) && !isEmbedded(url));
+}
+
+function collectImageSources(markdown) {
   if (typeof markdown !== 'string') return [];
   const urls = new Set();
   for (const match of markdown.matchAll(MD_IMAGE_RE)) urls.add(match[1]);
@@ -230,4 +255,41 @@ export function dropImagesByUrl(markdown, urls) {
       return alt ? alt[1] : '';
     })
     .replace(HTML_IMAGE_RE, (match, _quote, url) => (targets.has(url) ? '' : match));
+}
+
+/*
+  DOCX, ODT and EPUB are ZIP archives. Pandoc returns only the converted text,
+  so its image references point at paths inside the uploaded file
+  (`Pictures/…`, `media/…`) that no longer exist. Read those images straight
+  out of the archive and inline them as data URIs.
+*/
+export async function inlineArchiveImages(markdown, archiveBytes) {
+  const paths = collectArchiveImagePaths(markdown);
+  if (paths.length === 0 || !archiveBytes || archiveBytes.length === 0) {
+    return markdown;
+  }
+
+  let entries;
+  try {
+    entries = await readZipEntries(archiveBytes);
+  } catch (error) {
+    console.warn('No se pudieron leer las imágenes del archivo:', error);
+    return markdown;
+  }
+
+  const replacements = new Map();
+  for (const path of paths) {
+    // Pandoc may shorten the path (media/image1.png for word/media/image1.png).
+    const key = entries.has(path)
+      ? path
+      : [...entries.keys()].find(name => name.endsWith(`/${path}`) || name.endsWith(`/${path.split('/').pop()}`));
+    if (!key) continue;
+    try {
+      replacements.set(path, bytesToDataUri(entries.get(key), mimeForPath(key)));
+    } catch (error) {
+      console.warn(`No se pudo incrustar la imagen ${path}:`, error);
+    }
+  }
+
+  return replacements.size > 0 ? replaceImageUrls(markdown, replacements) : markdown;
 }

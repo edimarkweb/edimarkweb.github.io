@@ -20,6 +20,7 @@ import {
   normalizeThematicBreaks,
   buildImportArgs,
   stripEpubAnchorPrefixes,
+  inlineArchiveImages,
 } from '../pandoc-prepare.js';
 
 // Mirrors what exportDocument() sends for format 'epub'.
@@ -231,3 +232,38 @@ test('un EPUB se puede volver a importar como Markdown limpio', { timeout: 18000
   assert.match(markdown, /^> una cita$/m);
   assert.match(markdown, /\(#seccion-uno\)/);
 });
+
+const PNG_DATA_URI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC';
+
+/*
+  Pandoc only returns text, so an imported image points at a path inside the
+  uploaded archive (Pictures/…, media/…) that no longer exists. The image has to
+  be pulled out of the file itself.
+*/
+for (const [label, exportFormat, importFormat] of [
+  ['DOCX', 'docx', 'docx'],
+  ['ODT', 'odt', 'odt'],
+  ['EPUB', 'epub3', 'epub'],
+]) {
+  test(`las imágenes sobreviven al viaje de ida y vuelta en ${label}`, { timeout: 180000 }, async () => {
+    const source = `# Prueba\n\nAntes.\n\n![Un gato](${PNG_DATA_URI})\n\nDespués.\n`;
+    const prepared = ensureEpubMetadata(source, { fallbackTitle: 'doc', lang: 'es' });
+    const exported = await runPandoc(
+      buildExportArgs(exportFormat, { mathml: exportFormat !== 'docx', titleFromHeading: prepared.titleFromHeading }),
+      exportFormat === 'epub3' ? prepared.markdown : source,
+    );
+    assert.ok(exported.bytes.length > 0, `exportación vacía: ${exported.stderr.join(' | ')}`);
+
+    const imported = await runPandoc(buildImportArgs(importFormat), exported.bytes);
+    assert.ok(imported.bytes.length > 0, `importación vacía: ${imported.stderr.join(' | ')}`);
+    const raw = new TextDecoder().decode(imported.bytes);
+
+    // Pandoc devuelve una ruta interna del archivo, no la imagen.
+    assert.match(raw, /!\[[^\]]*\]\([^)]+\)/, 'no hay ninguna imagen en el Markdown importado');
+    assert.doesNotMatch(raw, /\{width=/, 'los atributos de tamaño saldrían como texto en la previsualización');
+    assert.doesNotMatch(raw, /<img/, 'no debería aparecer HTML crudo');
+
+    const resolved = await inlineArchiveImages(raw, exported.bytes);
+    assert.match(resolved, /!\[[^\]]*\]\(data:image\/[a-z]+;base64,[A-Za-z0-9+/=]+\)/, 'la imagen no quedó incrustada');
+  });
+}

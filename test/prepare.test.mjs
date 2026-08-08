@@ -13,7 +13,11 @@ import {
   normalizeThematicBreaks,
   buildImportArgs,
   stripEpubAnchorPrefixes,
+  collectArchiveImagePaths,
+  inlineArchiveImages,
 } from '../pandoc-prepare.js';
+import { readZipEntries, mimeForPath } from '../zip-reader.js';
+import { makeZip } from './helpers/make-zip.mjs';
 
 test('hasYamlFrontMatter distingue metadatos de una línea horizontal', () => {
   assert.equal(hasYamlFrontMatter('---\ntitle: X\n---\n\nTexto\n'), true);
@@ -126,14 +130,19 @@ test('normalizeThematicBreaks respeta encabezados setext, código y front matter
   assert.equal(normalizeThematicBreaks('Sin rayas\n'), 'Sin rayas\n');
 });
 
-test('buildImportArgs limpia la salida solo al importar EPUB', () => {
+test('buildImportArgs pide a Pandoc Markdown plano según el formato', () => {
   const epub = buildImportArgs('epub');
   for (const ext of ['-fenced_divs', '-native_divs', '-bracketed_spans', '-header_attributes', '-raw_html']) {
     assert.ok(epub.includes(ext), `faltaba ${ext}`);
   }
-  // Los formatos que ya funcionaban no cambian de comportamiento.
-  assert.equal(buildImportArgs('docx'), buildImportArgs('odt').replace('odt', 'docx'));
-  assert.doesNotMatch(buildImportArgs('docx'), /-fenced_divs/);
+  // DOCX y ODT solo necesitan evitar el `{width=...}` y el <img> crudo.
+  for (const format of ['docx', 'odt']) {
+    assert.ok(buildImportArgs(format).includes('-link_attributes-raw_html'), format);
+    assert.doesNotMatch(buildImportArgs(format), /-fenced_divs/);
+  }
+  // LaTeX y HTML conservan el comportamiento que ya tenían.
+  assert.doesNotMatch(buildImportArgs('latex'), /-link_attributes|-raw_html/);
+  assert.doesNotMatch(buildImportArgs('html'), /-link_attributes|-raw_html/);
 });
 
 test('stripEpubAnchorPrefixes recorta el nombre del archivo interno', () => {
@@ -156,4 +165,55 @@ test('trimInlineMath y normalizeNewlines siguen comportándose igual', () => {
   assert.equal(trimInlineMath('$ a^2 $ y $$b$$'), '$a^2$ y $$b$$');
   assert.equal(normalizeNewlines('a\r\nb\rc'), 'a\nb\nc');
   assert.equal(normalizeNewlines(null), '');
+});
+
+test('collectArchiveImagePaths separa rutas internas de URLs y data URIs', () => {
+  const markdown = [
+    '![a](Pictures/1000.png)',
+    '![b](media/image1.png)',
+    '![c](https://ejemplo.org/x.png)',
+    '![d](data:image/gif;base64,R0lGOD)',
+    '<img src="word/media/image2.jpg">',
+  ].join('\n\n');
+  assert.deepEqual(collectArchiveImagePaths(markdown), [
+    'Pictures/1000.png',
+    'media/image1.png',
+    'word/media/image2.jpg',
+  ]);
+});
+
+test('inlineArchiveImages saca las imágenes del archivo y las incrusta', async () => {
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4]);
+  const zip = makeZip({
+    'mimetype': 'application/vnd.oasis.opendocument.text',
+    'Pictures/1000.png': png,
+    // Pandoc acorta la ruta de DOCX: media/… en vez de word/media/…
+    'word/media/image1.jpeg': png,
+  });
+
+  const markdown = '![Gato](Pictures/1000.png)\n\n![Perro](media/image1.jpeg)\n';
+  const result = await inlineArchiveImages(markdown, zip);
+
+  assert.match(result, /!\[Gato\]\(data:image\/png;base64,[A-Za-z0-9+/=]+\)/);
+  assert.match(result, /!\[Perro\]\(data:image\/jpeg;base64,[A-Za-z0-9+/=]+\)/);
+  assert.doesNotMatch(result, /Pictures\//);
+});
+
+test('inlineArchiveImages deja el texto intacto si no encuentra la imagen', async () => {
+  const zip = makeZip({ 'otra/cosa.txt': 'nada' });
+  const markdown = '![x](Pictures/ausente.png)\n';
+  assert.equal(await inlineArchiveImages(markdown, zip), markdown);
+  // Un archivo ilegible tampoco debe romper la importación.
+  assert.equal(await inlineArchiveImages(markdown, new Uint8Array([1, 2, 3])), markdown);
+  assert.equal(await inlineArchiveImages(markdown, null), markdown);
+});
+
+test('readZipEntries omite directorios y descomprime entradas deflate', async () => {
+  const zip = makeZip({ 'dir/': '', 'a.txt': 'hola', 'b.bin': new Uint8Array([0, 1, 2]) });
+  const entries = await readZipEntries(zip);
+  assert.equal(entries.has('dir/'), false);
+  assert.equal(new TextDecoder().decode(entries.get('a.txt')), 'hola');
+  assert.deepEqual([...entries.get('b.bin')], [0, 1, 2]);
+  assert.equal(mimeForPath('foto.JPG'), 'image/jpeg');
+  assert.equal(mimeForPath('raro.xyz'), 'application/octet-stream');
 });

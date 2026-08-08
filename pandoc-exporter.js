@@ -13,6 +13,7 @@ import {
   trimInlineMath,
   ensureEpubMetadata,
   collectRemoteImageUrls,
+  inlineArchiveImages,
   replaceImageUrls,
   dropImagesByUrl,
 } from './pandoc-prepare.js';
@@ -589,6 +590,10 @@ async function importToMarkdown({
     }
     if (sourceFormat === 'epub') {
       markdownResult = stripEpubAnchorPrefixes(markdownResult);
+    }
+    if (config.binary) {
+      triggerStatus(onStatus, 'images_extracting', 'Extrayendo imágenes...');
+      markdownResult = await inlineArchiveImages(markdownResult, normalizedInput);
     }
     markdownResult = stripPandocHeadingIds(markdownResult);
     triggerStatus(onStatus, 'import_file_success', 'Importación completada.');

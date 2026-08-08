@@ -124,7 +124,7 @@ Puedes arrastrar la barra central para dar más espacio a cualquiera de los pane
 ## Acciones principales
 
 * **Abrir (`Ctrl+O`)**: Importa archivos `.md` o `.markdown`.
-* **Importar**: Convierte a Markdown documentos en otros formatos mediante Pandoc: `.docx`, `.odt`, `.epub`, `.html` y `.tex`. Al importar un EPUB se recupera el texto con sus encabezados, listas y enlaces internos; las imágenes del libro no se conservan.
+* **Importar**: Convierte a Markdown documentos en otros formatos mediante Pandoc: `.docx`, `.odt`, `.epub`, `.html` y `.tex`. Se recuperan los encabezados, listas, tablas y enlaces, y también las imágenes: al proceder de un `.docx`, `.odt` o `.epub`, se extraen del propio archivo y quedan incrustadas en el Markdown, de modo que se ven en la previsualización y viajan contigo al exportar.
 * **Guardar (`Ctrl+S`)**: Descarga el documento actual en tu equipo.
 * **Copiar contenido**: El panel izquierdo incluye un botón para copiar el Markdown; en la vista previa puedes elegir qué se copiará (HTML renderizado o variantes LaTeX) desde el menú desplegable junto al icono de copia.
 * **Borrar todo**: Restablece el documento tras una confirmación.
