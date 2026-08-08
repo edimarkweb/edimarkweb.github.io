@@ -12,7 +12,7 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 - Selector de idioma y tamaño de letra para adaptar la interfaz a tu aula.
 - Botones para ampliar el ancho de trabajo o abrir la aplicación en una ventana independiente (modo escritorio).
 - Menú de fórmulas renovado y acceso directo a EdiCuaTeX para construir expresiones complejas.
-- Apertura de múltiples archivos Markdown arrastrándolos al editor (cada uno en su pestaña).
+- Apertura de múltiples archivos arrastrándolos al editor (cada uno en su pestaña): Markdown y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo con Pandoc.
 
 ## ¡Pega cualquier contenido!
 
@@ -161,7 +161,7 @@ Cada opción muestra una notificación de éxito y, cuando corresponde, prepara 
 
 ## Arrastrar y soltar archivos
 
-Arrastra uno o varios archivos `.md` o `.markdown` sobre la aplicación:
+Arrastra uno o varios archivos sobre la aplicación. Se admiten `.md` y `.markdown`, que se abren tal cual, y `.docx`, `.odt`, `.epub`, `.html` y `.tex`, que se convierten a Markdown con Pandoc antes de abrirse:
 
 * Verás un marco iluminado que confirma que puedes soltarlos.
 * Cada archivo se abrirá en su propia pestaña con el nombre original.

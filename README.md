@@ -25,7 +25,7 @@ EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores t
 | --- | --- |
 | **Barra superior** | Gestión de archivos, idioma, tamaño de fuente, tema, ancho expandido, ventana independiente, impresión y acceso directo al manual (`Ctrl+H`). |
 | **Barra de herramientas** | Formatos básicos, listas, citas, bloques de código, enlaces, imágenes, tablas y un menú de fórmulas con snippets listos. |
-| **Panel Markdown** | Editor CodeMirror con numeración opcional, resaltado de sintaxis, botón de copia y soporte de arrastrar y soltar `.md`. |
+| **Panel Markdown** | Editor CodeMirror con numeración opcional, resaltado de sintaxis, botón de copia y soporte de arrastrar y soltar (`.md` y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo). |
 | **Panel HTML / Vista previa** | Cambia entre vista renderizada y código HTML, copia contenido con distintos perfiles (HTML, LaTeX parcial o completo). |
 
 Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pueden renombrarse con doble clic. El autoguardado del navegador recupera automáticamente el contenido tras recargar la página.

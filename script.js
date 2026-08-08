@@ -4511,7 +4511,7 @@ window.onload = () => {
       <div class="flex flex-col items-center gap-2">
         <i data-lucide="arrow-down-to-line" class="w-14 h-14 text-slate-600 dark:text-slate-200"></i>
         <p class="drop-hint text-lg font-semibold text-slate-800 dark:text-slate-100" data-i18n-key="drop_title">Suelta aquí para abrir en una pestaña nueva</p>
-        <p class="drop-hint text-sm text-slate-600 dark:text-slate-300" data-i18n-key="drop_subtitle">Archivos Markdown (.md, .markdown). También puedes soltar varios.</p>
+        <p class="drop-hint text-sm text-slate-600 dark:text-slate-300" data-i18n-key="drop_subtitle">Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX. También puedes soltar varios.</p>
       </div>
     </div>
   `;
@@ -4577,15 +4577,33 @@ window.onload = () => {
     const files = Array.from(e.dataTransfer?.files || []);
     if (!files.length) return;
 
-    const mdFiles = files.filter(f => {
+    const isMarkdown = (f) => {
       const name = (f.name || '').toLowerCase();
-      return /\\.md$|\\.markdown$/.test(name) || (f.type && f.type === 'text/markdown');
-    });
+      return /\.md$|\.markdown$/.test(name) || (f.type && f.type === 'text/markdown');
+    };
 
-    if (!mdFiles.length) {
-      alert('Solo se pueden soltar archivos Markdown (.md/.markdown)');
+    const mdFiles = files.filter(isMarkdown);
+    // Lo que no es Markdown puede seguir siendo convertible con Pandoc.
+    const importable = files.filter(f => !isMarkdown(f) && detectImportFormat(f));
+
+    if (!mdFiles.length && !importable.length) {
+      alert(getTranslation(
+        'drop_unsupported',
+        'Solo se pueden soltar archivos Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX.',
+      ));
       return;
     }
+
+    // Secuencial: cada importación levanta su propia instancia de Pandoc.
+    (async () => {
+      for (const file of importable) {
+        try {
+          await importFileWithPandoc(file);
+        } catch (err) {
+          console.error('No se pudo importar el archivo arrastrado:', err);
+        }
+      }
+    })();
 
     mdFiles.forEach((file) => {
       const reader = new FileReader();
