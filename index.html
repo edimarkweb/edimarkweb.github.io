@@ -558,6 +558,8 @@
       var ANALYTICS_FALLBACK_ENDPOINT = 'https://bilateria.org/app/estadistica/edimarkweb/track.php';
       var ANALYTICS_FALLBACK_STATS_URL = 'https://bilateria.org/app/estadistica/edimarkweb/admin-stats.php';
       var ANALYTICS_VISIT_COOLDOWN_MS = 30 * 60 * 1000;
+      var ANALYTICS_CALLBACK_NAME = '__edimarkAnalytics';
+      var ANALYTICS_CHANNEL = 'edimarkweb-analytics';
 
       function getMetaContent(name) {
         var node = document.querySelector('meta[name="' + name + '"]');
@@ -603,16 +605,49 @@
         return true;
       }
 
+      /*
+        Documento del iframe aislado que hace la llamada JSONP.
+
+        La URL llega ya codificada en porcentajes por URLSearchParams, así que no
+        puede contener `<` ni comillas y es seguro incrustarla; aun así se pasa
+        por JSON.stringify y el llamador lo verifica antes.
+      */
+      function buildAnalyticsFrameDocument(url) {
+        return '<!doctype html><meta charset="utf-8"><script>'
+          + '(function(){'
+          + 'var done=false;'
+          + 'function send(ok){if(done)return;done=true;'
+          + 'parent.postMessage({channel:' + JSON.stringify(ANALYTICS_CHANNEL) + ',ok:!!ok},"*");}'
+          + 'window[' + JSON.stringify(ANALYTICS_CALLBACK_NAME) + ']=function(p){send(p&&p.ok);};'
+          + 'var s=document.createElement("script");'
+          + 's.src=' + JSON.stringify(url) + ';'
+          + 's.onerror=function(){send(false);};'
+          + 'document.head.appendChild(s);'
+          + 'setTimeout(function(){send(false);},3000);'
+          + '})();'
+          + '<\/script>';
+      }
+
+      /*
+        La analítica es JSONP: el servidor contesta con una llamada a una función,
+        de modo que su respuesta es código que se ejecuta. Cargado en la página,
+        ese código tendría acceso a todo lo que hay en ella, incluidos los
+        documentos del usuario en localStorage.
+
+        Por eso se carga dentro de un iframe con `sandbox` y sin
+        `allow-same-origin`: origen opaco, sin acceso al DOM de la página, sin
+        localStorage y sin cookies. Lo único que vuelve es un booleano por
+        postMessage, y el contrato con el servidor no cambia.
+      */
       function loadAnalyticsSummary() {
         if (!shouldTrackAnalytics()) return;
         var cfg = getAnalyticsConfig();
-        if (!cfg.endpoint) return;
+        if (!cfg.endpoint || !/^https?:\/\//i.test(cfg.endpoint)) return;
 
-        var callbackName = '__edimarkAnalytics_' + String(Date.now()) + '_' + String(Math.floor(Math.random() * 100000));
         var pageParams = new URLSearchParams(window.location.search || '');
         var query = new URLSearchParams();
-        var script = document.createElement('script');
         var shouldCountVisit = shouldCountAnalyticsVisit(cfg.siteId);
+        var frame = document.createElement('iframe');
         var settled = false;
         var timeoutId = 0;
 
@@ -620,12 +655,24 @@
           if (settled) return;
           settled = true;
           if (timeoutId) window.clearTimeout(timeoutId);
-          try { delete window[callbackName]; } catch (err) { window[callbackName] = null; }
-          if (script && script.parentNode) script.parentNode.removeChild(script);
+          window.removeEventListener('message', onAnalyticsMessage);
+          if (frame && frame.parentNode) frame.parentNode.removeChild(frame);
+        }
+
+        // Del iframe solo se acepta un booleano, y solo si viene de él.
+        function onAnalyticsMessage(event) {
+          if (!frame || event.source !== frame.contentWindow) return;
+          var data = event.data;
+          if (!data || data.channel !== ANALYTICS_CHANNEL) return;
+          try {
+            if (shouldCountVisit && data.ok === true) rememberAnalyticsVisit(cfg.siteId);
+          } finally {
+            cleanup();
+          }
         }
 
         query.set('site', cfg.siteId);
-        query.set('callback', callbackName);
+        query.set('callback', ANALYTICS_CALLBACK_NAME);
         query.set('page_url', window.location.href);
         query.set('referrer', document.referrer || '');
         if (!shouldCountVisit) query.set('summary_only', '1');
@@ -635,19 +682,20 @@
           if (value) query.set(key, value);
         });
 
-        window[callbackName] = function (payload) {
-          try {
-            if (shouldCountVisit && payload && payload.ok) rememberAnalyticsVisit(cfg.siteId);
-          } finally {
-            cleanup();
-          }
-        };
+        var url = cfg.endpoint + (cfg.endpoint.indexOf('?') === -1 ? '?' : '&') + query.toString();
+        // Un endpoint con caracteres capaces de cerrar el <script> del srcdoc
+        // solo puede venir de una etiqueta <meta> mal puesta: no se carga.
+        if (/[<>"']/.test(url)) return;
 
-        script.async = true;
-        script.src = cfg.endpoint + (cfg.endpoint.indexOf('?') === -1 ? '?' : '&') + query.toString();
-        script.onerror = cleanup;
+        window.addEventListener('message', onAnalyticsMessage);
+        frame.setAttribute('sandbox', 'allow-scripts');
+        frame.setAttribute('aria-hidden', 'true');
+        frame.setAttribute('tabindex', '-1');
+        frame.setAttribute('title', '');
+        frame.style.display = 'none';
+        frame.srcdoc = buildAnalyticsFrameDocument(url);
         timeoutId = window.setTimeout(cleanup, 4000);
-        document.head.appendChild(script);
+        document.body.appendChild(frame);
       }
 
       function initPrivacyFlyout() {

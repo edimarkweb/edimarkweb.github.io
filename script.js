@@ -3,7 +3,7 @@
   llevan un marcador {version} en los cinco idiomas. La otra copia vive en
   package.json y una prueba comprueba que ambas coinciden.
 */
-const APP_VERSION = '2.8.3';
+const APP_VERSION = '2.9.0';
 
 // Declaración de variables globales
 let turndownService;
@@ -190,7 +190,8 @@ function cleanWordTables(container) {
         if (firstRow) {
             Array.from(firstRow.children).forEach((cell) => {
                 if (cell.nodeName === 'TH') return;
-                const th = document.createElement('th');
+                // Del mismo documento que la celda: el contenedor puede ser inerte.
+                const th = (cell.ownerDocument || document).createElement('th');
                 removeAttributes(th, TABLE_SANITIZE_ATTRS);
                 th.innerHTML = cell.innerHTML;
                 cell.replaceWith(th);
@@ -199,13 +200,57 @@ function cleanWordTables(container) {
     });
 }
 
+/*
+  Contenedor inerte para examinar HTML de fuera (portapapeles, importaciones).
+
+  Un <div> hecho con document.createElement pertenece al documento de la p\u00E1gina:
+  al asignarle innerHTML sus <img> empiezan a cargarse aunque el div no est\u00E9
+  insertado, y el `onerror` de un HTML pegado llegar\u00EDa a ejecutarse. En un
+  documento de createHTMLDocument no se carga ning\u00FAn recurso.
+*/
+function createInertContainer(html) {
+    const inertDocument = document.implementation.createHTMLDocument('');
+    inertDocument.body.innerHTML = typeof html === 'string' ? html : '';
+    return inertDocument.body;
+}
+
+// Los espacios y caracteres de control parten esquemas como `java\tscript:`.
+const UNSAFE_URL_SCHEME = /^(?:javascript:|vbscript:|data:text\/html)/i;
+const URL_ATTRIBUTES = new Set(['href', 'src', 'xlink:href', 'action', 'formaction']);
+
+function hasUnsafeUrlScheme(value) {
+    return UNSAFE_URL_SCHEME.test(String(value || '').replace(/[\u0000-\u0020]/g, ''));
+}
+
+/*
+  Quita de un HTML ajeno lo que ejecuta c\u00F3digo: manejadores en l\u00EDnea (`onerror`,
+  `onclick`\u2026), esquemas de URL ejecutables y las etiquetas que traen su propio
+  contenido activo. No es un saneador general \u2014el Markdown que escribe el propio
+  usuario no pasa por aqu\u00ED\u2014, sino la aduana de lo que llega de fuera.
+*/
+function stripUnsafeHtml(html) {
+    if (typeof html !== 'string' || !html.includes('<')) return html;
+    const container = createInertContainer(html);
+    container.querySelectorAll('script, iframe, object, embed').forEach((node) => node.remove());
+    container.querySelectorAll('*').forEach((element) => {
+        Array.from(element.attributes).forEach((attribute) => {
+            const name = attribute.name.toLowerCase();
+            if (name.startsWith('on')) {
+                element.removeAttribute(attribute.name);
+            } else if (URL_ATTRIBUTES.has(name) && hasUnsafeUrlScheme(attribute.value)) {
+                element.removeAttribute(attribute.name);
+            }
+        });
+    });
+    return container.innerHTML;
+}
+
 function sanitizeHtmlForMarkdown(html) {
     if (typeof html !== 'string' || !html.trim()) return html;
     if (!html.toLowerCase().includes('<table')) {
         return html.replace(/\u00A0/g, ' ');
     }
-    const container = document.createElement('div');
-    container.innerHTML = html;
+    const container = createInertContainer(html);
     cleanWordTables(container);
     return container.innerHTML.replace(/\u00A0/g, ' ');
 }
@@ -521,8 +566,7 @@ function hasMeaningfulHtmlContent(html) {
 function isPlainTextClipboardHtml(fragment) {
     if (typeof fragment !== 'string' || fragment.trim().length === 0) return false;
     if (typeof document === 'undefined' || typeof document.createElement !== 'function') return false;
-    const container = document.createElement('div');
-    container.innerHTML = fragment;
+    const container = createInertContainer(fragment);
     const elements = container.querySelectorAll('*');
     if (elements.length === 0) return false;
     for (const element of elements) {
@@ -715,7 +759,8 @@ function notifyHtmlPreviewChanged() {
 
 function insertHtmlIntoPreview({ html, plain }, { triggerSync = false } = {}) {
     if (!htmlOutputEl) return;
-    const markup = (html && html.trim()) ? html : convertPlainTextToHtml(plain);
+    // Lo pegado viene de fuera y va a parar al DOM de la aplicación.
+    const markup = stripUnsafeHtml((html && html.trim()) ? html : convertPlainTextToHtml(plain));
     if (!markup) return;
     const previouslyFocused = document.activeElement;
     htmlOutputEl.focus({ preventScroll: true });
@@ -993,6 +1038,12 @@ let currentId = null;
 // Último contenido escrito en el almacenamiento local, por documento.
 const lastAutosavedById = new Map();
 let currentLayout;
+/*
+  Adelanta el repintado pendiente de la vista previa. Lo define el bloque de
+  sincronización dentro de window.onload; hasta entonces no hay nada que
+  adelantar, de ahí que arranque como una función vacía.
+*/
+let flushPendingPreviewRepaint = () => {};
 let syncEnabled = true;
 let skipNextMarkdownSync = false;
 let skipNextCursorSync = false;
@@ -1022,6 +1073,34 @@ const IMPORT_EXTENSION_MAP = new Map([
     ['htm', 'html'],
     ['xhtml', 'html'],
 ]);
+
+/*
+  Autoguardado de un documento concreto.
+
+  El temporizador solo alcanza a la pestaña activa, así que cualquier punto en
+  el que un documento deje de serlo —cambio de pestaña, cierre de la página—
+  tiene que volcarlo antes: si no, lo escrito desde el último tic se pierde sin
+  aviso y la pestaña vuelve con el contenido viejo al recargar.
+
+  Escribe solo cuando el texto ha cambiado, que con imágenes base64 incrustadas
+  es una diferencia real de coste.
+*/
+function autosaveDoc(id, content) {
+    if (!id || typeof content !== 'string') return;
+    if (lastAutosavedById.get(id) === content) return;
+    if (safeLocalStorageSet(`${AUTOSAVE_KEY_PREFIX}-${id}`, content)) {
+        lastAutosavedById.set(id, content);
+    }
+}
+
+// Vuelca el documento abierto tal y como está ahora mismo en el editor.
+function autosaveCurrentDoc() {
+    if (!currentId || !markdownEditor) return;
+    const content = markdownEditor.getValue();
+    const doc = docs.find(d => d.id === currentId);
+    if (doc) doc.md = content;
+    autosaveDoc(currentId, content);
+}
 
 function getTranslation(key, fallback) {
     const catalog = window.__edimarkTranslations;
@@ -2219,6 +2298,8 @@ function switchTo(id) {
         const previousDoc = docs.find(d => d.id === currentId);
         if (previousDoc) {
             previousDoc.md = markdownEditor.getValue();
+            // El temporizador ya no volverá a este documento: se guarda aquí.
+            autosaveDoc(previousDoc.id, previousDoc.md);
             updateDirtyIndicator(previousDoc.id, previousDoc.md !== previousDoc.lastSaved);
         }
     }
@@ -3885,6 +3966,8 @@ window.onload = () => {
 
     async function copyPreviewHtml() {
         if (!copyHtmlBtn) return;
+        // Se copia lo que hay escrito, no lo último repintado.
+        flushPendingPreviewRepaint();
         const isPreviewVisible = htmlOutput && htmlOutput.style.display !== 'none';
         const html = isPreviewVisible ? buildHtmlWithTex() : (htmlEditor ? htmlEditor.getValue() : '');
         await copyRich(html, copyHtmlBtn);
@@ -4393,16 +4476,20 @@ window.onload = () => {
       se reescribía el documento entero cada tres segundos aunque nadie tocara
       nada, algo especialmente caro con imágenes base64 incrustadas.
     */
-    setInterval(() => {
-        if (!currentId) return;
-        const content = markdownEditor.getValue();
-        const doc = docs.find(d => d.id === currentId);
-        if (doc) doc.md = content;
-        if (lastAutosavedById.get(currentId) === content) return;
-        if (safeLocalStorageSet(`${AUTOSAVE_KEY_PREFIX}-${currentId}`, content)) {
-            lastAutosavedById.set(currentId, content);
-        }
-    }, 3000);
+    setInterval(autosaveCurrentDoc, 3000);
+
+    /*
+      Volcado final: entre dos tics del temporizador caben tres segundos de
+      escritura que se perderían al cerrar la pestaña. Se usa `pagehide` y no
+      `beforeunload` porque en móvil una aplicación que pasa a segundo plano
+      puede no volver nunca, y `visibilitychange` es el único aviso que llega en
+      ese caso. Ambos eventos son idempotentes: autosaveDoc no reescribe nada si
+      el contenido no ha cambiado.
+    */
+    window.addEventListener('pagehide', autosaveCurrentDoc);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') autosaveCurrentDoc();
+    });
 
     // --- Eventos de la barra de herramientas ---
     toolbar.addEventListener('click', (e) => {
@@ -4850,13 +4937,48 @@ window.onload = () => {
       const lineRatio = markdownEditor.getCursor().line / Math.max(1, markdownEditor.lineCount() - 1);
       htmlOutput.scrollTop = lineRatio * (htmlOutput.scrollHeight - htmlOutput.clientHeight);
     }
+    /*
+      Repintar la vista previa no es barato: reanaliza el documento entero,
+      sustituye todo el HTML del panel, reescribe el editor HTML y vuelve a
+      renderizar todas las fórmulas. Hacerlo una vez por tecla se nota en
+      documentos largos, así que las pulsaciones seguidas se agrupan.
+
+      Es una limitación de frecuencia, no un aplazamiento: la primera tecla tras
+      una pausa se atiende enseguida y al escribir sin parar la vista se
+      actualiza cada MS_ENTRE_REPINTADOS, en lugar de dejar de refrescarse
+      mientras dure la escritura.
+    */
+    const MS_ENTRE_REPINTADOS = 150;
+    let repaintTimer = null;
+    let lastRepaintAt = 0;
+    function repaintPreview() {
+      repaintTimer = null;
+      lastRepaintAt = Date.now();
+      updateHtml();
+      syncFromMarkdown();
+    }
+    function schedulePreviewRepaint() {
+      if (repaintTimer !== null) return;
+      const waited = Date.now() - lastRepaintAt;
+      repaintTimer = setTimeout(repaintPreview, Math.max(0, MS_ENTRE_REPINTADOS - waited));
+    }
+    /*
+      Quien vaya a leer el HTML ya generado (copiar, exportar) no puede
+      encontrarse con un repintado pendiente: adelanta el que hubiera.
+    */
+    flushPendingPreviewRepaint = () => {
+      if (repaintTimer === null) return;
+      clearTimeout(repaintTimer);
+      repaintPreview();
+    };
+
     markdownEditor.on('change', () => {
       updateUndoRedoButtons();
       if (skipNextMarkdownSync) {
         skipNextMarkdownSync = false;
         return;
       }
-      requestAnimationFrame(() => { updateHtml(); syncFromMarkdown(); });
+      schedulePreviewRepaint();
     });
     markdownEditor.on('cursorActivity', () => {
       if (skipNextCursorSync) return;

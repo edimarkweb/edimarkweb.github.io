@@ -15,6 +15,7 @@ import {
   normalizeThematicBreaks,
   buildImportArgs,
   stripEpubAnchorPrefixes,
+  stripUnsafeMarkup,
   collectArchiveImagePaths,
   inlineArchiveImages,
   prepareOdtForImport,
@@ -408,4 +409,59 @@ test('la versión no se desincroniza entre package.json y la aplicación', () =>
   const pie = leer('index.html').match(/<span data-i18n-key="footer_version">([^<]*)<\/span>/);
   assert.ok(pie, 'no se encuentra el pie de versión en index.html');
   assert.doesNotMatch(pie[1], /\d+\.\d+\.\d+/, 'index.html lleva la versión escrita a mano');
+});
+
+/*
+  Lo que llega dentro de un archivo importado se renderiza en la vista previa,
+  o sea en el origen de la aplicación y con acceso a los documentos guardados.
+*/
+test('la importación desarma manejadores y esquemas ejecutables', () => {
+  const TAB = String.fromCharCode(9);
+  const casos = [
+    ['<img src="x.png" onerror="robar()">', '<img src="x.png">'],
+    ['<a href="javascript:robar()">pulsa</a>', '<a>pulsa</a>'],
+    // El destino del enlace lleva paréntesis: no puede cortarse por el primero.
+    ['[pulsa](javascript:robar())', '[pulsa](#)'],
+    ['[pulsa](javascript:alert(1) "titulo")', '[pulsa](#)'],
+    // Un carácter de control no puede usarse para partir el esquema.
+    [`<a href="java${TAB}script:robar()">x</a>`, '<a>x</a>'],
+    ["<a HREF='VBScript:robar()'>x</a>", '<a>x</a>'],
+    ['<a href="data:text/html,<script>robar()</script>">x</a>', '<a>x</a>'],
+    // Un `>` dentro de una comilla no puede cortar la etiqueta antes de tiempo:
+    // el navegador respeta las comillas y ejecutaría el manejador.
+    ['<img src="a>" onerror="alert(1)">', '<img src="a>">'],
+    ["<span data-x='a>b' onclick=\"y()\">z</span>", "<span data-x='a>b'>z</span>"],
+  ];
+  for (const [entrada, esperado] of casos) {
+    assert.equal(stripUnsafeMarkup(entrada), esperado, entrada);
+  }
+});
+
+/*
+  Contrapartida: el saneado no puede comerse contenido legítimo. El caso del
+  código importa especialmente porque el manual de la aplicación documenta
+  etiquetas HTML dentro de bloques cercados.
+*/
+test('el saneado de la importación no toca el contenido legítimo', () => {
+  const intactos = [
+    'Texto normal con la palabra onclick= suelta en medio.',
+    '<img src="imagen.png" alt="foto">',
+    '<a href="https://example.org/a?b=1&c=2">enlace</a>',
+    '[enlace](https://example.org)',
+    '[con titulo](https://example.org "Mi titulo")',
+    '![imagen](data:image/png;base64,iVBORw0KGgo=)',
+    '`<img onerror="x">` dentro de codigo en linea',
+    '```html\n<img src=x onerror="alert(1)">\n```',
+    '~~~\n[x](javascript:alert(1))\n~~~',
+    '| a | b |\n|---|---|\n| `<a href="javascript:x">` | c |',
+  ];
+  for (const caso of intactos) {
+    assert.equal(stripUnsafeMarkup(caso), caso, caso);
+  }
+});
+
+test('stripUnsafeMarkup tolera entradas que no son texto', () => {
+  assert.equal(stripUnsafeMarkup(null), '');
+  assert.equal(stripUnsafeMarkup(undefined), '');
+  assert.equal(stripUnsafeMarkup(''), '');
 });

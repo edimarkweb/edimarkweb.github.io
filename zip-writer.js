@@ -10,6 +10,14 @@
   first entry of the archive.
 */
 
+/*
+  Bit 11 de los «general purpose flags»: los nombres de entrada van en UTF-8.
+  Sin él, quien lea el archivo interpreta los nombres con la página de códigos
+  local y una imagen como `Pictures/gráfico.png` vuelve con el nombre roto.
+  TextEncoder ya escribe UTF-8, así que solo faltaba anunciarlo.
+*/
+const UTF8_NAME_FLAG = 0x0800;
+
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
   for (let i = 0; i < 256; i += 1) {
@@ -52,6 +60,7 @@ export function createZip(files) {
     const localView = new DataView(local.buffer);
     localView.setUint32(0, 0x04034b50, true);
     localView.setUint16(4, 20, true);
+    localView.setUint16(6, UTF8_NAME_FLAG, true);
     localView.setUint32(14, crc, true);
     localView.setUint32(18, data.length, true);
     localView.setUint32(22, data.length, true);
@@ -64,6 +73,7 @@ export function createZip(files) {
     const centralView = new DataView(central.buffer);
     centralView.setUint32(0, 0x02014b50, true);
     centralView.setUint16(6, 20, true);
+    centralView.setUint16(8, UTF8_NAME_FLAG, true);
     centralView.setUint32(16, crc, true);
     centralView.setUint32(20, data.length, true);
     centralView.setUint32(24, data.length, true);

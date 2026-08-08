@@ -9,6 +9,7 @@ import {
   buildExportArgs,
   buildImportArgs,
   stripEpubAnchorPrefixes,
+  stripUnsafeMarkup,
   normalizeNewlines,
   normalizeThematicBreaks,
   trimInlineMath,
@@ -56,11 +57,17 @@ const FORMATS = {
   },
 };
 
+/*
+  El comprimido va primero: son 19 MB en lugar de 70 MB para el mismo base64.
+  La variante sin comprimir se queda como respaldo porque la descompresión
+  necesita DecompressionStream; donde no exista, readResponseAsText devuelve
+  una cadena vacía y el bucle pasa a la fuente siguiente.
+*/
 const PANDOC_WASM_SOURCES = [
-  { url: 'pandoc.b64', gzip: false },
   { url: 'pandoc.b64.gz', gzip: true },
-  { url: 'https://raw.githubusercontent.com/mdaitex/mdaitex.github.io/main/pandoc.b64', gzip: false },
+  { url: 'pandoc.b64', gzip: false },
   { url: 'https://raw.githubusercontent.com/mdaitex/mdaitex.github.io/main/pandoc.b64.gz', gzip: true },
+  { url: 'https://raw.githubusercontent.com/mdaitex/mdaitex.github.io/main/pandoc.b64', gzip: false },
 ];
 const MAX_RETRIES = 3;
 const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -307,11 +314,19 @@ async function readResponseAsText(response, gzip, throttled = false) {
 async function fetchPandocBase64() {
   for (const source of PANDOC_WASM_SOURCES) {
     try {
-      const response = await fetch(source.url, { cache: 'no-store' });
+      /*
+        Sin `cache: 'no-store'`: el módulo pesa decenas de megas y no cambia
+        entre versiones, así que forzar una descarga completa en cada visita
+        (y en cada recarga) era el mayor coste de red de la aplicación. Con la
+        caché normal del navegador basta una revalidación condicional.
+      */
+      const response = await fetch(source.url);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      const throttled = isIOS && !source.gzip;
+      // El goteo es por presión de memoria en iOS, que la descompresión no
+      // evita: lo que se acumula es el base64 ya expandido.
+      const throttled = isIOS;
       const text = await readResponseAsText(response, source.gzip, throttled);
       if (text) return text;
     } catch (innerError) {
@@ -678,6 +693,8 @@ async function importToMarkdown({
       markdownResult = await inlineArchiveImages(markdownResult, normalizedInput);
     }
     markdownResult = stripPandocHeadingIds(markdownResult);
+    // El archivo lo ha traído el usuario, pero no lo ha escrito él.
+    markdownResult = stripUnsafeMarkup(markdownResult);
     triggerStatus(onStatus, 'import_file_success', 'Importación completada.');
     return trimInlineMath(normalizeNewlines(markdownResult));
   } catch (error) {

@@ -140,6 +140,116 @@ test('pestañas, sincronización y búsqueda funcionan juntas', async (t) => {
   await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('# Cambio HTML'));
 });
 
+/*
+  El cuadro de búsqueda roba el foco al abrirse, así que el editor sobre el que
+  hay que buscar es el que lo tenía justo antes, no el que lo tiene al buscar.
+*/
+test('en diseño dual se busca en el panel que se estaba editando', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('# Solo en Markdown\n');
+  await page.locator('#html-output h1').getByText('Solo en Markdown', { exact: true }).waitFor();
+
+  // El panel derecho pasa a mostrar el código HTML y se edita allí.
+  await page.locator('#view-toggle-btn').click();
+  await page.waitForFunction(() => htmlEditor.getValue().includes('<h1'));
+  await page.evaluate(() => htmlEditor.focus());
+
+  // `<h1` solo existe en el panel HTML: si la búsqueda cayera en el Markdown,
+  // no habría ninguna coincidencia.
+  await page.locator('#open-search-btn').click();
+  await page.locator('#search-input').fill('<h1');
+  await page.locator('#search-matches-info').getByText('1 / 1', { exact: true }).waitFor();
+});
+
+test('cerrar la búsqueda devuelve el foco al editor', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('texto cualquiera');
+  await page.evaluate(() => markdownEditor.focus());
+
+  await page.locator('#open-search-btn').click();
+  await page.locator('#search-input').fill('texto');
+  await page.locator('#search-matches-info').getByText('1 / 1', { exact: true }).waitFor();
+  await page.locator('#close-search-btn').click();
+
+  assert.ok(
+    await page.evaluate(() => markdownEditor.hasFocus()),
+    'el foco no volvió al editor al cerrar la búsqueda',
+  );
+});
+
+/*
+  El repintado de la vista previa está limitado en frecuencia, y ese mismo
+  repintado es lo que vuelca el Markdown al editor HTML: la escritura seguida no
+  puede dejar ningún panel con contenido viejo.
+*/
+test('escribir sin pausas mantiene los dos paneles al día', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').click();
+  await page.keyboard.type('# Escritura seguida', { delay: 15 });
+
+  await page.locator('#html-output h1').getByText('Escritura seguida', { exact: true }).waitFor();
+  await page.waitForFunction(() => htmlEditor.getValue().includes('Escritura seguida'));
+});
+
+/*
+  La analítica es JSONP: la respuesta del servidor es código que se ejecuta. Se
+  carga dentro de un iframe con sandbox y sin allow-same-origin para que ese
+  código no alcance la página ni, con ella, los documentos del usuario.
+
+  La analítica está desactivada en localhost, así que la prueba sirve la
+  aplicación desde un host inventado; todo se resuelve contra el servidor local.
+*/
+test('el JSONP de analítica no alcanza la página que lo carga', async (t) => {
+  const context = await browser.newContext();
+  t.after(() => context.close());
+
+  const host = 'https://edimarkweb.test';
+  await context.route(`${host}/**`, async (route) => {
+    const ruta = new URL(route.request().url()).pathname;
+    const respuesta = await route.fetch({ url: `${appUrl.replace('/index.html', '')}${ruta}` });
+    await route.fulfill({ response: respuesta });
+  });
+  await context.route(/pandoc\.b64(?:\.gz)?(?:\?.*)?$/, route => (
+    route.fulfill({ status: 200, contentType: 'text/plain', body: '' })
+  ));
+  await context.route(/\/imagenes\//, route => route.abort());
+
+  // El JSONP intenta escribir en el almacenamiento de la página antes de
+  // contestar: si el aislamiento funciona, lanza y no llega a hacerlo.
+  await context.route(/track\.php/, route => route.fulfill({
+    status: 200,
+    contentType: 'application/javascript',
+    body: 'try{parent.localStorage.setItem("colado","1");}catch(e){}'
+      + 'window.__edimarkAnalytics({"ok":true});',
+  }));
+
+  const page = await context.newPage();
+  await page.goto(`${host}/index.html`, { waitUntil: 'domcontentloaded' });
+  await page.locator('.tab-name').first().waitFor();
+
+  // La visita se apunta desde la página, con lo que devuelve el iframe.
+  await page.waitForFunction(
+    () => localStorage.getItem('analytics:last-visit:edimarkweb') !== null,
+    null,
+    { timeout: 15000 },
+  );
+
+  assert.equal(
+    await page.evaluate(() => localStorage.getItem('colado')),
+    null,
+    'el código de la analítica llegó al almacenamiento de la página',
+  );
+});
+
 test('los controles base64 y de pegado se traducen', async (t) => {
   const { context, page } = await openApp({ locale: 'en-US' });
   t.after(() => context.close());
@@ -455,6 +565,56 @@ test('el autoguardado no reescribe un documento que no ha cambiado', async (t) =
   // Y al cambiar el texto vuelve a guardar.
   await page.locator('#markdown-input').fill('contenido nuevo');
   await page.waitForFunction(() => window.__escrituras >= 2, null, { timeout: 8000 });
+});
+
+/*
+  El temporizador solo guarda la pestaña activa, así que lo escrito entre el
+  último tic y el cambio de pestaña solo llega al almacenamiento si switchTo lo
+  vuelca. Los dos casos desactivan el temporizador antes de escribir: si no, la
+  prueba pasaría igual sin el volcado, guardado por el tic siguiente.
+*/
+const detenerTemporizadores = page => page.evaluate(() => {
+  const ultimo = setTimeout(() => {}, 0);
+  for (let id = 0; id <= Number(ultimo); id += 1) clearInterval(id);
+});
+
+const autoguardados = page => page.evaluate(() => Object.keys(localStorage)
+  .filter(clave => clave.startsWith('edimarkweb-autosave'))
+  .map(clave => localStorage.getItem(clave)));
+
+test('cambiar de pestaña guarda lo escrito en la que se abandona', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await detenerTemporizadores(page);
+  await page.locator('#markdown-input').fill('texto de la pestaña abandonada');
+
+  await page.locator('#new-tab-btn').click();
+
+  assert.ok(
+    (await autoguardados(page)).includes('texto de la pestaña abandonada'),
+    'el documento anterior no se guardó al cambiar de pestaña',
+  );
+});
+
+test('ocultar la página guarda el documento abierto', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await detenerTemporizadores(page);
+  await page.locator('#markdown-input').fill('texto sin guardar al cerrar');
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+
+  assert.ok(
+    (await autoguardados(page)).includes('texto sin guardar al cerrar'),
+    'el documento abierto no se guardó al ocultarse la página',
+  );
 });
 
 /*

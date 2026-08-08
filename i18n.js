@@ -35,7 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const setLanguage = async (lang) => {
+  /*
+    `persist` distingue la elección del usuario de la detección automática. Al
+    arrancar no se guarda nada: si se guardara el idioma deducido de
+    navigator.language, la primera visita lo dejaría fijado y cambiar luego el
+    idioma del navegador ya no tendría efecto.
+  */
+  const setLanguage = async (lang, { persist = true } = {}) => {
     const usableLang = normalizeLanguage(lang);
     const response = await fetch(`locales/${usableLang}.json`);
     if (!response.ok) {
@@ -73,12 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     document.documentElement.lang = usableLang;
-    try {
-      localStorage.setItem('language', usableLang);
-    } catch (error) {
-      console.warn('No se pudo guardar el idioma:', error);
+    if (persist) {
+      try {
+        localStorage.setItem('language', usableLang);
+      } catch (error) {
+        console.warn('No se pudo guardar el idioma:', error);
+      }
     }
-    languageSelect.value = usableLang;
+    if (languageSelect) languageSelect.value = usableLang;
     updateLanguageLabel();
     if (typeof window.__reloadManualForLanguage === 'function') {
       window.__reloadManualForLanguage();
@@ -106,12 +114,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  languageSelect.addEventListener('change', (event) => {
-    setLanguage(event.target.value);
-  });
-  languageSelect.addEventListener('change', updateLanguageLabel);
+  /*
+    Sin la guarda, la falta del selector lanzaría aquí y resolveLanguageReady()
+    no llegaría a ejecutarse: la promesa __edimarkLanguageReady se quedaría
+    pendiente para siempre y con ella el documento inicial.
+  */
+  if (languageSelect) {
+    languageSelect.addEventListener('change', (event) => {
+      setLanguage(event.target.value);
+    });
+    languageSelect.addEventListener('change', updateLanguageLabel);
+  }
 
-  setLanguage(getPreferredLanguage())
+  setLanguage(getPreferredLanguage(), { persist: false })
     .catch(error => console.error('No se pudo inicializar el idioma:', error))
     .finally(() => {
       resolveLanguageReady();

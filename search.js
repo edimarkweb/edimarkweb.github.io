@@ -28,21 +28,36 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         currentMatchMarker: null
     };
 
-    // --- INICIO DE LA CORRECCIÓN ---
+    /*
+      Último editor que tuvo el foco.
+
+      El cuadro de búsqueda se lo quita nada más abrirse, así que a partir de
+      ese momento `hasFocus()` es falso en los dos editores. Sin esta memoria,
+      el diseño dual resolvía siempre a favor del Markdown y el panel HTML no
+      se podía buscar.
+    */
+    let lastFocusedEditor = null;
+    [mdEditor, htmlEditor].forEach(editor => {
+        if (editor && typeof editor.on === 'function') {
+            editor.on('focus', () => { lastFocusedEditor = editor; });
+        }
+    });
+
     function openSearch() {
         searchWrapper.classList.remove('hidden');
         searchInput.value = ''; // Limpia el campo de búsqueda al abrir
         searchInput.focus();
         // Al abrir, también se limpia el estado anterior para empezar de cero
-        runSearch(); 
+        runSearch();
     }
-    // --- FIN DE LA CORRECCIÓN ---
 
     function closeSearch() {
         searchWrapper.classList.add('hidden');
+        // Se guarda antes de limpiar: clearSearchState deja activeEditor a null.
+        const editorToRefocus = state.activeEditor || lastFocusedEditor;
         clearSearchState();
-        if (state.activeEditor) {
-            state.activeEditor.focus(); // Devuelve el foco al editor
+        if (editorToRefocus && typeof editorToRefocus.focus === 'function') {
+            editorToRefocus.focus(); // Devuelve el foco al editor
         }
     }
     
@@ -210,12 +225,24 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
 
     // --- Funciones auxiliares ---
     
+    // Un editor oculto (el panel derecho mostrando la vista previa) no es un
+    // destino válido: se buscaría sobre algo que no se ve.
+    function isEditorVisible(editor) {
+        if (!editor) return false;
+        const wrapper = typeof editor.getWrapperElement === 'function' ? editor.getWrapperElement() : null;
+        return !wrapper || wrapper.offsetParent !== null;
+    }
+
     function determineActiveEditor() {
         const layout = getLayout();
-        if (layout === 'dual') {
-            return htmlEditor.hasFocus() ? htmlEditor : mdEditor;
-        }
-        return layout === 'md' ? mdEditor : htmlEditor;
+        if (layout === 'md') return mdEditor;
+        if (layout === 'html') return htmlEditor;
+        // Diseño dual: manda el foco real si todavía lo tiene alguno, y si no
+        // el último que lo tuvo antes de que el cuadro de búsqueda se lo llevara.
+        if (htmlEditor && htmlEditor.hasFocus()) return htmlEditor;
+        if (mdEditor && mdEditor.hasFocus()) return mdEditor;
+        if (lastFocusedEditor && isEditorVisible(lastFocusedEditor)) return lastFocusedEditor;
+        return mdEditor;
     }
     
     // Dónde queda el cursor tras insertar `text` en `from`.
