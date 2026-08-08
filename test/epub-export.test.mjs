@@ -267,3 +267,38 @@ for (const [label, exportFormat, importFormat] of [
     assert.match(resolved, /!\[[^\]]*\]\(data:image\/[a-z]+;base64,[A-Za-z0-9+/=]+\)/, 'la imagen no quedó incrustada');
   });
 }
+
+/*
+  Pandoc's default Markdown writer aligns tables with spaces. The preview only
+  understands pipe tables, so an imported table used to show up as plain text.
+*/
+for (const [label, exportFormat, importFormat] of [
+  ['DOCX', 'docx', 'docx'],
+  // El lector ODT de Pandoc no recupera <table:table-header-rows>, así que la
+  // fila de encabezado vuelve vacía aunque el ODT exportado sí la contiene.
+  ['ODT', 'odt', 'odt', { headerSurvives: false }],
+  ['EPUB', 'epub3', 'epub'],
+]) {
+  test(`las tablas vuelven como tabla Markdown desde ${label}`, { timeout: 180000 }, async () => {
+    const source = '# Datos\n\n| Nombre | Edad | Ciudad    |\n|--------|------|-----------|\n| Ana    | 28   | Barcelona |\n| Marta  | 42   | Valencia  |\n';
+    const prepared = ensureEpubMetadata(source, { fallbackTitle: 'doc', lang: 'es' });
+    const exported = await runPandoc(
+      buildExportArgs(exportFormat, { mathml: exportFormat !== 'docx', titleFromHeading: prepared.titleFromHeading }),
+      exportFormat === 'epub3' ? prepared.markdown : source,
+    );
+    assert.ok(exported.bytes.length > 0, `exportación vacía: ${exported.stderr.join(' | ')}`);
+
+    const imported = await runPandoc(buildImportArgs(importFormat), exported.bytes);
+    const markdown = new TextDecoder().decode(imported.bytes);
+
+    // Lo esencial: una tabla de tuberías, no texto alineado con espacios.
+    assert.match(markdown, /^\|.*\|$/m, `sin tabla de tuberías:\n${markdown}`);
+    assert.match(markdown, /^\|[-:| ]+\|$/m, 'falta la fila separadora');
+    assert.match(markdown, /\|\s*Ana\s*\|\s*28\s*\|\s*Barcelona\s*\|/);
+    assert.match(markdown, /\|\s*Marta\s*\|\s*42\s*\|\s*Valencia\s*\|/);
+
+    if (label !== 'ODT') {
+      assert.match(markdown, /^\|\s*Nombre\s*\|\s*Edad\s*\|\s*Ciudad\s*\|/m, 'se perdió el encabezado');
+    }
+  });
+}

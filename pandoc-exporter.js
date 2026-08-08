@@ -5,6 +5,7 @@
 import { pandoc } from './pandoc-wasm.js';
 import {
   MARKDOWN_READER_NO_AUTO_IDS,
+  MARKDOWN_WRITER,
   buildExportArgs,
   buildImportArgs,
   stripEpubAnchorPrefixes,
@@ -511,7 +512,7 @@ async function convertLatexToMarkdown({
     const metadata = extractLatexMetadata(normalizedLatex);
     const base64 = await loadPandocWasm({ onStatus });
     const sanitizedLatex = sanitizeLatexInput(normalizedLatex);
-    const pandocArgs = `-f latex -t ${MARKDOWN_READER_NO_AUTO_IDS} --wrap=preserve`;
+    const pandocArgs = `-f latex -t ${MARKDOWN_WRITER} --wrap=preserve`;
     const resultadoBytes = await pandoc(pandocArgs, sanitizedLatex, base64);
     let markdownResult = new TextDecoder().decode(resultadoBytes);
     markdownResult = ensureMarkdownTitle(markdownResult, metadata);

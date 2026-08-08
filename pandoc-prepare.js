@@ -17,6 +17,19 @@ export const MARKDOWN_READER = [
 
 export const MARKDOWN_READER_NO_AUTO_IDS = `${MARKDOWN_READER}-auto_identifiers`;
 
+/*
+  Pandoc's Markdown writer defaults to space-aligned "simple" tables, which the
+  preview (and GitHub-flavoured Markdown in general) renders as plain text.
+  Every conversion back to Markdown asks for pipe tables instead.
+*/
+export const MARKDOWN_WRITER = [
+  MARKDOWN_READER_NO_AUTO_IDS,
+  '-simple_tables',
+  '-multiline_tables',
+  '-grid_tables',
+  '+pipe_tables',
+].join('');
+
 // Kept here so tests exercise the same command line the app sends to Pandoc.
 export function buildExportArgs(pandocFormat, { mathml = false, titleFromHeading = false } = {}) {
   let args = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t ${pandocFormat}`;
@@ -35,7 +48,7 @@ export function buildExportArgs(pandocFormat, { mathml = false, titleFromHeading
   yields plain Markdown instead.
 */
 const MARKDOWN_WRITER_PLAIN = [
-  MARKDOWN_READER_NO_AUTO_IDS,
+  MARKDOWN_WRITER,
   '-fenced_divs',
   '-native_divs',
   '-bracketed_spans',
@@ -46,7 +59,7 @@ const MARKDOWN_WRITER_PLAIN = [
 ].join('');
 
 export function buildImportArgs(fromFormat) {
-  let writer = MARKDOWN_READER_NO_AUTO_IDS;
+  let writer = MARKDOWN_WRITER;
   if (fromFormat === 'epub') {
     writer = MARKDOWN_WRITER_PLAIN;
   } else if (fromFormat === 'docx' || fromFormat === 'odt') {

@@ -143,6 +143,14 @@ test('buildImportArgs pide a Pandoc Markdown plano según el formato', () => {
   // LaTeX y HTML conservan el comportamiento que ya tenían.
   assert.doesNotMatch(buildImportArgs('latex'), /-link_attributes|-raw_html/);
   assert.doesNotMatch(buildImportArgs('html'), /-link_attributes|-raw_html/);
+
+  // Sin esto Pandoc devuelve tablas alineadas con espacios, que la
+  // previsualización muestra como texto plano.
+  for (const format of ['epub', 'docx', 'odt', 'html', 'latex']) {
+    const args = buildImportArgs(format);
+    assert.ok(args.includes('+pipe_tables'), `${format} sin pipe_tables`);
+    assert.ok(args.includes('-simple_tables'), `${format} con simple_tables`);
+  }
 });
 
 test('stripEpubAnchorPrefixes recorta el nombre del archivo interno', () => {
