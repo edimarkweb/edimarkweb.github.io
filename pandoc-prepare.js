@@ -1,4 +1,5 @@
 import { readZipEntries, mimeForPath, bytesToDataUri } from './zip-reader.js';
+import { extractOdtTableHeaders, restoreTableHeaders } from './odt-tables.js';
 
 /*
   Pure Markdown preparation helpers used by pandoc-exporter.js.
@@ -305,4 +306,24 @@ export async function inlineArchiveImages(markdown, archiveBytes) {
   }
 
   return replacements.size > 0 ? replaceImageUrls(markdown, replacements) : markdown;
+}
+
+/*
+  Pandoc's ODT reader ignores <table:table-header-rows>, so imported tables lose
+  their header row. Read it back out of the uploaded file.
+*/
+export async function restoreOdtTableHeaders(markdown, archiveBytes) {
+  if (typeof markdown !== 'string' || !markdown.includes('|') || !archiveBytes || archiveBytes.length === 0) {
+    return markdown || '';
+  }
+  try {
+    const entries = await readZipEntries(archiveBytes);
+    const contentXml = entries.get('content.xml');
+    if (!contentXml) return markdown;
+    const headers = extractOdtTableHeaders(new TextDecoder().decode(contentXml));
+    return restoreTableHeaders(markdown, headers);
+  } catch (error) {
+    console.warn('No se pudieron recuperar los encabezados de tabla del ODT:', error);
+    return markdown;
+  }
 }

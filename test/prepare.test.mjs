@@ -17,6 +17,7 @@ import {
   inlineArchiveImages,
 } from '../pandoc-prepare.js';
 import { readZipEntries, mimeForPath } from '../zip-reader.js';
+import { extractOdtTableHeaders, restoreTableHeaders } from '../odt-tables.js';
 import { makeZip } from './helpers/make-zip.mjs';
 
 test('hasYamlFrontMatter distingue metadatos de una línea horizontal', () => {
@@ -224,4 +225,71 @@ test('readZipEntries omite directorios y descomprime entradas deflate', async ()
   assert.deepEqual([...entries.get('b.bin')], [0, 1, 2]);
   assert.equal(mimeForPath('foto.JPG'), 'image/jpeg');
   assert.equal(mimeForPath('raro.xyz'), 'application/octet-stream');
+});
+
+const ODT_CONTENT_XML = `<office:document-content>
+  <table:table table:name="Tabla1">
+    <table:table-header-rows>
+      <table:table-row>
+        <table:table-cell office:value-type="string"><text:p>Nombre</text:p></table:table-cell>
+        <table:table-cell office:value-type="string"><text:p>Edad &amp; m&#225;s</text:p></table:table-cell>
+      </table:table-row>
+    </table:table-header-rows>
+    <table:table-row><table:table-cell><text:p>Ana</text:p></table:table-cell></table:table-row>
+  </table:table>
+  <table:table table:name="Tabla2">
+    <table:table-row><table:table-cell><text:p>1</text:p></table:table-cell></table:table-row>
+  </table:table>
+</office:document-content>`;
+
+test('extractOdtTableHeaders lee los encabezados y decodifica entidades', () => {
+  const headers = extractOdtTableHeaders(ODT_CONTENT_XML);
+  assert.equal(headers.length, 2, 'una entrada por tabla del documento');
+  assert.deepEqual(headers[0], ['Nombre', 'Edad & más']);
+  // Una tabla sin fila de encabezado no aporta nada.
+  assert.deepEqual(headers[1], []);
+  assert.deepEqual(extractOdtTableHeaders(''), []);
+});
+
+test('restoreTableHeaders rellena la fila vacía y realinea la tabla', () => {
+  const markdown = '|       |     |\n|-------|-----|\n| Ana   | 28  |\n';
+  const result = restoreTableHeaders(markdown, [['Nombre', 'Edad & más']]);
+  assert.equal(result, [
+    '| Nombre | Edad & más |',
+    '|--------|------------|',
+    '| Ana    | 28         |',
+    '',
+  ].join('\n'));
+});
+
+test('restoreTableHeaders empareja cada tabla con la suya y respeta la alineación', () => {
+  const markdown = [
+    '|     |     |', '|:---:|----:|', '| a   | b   |',
+    '',
+    'Texto.',
+    '',
+    '|     |', '|-----|', '| z   |',
+    '',
+  ].join('\n');
+  const result = restoreTableHeaders(markdown, [['Uno', 'Dos'], ['Tres']]);
+  assert.match(result, /\| Uno \| Dos \|/);
+  assert.match(result, /\|:-+:\|-+:\|/, 'debería conservar :---: y ---:');
+  assert.match(result, /\| Tres \|/);
+});
+
+test('restoreTableHeaders no toca tablas que ya tienen encabezado ni descuadres', () => {
+  const conEncabezado = '| Ya | Está |\n|----|------|\n| 1  | 2    |\n';
+  assert.equal(restoreTableHeaders(conEncabezado, [['Otro', 'Cosa']]), conEncabezado);
+
+  // Distinto número de columnas: mejor no tocar nada.
+  const descuadre = '|     |     |\n|-----|-----|\n| a   | b   |\n';
+  assert.equal(restoreTableHeaders(descuadre, [['Solo una']]), descuadre);
+
+  assert.equal(restoreTableHeaders('Sin tablas\n', [['x']]), 'Sin tablas\n');
+  assert.equal(restoreTableHeaders(conEncabezado, []), conEncabezado);
+});
+
+test('restoreTableHeaders escapa las barras verticales del encabezado', () => {
+  const result = restoreTableHeaders('|     |\n|-----|\n| a   |\n', [['uno|dos']]);
+  assert.match(result, /\| uno\\\|dos \|/);
 });

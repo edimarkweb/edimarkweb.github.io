@@ -15,6 +15,7 @@ import {
   ensureEpubMetadata,
   collectRemoteImageUrls,
   inlineArchiveImages,
+  restoreOdtTableHeaders,
   replaceImageUrls,
   dropImagesByUrl,
 } from './pandoc-prepare.js';
@@ -591,6 +592,9 @@ async function importToMarkdown({
     }
     if (sourceFormat === 'epub') {
       markdownResult = stripEpubAnchorPrefixes(markdownResult);
+    }
+    if (sourceFormat === 'odt') {
+      markdownResult = await restoreOdtTableHeaders(markdownResult, normalizedInput);
     }
     if (config.binary) {
       triggerStatus(onStatus, 'images_extracting', 'Extrayendo imágenes...');

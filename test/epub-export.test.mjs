@@ -21,6 +21,7 @@ import {
   buildImportArgs,
   stripEpubAnchorPrefixes,
   inlineArchiveImages,
+  restoreOdtTableHeaders,
 } from '../pandoc-prepare.js';
 
 // Mirrors what exportDocument() sends for format 'epub'.
@@ -274,9 +275,7 @@ for (const [label, exportFormat, importFormat] of [
 */
 for (const [label, exportFormat, importFormat] of [
   ['DOCX', 'docx', 'docx'],
-  // El lector ODT de Pandoc no recupera <table:table-header-rows>, así que la
-  // fila de encabezado vuelve vacía aunque el ODT exportado sí la contiene.
-  ['ODT', 'odt', 'odt', { headerSurvives: false }],
+  ['ODT', 'odt', 'odt'],
   ['EPUB', 'epub3', 'epub'],
 ]) {
   test(`las tablas vuelven como tabla Markdown desde ${label}`, { timeout: 180000 }, async () => {
@@ -289,16 +288,18 @@ for (const [label, exportFormat, importFormat] of [
     assert.ok(exported.bytes.length > 0, `exportación vacía: ${exported.stderr.join(' | ')}`);
 
     const imported = await runPandoc(buildImportArgs(importFormat), exported.bytes);
-    const markdown = new TextDecoder().decode(imported.bytes);
+    let markdown = new TextDecoder().decode(imported.bytes);
+    // El lector ODT de Pandoc descarta <table:table-header-rows>; la app lo
+    // recupera del propio archivo, así que la prueba hace lo mismo.
+    if (importFormat === 'odt') {
+      markdown = await restoreOdtTableHeaders(markdown, exported.bytes);
+    }
 
     // Lo esencial: una tabla de tuberías, no texto alineado con espacios.
     assert.match(markdown, /^\|.*\|$/m, `sin tabla de tuberías:\n${markdown}`);
     assert.match(markdown, /^\|[-:| ]+\|$/m, 'falta la fila separadora');
     assert.match(markdown, /\|\s*Ana\s*\|\s*28\s*\|\s*Barcelona\s*\|/);
     assert.match(markdown, /\|\s*Marta\s*\|\s*42\s*\|\s*Valencia\s*\|/);
-
-    if (label !== 'ODT') {
-      assert.match(markdown, /^\|\s*Nombre\s*\|\s*Edad\s*\|\s*Ciudad\s*\|/m, 'se perdió el encabezado');
-    }
+    assert.match(markdown, /^\|\s*Nombre\s*\|\s*Edad\s*\|\s*Ciudad\s*\|/m, 'se perdió el encabezado');
   });
 }
