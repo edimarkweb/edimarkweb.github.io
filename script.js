@@ -3,7 +3,7 @@
   llevan un marcador {version} en los cinco idiomas. La otra copia vive en
   package.json y una prueba comprueba que ambas coinciden.
 */
-const APP_VERSION = '2.8.2';
+const APP_VERSION = '2.8.3';
 
 // Declaración de variables globales
 let turndownService;
@@ -53,6 +53,16 @@ let forceMarkdownUpdate = false;
 let lastMarkdownSelection = { start: null, end: null };
 let pendingStorageNotice = null;
 let storageNoticeHandler = null;
+/*
+  El indicador de estado se crea dentro de window.onload, así que las funciones
+  de nivel superior no lo alcanzaban: la importación comprobaba si existía,
+  concluía que no y se ejecutaba entera en silencio.
+*/
+let statusReporter = null;
+
+function reportStatus(message) {
+    if (typeof statusReporter === 'function') statusReporter(message);
+}
 const shownStorageNoticeKeys = new Set();
 
 function queueStorageNotice(notice) {
@@ -2695,53 +2705,88 @@ function getSafeDocumentName(filename, fallback = 'documento') {
     return filename.replace(/\.[^.]+$/, '').trim() || fallback;
 }
 
-async function importFileWithPandoc(file) {
-    const format = detectImportFormat(file);
-    const showStatus = typeof updateExportStatus === 'function';
-    if (!format) {
-        if (showStatus) {
-            updateExportStatus(getTranslation('import_file_unsupported', 'Formato no soportado para importar.'));
+/*
+  Convertir un archivo puede tardar bastante: la primera vez hay que cargar el
+  módulo de Pandoc, y las imágenes y las fórmulas se procesan después. El aviso
+  dice siempre qué archivo se está convirtiendo, en qué paso va y, si son
+  varios, por cuál se va, para que la espera no parezca que no pasa nada.
+*/
+/*
+  En serie y no en paralelo: cada conversión levanta su propia instancia de
+  Pandoc, así que lanzarlas a la vez multiplicaría la memoria sin ir más rápido.
+  Al terminar se resume cuántas salieron bien, porque el aviso del último
+  archivo no dice nada de los anteriores.
+*/
+async function importFilesSequentially(files) {
+    const list = Array.from(files || []);
+    if (list.length === 0) return;
+
+    let done = 0;
+    for (let i = 0; i < list.length; i += 1) {
+        try {
+            if (await importFileWithPandoc(list[i], { index: i + 1, total: list.length })) done += 1;
+        } catch (error) {
+            console.error('No se pudo importar el archivo:', error);
         }
-        return;
+    }
+
+    if (list.length > 1) {
+        reportStatus(done === list.length
+            ? formatTranslation('import_done_all', '{count} archivos importados.', { count: done })
+            : formatTranslation('import_done_partial', '{done} de {total} archivos importados.', { done, total: list.length }));
+    }
+}
+
+function importProgressLabel(file, index, total) {
+    const name = file && file.name ? file.name : '';
+    return total > 1
+        ? formatTranslation('import_progress_multi', 'Importando {index} de {total}: {name}', { index, total, name })
+        : formatTranslation('import_progress_single', 'Importando {name}', { name });
+}
+
+async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
+    const label = importProgressLabel(file, index, total);
+    // Los puntos suspensivos mantienen el aviso en pantalla mientras se trabaja.
+    const reportStep = (step) => reportStatus(step ? `${label} · ${step}` : `${label}…`);
+
+    const format = detectImportFormat(file);
+    if (!format) {
+        reportStatus(getTranslation('import_file_unsupported', 'Formato no soportado para importar.'));
+        return false;
     }
     if (!window.PandocExporter || typeof window.PandocExporter.importToMarkdown !== 'function') {
-        if (showStatus) {
-            updateExportStatus(getTranslation('import_file_error', 'No se pudo importar el archivo.'));
-        }
-        return;
+        reportStatus(getTranslation('import_file_error', 'No se pudo importar el archivo.'));
+        return false;
     }
+    reportStep();
     let payload;
     try {
         payload = await readFileForImport(file, format);
     } catch (error) {
         console.error('No se pudo leer el archivo para importar:', error);
-        if (showStatus) {
-            updateExportStatus(getTranslation('import_file_error', 'No se pudo importar el archivo.'));
-        }
-        return;
+        reportStatus(getTranslation('import_file_error', 'No se pudo importar el archivo.'));
+        return false;
     }
     try {
-        if (showStatus) {
-            updateExportStatus(getTranslation('import_file_status_preparing', 'Importando con Pandoc...'));
-        }
+        reportStep(getTranslation('import_file_status_preparing', 'Importando con Pandoc...'));
         const markdown = await window.PandocExporter.importToMarkdown({
             data: payload,
             sourceFormat: format,
-            onStatus: showStatus ? updateExportStatus : undefined,
+            onStatus: reportStep,
         });
         const docName = getSafeDocumentName(file.name);
         const createdDoc = newDoc(docName, markdown);
         if (createdDoc) {
             updateDirtyIndicator(createdDoc.id, false);
         }
-        if (showStatus) {
-            updateExportStatus(getTranslation('import_file_success', 'Importación completada.'));
+        if (total === 1) {
+            reportStatus(getTranslation('import_file_success', 'Importación completada.'));
         }
+        return true;
     } catch (error) {
         console.error('Error durante la importación con Pandoc:', error);
-        if (showStatus) {
-            updateExportStatus(getTranslation('import_file_error', 'No se pudo importar el archivo.'));
-        }
+        reportStatus(getTranslation('import_file_error', 'No se pudo importar el archivo.'));
+        return false;
     }
 }
 
@@ -3712,6 +3757,8 @@ window.onload = () => {
         }
     }
 
+    statusReporter = updateExportStatus;
+
     storageNoticeHandler = notice => {
         const showNotice = () => updateExportStatus(getTranslation(notice.key, notice.fallback));
         if (window.__edimarkLanguageReady) {
@@ -4457,10 +4504,10 @@ window.onload = () => {
             importFileInput.click();
         });
         importFileInput.addEventListener('change', async (event) => {
-            const file = event.target.files && event.target.files[0];
+            const archivos = Array.from(event.target.files || []);
             importFileInput.value = '';
-            if (!file) return;
-            await importFileWithPandoc(file);
+            if (archivos.length === 0) return;
+            await importFilesSequentially(archivos);
         });
     }
 
@@ -5003,15 +5050,7 @@ window.onload = () => {
     }
 
     // Secuencial: cada importación levanta su propia instancia de Pandoc.
-    (async () => {
-      for (const file of importable) {
-        try {
-          await importFileWithPandoc(file);
-        } catch (err) {
-          console.error('No se pudo importar el archivo arrastrado:', err);
-        }
-      }
-    })();
+    importFilesSequentially(importable);
 
     mdFiles.forEach((file) => {
       const reader = new FileReader();

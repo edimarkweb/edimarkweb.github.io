@@ -531,3 +531,48 @@ test('una imagen normal se incrusta sin avisar de nada', async (t) => {
   const avisos = await exportarConImagen(t, { bytes: 64 * 1024, nombre: 'pequena.gif' });
   assert.deepEqual(avisos, [], 'una imagen dentro del presupuesto no debe avisar');
 });
+
+
+/*
+  Importar puede tardar bastante -la primera vez hay que cargar el modulo de
+  Pandoc- y antes no se decia nada: el indicador de estado se crea dentro de
+  window.onload, asi que la importacion, que es de nivel superior, comprobaba si
+  existia, concluia que no y trabajaba en silencio.
+*/
+test('importar un archivo dice qué archivo y en qué paso va', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const toast = page.locator('#status-toast-message');
+  await page.locator('#import-file-input').setInputFiles({
+    name: 'apuntes de clase.docx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    buffer: Buffer.from('PK contenido que no llega a convertirse'),
+  });
+
+  await toast.getByText('apuntes de clase.docx', { exact: false }).waitFor();
+  // El paso concreto se añade al nombre, no lo sustituye.
+  await page.waitForFunction(() => {
+    const texto = document.getElementById('status-toast-message').textContent;
+    return texto.includes('apuntes de clase.docx') && texto.includes('Pandoc');
+  });
+});
+
+test('importar varios archivos indica por cuál va y resume al final', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const archivo = nombre => ({
+    name: nombre,
+    mimeType: 'application/vnd.oasis.opendocument.text',
+    buffer: Buffer.from('PK contenido que no llega a convertirse'),
+  });
+  const toast = page.locator('#status-toast-message');
+  await page.locator('#import-file-input').setInputFiles([archivo('uno.odt'), archivo('dos.odt')]);
+
+  await toast.getByText('1 de 2', { exact: false }).waitFor();
+  await toast.getByText('2 de 2', { exact: false }).waitFor();
+  // Ninguno se convierte (pandoc.b64 está vacío en las pruebas), así que el
+  // resumen tiene que reflejar el fracaso en vez de dar por buena la tanda.
+  await toast.getByText('0 de 2 archivos importados.', { exact: true }).waitFor();
+});
