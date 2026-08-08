@@ -48,8 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('[data-i18n-key]').forEach(element => {
       const key = element.getAttribute('data-i18n-key');
-      if (translations[key]) {
-        const translation = translations[key];
+      // hasOwnProperty y no truthiness: una cadena vacía es una traducción
+      // válida y debe aplicarse igual que cualquier otra.
+      if (Object.prototype.hasOwnProperty.call(translations, key)) {
+        const translation = String(translations[key]);
 
         let translatedAttribute = false;
         if (element.hasAttribute('placeholder')) {
@@ -98,6 +100,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (typeof window.__updateBase64UiLabels === 'function') {
       window.__updateBase64UiLabels();
+    }
+    if (typeof window.__updateVersionLabel === 'function') {
+      window.__updateVersionLabel();
     }
   };
 

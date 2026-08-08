@@ -178,7 +178,7 @@
   "heading6": "Títol 6",
   "footer_name": "EdiMarkWeb",
   "footer_tagline": "Editor de textos Markdown.",
-  "footer_version": "Versió 2.8.0.",
+  "footer_version": "Versió {version}.",
   "footer_author_prefix": "© 2025-2026",
   "footer_license_prefix": "Codi sota",
   "footer_license_link": "llicència AGPL v3",

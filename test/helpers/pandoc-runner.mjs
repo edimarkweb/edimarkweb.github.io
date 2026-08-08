@@ -27,6 +27,8 @@ function loadModule() {
 export async function runPandoc(argsString, input) {
   const wasmModule = await loadModule();
   const args = ['pandoc.wasm', '+RTS', '-H64m', '-RTS'];
+  // Igual que pandoc-wasm.js: las longitudes son bytes UTF-8, no UTF-16.
+  const encoder = new TextEncoder();
   const inFile = new File(new Uint8Array(), { readonly: true });
   const outFile = new File(new Uint8Array(), { readonly: false });
   const stderr = [];
@@ -49,9 +51,10 @@ export async function runPandoc(argsString, input) {
   view().setUint32(argcPtr, args.length, true);
   const argv = instance.exports.malloc(4 * (args.length + 1));
   for (let i = 0; i < args.length; i += 1) {
-    const ptr = instance.exports.malloc(args[i].length + 1);
-    new TextEncoder().encodeInto(args[i], new Uint8Array(instance.exports.memory.buffer, ptr, args[i].length));
-    view().setUint8(ptr + args[i].length, 0);
+    const argBytes = encoder.encode(args[i]);
+    const ptr = instance.exports.malloc(argBytes.length + 1);
+    new Uint8Array(instance.exports.memory.buffer, ptr, argBytes.length).set(argBytes);
+    view().setUint8(ptr + argBytes.length, 0);
     view().setUint32(argv + 4 * i, ptr, true);
   }
   view().setUint32(argv + 4 * args.length, 0, true);
@@ -59,13 +62,14 @@ export async function runPandoc(argsString, input) {
   view().setUint32(argvPtr, argv, true);
   instance.exports.hs_init_with_rtsopts(argcPtr, argvPtr);
 
-  const argsPtr = instance.exports.malloc(argsString.length);
-  new TextEncoder().encodeInto(argsString, new Uint8Array(instance.exports.memory.buffer, argsPtr, argsString.length));
+  const argsStrBytes = encoder.encode(argsString);
+  const argsPtr = instance.exports.malloc(argsStrBytes.length);
+  new Uint8Array(instance.exports.memory.buffer, argsPtr, argsStrBytes.length).set(argsStrBytes);
   inFile.data = typeof input === 'string' ? new TextEncoder().encode(input) : new Uint8Array(input);
 
   let threw = null;
   try {
-    instance.exports.wasm_main(argsPtr, argsString.length);
+    instance.exports.wasm_main(argsPtr, argsStrBytes.length);
   } catch (error) {
     threw = error;
   }

@@ -1,3 +1,10 @@
+/*
+  Única copia del número de versión dentro de la aplicación: los textos del pie
+  llevan un marcador {version} en los cinco idiomas. La otra copia vive en
+  package.json y una prueba comprueba que ambas coinciden.
+*/
+const APP_VERSION = '2.8.1';
+
 // Declaración de variables globales
 let turndownService;
 let isUpdating = false;
@@ -973,6 +980,8 @@ async function handlePasteButtonClick(button) {
 
 let docs = [];
 let currentId = null;
+// Último contenido escrito en el almacenamiento local, por documento.
+const lastAutosavedById = new Map();
 let currentLayout;
 let syncEnabled = true;
 let skipNextMarkdownSync = false;
@@ -1523,8 +1532,15 @@ function createTextareaEditor(textarea) {
                     return false;
                 }
                 const start = match.index;
-                const end = start + (match[0].length || 1);
-                lastIndex = end;
+                const end = start + match[0].length;
+                /*
+                  El rango es el de la coincidencia real, aunque esté vacía: si
+                  se inflaba a un carácter, reemplazar con una expresión como
+                  `x*` se comía texto que no formaba parte del resultado. Lo que
+                  sí tiene que avanzar es el punto de búsqueda, o el recorrido no
+                  terminaría nunca.
+                */
+                lastIndex = end > start ? end : end + 1;
                 currentMatch = {
                     from: offsetToPos(start),
                     to: offsetToPos(end),
@@ -1540,6 +1556,11 @@ function createTextareaEditor(textarea) {
             to() {
                 return currentMatch ? { ...currentMatch.to } : null;
             },
+            // Evita que quien reemplaza tenga que recortar el texto por su
+            // cuenta recorriendo el documento entero.
+            text() {
+                return currentMatch ? currentMatch.text : '';
+            },
             replace(replacement) {
                 if (!currentMatch) return;
                 const value = getValue();
@@ -1547,7 +1568,9 @@ function createTextareaEditor(textarea) {
                 const after = value.slice(currentMatch.endOffset);
                 textarea.value = before + replacement + after;
                 const delta = replacement.length - currentMatch.text.length;
-                lastIndex = currentMatch.endOffset + delta;
+                const resumeAt = currentMatch.endOffset + delta;
+                // Una coincidencia vacía volvería a casar en el mismo punto.
+                lastIndex = currentMatch.endOffset > currentMatch.startOffset ? resumeAt : resumeAt + 1;
                 currentMatch = null;
                 triggerChange();
             }
@@ -1857,6 +1880,14 @@ window.__localizeShortcutLabels = () => {
   });
 };
 
+function updateVersionLabel() {
+    document.querySelectorAll('[data-i18n-key="footer_version"]').forEach((element) => {
+        element.textContent = formatTranslation('footer_version', 'Versión {version}.', { version: APP_VERSION });
+    });
+}
+
+window.__updateVersionLabel = updateVersionLabel;
+
 window.__updateCharCounterLabel = () => {
     const currentValue = markdownEditor ? markdownEditor.getValue() : '';
     updateMarkdownCharCounter(currentValue);
@@ -1961,8 +1992,17 @@ function loadSavedDocsList() {
 }
 
 function saveDocsList() {
-    const docList = docs.map(d => ({id: d.id, name: d.name}));
+    const docList = docs.map(d => (d.isManual ? { id: d.id, name: d.name, isManual: true } : { id: d.id, name: d.name }));
     return safeLocalStorageSet(DOCS_LIST_KEY, JSON.stringify(docList));
+}
+
+/*
+  El manual se reconoce por una marca propia y no por su nombre: renombrar la
+  pestaña dejaba de recargarlo al cambiar de idioma. El nombre sigue valiendo
+  como respaldo para las sesiones guardadas antes de existir la marca.
+*/
+function findManualDoc() {
+    return docs.find(d => d.isManual) || docs.find(d => d.name === 'Manual');
 }
 
 function syncDocsOrderWithTabs(tabBar) {
@@ -2128,11 +2168,11 @@ function startRename(tab) {
     input.addEventListener('keydown', handleKey);
 }
 
-function newDoc(name = '', md = '') {
+function newDoc(name = '', md = '', { isManual = false } = {}) {
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
     const normalizedMd = normalizeNewlines(md || '');
     const documentName = name || getTranslation('untitled_document', 'Documento sin título');
-    const newDoc = { id, name: documentName, md: normalizedMd, lastSaved: normalizedMd };
+    const newDoc = { id, name: documentName, md: normalizedMd, lastSaved: normalizedMd, isManual };
     docs.push(newDoc);
     addTabElement(newDoc);
     switchTo(id);
@@ -2237,6 +2277,7 @@ function closeDoc(id) {
     docs.splice(docIndex, 1);
     document.querySelector(`.tab[data-id="${id}"]`).remove();
     safeLocalStorageRemove(`${AUTOSAVE_KEY_PREFIX}-${id}`);
+    lastAutosavedById.delete(id);
     saveDocsList();
 
     if (currentId === id) {
@@ -2290,7 +2331,7 @@ async function fetchManualMarkdown() {
 // Al cambiar el idioma, el manual abierto se recarga en el nuevo, salvo que
 // tenga cambios sin guardar: en ese caso se respeta lo que haya escrito el usuario.
 window.__reloadManualForLanguage = () => {
-    const manualDoc = docs.find(d => d.name === 'Manual');
+    const manualDoc = findManualDoc();
     if (!manualDoc) return;
     if (manualDoc.md !== manualDoc.lastSaved) return;
     const wasActive = currentId === manualDoc.id;
@@ -2304,7 +2345,7 @@ window.__reloadManualForLanguage = () => {
 };
 
 function openManualDoc(forceReload = false) {
-    const manualDoc = docs.find(d => d.name === 'Manual');
+    const manualDoc = findManualDoc();
 
     if (manualDoc && !forceReload) {
         switchTo(manualDoc.id);
@@ -2323,13 +2364,13 @@ function openManualDoc(forceReload = false) {
                 switchTo(doc.id);
                 updateDirtyIndicator(doc.id, false);
             } else {
-                newDoc('Manual', normalized);
+                newDoc('Manual', normalized, { isManual: true });
             }
         })
         .catch(err => {
             console.error("Error al cargar el manual:", err);
             if (!manualDoc) {
-                newDoc('Manual', '# Error\n\nNo se pudo cargar el manual.');
+                newDoc('Manual', '# Error\n\nNo se pudo cargar el manual.', { isManual: true });
             }
         });
 }
@@ -2591,13 +2632,15 @@ function setLatexImportBusy(isBusy) {
 
 function saveFile(filename, content, type) {
     const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = url;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
+    // Revocar en el mismo tic cancela la descarga en algunos navegadores.
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function saveCurrentDocument() {
@@ -2996,6 +3039,7 @@ window.onload = () => {
         pasteBtn.addEventListener('click', () => handlePasteButtonClick(pasteBtn));
     }
     updateBase64Ui(currentBase64State);
+    updateVersionLabel();
 
     function getCopyStartMessage(action) {
         if (action === 'latex-preview' || action === 'latex-full') {
@@ -4288,6 +4332,8 @@ window.onload = () => {
             const md = safeLocalStorageGet(`${AUTOSAVE_KEY_PREFIX}-${docInfo.id}`, '');
             const normalized = normalizeNewlines(md);
             docs.push({ ...docInfo, md: normalized, lastSaved: normalized });
+            // Lo recién leído ya está guardado: no hay que reescribirlo.
+            lastAutosavedById.set(docInfo.id, normalized);
             addTabElement(docInfo);
         });
         switchTo(docs[0].id);
@@ -4295,12 +4341,19 @@ window.onload = () => {
         openManualDoc();
     }
     
+    /*
+      Solo se escribe cuando el texto ha cambiado desde el último guardado. Antes
+      se reescribía el documento entero cada tres segundos aunque nadie tocara
+      nada, algo especialmente caro con imágenes base64 incrustadas.
+    */
     setInterval(() => {
-        if (currentId) {
-            const content = markdownEditor.getValue();
-            const doc = docs.find(d => d.id === currentId);
-            if (doc) doc.md = content;
-            safeLocalStorageSet(`${AUTOSAVE_KEY_PREFIX}-${currentId}`, content);
+        if (!currentId) return;
+        const content = markdownEditor.getValue();
+        const doc = docs.find(d => d.id === currentId);
+        if (doc) doc.md = content;
+        if (lastAutosavedById.get(currentId) === content) return;
+        if (safeLocalStorageSet(`${AUTOSAVE_KEY_PREFIX}-${currentId}`, content)) {
+            lastAutosavedById.set(currentId, content);
         }
     }, 3000);
 

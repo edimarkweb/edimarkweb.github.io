@@ -370,3 +370,116 @@ for (const [locale, lang] of [['es-ES', 'es'], ['en-US', 'en'], ['ca-ES', 'ca'],
     assert.ok(render.bloque >= 5, `${lang}: faltan fórmulas de bloque (${render.bloque})`);
   });
 }
+
+test('el pie muestra la versión de package.json en cada idioma', async (t) => {
+  const packageVersion = JSON.parse(await readFile(resolve(repoRoot, 'package.json'), 'utf8')).version;
+  const { context, page } = await openApp({ locale: 'en-US' });
+  t.after(() => context.close());
+
+  await page.waitForFunction(() => document.documentElement.lang === 'en');
+  assert.equal(
+    await page.locator('[data-i18n-key="footer_version"]').textContent(),
+    `Version ${packageVersion}.`,
+  );
+  // El marcador no puede llegar nunca a la vista.
+  assert.doesNotMatch(await page.locator('.site-footer').textContent(), /\{version\}/);
+});
+
+test('una coincidencia vacía no se come un carácter al reemplazar', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('abc');
+
+  await page.locator('#open-search-btn').click();
+  await page.locator('#search-regex-toggle-btn').click();
+  await page.locator('#toggle-replace-btn').click();
+  await page.locator('#search-input').fill('x*');
+  await page.locator('#replace-input').fill('-');
+  await page.locator('#search-matches-info').getByText('1 / 4', { exact: true }).waitFor();
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#replace-all-btn').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value !== 'abc');
+
+  // Las letras siguen ahí: solo se inserta en los huecos vacíos.
+  assert.equal(await page.locator('#markdown-input').inputValue(), '-a-b-c-');
+});
+
+test('el manual sigue recargándose al cambiar de idioma tras renombrar su pestaña', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.waitForFunction(() => document.documentElement.lang === 'es');
+  await page.locator('#html-output h1').getByText('Manual de EdiMarkWeb', { exact: true }).waitFor();
+
+  await page.evaluate(() => {
+    const doc = docs.find(d => d.isManual);
+    doc.name = 'Mis apuntes';
+    document.querySelector(`.tab[data-id="${doc.id}"] .tab-name`).textContent = doc.name;
+  });
+
+  await page.evaluate(() => {
+    const select = document.getElementById('language-select');
+    select.value = 'en';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await page.locator('#html-output h1').getByText('EdiMarkWeb manual', { exact: true }).waitFor();
+});
+
+test('el autoguardado no reescribe un documento que no ha cambiado', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('contenido estable');
+
+  // Se cuentan las escrituras del autoguardado durante dos ciclos completos.
+  await page.evaluate(() => {
+    window.__escrituras = 0;
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (clave, valor) {
+      if (String(clave).startsWith('edimarkweb-autosave')) window.__escrituras += 1;
+      return original.call(this, clave, valor);
+    };
+  });
+  await page.waitForTimeout(7000);
+
+  // Una escritura inicial es legítima; a partir de ahí, silencio.
+  assert.ok(
+    await page.evaluate(() => window.__escrituras <= 1),
+    `el autoguardado escribió ${await page.evaluate(() => window.__escrituras)} veces sin cambios`,
+  );
+
+  // Y al cambiar el texto vuelve a guardar.
+  await page.locator('#markdown-input').fill('contenido nuevo');
+  await page.waitForFunction(() => window.__escrituras >= 2, null, { timeout: 8000 });
+});
+
+/*
+  Buscar y reemplazar conviviendo con el plegado de imágenes base64: el editor
+  maneja a la vez el texto visible (con el marcador) y el expandido, y el
+  reemplazo tiene que caer en el visible sin tocar la imagen.
+*/
+test('buscar y reemplazar acierta con una imagen base64 plegada delante', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  const imagen = `![img](data:image/png;base64,${'A'.repeat(400)})`;
+  await page.evaluate(md => markdownEditor.setValue(md), `${imagen}\n\nhola mundo\n`);
+  await page.locator('.base64-hidden-item').first().waitFor();
+
+  await page.locator('#open-search-btn').click();
+  await page.locator('#search-regex-toggle-btn').click();
+  await page.locator('#toggle-replace-btn').click();
+  await page.locator('#search-input').fill('(mundo)');
+  await page.locator('#replace-input').fill('[$1]');
+  await page.locator('#search-matches-info').getByText('1 / 1', { exact: true }).waitFor();
+  await page.locator('#replace-one-btn').click();
+
+  await page.waitForFunction(() => markdownEditor.getValue().includes('hola [mundo]'));
+  // La imagen tiene que seguir entera tras el reemplazo.
+  assert.match(await page.evaluate(() => markdownEditor.getValue()), /!\[img\]\(data:image\/png;base64,A{400}\)/);
+});

@@ -17,6 +17,9 @@ export async function pandoc(args_str, inputData, base64Wasm) {
   const bytes = Uint8Array.from(atob(base64Wasm), c => c.charCodeAt(0));
 
   const args = ["pandoc.wasm", "+RTS", "-H64m", "-RTS"];
+  // Las longitudes que espera el WASM son bytes UTF-8, no unidades UTF-16:
+  // medir con .length trunca en cuanto aparece un carácter no ASCII.
+  const encoder = new TextEncoder();
   const env = [];
   const in_file = new File(new Uint8Array(), { readonly: true });
   const out_file = new File(new Uint8Array(), { readonly: false });
@@ -44,9 +47,10 @@ export async function pandoc(args_str, inputData, base64Wasm) {
   memory_data_view().setUint32(argc_ptr, args.length, true);
   const argv = instance.exports.malloc(4 * (args.length + 1));
   for (let i = 0; i < args.length; ++i) {
-    const arg = instance.exports.malloc(args[i].length + 1);
-    new TextEncoder().encodeInto(args[i], new Uint8Array(instance.exports.memory.buffer, arg, args[i].length));
-    memory_data_view().setUint8(arg + args[i].length, 0);
+    const argBytes = encoder.encode(args[i]);
+    const arg = instance.exports.malloc(argBytes.length + 1);
+    new Uint8Array(instance.exports.memory.buffer, arg, argBytes.length).set(argBytes);
+    memory_data_view().setUint8(arg + argBytes.length, 0);
     memory_data_view().setUint32(argv + 4 * i, arg, true);
   }
   memory_data_view().setUint32(argv + 4 * args.length, 0, true);
@@ -55,8 +59,9 @@ export async function pandoc(args_str, inputData, base64Wasm) {
 
   instance.exports.hs_init_with_rtsopts(argc_ptr, argv_ptr);
 
-  const args_ptr = instance.exports.malloc(args_str.length);
-  new TextEncoder().encodeInto(args_str, new Uint8Array(instance.exports.memory.buffer, args_ptr, args_str.length));
+  const argsStrBytes = encoder.encode(args_str);
+  const args_ptr = instance.exports.malloc(argsStrBytes.length);
+  new Uint8Array(instance.exports.memory.buffer, args_ptr, argsStrBytes.length).set(argsStrBytes);
   let inputBytes;
   if (typeof inputData === 'string') {
     inputBytes = new TextEncoder().encode(inputData);
@@ -68,6 +73,6 @@ export async function pandoc(args_str, inputData, base64Wasm) {
     inputBytes = new Uint8Array();
   }
   in_file.data = inputBytes;
-  instance.exports.wasm_main(args_ptr, args_str.length);
+  instance.exports.wasm_main(args_ptr, argsStrBytes.length);
   return new Uint8Array(out_file.data);
 }

@@ -128,6 +128,14 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         state.overlay = createSearchOverlay(state.queryRegex);
         editor.addOverlay(state.overlay);
 
+        /*
+          El índice de líneas se calcula una vez por búsqueda. Antes cada
+          coincidencia recorría el documento entero dos veces para traducir sus
+          posiciones a desplazamientos, lo que hacía la búsqueda cuadrática y
+          congelaba la interfaz en documentos largos con muchos resultados.
+        */
+        const content = editorContent(editor);
+        const lineStarts = buildLineIndex(content);
         const cursor = editor.getSearchCursor(state.queryRegex);
         while (cursor.findNext()) {
             const from = cursor.from();
@@ -135,7 +143,7 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
             state.matches.push({
                 from,
                 to,
-                text: getTextBetween(editor, from, to)
+                text: content.slice(offsetOfPos(lineStarts, content.length, from), offsetOfPos(lineStarts, content.length, to))
             });
         }
 
@@ -189,7 +197,9 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
             while (cursor.findNext()) {
                 const from = cursor.from();
                 const to = cursor.to();
-                const matchText = getTextBetween(editor, from, to);
+                const matchText = typeof cursor.text === 'function'
+                    ? cursor.text()
+                    : textBetween(editor, from, to);
                 cursor.replace(resolveReplacementText(matchText));
             }
         });
@@ -317,34 +327,43 @@ function initSearch(mdEditor, htmlEditor, getLayout) {
         }
     }
 
-    function getTextBetween(editor, from, to) {
-        if (!editor || typeof editor.getValue !== 'function') return '';
-        const content = editor.getValue();
-        const start = posToOffset(content, from);
-        const end = posToOffset(content, to);
-        return content.slice(start, end);
+    /*
+      El texto sobre el que el cursor calcula sus posiciones. En el panel
+      Markdown es el valor visible, con las imágenes base64 plegadas; getValue()
+      las expandiría. Hoy ambos dan el mismo resultado, porque el plegado no
+      añade ni quita saltos de línea y las posiciones son (línea, columna), pero
+      indexar lo que el cursor recorre evita que eso deje de ser cierto.
+    */
+    function editorContent(editor) {
+        if (!editor) return '';
+        if (typeof editor.getDisplayValue === 'function') return editor.getDisplayValue();
+        return typeof editor.getValue === 'function' ? editor.getValue() : '';
     }
 
-    function posToOffset(content, pos) {
+    // Desplazamiento donde empieza cada línea.
+    function buildLineIndex(content) {
+        const starts = [0];
+        for (let i = 0; i < content.length; i += 1) {
+            if (content.charCodeAt(i) === 10) starts.push(i + 1);
+        }
+        return starts;
+    }
+
+    // Solo para editores cuyo cursor no expone el texto de la coincidencia.
+    function textBetween(editor, from, to) {
+        const content = editorContent(editor);
+        const lineStarts = buildLineIndex(content);
+        return content.slice(
+            offsetOfPos(lineStarts, content.length, from),
+            offsetOfPos(lineStarts, content.length, to),
+        );
+    }
+
+    function offsetOfPos(lineStarts, length, pos) {
         if (!pos) return 0;
-        const text = typeof content === 'string' ? content : '';
-        const targetLine = Math.max(0, pos.line || 0);
-        const targetCh = Math.max(0, pos.ch || 0);
-        let line = 0;
-        let offset = 0;
-        for (let i = 0; i < text.length; i += 1) {
-            if (line === targetLine) {
-                return Math.min(offset + targetCh, text.length);
-            }
-            if (text.charCodeAt(i) === 10) {
-                line += 1;
-                offset = i + 1;
-            }
-        }
-        if (line === targetLine) {
-            return Math.min(offset + targetCh, text.length);
-        }
-        return text.length;
+        const line = Math.max(0, pos.line || 0);
+        const base = line < lineStarts.length ? lineStarts[line] : length;
+        return Math.min(base + Math.max(0, pos.ch || 0), length);
     }
 
     function resolveReplacementText(matchText) {

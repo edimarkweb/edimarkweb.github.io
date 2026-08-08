@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   ensureEpubMetadata,
@@ -382,4 +383,29 @@ test('prepareOdtForImport devuelve el archivo intacto si no hay nada que reparar
     ['content.xml', `<office:text><text:p>${FRAME_LIBREOFFICE}</text:p></office:text>`],
   ]));
   assert.equal(await prepareOdtForImport(odt), odt, 'no debería reescribirse');
+});
+
+/*
+  La versión vivía escrita a mano en siete sitios y nada avisaba si se olvidaba
+  alguno. Ahora los textos del pie llevan un marcador {version} y solo quedan dos
+  copias del número: package.json y APP_VERSION. Esta prueba las ata.
+*/
+test('la versión no se desincroniza entre package.json y la aplicación', () => {
+  const leer = nombre => readFileSync(new URL(`../${nombre}`, import.meta.url), 'utf8');
+  const packageVersion = JSON.parse(leer('package.json')).version;
+  assert.match(packageVersion, /^\d+\.\d+\.\d+$/, 'versión con formato inesperado');
+
+  const declarada = leer('script.js').match(/^const APP_VERSION = '([^']+)';$/m);
+  assert.ok(declarada, 'no se encuentra APP_VERSION en script.js');
+  assert.equal(declarada[1], packageVersion, 'APP_VERSION y package.json no coinciden');
+
+  // Ni los idiomas ni el HTML pueden volver a llevar el número escrito a mano.
+  for (const locale of ['es', 'en', 'ca', 'gl', 'eu']) {
+    const texto = JSON.parse(leer(`locales/${locale}.json`)).footer_version;
+    assert.ok(texto.includes('{version}'), `${locale}: falta el marcador {version}`);
+    assert.doesNotMatch(texto, /\d+\.\d+\.\d+/, `${locale}: versión escrita a mano`);
+  }
+  const pie = leer('index.html').match(/<span data-i18n-key="footer_version">([^<]*)<\/span>/);
+  assert.ok(pie, 'no se encuentra el pie de versión en index.html');
+  assert.doesNotMatch(pie[1], /\d+\.\d+\.\d+/, 'index.html lleva la versión escrita a mano');
 });
