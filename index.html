@@ -122,7 +122,7 @@
                 </div>
             </div>
             <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="latex-print-group">
-                <button id="print-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="print_btn_title" title="Imprimir (Ctrl+P)"><i data-lucide="printer" class="text-slate-600 dark:text-slate-400"></i></button>
+                <button id="print-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="print_btn_title" title="Imprimir (Ctrl+P)"><i data-lucide="printer"></i></button>
             </div>
             <div class="toolbar-group flex items-center gap-1 sm:gap-2">
                 <div id="settings-menu-container" class="relative">
@@ -188,7 +188,7 @@
             <div class="toolbar-group flex items-center gap-1 sm:gap-2">
                 <button id="open-search-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="open_search_btn_title" title="Buscar (Ctrl+F)"><i data-lucide="search" class="text-slate-600 dark:text-slate-400"></i></button>
                 <button id="help-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="help_btn_title" title="Manual de EdiMarkWeb" aria-label="Abrir manual"><i data-lucide="help-circle"></i></button>
-                <button id="clear-all-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="clear_all_btn_title" title="Borrar todo"><i data-lucide="trash-2" class="text-red-600"></i></button>
+                <button id="clear-all-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="clear_all_btn_title" title="Borrar todo"><i data-lucide="trash-2" class="text-red-600 dark:text-red-400"></i></button>
             </div>
         </div>
     </header>
@@ -232,7 +232,7 @@
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="bold" data-i18n-key="bold_btn_title" title="Negrita (Ctrl+B)"><i data-lucide="bold"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="italic" data-i18n-key="italic_btn_title" title="Cursiva (Ctrl+I)"><i data-lucide="italic"></i></button>
                 <div class="relative" id="heading-dropdown-container">
-                    <button id="heading-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="heading_btn_title" title="Encabezado (Ctrl+1..6)"><i data-lucide="heading-1"></i></button>
+                    <button id="heading-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="heading_btn_title" title="Encabezado (Ctrl+1..6)" aria-haspopup="true" aria-expanded="false"><i data-lucide="heading-1"></i><i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i></button>
                     <div id="heading-options" class="hidden absolute z-20 -left-2 mt-2 w-40 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
                         <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="heading-1" data-i18n-key="heading1">Título 1</button>
                         <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="heading-2" data-i18n-key="heading2">Título 2</button>
@@ -294,7 +294,7 @@
                             <i data-lucide="arrow-right"></i>
                         </button>
                         <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
-                        <button id="copy-md-btn" class="copy-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="copy_md_btn_title" title="Copiar Markdown"><i data-lucide="copy"></i></button>
+                        <button id="copy-md-btn" class="copy-btn flex items-center gap-2 px-3 py-2 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="copy_md_btn_title" title="Copiar Markdown"><i data-lucide="copy"></i><span class="hidden sm:inline" data-i18n-key="copy_md_btn_text">Copiar</span></button>
                     </div>
                 </div>
                 <textarea id="markdown-input"></textarea>
@@ -318,11 +318,11 @@
                         </button>
                         <button id="view-toggle-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="view_toggle_btn_title" title="Cambiar a vista de código"><i data-lucide="code-2"></i></button>
                         <div id="preview-copy-container" class="relative inline-flex items-center">
-                            <button type="button" id="copy-html-btn" class="action-btn flex items-center gap-2 px-3 py-2 focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="copy_html_btn_title" title="Copiar HTML">
+                            <button type="button" id="copy-html-btn" class="copy-btn flex items-center gap-2 px-3 py-2 focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="copy_html_btn_title" title="Copiar HTML">
                                 <i data-lucide="copy"></i>
                                 <span class="copy-html-btn-label hidden sm:inline" data-i18n-key="copy_html_btn_text">Copiar</span>
                             </button>
-                            <button type="button" id="copy-html-menu-toggle" class="action-btn p-2 ml-1 focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" aria-haspopup="true" aria-expanded="false" data-i18n-key="copy_menu_toggle_title" title="Opciones de copiado" aria-label="Opciones de copiado">
+                            <button type="button" id="copy-html-menu-toggle" class="copy-btn p-2 ml-1 focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" aria-haspopup="true" aria-expanded="false" data-i18n-key="copy_menu_toggle_title" title="Opciones de copiado" aria-label="Opciones de copiado">
                                 <i data-lucide="chevron-down" class="w-4 h-4"></i>
                             </button>
                             <div id="preview-copy-menu" class="hidden absolute right-0 top-full mt-2 w-80 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="copy-html-menu-toggle">
@@ -357,7 +357,7 @@
         <strong data-i18n-key="footer_name">EdiMarkWeb</strong>
         <span data-i18n-key="footer_tagline">Editor de textos Markdown.</span>
         <span class="site-footer-sep">·</span>
-        <span data-i18n-key="footer_version">Versión 2.7.24.</span>
+        <span data-i18n-key="footer_version">Versión 2.7.25.</span>
         <span class="site-footer-sep">·</span>
         <span data-i18n-key="footer_author_prefix">© 2025-2026</span>
         <a href="https://bilateria.es" target="_blank" rel="noreferrer noopener">Juan José de Haro</a>

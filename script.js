@@ -1758,6 +1758,9 @@ function updateMarkdownCharCounter(sourceText) {
   wording the active locale uses for Shift.
 */
 const IS_MAC = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
+// Los submenús se abren al pasar el ratón solo donde hay puntero real.
+const POINTER_HAS_HOVER = typeof window.matchMedia === 'function'
+    && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
 window.__localizeShortcutLabels = () => {
   if (!IS_MAC) return;
@@ -3153,7 +3156,10 @@ window.onload = () => {
         exportMenuBtn.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
-            toggleExportMenu();
+            // Con ratón el submenú ya se abre al pasar por encima; el clic no
+            // debe cerrarlo, como en cualquier submenú de escritorio.
+            if (POINTER_HAS_HOVER) openExportMenu();
+            else toggleExportMenu();
             if (window.lucide && typeof window.lucide.createIcons === 'function') {
                 window.lucide.createIcons();
             }
@@ -3269,6 +3275,29 @@ window.onload = () => {
                 closeExportMenu();
             }
         }, { capture: true });
+
+        if (POINTER_HAS_HOVER) {
+            let closeTimer;
+            const cancelClose = () => clearTimeout(closeTimer);
+            exportMenuContainer.addEventListener('mouseenter', () => {
+                cancelClose();
+                openExportMenu();
+            });
+            // Un margen para el recorrido diagonal hasta el submenú.
+            exportMenuContainer.addEventListener('mouseleave', () => {
+                cancelClose();
+                closeTimer = setTimeout(closeExportMenu, 250);
+            });
+
+            // Volver a cualquier otra opción del menú cierra el submenú.
+            actionsMenu?.querySelectorAll('[role="menuitem"]').forEach((item) => {
+                if (exportMenuContainer.contains(item)) return;
+                item.addEventListener('mouseenter', () => {
+                    cancelClose();
+                    closeExportMenu();
+                });
+            });
+        }
     }
 
     document.addEventListener('keydown', (event) => {
