@@ -189,7 +189,9 @@ While exporting, the top bar shows status messages (progress, success or errors)
 
 **Author**, stored in the file properties and shown as the book author in the EPUB and on the LaTeX title page. In DOCX and ODT, Pandoc also writes a line with the name at the start of the document; leave the field empty if you would rather it did not appear. A particular document can carry a different author: *This document's author…*, in the language button menu.
 
-**Table of contents**, which adds a list of the sections at the start of the document. In DOCX it is a real Word table of contents that you can update from Word itself; in ODT, a native LibreOffice one. The EPUB does not need it, since the reader already provides its navigation index.
+**Table of contents**, which adds a list of the sections at the start of the document. In DOCX it is a real Word table of contents and in ODT a native LibreOffice one; the EPUB does not need it, since the reader already provides its navigation index.
+
+> **If the table of contents looks empty**, the document is not broken: in DOCX and ODT it is not text but a field the word processor calculates, because the pages have to be laid out before it knows where each section falls. EdiMarkWeb marks the document so that it refreshes on opening, but some programs ask first or wait until told: in Word, right-click the table of contents → *Update field*; in LibreOffice, *Tools → Update → Indexes*.
 
 **Number the sections**, which puts 1, 1.1, 1.2… before the headings. It works in DOCX, HTML and LaTeX; ODT does not support this numbering and comes out without it.
 

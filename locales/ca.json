@@ -32,7 +32,7 @@
   "doc_author_btn": "Autor d'aquest document…",
   "doc_author_prompt": "Autor d'aquest document (deixa-ho buit per fer servir el general):",
   "doc_settings_toc_label": "Índex automàtic",
-  "doc_settings_toc_hint": "Afegeix un índex al principi del document, amb els apartats i els seus enllaços. A l'EPUB no cal: el lector ja té el seu.",
+  "doc_settings_toc_hint": "Afegeix un índex al principi del document, amb els apartats i els seus enllaços. En DOCX i ODT l'índex l'omple el processador de textos en obrir-lo: si surt buit, actualitza'l (al Word, clic dret a sobre → Actualitza el camp; al LibreOffice, Eines → Actualitza → Índexs). A l'EPUB no cal: el lector ja té el seu.",
   "doc_settings_numbering_label": "Numerar els apartats",
   "doc_settings_numbering_hint": "Numera els encapçalaments (1, 1.1, 1.2…). L'ODT no admet aquesta numeració i surt sense.",
   "doc_settings_latex_section": "Només per a LaTeX",

@@ -189,7 +189,9 @@ Durant l'exportació, la barra superior mostra missatges d'estat (progrés, èxi
 
 **Autor**, que es desa a les propietats del fitxer i apareix com a autor del llibre a l'EPUB i a la portada del LaTeX. En DOCX i ODT, a més, el Pandoc escriu una línia amb el nom al principi del document; si no vols que hi aparegui, deixa el camp buit. Un document concret pot portar un altre autor: *Autor d'aquest document…*, al menú del botó d'idioma.
 
-**Índex automàtic**, que afegeix al principi del document un índex amb els apartats. En DOCX és un índex del Word de debò, que pots actualitzar des del mateix Word; en ODT, un de natiu del LibreOffice. L'EPUB no el necessita, perquè el lector ja porta el seu índex de navegació.
+**Índex automàtic**, que afegeix al principi del document un índex amb els apartats. En DOCX és un índex del Word de debò i en ODT un de natiu del LibreOffice; l'EPUB no el necessita, perquè el lector ja porta el seu índex de navegació.
+
+> **Si l'índex surt buit**, no és cap error del document: en DOCX i ODT l'índex no és text, sinó un camp que calcula el processador de textos, perquè cal maquetar les pàgines per saber on cau cada apartat. EdiMarkWeb marca el document perquè s'actualitzi tot sol en obrir-lo, però alguns programes demanen confirmació o esperen que els ho manis: al Word, clic dret a l'índex → *Actualitza el camp*; al LibreOffice, *Eines → Actualitza → Índexs*.
 
 **Numerar els apartats**, que anteposa 1, 1.1, 1.2… als encapçalaments. Funciona en DOCX, HTML i LaTeX; l'ODT no admet aquesta numeració i surt sense.
 

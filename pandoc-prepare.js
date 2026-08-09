@@ -699,6 +699,44 @@ export async function prepareOdtForImport(archiveBytes) {
 }
 
 /*
+  Makes Word and LibreOffice fill in the table of contents when they open the
+  document.
+
+  Pandoc does not write the entries: it writes a Word TOC field, and the entries
+  and their page numbers are calculated by the word processor. The field is
+  marked dirty, which should be enough, but on its own the document still opens
+  with an empty index unless the reader is told to refresh its fields — so
+  `<w:updateFields w:val="true"/>` goes into settings.xml, which is the switch
+  both Word and LibreOffice honour.
+
+  Any failure leaves the original file untouched: an index that needs a manual
+  refresh is a nuisance, a corrupted DOCX is a lost document.
+*/
+export async function requestDocxFieldUpdate(archiveBytes) {
+  if (!archiveBytes || archiveBytes.length === 0) return archiveBytes;
+  try {
+    const entries = await readZipEntries(archiveBytes);
+    const settings = entries.get('word/settings.xml');
+    if (!settings) return archiveBytes;
+    const xml = new TextDecoder().decode(settings);
+    if (/<w:updateFields\b/.test(xml)) return archiveBytes;
+    // El elemento va al principio de <w:settings>, que es donde el esquema lo
+    // espera; fuera de orden, Word considera el archivo dañado.
+    const updated = xml.replace(/(<w:settings\b[^>]*>)/, '$1<w:updateFields w:val="true"/>');
+    if (updated === xml) return archiveBytes;
+
+    const rebuilt = new Map();
+    for (const [name, bytes] of entries) {
+      rebuilt.set(name, name === 'word/settings.xml' ? new TextEncoder().encode(updated) : bytes);
+    }
+    return createZip(rebuilt);
+  } catch (error) {
+    console.warn('No se pudo pedir la actualización del índice del DOCX:', error);
+    return archiveBytes;
+  }
+}
+
+/*
   Pandoc's ODT reader ignores <table:table-header-rows>, so imported tables lose
   their header row. Read it back out of the uploaded file.
 */

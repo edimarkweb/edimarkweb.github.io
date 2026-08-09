@@ -32,7 +32,7 @@
   "doc_author_btn": "This document's author…",
   "doc_author_prompt": "This document's author (leave empty to use the general one):",
   "doc_settings_toc_label": "Table of contents",
-  "doc_settings_toc_hint": "Adds a table of contents at the start of the document, with the sections and their links. The EPUB does not need it: the reader already has its own.",
+  "doc_settings_toc_hint": "Adds a table of contents at the start of the document, with the sections and their links. In DOCX and ODT the word processor fills it in when the file is opened: if it looks empty, refresh it (in Word, right-click it → Update field; in LibreOffice, Tools → Update → Indexes). The EPUB does not need it: the reader already has its own.",
   "doc_settings_numbering_label": "Number the sections",
   "doc_settings_numbering_hint": "Numbers the headings (1, 1.1, 1.2…). ODT does not support this numbering and comes out without it.",
   "doc_settings_latex_section": "LaTeX only",

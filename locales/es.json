@@ -32,7 +32,7 @@
   "doc_author_btn": "Autor de este documento…",
   "doc_author_prompt": "Autor de este documento (deja vacío para usar el general):",
   "doc_settings_toc_label": "Índice automático",
-  "doc_settings_toc_hint": "Añade un índice al principio del documento, con los apartados y sus enlaces. En el EPUB no hace falta: el lector ya tiene el suyo.",
+  "doc_settings_toc_hint": "Añade un índice al principio del documento, con los apartados y sus enlaces. En DOCX y ODT el índice lo rellena el procesador de textos al abrirlo: si aparece vacío, actualízalo (en Word, clic derecho sobre él → Actualizar campos; en LibreOffice, Herramientas → Actualizar → Índices). En el EPUB no hace falta: el lector ya tiene el suyo.",
   "doc_settings_numbering_label": "Numerar los apartados",
   "doc_settings_numbering_hint": "Numera los encabezados (1, 1.1, 1.2…). El ODT no admite esta numeración y sale sin ella.",
   "doc_settings_latex_section": "Solo para LaTeX",

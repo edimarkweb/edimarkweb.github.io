@@ -22,6 +22,7 @@ import {
   collectArchiveImagePaths,
   inlineArchiveImages,
   prepareOdtForImport,
+  requestDocxFieldUpdate,
 } from '../pandoc-prepare.js';
 import { readZipEntries, mimeForPath } from '../zip-reader.js';
 import { createZip } from '../zip-writer.js';
@@ -389,7 +390,7 @@ test('collectFetchableImageUrls recoge también las rutas relativas', () => {
 
 test('inlineArchiveImages saca las imágenes del archivo y las incrusta', async () => {
   const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4]);
-  const zip = makeZip({
+  const zip = await makeZip({
     'mimetype': 'application/vnd.oasis.opendocument.text',
     'Pictures/1000.png': png,
     // Pandoc acorta la ruta de DOCX: media/… en vez de word/media/…
@@ -405,7 +406,7 @@ test('inlineArchiveImages saca las imágenes del archivo y las incrusta', async 
 });
 
 test('inlineArchiveImages deja el texto intacto si no encuentra la imagen', async () => {
-  const zip = makeZip({ 'otra/cosa.txt': 'nada' });
+  const zip = await makeZip({ 'otra/cosa.txt': 'nada' });
   const markdown = '![x](Pictures/ausente.png)\n';
   assert.equal(await inlineArchiveImages(markdown, zip), markdown);
   // Un archivo ilegible tampoco debe romper la importación.
@@ -414,7 +415,7 @@ test('inlineArchiveImages deja el texto intacto si no encuentra la imagen', asyn
 });
 
 test('readZipEntries omite directorios y descomprime entradas deflate', async () => {
-  const zip = makeZip({ 'dir/': '', 'a.txt': 'hola', 'b.bin': new Uint8Array([0, 1, 2]) });
+  const zip = await makeZip({ 'dir/': '', 'a.txt': 'hola', 'b.bin': new Uint8Array([0, 1, 2]) });
   const entries = await readZipEntries(zip);
   assert.equal(entries.has('dir/'), false);
   assert.equal(new TextDecoder().decode(entries.get('a.txt')), 'hola');
@@ -521,10 +522,43 @@ test('normalizeFormulaHrefs no toca un ODT de LibreOffice ni las imágenes', () 
   assert.equal(patched, xml);
 });
 
+/*
+  El índice del DOCX no es texto: es un campo que calcula el procesador de
+  textos. Sin pedir la actualización de campos, el documento se abre con el
+  índice vacío.
+*/
+test('requestDocxFieldUpdate pide actualizar los campos sin tocar nada más', async () => {
+  const docx = await createZip(new Map([
+    ['[Content_Types].xml', '<?xml version="1.0"?><Types/>'],
+    ['word/settings.xml', '<?xml version="1.0"?><w:settings xmlns:w="x"><w:zoom w:percent="100"/></w:settings>'],
+    ['word/document.xml', '<?xml version="1.0"?><w:document xmlns:w="x"><w:body/></w:document>'],
+  ]));
+  const actualizado = await requestDocxFieldUpdate(docx);
+  const entries = await readZipEntries(actualizado);
+
+  const leer = name => new TextDecoder().decode(entries.get(name));
+  const settings = leer('word/settings.xml');
+  assert.match(settings, /<w:settings[^>]*><w:updateFields w:val="true"\/>/, 'va al principio, como pide el esquema');
+  assert.match(settings, /<w:zoom w:percent="100"\/>/, 'lo que ya había se conserva');
+  assert.equal(entries.size, 3, 'ninguna entrada se pierde');
+  assert.match(leer('word/document.xml'), /<w:body\/>/);
+});
+
+test('requestDocxFieldUpdate no repite el ajuste ni rompe un archivo ilegible', async () => {
+  const yaPedido = await createZip(new Map([
+    ['word/settings.xml', '<w:settings xmlns:w="x"><w:updateFields w:val="true"/></w:settings>'],
+  ]));
+  assert.equal(await requestDocxFieldUpdate(yaPedido), yaPedido, 'sin cambios, se devuelve el mismo archivo');
+
+  // Un archivo que no es un ZIP no debe acabar en una descarga corrupta.
+  const basura = new Uint8Array([1, 2, 3, 4]);
+  assert.equal(await requestDocxFieldUpdate(basura), basura);
+});
+
 test('prepareOdtForImport reescribe el ODT y conserva el resto de entradas', async () => {
   const contentXml = `<?xml version="1.0"?><office:document-content><office:body><office:text>`
     + `<text:p>Fórmula ${FRAME_PANDOC} dentro</text:p></office:text></office:body></office:document-content>`;
-  const odt = createZip(new Map([
+  const odt = await createZip(new Map([
     ['mimetype', 'application/vnd.oasis.opendocument.text'],
     ['content.xml', contentXml],
     ['Formula-0/content.xml', '<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>a</mi></math>'],
@@ -543,7 +577,7 @@ test('prepareOdtForImport reescribe el ODT y conserva el resto de entradas', asy
 });
 
 test('prepareOdtForImport devuelve el archivo intacto si no hay nada que reparar', async () => {
-  const odt = createZip(new Map([
+  const odt = await createZip(new Map([
     ['mimetype', 'application/vnd.oasis.opendocument.text'],
     ['content.xml', `<office:text><text:p>${FRAME_LIBREOFFICE}</text:p></office:text>`],
   ]));

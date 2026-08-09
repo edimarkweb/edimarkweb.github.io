@@ -15,6 +15,7 @@ import {
   trimInlineMath,
   ensureEpubMetadata,
   ensureExportMetadata,
+  requestDocxFieldUpdate,
   splitFrontMatter,
   mergeFrontMatter,
   prepareLatexStandalone,
@@ -569,7 +570,15 @@ async function exportDocument({
       throw new Error('pandoc_empty_output');
     }
 
-    const blob = new Blob([resultadoBytes], { type: config.mime });
+    /*
+      El índice del DOCX es un campo que calcula Word, no texto: sin pedir la
+      actualización de campos, el documento se abre con el índice vacío.
+    */
+    const finalBytes = (normalizedFormat === 'docx' && documentOutlineOptions().toc)
+      ? await requestDocxFieldUpdate(resultadoBytes)
+      : resultadoBytes;
+
+    const blob = new Blob([finalBytes], { type: config.mime });
     saveBlob(blob, outputFilename || config.defaultFilename);
 
     triggerStatus(onStatus, config.doneKey, config.doneFallback);

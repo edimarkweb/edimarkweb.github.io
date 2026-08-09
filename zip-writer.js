@@ -1,13 +1,16 @@
 /*
   Minimal ZIP writer, the counterpart of zip-reader.js.
 
-  Entries are always stored uncompressed: the only archive the app rebuilds is
-  an ODT on its way into Pandoc, which never reaches the disk, so paying for
-  compression would buy nothing. Storing also keeps the module free of
-  CompressionStream, so it runs unchanged in the browser and in the tests.
+  Entries are deflated when the platform offers CompressionStream, and stored
+  otherwise. Compression started to matter when the app began rebuilding a DOCX
+  before handing it to the user: stored, a manual grew from 22 KB to 159 KB just
+  to flip one flag in settings.xml. The ODT rebuilt on its way into Pandoc never
+  reaches the disk, so there either way works.
 
-  Insertion order is preserved, which matters for ODT: `mimetype` has to be the
-  first entry of the archive.
+  `mimetype` is never compressed, and is expected first: an ODT whose first
+  entry is not a stored `mimetype` is not a valid ODT.
+
+  Insertion order is preserved.
 */
 
 /*
@@ -40,11 +43,31 @@ function toBytes(content) {
   return new TextEncoder().encode(String(content ?? ''));
 }
 
+const STORED = 0;
+const DEFLATED = 8;
+
+/*
+  Devuelve los bytes comprimidos, o null cuando no compensa: sin
+  CompressionStream, o si el resultado no es menor que el original, que es lo
+  normal en lo ya comprimido (un PNG, un JPEG).
+*/
+async function deflateRaw(bytes) {
+  if (typeof CompressionStream !== 'function' || bytes.length === 0) return null;
+  try {
+    const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+    const packed = new Uint8Array(await new Response(stream).arrayBuffer());
+    return packed.length < bytes.length ? packed : null;
+  } catch (error) {
+    console.warn('No se pudo comprimir una entrada del ZIP, se guarda tal cual:', error);
+    return null;
+  }
+}
+
 /*
   `files` is a Map (or a plain object) of entry name to bytes or string.
-  Returns the archive as a Uint8Array.
+  Returns a promise for the archive as a Uint8Array.
 */
-export function createZip(files) {
+export async function createZip(files) {
   const entries = files instanceof Map ? [...files.entries()] : Object.entries(files || {});
   const encoder = new TextEncoder();
   const locals = [];
@@ -55,18 +78,22 @@ export function createZip(files) {
     const nameBytes = encoder.encode(name);
     const data = toBytes(content);
     const crc = crc32(data);
+    const packed = name === 'mimetype' ? null : await deflateRaw(data);
+    const payload = packed || data;
+    const method = packed ? DEFLATED : STORED;
 
-    const local = new Uint8Array(30 + nameBytes.length + data.length);
+    const local = new Uint8Array(30 + nameBytes.length + payload.length);
     const localView = new DataView(local.buffer);
     localView.setUint32(0, 0x04034b50, true);
     localView.setUint16(4, 20, true);
     localView.setUint16(6, UTF8_NAME_FLAG, true);
+    localView.setUint16(8, method, true);
     localView.setUint32(14, crc, true);
-    localView.setUint32(18, data.length, true);
+    localView.setUint32(18, payload.length, true);
     localView.setUint32(22, data.length, true);
     localView.setUint16(26, nameBytes.length, true);
     local.set(nameBytes, 30);
-    local.set(data, 30 + nameBytes.length);
+    local.set(payload, 30 + nameBytes.length);
     locals.push(local);
 
     const central = new Uint8Array(46 + nameBytes.length);
@@ -74,8 +101,9 @@ export function createZip(files) {
     centralView.setUint32(0, 0x02014b50, true);
     centralView.setUint16(6, 20, true);
     centralView.setUint16(8, UTF8_NAME_FLAG, true);
+    centralView.setUint16(10, method, true);
     centralView.setUint32(16, crc, true);
-    centralView.setUint32(20, data.length, true);
+    centralView.setUint32(20, payload.length, true);
     centralView.setUint32(24, data.length, true);
     centralView.setUint16(28, nameBytes.length, true);
     centralView.setUint32(42, offset, true);
