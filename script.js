@@ -3,7 +3,7 @@
   llevan un marcador {version} en los cinco idiomas. La otra copia vive en
   package.json y una prueba comprueba que ambas coinciden.
 */
-const APP_VERSION = '2.9.0';
+const APP_VERSION = '2.10.0';
 
 // Declaración de variables globales
 let turndownService;
