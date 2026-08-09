@@ -3,7 +3,7 @@
   llevan un marcador {version} en los cinco idiomas. La otra copia vive en
   package.json y una prueba comprueba que ambas coinciden.
 */
-const APP_VERSION = '2.13.0';
+const APP_VERSION = '2.14.0';
 
 // Declaración de variables globales
 let turndownService;
@@ -2717,6 +2717,8 @@ const LATEX_SETTINGS_DEFAULTS = {
     // exportando en el anterior sin saber por qué.
     documentLanguage: 'auto',
     documentAuthor: '',
+    documentToc: false,
+    documentNumberSections: false,
     documentClass: 'article',
     classOptions: '',
     preamble: '',
@@ -2733,6 +2735,8 @@ function readLatexSettings() {
                 ? parsed.documentLanguage.trim()
                 : LATEX_SETTINGS_DEFAULTS.documentLanguage,
             documentAuthor: typeof parsed.documentAuthor === 'string' ? parsed.documentAuthor : '',
+            documentToc: parsed.documentToc === true,
+            documentNumberSections: parsed.documentNumberSections === true,
             documentClass: typeof parsed.documentClass === 'string' ? parsed.documentClass : LATEX_SETTINGS_DEFAULTS.documentClass,
             classOptions: typeof parsed.classOptions === 'string' ? parsed.classOptions : '',
             preamble: typeof parsed.preamble === 'string' ? parsed.preamble : '',
@@ -3421,6 +3425,8 @@ window.onload = () => {
     const docLanguageCodeField = document.getElementById('doc-language-code-field');
     const docLanguageCodeInput = document.getElementById('doc-language-code');
     const docAuthorInput = document.getElementById('doc-author');
+    const docTocCheckbox = document.getElementById('doc-toc');
+    const docNumberingCheckbox = document.getElementById('doc-number-sections');
     const latexClassSelect = document.getElementById('latex-documentclass');
     const latexClassOptionsInput = document.getElementById('latex-classoption');
     const latexPreambleTextarea = document.getElementById('latex-preamble');
@@ -5045,6 +5051,8 @@ window.onload = () => {
         if (docLanguageCodeInput) docLanguageCodeInput.value = listed ? '' : language;
         syncDocLanguageCodeField();
         if (docAuthorInput) docAuthorInput.value = settings.documentAuthor || '';
+        if (docTocCheckbox) docTocCheckbox.checked = settings.documentToc === true;
+        if (docNumberingCheckbox) docNumberingCheckbox.checked = settings.documentNumberSections === true;
         if (latexClassSelect) latexClassSelect.value = settings.documentClass || 'article';
         if (latexClassOptionsInput) latexClassOptionsInput.value = settings.classOptions || '';
         if (latexPreambleTextarea) latexPreambleTextarea.value = settings.preamble || '';
@@ -5095,6 +5103,8 @@ window.onload = () => {
             storeLatexSettings({
                 documentLanguage: readDocLanguageFromForm(),
                 documentAuthor: docAuthorInput ? docAuthorInput.value.trim() : '',
+                documentToc: docTocCheckbox ? docTocCheckbox.checked : false,
+                documentNumberSections: docNumberingCheckbox ? docNumberingCheckbox.checked : false,
                 documentClass: latexClassSelect ? latexClassSelect.value : 'article',
                 classOptions: latexClassOptionsInput ? latexClassOptionsInput.value.trim() : '',
                 preamble: latexPreambleTextarea ? latexPreambleTextarea.value : '',
@@ -5415,6 +5425,14 @@ window.onload = () => {
     if (typeof initSearch === 'function') {
         initSearch(markdownEditor, htmlEditor, () => currentLayout);
     }
+
+    /*
+      Última línea del arranque: los atajos de teclado y la búsqueda se
+      registran aquí abajo, mucho después de que aparezca la primera pestaña.
+      Las pruebas esperan esta marca para no pulsar teclas que todavía no
+      escucha nadie.
+    */
+    window.__edimarkReady = true;
 };
 
 /* =========================================================

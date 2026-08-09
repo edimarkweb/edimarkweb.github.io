@@ -633,3 +633,46 @@ test('el autor llega a las propiedades del DOCX y del EPUB', { timeout: 240000 }
   const opf = [...epub.keys()].find(name => name.endsWith('.opf'));
   assert.match(epub.get(opf).toString('utf8'), /<dc:creator[^>]*>Juan José<\/dc:creator>/);
 });
+
+/*
+  Índice y numeración, medidos en el documento real: en DOCX el índice es un
+  campo de Word (actualizable), en ODT un índice nativo, y la numeración la
+  escribe Pandoc en el propio encabezado. El ODT no admite numeración.
+*/
+test('el índice y la numeración llegan a DOCX, ODT y LaTeX', { timeout: 300000 }, async () => {
+  const fuente = ensureExportMetadata(
+    '# Tema 1\n\nTexto.\n\n## Apartado A\n\nMás.\n',
+    { lang: 'es', tocTitle: 'Índice' },
+  ).markdown;
+
+  const docx = readZipEntries((await runPandoc(
+    buildExportArgs('docx', { toc: true, numberSections: true }), fuente,
+  )).bytes).get('word/document.xml').toString('utf8');
+  assert.match(docx, /TOC \\o/, 'el DOCX debe llevar un campo de índice de Word');
+  assert.match(docx, /Índice/, 'el rótulo del índice va en el idioma del documento');
+  // Cada etiqueta deja su marca: se colapsan para leer el texto seguido.
+  const textoDocx = docx.replace(/<[^>]+>/g, '|').replace(/\|+/g, '|');
+  assert.match(textoDocx, /\|1\|Tema 1\|/, 'los apartados deben ir numerados');
+  assert.match(textoDocx, /\|1\.1\|Apartado A\|/);
+
+  const odt = readZipEntries((await runPandoc(
+    buildExportArgs('odt', { toc: true }), fuente,
+  )).bytes).get('content.xml').toString('utf8');
+  assert.match(odt, /text:table-of-content/, 'el ODT debe llevar su índice nativo');
+
+  const latex = new TextDecoder().decode((await runPandoc(
+    `-s -f ${MARKDOWN_READER_NO_AUTO_IDS} -t latex --no-highlight --toc --number-sections`, fuente,
+  )).bytes);
+  assert.match(latex, /\\tableofcontents/);
+  assert.equal(/setcounter\{secnumdepth\}\{-\\maxdimen\}/.test(latex), false, 'la numeración debe quedar activada');
+});
+
+test('sin pedirlo, nada cambia', { timeout: 180000 }, async () => {
+  const fuente = ensureExportMetadata('# Tema 1\n\nTexto.\n', { lang: 'es' }).markdown;
+  const docx = readZipEntries((await runPandoc(buildExportArgs('docx', {}), fuente)).bytes)
+    .get('word/document.xml').toString('utf8');
+  assert.equal(/TOC \\o/.test(docx), false);
+  const texto = docx.replace(/<[^>]+>/g, '|').replace(/\|+/g, '|');
+  assert.match(texto, /\|Tema 1\|/, 'el encabezado no debe llevar número');
+  assert.equal(/\|1\|Tema 1\|/.test(texto), false);
+});

@@ -183,6 +183,40 @@ function documentAuthor() {
   return String(documentSettings().documentAuthor || '').trim();
 }
 
+/*
+  Índice y numeración de apartados. Son opciones del conversor, no datos del
+  documento: `toc: true` en los metadatos lo entienden LaTeX y HTML, pero el
+  escritor DOCX lo ignora, y la numeración solo funciona con la bandera.
+*/
+function documentOutlineOptions() {
+  const settings = documentSettings();
+  return {
+    toc: settings.documentToc === true,
+    numberSections: settings.documentNumberSections === true,
+  };
+}
+
+/*
+  Rótulo del índice, en el idioma del documento y no en el de la interfaz.
+
+  Pandoc no lo traduce en DOCX ni en ODT: un documento en castellano salía con
+  «Table of Contents». Para un idioma que la aplicación no habla se deja el
+  suyo, que es mejor que imponerle el español.
+*/
+const TOC_TITLES = {
+  es: 'Índice',
+  en: 'Contents',
+  ca: 'Índex',
+  gl: 'Índice',
+  eu: 'Aurkibidea',
+};
+
+function tocTitleFor(lang) {
+  if (!documentOutlineOptions().toc) return '';
+  const base = String(lang || '').toLowerCase().split(/[-_]/)[0];
+  return TOC_TITLES[base] || '';
+}
+
 // Los tres ajustes de LaTeX solo afectan al documento completo.
 function currentLatexSettings() {
   const settings = documentSettings();
@@ -467,6 +501,7 @@ async function exportDocument({
       untitledLabel: translate('untitled_document', 'Documento sin título'),
       lang: documentLanguage(),
       author: documentAuthor(),
+      tocTitle: tocTitleFor(documentLanguage()),
     });
     normalized = prepared.markdown;
     titleFromHeading = prepared.titleFromHeading;
@@ -480,6 +515,7 @@ async function exportDocument({
     normalized = ensureExportMetadata(normalized, {
       lang: documentLanguage(),
       author: documentAuthor(),
+      tocTitle: tocTitleFor(documentLanguage()),
     }).markdown;
   }
 
@@ -522,6 +558,7 @@ async function exportDocument({
     const pandocArgs = buildExportArgs(config.pandocFormat || normalizedFormat, {
       mathml: normalizedFormat === 'odt' || normalizedFormat === 'epub',
       titleFromHeading,
+      ...documentOutlineOptions(),
     });
     const resultadoBytes = await pandoc(pandocArgs, normalized, base64);
     if (iosTimer) clearTimeout(iosTimer);
@@ -571,6 +608,7 @@ async function generateHtml({
       lang: documentLanguage(),
       author: documentAuthor(),
       pageTitle: extractMarkdownTitle(normalized) || String(documentTitle || '').trim(),
+      tocTitle: tocTitleFor(documentLanguage()),
     }).markdown
     : normalized;
 
@@ -581,6 +619,9 @@ async function generateHtml({
     let pandocArgs = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --mathjax`;
     if (standalone) {
       pandocArgs += ' -s';
+      const { toc, numberSections } = documentOutlineOptions();
+      if (toc) pandocArgs += ' --toc';
+      if (numberSections) pandocArgs += ' --number-sections';
     }
     const resultadoBytes = await pandoc(pandocArgs, withLanguage, base64);
     if (!resultadoBytes || resultadoBytes.length === 0) {
@@ -627,6 +668,7 @@ async function generateLatex({
     const prepared = prepareLatexStandalone(normalized, {
       lang: documentLanguage(),
       author: documentAuthor(),
+      tocTitle: tocTitleFor(documentLanguage()),
       ...currentLatexSettings(),
     });
     normalized = prepared.markdown;
@@ -643,6 +685,9 @@ async function generateLatex({
       // El encabezado promovido a \title dejaría el resto colgando un nivel
       // por debajo del que les corresponde.
       if (shiftHeadings) pandocArgs += ' --shift-heading-level-by=-1';
+      const { toc, numberSections } = documentOutlineOptions();
+      if (toc) pandocArgs += ' --toc';
+      if (numberSections) pandocArgs += ' --number-sections';
     }
     const resultadoBytes = await pandoc(pandocArgs, normalized, base64);
     if (!resultadoBytes || resultadoBytes.length === 0) {

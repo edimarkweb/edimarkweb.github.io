@@ -544,6 +544,22 @@
                     <input type="text" id="doc-author" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="Tu nombre" data-i18n-key="doc_settings_author_placeholder">
                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_author_hint">Se guarda en las propiedades del archivo y aparece en el EPUB y en la portada del LaTeX. En DOCX y ODT también se escribe una línea con el nombre al principio del documento. Déjalo vacío para no incluir autor.</p>
                 </div>
+                <div class="border-t border-slate-200 pt-4 dark:border-slate-700 space-y-3">
+                    <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+                        <input type="checkbox" id="doc-toc" class="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700">
+                        <span>
+                            <span class="font-medium" data-i18n-key="doc_settings_toc_label">Índice automático</span>
+                            <span class="block text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_toc_hint">Añade un índice al principio del documento, con los apartados y sus enlaces. En el EPUB no hace falta: el lector ya tiene el suyo.</span>
+                        </span>
+                    </label>
+                    <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
+                        <input type="checkbox" id="doc-number-sections" class="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700">
+                        <span>
+                            <span class="font-medium" data-i18n-key="doc_settings_numbering_label">Numerar los apartados</span>
+                            <span class="block text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_numbering_hint">Numera los encabezados (1, 1.1, 1.2…). El ODT no admite esta numeración y sale sin ella.</span>
+                        </span>
+                    </label>
+                </div>
                 <div class="border-t border-slate-200 pt-4 dark:border-slate-700">
                     <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200" data-i18n-key="doc_settings_latex_section">Solo para LaTeX</h4>
                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_latex_section_hint">Se aplica al exportar a TEX y al copiar LaTeX como documento completo.</p>

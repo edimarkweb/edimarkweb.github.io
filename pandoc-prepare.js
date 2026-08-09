@@ -33,10 +33,26 @@ export const MARKDOWN_WRITER = [
   '+pipe_tables',
 ].join('');
 
-// Kept here so tests exercise the same command line the app sends to Pandoc.
-export function buildExportArgs(pandocFormat, { mathml = false, titleFromHeading = false } = {}) {
+/*
+  Kept here so tests exercise the same command line the app sends to Pandoc.
+
+  The table of contents and the section numbering are command-line flags, not
+  metadata: `toc: true` in the document works for LaTeX and HTML but is ignored
+  by the DOCX writer, and `numbersections: true` numbers nothing outside LaTeX.
+  The heading of the table of contents does travel as metadata (`toc-title`),
+  which is how it avoids being called "Table of Contents" in a Spanish document.
+*/
+export function buildExportArgs(pandocFormat, {
+  mathml = false,
+  titleFromHeading = false,
+  toc = false,
+  numberSections = false,
+} = {}) {
   let args = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t ${pandocFormat}`;
   if (mathml) args += ' --mathml';
+  // El EPUB ya trae su propio índice de navegación, que es el que usa el lector.
+  if (toc && pandocFormat !== 'epub3') args += ' --toc';
+  if (numberSections) args += ' --number-sections';
   if (pandocFormat === 'epub3' && titleFromHeading) {
     // The body already opens with the title, so skip Pandoc's title page.
     args += ' --epub-title-page=false';
@@ -342,6 +358,7 @@ export function ensureEpubMetadata(markdown, {
   untitledLabel = 'Documento sin título',
   lang = 'es',
   author = '',
+  tocTitle = '',
 } = {}) {
   const source = typeof markdown === 'string' ? markdown : '';
   const { keys } = splitFrontMatter(source);
@@ -354,6 +371,9 @@ export function ensureEpubMetadata(markdown, {
   // En un lector de libros el autor es un campo visible, y salía vacío.
   if (String(author || '').trim()) {
     entries.push({ key: 'author', lines: [`author: "${escapeYamlValue(String(author).trim())}"`] });
+  }
+  if (String(tocTitle || '').trim()) {
+    entries.push({ key: 'toc-title', lines: [`toc-title: "${escapeYamlValue(String(tocTitle).trim())}"`] });
   }
   const { markdown: merged, added } = mergeFrontMatter(source, entries);
   return {
@@ -381,7 +401,12 @@ export function ensureEpubMetadata(markdown, {
 
   Whatever the document declares wins; this only fills what is missing.
 */
-export function ensureExportMetadata(markdown, { lang = 'es', author = '', pageTitle = '' } = {}) {
+export function ensureExportMetadata(markdown, {
+  lang = 'es',
+  author = '',
+  pageTitle = '',
+  tocTitle = '',
+} = {}) {
   const source = typeof markdown === 'string' ? markdown : '';
   const entries = [];
   const code = String(lang || '').trim();
@@ -390,6 +415,8 @@ export function ensureExportMetadata(markdown, { lang = 'es', author = '', pageT
   if (writer) entries.push({ key: 'author', lines: [`author: "${escapeYamlValue(writer)}"`] });
   const heading = String(pageTitle || '').trim();
   if (heading) entries.push({ key: 'pagetitle', lines: [`pagetitle: "${escapeYamlValue(heading)}"`] });
+  const contents = String(tocTitle || '').trim();
+  if (contents) entries.push({ key: 'toc-title', lines: [`toc-title: "${escapeYamlValue(contents)}"`] });
   if (!entries.length) return { markdown: source, injected: false };
   const { markdown: merged, added } = mergeFrontMatter(source, entries);
   return { markdown: merged, injected: added.length > 0 };
@@ -475,6 +502,7 @@ function yamlClassOptions(options) {
 export function prepareLatexStandalone(markdown, {
   lang = 'es',
   author = '',
+  tocTitle = '',
   documentClass = '',
   classOptions = '',
   preamble = '',
@@ -499,6 +527,9 @@ export function prepareLatexStandalone(markdown, {
     entries.push({ key: 'author', lines: [`author: "${escapeYamlValue(String(author).trim())}"`] });
   }
 
+  if (String(tocTitle || '').trim()) {
+    entries.push({ key: 'toc-title', lines: [`toc-title: "${escapeYamlValue(String(tocTitle).trim())}"`] });
+  }
   const cls = String(documentClass || '').trim();
   if (LATEX_DOCUMENT_CLASSES.includes(cls)) {
     entries.push({ key: 'documentclass', lines: [`documentclass: "${escapeYamlValue(cls)}"`] });

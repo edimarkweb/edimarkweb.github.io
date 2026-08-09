@@ -189,6 +189,10 @@ Durante a exportación, a barra superior mostra mensaxes de estado (progreso, é
 
 **Autor**, que se garda nas propiedades do ficheiro e aparece como autor do libro no EPUB e na portada do LaTeX. En DOCX e ODT, ademais, Pandoc escribe unha liña co nome ao principio do documento; se non queres que apareza, deixa o campo baleiro. Un documento concreto pode levar outro autor: *Autor deste documento…*, no menú do botón de idioma.
 
+**Índice automático**, que engade ao principio do documento un índice cos apartados. En DOCX é un índice de Word de verdade, que podes actualizar desde o propio Word; en ODT, un nativo de LibreOffice. O EPUB non o precisa, porque o lector xa trae o seu índice de navegación.
+
+**Numerar os apartados**, que antepón 1, 1.1, 1.2… aos encabezamentos. Funciona en DOCX, HTML e LaTeX; o ODT non admite esta numeración e sae sen ela.
+
 E tres axustes **só para LaTeX**, que se aplican ao exportar a TEX e ao copiar *LaTeX – documento completo*:
 
 * **Clase de documento**: `article` (a predeterminada), `report` ou `book`.

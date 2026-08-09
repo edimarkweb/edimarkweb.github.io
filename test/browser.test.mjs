@@ -65,6 +65,10 @@ async function openApp({ locale = 'es-ES', initStorage } = {}) {
   page.on('request', request => requests.push(request.url()));
   await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
   await page.locator('.tab-name').first().waitFor();
+  // La pestaña aparece antes de que el arranque termine de registrar los
+  // atajos de teclado: sin esperar, las pruebas que pulsan teclas fallaban
+  // una de cada tres veces.
+  await page.waitForFunction(() => window.__edimarkReady === true);
   return { context, page, requests };
 }
 
@@ -816,6 +820,8 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
     {
       documentLanguage: 'auto',
       documentAuthor: '',
+      documentToc: false,
+      documentNumberSections: false,
       documentClass: 'report',
       classOptions: '12pt, a4paper',
       preamble: '\\usepackage{amsthm}',
@@ -824,6 +830,7 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
 
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.locator('.tab-name').first().waitFor();
+  await page.waitForFunction(() => window.__edimarkReady === true);
   await page.locator('#settings-menu-btn').click();
   await page.locator('#latex-settings-btn').click();
   assert.equal(await page.locator('#latex-documentclass').inputValue(), 'report');
@@ -980,4 +987,30 @@ test('el autor se guarda como ajuste general y por documento', async (t) => {
   await page.locator('#doc-author-btn').click();
   await page.waitForFunction(() => !document.getElementById('markdown-input').value.includes('author:'));
   assert.equal(await page.locator('#markdown-input').inputValue(), '# Notas\n\nTexto.\n');
+});
+
+test('el índice y la numeración se recuerdan como ajuste', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  assert.equal(await page.locator('#doc-toc').isChecked(), false, 'apagados de fábrica');
+  assert.equal(await page.locator('#doc-number-sections').isChecked(), false);
+
+  await page.locator('#doc-toc').check();
+  await page.locator('#doc-number-sections').check();
+  await page.locator('#latex-settings-save-btn').click();
+  assert.deepEqual(
+    await page.evaluate(() => [window.__edimarkLatexSettings.documentToc, window.__edimarkLatexSettings.documentNumberSections]),
+    [true, true],
+  );
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('.tab-name').first().waitFor();
+  await page.waitForFunction(() => window.__edimarkReady === true);
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  assert.equal(await page.locator('#doc-toc').isChecked(), true);
+  assert.equal(await page.locator('#doc-number-sections').isChecked(), true);
 });

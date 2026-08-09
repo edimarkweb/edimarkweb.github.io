@@ -16,6 +16,7 @@ import {
   normalizeNewlines,
   normalizeThematicBreaks,
   buildImportArgs,
+  buildExportArgs,
   stripEpubAnchorPrefixes,
   stripUnsafeMarkup,
   collectArchiveImagePaths,
@@ -75,6 +76,26 @@ test('ensureEpubMetadata encadena encabezado, nombre del documento y sin título
 
   const sinNada = ensureEpubMetadata('Texto\n', { fallbackTitle: '', untitledLabel: 'Sin título', lang: 'es' });
   assert.match(sinNada.markdown, /title: "Sin título"/);
+});
+
+/*
+  El índice y la numeración son banderas del conversor, no metadatos: el
+  escritor DOCX ignora `toc: true` y la numeración no sale sin la bandera.
+*/
+test('buildExportArgs añade índice y numeración solo cuando se piden', () => {
+  assert.equal(buildExportArgs('docx', {}).includes('--toc'), false);
+  assert.match(buildExportArgs('docx', { toc: true }), /--toc(?!-)/);
+  assert.match(buildExportArgs('docx', { numberSections: true }), /--number-sections/);
+  // El EPUB ya trae su índice de navegación; otro encima sobra.
+  assert.equal(buildExportArgs('epub3', { toc: true }).includes('--toc'), false);
+  assert.match(buildExportArgs('epub3', { toc: true, numberSections: true }), /--number-sections/);
+});
+
+test('el rótulo del índice viaja como metadato', () => {
+  const conRotulo = ensureExportMetadata('# Tema\n', { lang: 'es', tocTitle: 'Índice' });
+  assert.match(conRotulo.markdown, /toc-title: "Índice"/);
+  // Sin rótulo no se inventa ninguno: Pandoc pondrá el suyo.
+  assert.equal(ensureExportMetadata('# Tema\n', { lang: 'es' }).markdown.includes('toc-title'), false);
 });
 
 test('ensureExportMetadata marca el idioma cuando el documento no lo trae', () => {
