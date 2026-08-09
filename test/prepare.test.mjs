@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 import {
   ensureEpubMetadata,
+  prepareLatexStandalone,
   extractMarkdownTitle,
   hasYamlFrontMatter,
   collectRemoteImageUrls,
@@ -67,6 +68,84 @@ test('ensureEpubMetadata encadena encabezado, nombre del documento y sin título
 
   const sinNada = ensureEpubMetadata('Texto\n', { fallbackTitle: '', untitledLabel: 'Sin título', lang: 'es' });
   assert.match(sinNada.markdown, /title: "Sin título"/);
+});
+
+test('prepareLatexStandalone promueve a título el único encabezado inicial', () => {
+  const result = prepareLatexStandalone('# Ecuaciones\n\n## Planteamiento\n\nTexto\n', { lang: 'es' });
+  assert.match(result.markdown, /^---\ntitle: "Ecuaciones"\nlang: "es"\n---\n/);
+  assert.equal(result.shiftHeadings, true);
+  // El encabezado promovido sale del cuerpo para no repetirse bajo \\maketitle.
+  assert.equal(result.markdown.includes('# Ecuaciones'), false);
+  assert.match(result.markdown, /## Planteamiento/);
+});
+
+test('prepareLatexStandalone deja intactos los documentos con varios encabezados de nivel 1', () => {
+  const result = prepareLatexStandalone('# Tema 1\n\nTexto\n\n# Tema 2\n', { lang: 'es' });
+  assert.equal(result.shiftHeadings, false);
+  assert.equal(result.markdown.includes('title:'), false);
+  assert.match(result.markdown, /lang: "es"/);
+  assert.match(result.markdown, /# Tema 1[\s\S]*# Tema 2/);
+});
+
+test('prepareLatexStandalone solo asciende el encabezado que abre el documento', () => {
+  const trasTexto = prepareLatexStandalone('Introducción\n\n# Desarrollo\n', { lang: 'es' });
+  assert.equal(trasTexto.shiftHeadings, false);
+  assert.equal(trasTexto.markdown.includes('title:'), false);
+
+  // Una almohadilla dentro de un bloque de código no es un título.
+  const enCodigo = prepareLatexStandalone('```sh\n# npm install\n```\n\n# De verdad\n', { lang: 'es' });
+  assert.equal(enCodigo.shiftHeadings, false);
+});
+
+test('prepareLatexStandalone respeta el front matter propio y añade siempre el idioma', () => {
+  const propio = '---\ntitle: "Mío"\n---\n\n# Cuerpo\n';
+  assert.equal(prepareLatexStandalone(propio, { lang: 'eu' }).markdown, propio);
+  assert.equal(prepareLatexStandalone(propio, { lang: 'eu' }).injected, false);
+
+  const soloTexto = prepareLatexStandalone('Texto suelto\n', { lang: 'gl' });
+  assert.match(soloTexto.markdown, /^---\nlang: "gl"\n---\n/);
+});
+
+test('prepareLatexStandalone aplica clase, opciones y preámbulo del usuario', () => {
+  const result = prepareLatexStandalone('# Apuntes\n\nTexto\n', {
+    lang: 'es',
+    documentClass: 'report',
+    classOptions: '12pt, a4paper',
+    preamble: '\\usepackage{geometry}\n\\newcommand{\\R}{\\mathbb{R}}',
+  });
+  assert.match(result.markdown, /documentclass: "report"/);
+  // Pandoc espera una entrada por opción, no la cadena entera.
+  assert.match(result.markdown, /classoption:\n- "12pt"\n- "a4paper"\n/);
+  assert.match(result.markdown, /header-includes: \|\n {2}\\usepackage\{geometry\}\n {2}\\newcommand/);
+});
+
+test('prepareLatexStandalone no deja que el preámbulo rompa el YAML', () => {
+  // Comillas, dos puntos, barras y una línea que parece cerrar los metadatos.
+  const hostil = '\\title{"x": y}\n---\n\\def\\z{1}\n\n\\usepackage{amsmath}\n';
+  const result = prepareLatexStandalone('Texto\n', { lang: 'es', preamble: hostil });
+  const lineas = result.markdown.split('\n');
+  const cierre = lineas.indexOf('---', 1);
+
+  // El bloque literal va indentado, así que ningún --- del usuario cierra nada.
+  assert.match(lineas[cierre - 1], /^ {2}\\usepackage\{amsmath\}$/);
+  assert.match(result.markdown, /^ {2}---$/m);
+  assert.equal(lineas.slice(cierre).join('\n'), '---\n\nTexto\n');
+});
+
+test('prepareLatexStandalone ignora los ajustes vacíos o desconocidos', () => {
+  const result = prepareLatexStandalone('Texto\n', {
+    lang: 'es',
+    documentClass: 'memoir',
+    classOptions: ' , ,',
+    preamble: '   \n',
+  });
+  assert.equal(result.markdown, '---\nlang: "es"\n---\n\nTexto\n');
+});
+
+test('prepareLatexStandalone tampoco aplica los ajustes si el documento trae su YAML', () => {
+  const propio = '---\ntitle: "Mío"\n---\n\nTexto\n';
+  const result = prepareLatexStandalone(propio, { lang: 'es', documentClass: 'book', preamble: '\\usepackage{tikz}' });
+  assert.equal(result.markdown, propio);
 });
 
 test('ensureEpubMetadata escapa comillas en el título y el idioma', () => {

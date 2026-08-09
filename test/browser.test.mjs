@@ -795,3 +795,39 @@ test('soltar una carpeta abre los archivos que contiene', async (t) => {
   await page.locator('.tab-name').getByText('apuntes.md', { exact: true }).waitFor();
   await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('# Desde la carpeta'));
 });
+
+/*
+  Los ajustes de LaTeX solo sirven si sobreviven a la sesión: se guardan en el
+  almacenamiento local y el exportador los recoge de window.
+*/
+test('los ajustes de LaTeX se guardan y se recuperan al volver', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  await page.locator('#latex-documentclass').selectOption('report');
+  await page.locator('#latex-classoption').fill('12pt, a4paper');
+  await page.locator('#latex-preamble').fill('\\usepackage{amsthm}');
+  await page.locator('#latex-settings-save-btn').click();
+
+  assert.deepEqual(
+    await page.evaluate(() => window.__edimarkLatexSettings),
+    { documentClass: 'report', classOptions: '12pt, a4paper', preamble: '\\usepackage{amsthm}' }
+  );
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('.tab-name').first().waitFor();
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  assert.equal(await page.locator('#latex-documentclass').inputValue(), 'report');
+  assert.equal(await page.locator('#latex-preamble').inputValue(), '\\usepackage{amsthm}');
+
+  // Cancelar descarta lo tecleado; restablecer solo vacía el formulario.
+  await page.locator('#latex-preamble').fill('\\usepackage{tikz}');
+  await page.locator('#latex-settings-cancel-btn').click();
+  assert.equal(
+    await page.evaluate(() => window.__edimarkLatexSettings.preamble),
+    '\\usepackage{amsthm}'
+  );
+});

@@ -14,6 +14,7 @@ import {
   normalizeThematicBreaks,
   trimInlineMath,
   ensureEpubMetadata,
+  prepareLatexStandalone,
   extractMarkdownTitle,
   collectFetchableImageUrls,
   inlineArchiveImages,
@@ -154,6 +155,18 @@ function ensureMarkdownTitle(markdown, { title, hasMakeTitle }) {
 
 function currentLanguage() {
   return window.__edimarkLang || document.documentElement.lang || 'es';
+}
+
+// Ajustes de LaTeX del usuario, publicados por script.js al leerlos del
+// almacenamiento local. Solo afectan al documento completo.
+function currentLatexSettings() {
+  const settings = window.__edimarkLatexSettings;
+  if (!settings || typeof settings !== 'object') return {};
+  return {
+    documentClass: settings.documentClass || '',
+    classOptions: settings.classOptions || '',
+    preamble: settings.preamble || '',
+  };
 }
 
 /*
@@ -547,10 +560,24 @@ async function generateLatex({
   standalone = false,
   onStatus = () => {},
 } = {}) {
-  const normalized = normalizeThematicBreaks(normalizeNewlines(trimInlineMath(markdown || '')));
+  let normalized = normalizeThematicBreaks(normalizeNewlines(trimInlineMath(markdown || '')));
   if (!normalized.trim()) {
     const message = translate('no_content', 'No hay contenido para exportar.');
     throw new Error(message || 'No content');
+  }
+
+  /*
+    El fragmento suelto va tal cual: se pega dentro de otro documento, que es
+    quien pone el idioma y el título. Solo el documento completo los necesita.
+  */
+  let shiftHeadings = false;
+  if (standalone) {
+    const prepared = prepareLatexStandalone(normalized, {
+      lang: currentLanguage(),
+      ...currentLatexSettings(),
+    });
+    normalized = prepared.markdown;
+    shiftHeadings = prepared.shiftHeadings;
   }
 
   triggerStatus(onStatus, 'latex_export_preparing', 'Preparando LaTeX, espera...');
@@ -560,6 +587,9 @@ async function generateLatex({
     let pandocArgs = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t latex --no-highlight`;
     if (standalone) {
       pandocArgs = `-s ${pandocArgs}`;
+      // El encabezado promovido a \title dejaría el resto colgando un nivel
+      // por debajo del que les corresponde.
+      if (shiftHeadings) pandocArgs += ' --shift-heading-level-by=-1';
     }
     const resultadoBytes = await pandoc(pandocArgs, normalized, base64);
     if (!resultadoBytes || resultadoBytes.length === 0) {

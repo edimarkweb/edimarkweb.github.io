@@ -286,6 +286,122 @@ export function ensureEpubMetadata(markdown, {
   };
 }
 
+/*
+  Where each level-1 heading sits, ignoring the ones inside fenced code blocks.
+  `firstContentLine` is the first line with something other than blank space or
+  a fence, which is what tells a title apart from a heading buried in the text.
+*/
+function scanTopLevelHeadings(lines) {
+  const headings = [];
+  let firstContentLine = -1;
+  let fence = null;
+  lines.forEach((line, index) => {
+    const fenceMatch = line.match(/^\s{0,3}(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      const marker = fenceMatch[1][0];
+      if (fence === null) fence = marker;
+      else if (fence === marker) fence = null;
+      if (firstContentLine === -1) firstContentLine = index;
+      return;
+    }
+    if (fence !== null) return;
+    if (line.trim() === '') return;
+    if (firstContentLine === -1) firstContentLine = index;
+    const heading = line.match(/^#\s+(.*)$/);
+    if (heading) {
+      headings.push({ index, text: heading[1].trim().replace(/\s+#+\s*$/, '') });
+    }
+  });
+  return { headings, firstContentLine };
+}
+
+export const LATEX_DOCUMENT_CLASSES = ['article', 'report', 'book'];
+
+/*
+  A user preamble is arbitrary LaTeX: backslashes, colons, quotes and blank
+  lines. Quoting it would mean escaping all of that, so it goes in as a YAML
+  literal block, where every indented line is taken verbatim. A `---` of the
+  user's own cannot close the metadata block from there, because the terminator
+  has to sit at column zero.
+*/
+function yamlLiteralBlock(key, value) {
+  const lines = String(value).replace(/\r\n?/g, '\n').split('\n');
+  while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+  return [`${key}: |`, ...lines.map(line => (line.trim() === '' ? '' : `  ${line}`))];
+}
+
+// "12pt, a4paper" as Pandoc expects it: one entry per option.
+function yamlClassOptions(options) {
+  const values = String(options)
+    .split(',')
+    .map(option => option.trim())
+    .filter(Boolean);
+  if (!values.length) return [];
+  return ['classoption:', ...values.map(value => `- "${escapeYamlValue(value)}"`)];
+}
+
+/*
+  Metadata for a standalone LaTeX document.
+
+  Without `lang` Pandoc loads no babel/polyglossia at all, so a Spanish document
+  gets English hyphenation. And a document that opens with a single `# Title`
+  means that heading to be the title: promoting it to `\title` (with the rest of
+  the headings shifted up a level) produces `\maketitle` instead of a `\section`
+  where a title page belongs.
+
+  The promotion is deliberately conservative. With several level-1 headings the
+  document is using them as sections, so touching them would break its
+  structure; `shiftHeadings` then stays false and only the language is added.
+  A document that already carries its own YAML block is left untouched: its
+  author has said what the metadata should be, and that includes the settings
+  coming from the app.
+
+  `documentClass` and `classOptions` cannot be part of the preamble: the
+  template has already emitted \documentclass by the time `header-includes`
+  is inserted.
+*/
+export function prepareLatexStandalone(markdown, {
+  lang = 'es',
+  documentClass = '',
+  classOptions = '',
+  preamble = '',
+} = {}) {
+  const source = typeof markdown === 'string' ? markdown : '';
+  if (hasYamlFrontMatter(source)) {
+    return { markdown: source, shiftHeadings: false, injected: false };
+  }
+
+  const lines = source.split('\n');
+  const { headings, firstContentLine } = scanTopLevelHeadings(lines);
+  const opensWithTitle = headings.length === 1
+    && headings[0].index === firstContentLine
+    && Boolean(headings[0].text);
+
+  const meta = ['---'];
+  if (opensWithTitle) meta.push(`title: "${escapeYamlValue(headings[0].text)}"`);
+  meta.push(`lang: "${escapeYamlValue(lang || 'es')}"`);
+
+  const cls = String(documentClass || '').trim();
+  if (LATEX_DOCUMENT_CLASSES.includes(cls)) {
+    meta.push(`documentclass: "${escapeYamlValue(cls)}"`);
+  }
+  meta.push(...yamlClassOptions(classOptions || ''));
+  if (String(preamble || '').trim()) {
+    meta.push(...yamlLiteralBlock('header-includes', preamble));
+  }
+  meta.push('---', '', '');
+
+  const body = opensWithTitle
+    ? lines.filter((_, index) => index !== headings[0].index).join('\n')
+    : source;
+
+  return {
+    markdown: meta.join('\n') + body,
+    shiftHeadings: opensWithTitle,
+    injected: true,
+  };
+}
+
 const MD_IMAGE_RE = /!\[[^\]]*\]\(\s*<?([^\s<>)]+)>?[^)]*\)/g;
 const HTML_IMAGE_RE = /<img\b[^>]*?\ssrc\s*=\s*(["'])([^"']+)\1[^>]*>/gi;
 

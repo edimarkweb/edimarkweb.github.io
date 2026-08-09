@@ -76,6 +76,7 @@ Logotipoaren ondoko barrak aplikazioaren aukera orokorrak biltzen ditu eta fitxa
   * **Gaia**: `Sistemakoa` aukerak ekipoarena jarraitzen du eta harekin batera aldatzen da; `Argia` eta `Iluna` aukerek finkatu egiten dute. Aukeraketa gogoratu egiten da aplikazioa hurrengoan irekitzean.
   * **Zabalera hedatua**: lan-azalera zabaltzen du.
   * **Leiho independentea**: EdiMarkWeb bere leiho batean irekitzen du, mahaigaineko aplikazio gisa.
+  * **LaTeX dokumentua…**: aplikazioak sortzen duen `.tex` fitxategiaren ezarpenak irekitzen ditu, behean azalduta.
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia sortzen du uneko estiloekin.
 * **Bilatu (Ctrl+F)** eta **Eskuliburua (Ctrl+H)**: bilatzaile aurreratua edo dokumentu hau bera irekitzen dituzte.
 * **Ezabatu dena**: dokumentu aktiboa erabat hustutzen du, berrespena eskatu ondoren.
@@ -160,9 +161,19 @@ Ireki **Fitxategia** botoia eta hautatu `Esportatu` entregatzeko edo argitaratze
 * **ODT (LibreOffice)**: LibreOffice edo OnlyOffice bezalako suite libreetarako pentsatua.
 * **EPUB (liburu digitala)**: EPUB 3 irakurgailuekin bateragarria den liburu elektroniko bat sortzen du (Calibre, Apple Liburuak, Thorium, tinta elektronikoa…). Izenburua 1. mailako lehen goiburutik hartzen da (edo dokumentuaren izenetik), eta hizkuntza, aplikazioan hautatutakotik.
 * **HTML (web-orria)**: fitxategi autonomo bat sortzen du, estiloak eta formulak kapsulatuta dituena, webean ostatatzeko prest.
-* **TEX (LaTeX)**: `.tex` dokumentu oso bat sortzen du, konpilatzeko prest dagoen goiburuarekin.
+* **TEX (LaTeX)**: `.tex` dokumentu oso bat sortzen du, konpilatzeko prest dagoen goiburuarekin. Interfazearen hizkuntza darama, beraz hitz-zatiketa eta etiketa automatikoak zure hizkuntzan ateratzen dira, eta dokumentua 1. mailako izenburu bakar batekin hasten bada, izenburu hori dokumentuaren titulu bihurtzen da (`\title` eta `\maketitle`), beste atal bat izan beharrean.
 
 Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapena, arrakasta edo erroreak).
+
+### LaTeX dokumentua doitu
+
+**Ezarpenak → LaTeX dokumentua…** hiru hobespen gordetzen ditu, TEX esportazio bakoitzean eta *LaTeX – dokumentu osoa* kopia bakoitzean berrerabiltzen direnak, baita aplikazioa hurrengoan irekitzean ere:
+
+* **Dokumentu-klasea**: `article` (lehenetsia), `report` edo `book`.
+* **Klase-aukerak**: `\documentclass` aginduan kortxete artean doana, komaz bereizita (`12pt, a4paper`).
+* **Atarikoa**: zure paketeak eta makroak, atarikoaren amaieran dauden bezala txertatzen direnak, `\begin{document}` baino lehen.
+
+Hirurek LaTeX-i baino ez diote eragiten: DOCX, ODT, EPUB eta HTML beti bezala esportatzen dira. Eta dokumentua bere YAML metadatuekin hasten bada, haiek agintzen dute eta ezarpen hauek ez dira aplikatzen. Kontuan izan akatsak dituen atariko batek ez duela hemen abisurik emango: hutsegitea `.tex` konpilatzean agertuko da.
 
 ---
 
@@ -172,7 +183,7 @@ Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapen
 * **Aurrebistatik kopiatu**: eskuineko panelaren kopiatzeko botoiak zure azken aukeraketa gogoratzen du:
   * *HTML kopiatu* (ikusten duzun bezala errendatuta).
   * *LaTeX kopiatu* (uneko zatia soilik).
-  * *LaTeX kopiatu – dokumentu osoa* (goiburua eta ingurunea barne, konpilatzeko prest).
+  * *LaTeX kopiatu – dokumentu osoa* (goiburua eta ingurunea barne, konpilatzeko prest, TEX esportazioaren hizkuntza eta titulu berberekin).
 
 Aukera bakoitzak arrakasta-jakinarazpen bat erakusten du eta, dagokionean, LaTeX markaketa automatikoki prestatzen du errendatutako aurrebistatik abiatuta.
 

@@ -71,6 +71,7 @@ La barra junto al logotipo agrupa las opciones globales de la aplicación y ahor
   * **Tema**: `Sistema` sigue el del equipo y cambia con él; `Claro` y `Oscuro` lo fijan. La elección se recuerda la próxima vez que abras la aplicación.
   * **Ancho expandido**: amplía la superficie de trabajo.
   * **Ventana independiente**: abre EdiMarkWeb en una ventana propia, a modo de aplicación de escritorio.
+  * **Documento LaTeX…**: abre los ajustes del `.tex` que genera la aplicación, explicados más abajo.
 * **Imprimir (Ctrl+P)**: genera una vista preparada para papel o PDF con los estilos actuales.
 * **Buscar (Ctrl+F)** y **Manual (Ctrl+H)**: abren el buscador avanzado o este mismo documento.
 * **Borrar todo**: limpia por completo el documento activo tras pedir confirmación.
@@ -155,9 +156,19 @@ Abre el botón **Archivo** y selecciona `Exportar` para descargar versiones list
 * **ODT (LibreOffice)**: Pensado para suites libres como LibreOffice u OnlyOffice.
 * **EPUB (libro digital)**: Crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). El título se toma del primer encabezado de nivel 1 (o del nombre del documento) y el idioma, del seleccionado en la aplicación.
 * **HTML (página web)**: Genera un archivo autónomo con estilos y fórmulas incrustadas, listo para alojar en la web.
-* **TEX (LaTeX)**: Crea un documento `.tex` completo con cabecera preparada para compilar.
+* **TEX (LaTeX)**: Crea un documento `.tex` completo con cabecera preparada para compilar. Lleva el idioma de la interfaz, de modo que la partición de palabras y los rótulos automáticos salen en tu lengua, y si el documento empieza con un único encabezado de nivel 1 este pasa a ser el título (`\title` y `\maketitle`) en lugar de una sección más.
 
 Durante la exportación, la barra superior muestra mensajes de estado (progreso, éxito o errores).
+
+### Ajustar el documento LaTeX
+
+**Configuración → Documento LaTeX…** guarda tres preferencias que se reutilizan en cada exportación a TEX y en cada copia de *LaTeX – documento completo*, también la próxima vez que abras la aplicación:
+
+* **Clase de documento**: `article` (la predeterminada), `report` o `book`.
+* **Opciones de clase**: lo que va entre corchetes en `\documentclass`, separado por comas (`12pt, a4paper`).
+* **Preámbulo**: tus paquetes y macros, que se insertan tal cual al final del preámbulo, justo antes de `\begin{document}`.
+
+Los tres afectan solo al LaTeX: DOCX, ODT, EPUB y HTML se exportan igual que siempre. Y si el documento empieza con sus propios metadatos YAML, mandan ellos y estos ajustes no se aplican. Ten en cuenta que un preámbulo con errores no dará ningún aviso aquí: el fallo aparecerá al compilar el `.tex`.
 
 ---
 
@@ -167,7 +178,7 @@ Durante la exportación, la barra superior muestra mensajes de estado (progreso,
 * **Copiar desde la vista previa**: El botón de copia del panel derecho recuerda tu última elección entre:
   * *Copiar HTML* (renderizado tal como lo ves).
   * *Copiar LaTeX* (solo el fragmento actual).
-  * *Copiar LaTeX – documento completo* (incluye cabecera y entorno listos para compilar).
+  * *Copiar LaTeX – documento completo* (incluye cabecera y entorno listos para compilar, con el mismo idioma y título que la exportación a TEX).
 
 Cada opción muestra una notificación de éxito y, cuando corresponde, prepara automáticamente el marcado LaTeX a partir de la vista previa renderizada.
 

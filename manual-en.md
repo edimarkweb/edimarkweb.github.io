@@ -76,6 +76,7 @@ The bar next to the logo holds the application's global options and gathers ever
   * **Theme**: `System` follows your computer's setting and changes with it; `Light` and `Dark` fix it. Your choice is remembered next time you open the application.
   * **Expanded width**: widens the working area.
   * **Separate window**: opens EdiMarkWeb in a window of its own, like a desktop application.
+  * **LaTeX document…**: opens the settings for the `.tex` the application generates, explained below.
 * **Print (Ctrl+P)**: produces a view ready for paper or PDF using the current styles.
 * **Search (Ctrl+F)** and **Manual (Ctrl+H)**: open the advanced search panel or this very document.
 * **Clear all**: empties the active document after asking for confirmation.
@@ -160,9 +161,19 @@ Open the **File** button and choose `Export` to download versions ready to hand 
 * **ODT (LibreOffice)**: intended for free suites such as LibreOffice or OnlyOffice.
 * **EPUB (e-book)**: creates an e-book compatible with EPUB 3 readers (Calibre, Apple Books, Thorium, e-ink devices…). The title comes from the first level-1 heading (or from the document name) and the language from the one selected in the application.
 * **HTML (web page)**: produces a self-contained file with embedded styles and formulas, ready to host on the web.
-* **TEX (LaTeX)**: creates a complete `.tex` document with a preamble ready to compile.
+* **TEX (LaTeX)**: creates a complete `.tex` document with a preamble ready to compile. It carries the interface language, so hyphenation and the automatic labels come out in your language, and if the document opens with a single level-1 heading that heading becomes the title (`\title` and `\maketitle`) instead of just another section.
 
 While exporting, the top bar shows status messages (progress, success or errors).
+
+### Tuning the LaTeX document
+
+**Settings → LaTeX document…** stores three preferences that are reused in every TEX export and every *LaTeX – full document* copy, including the next time you open the application:
+
+* **Document class**: `article` (the default), `report` or `book`.
+* **Class options**: whatever goes in brackets in `\documentclass`, comma separated (`12pt, a4paper`).
+* **Preamble**: your packages and macros, inserted verbatim at the end of the preamble, right before `\begin{document}`.
+
+All three affect LaTeX only: DOCX, ODT, EPUB and HTML export exactly as before. And if the document starts with its own YAML metadata, that wins and these settings are not applied. Bear in mind that a faulty preamble raises no warning here: the failure shows up when compiling the `.tex`.
 
 ---
 
@@ -172,7 +183,7 @@ While exporting, the top bar shows status messages (progress, success or errors)
 * **Copy from the preview**: the copy button in the right pane remembers your last choice among:
   * *Copy HTML* (rendered exactly as you see it).
   * *Copy LaTeX* (only the current fragment).
-  * *Copy LaTeX – full document* (includes preamble and environment ready to compile).
+  * *Copy LaTeX – full document* (includes preamble and environment ready to compile, with the same language and title as the TEX export).
 
 Each option shows a success notice and, where appropriate, prepares the LaTeX markup automatically from the rendered preview.
 

@@ -3,7 +3,7 @@
   llevan un marcador {version} en los cinco idiomas. La otra copia vive en
   package.json y una prueba comprueba que ambas coinciden.
 */
-const APP_VERSION = '2.10.0';
+const APP_VERSION = '2.11.0';
 
 // Declaración de variables globales
 let turndownService;
@@ -18,6 +18,7 @@ const CORRUPT_DOCS_LIST_BACKUP_KEY = 'edimarkweb-docslist-corrupt-backup';
 const LAYOUT_KEY = 'edimarkweb-layout';
 const FS_KEY = 'edimarkweb-fontsize';
 const FOCUS_MODE_KEY = 'edimarkweb-focus-mode';
+const LATEX_SETTINGS_KEY = 'edimarkweb-latex-settings';
 const EDICUATEX_BASE_URL = 'https://jjdeharo.github.io/edicuatex/index.html';
 const DESKTOP_PARAM_KEY = 'desktop';
 const DESKTOP_SPAWNED_KEY = 'desktop_spawned';
@@ -2674,6 +2675,40 @@ function toggleImageModal(show, presetText = '') {
     }
 }
 
+/*
+  Ajustes del documento LaTeX. Viven en el almacenamiento local para que se
+  reutilicen de una sesión a otra, y se publican en window para que
+  pandoc-exporter.js los recoja sin depender de este archivo.
+*/
+const LATEX_SETTINGS_DEFAULTS = { documentClass: 'article', classOptions: '', preamble: '' };
+
+function readLatexSettings() {
+    const raw = safeLocalStorageGet(LATEX_SETTINGS_KEY);
+    if (!raw) return { ...LATEX_SETTINGS_DEFAULTS };
+    try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return { ...LATEX_SETTINGS_DEFAULTS };
+        return {
+            documentClass: typeof parsed.documentClass === 'string' ? parsed.documentClass : LATEX_SETTINGS_DEFAULTS.documentClass,
+            classOptions: typeof parsed.classOptions === 'string' ? parsed.classOptions : '',
+            preamble: typeof parsed.preamble === 'string' ? parsed.preamble : '',
+        };
+    } catch (error) {
+        console.warn('Ajustes de LaTeX ilegibles, se usan los predeterminados:', error);
+        return { ...LATEX_SETTINGS_DEFAULTS };
+    }
+}
+
+function publishLatexSettings(settings) {
+    window.__edimarkLatexSettings = { ...settings };
+    return window.__edimarkLatexSettings;
+}
+
+function storeLatexSettings(settings) {
+    publishLatexSettings(settings);
+    safeLocalStorageSet(LATEX_SETTINGS_KEY, JSON.stringify(settings));
+}
+
 function toggleLatexImportModal(show) {
     if (!latexImportModalOverlay) return;
     latexImportModalOverlay.style.display = show ? 'flex' : 'none';
@@ -3332,6 +3367,14 @@ window.onload = () => {
     latexImportStatusEl = document.getElementById('latex-import-status');
     latexImportConvertBtn = document.getElementById('latex-import-convert-btn');
     latexImportCancelBtn = document.getElementById('latex-import-cancel-btn');
+    const latexSettingsBtn = document.getElementById('latex-settings-btn');
+    const latexSettingsOverlay = document.getElementById('latex-settings-modal-overlay');
+    const latexClassSelect = document.getElementById('latex-documentclass');
+    const latexClassOptionsInput = document.getElementById('latex-classoption');
+    const latexPreambleTextarea = document.getElementById('latex-preamble');
+    const latexSettingsSaveBtn = document.getElementById('latex-settings-save-btn');
+    const latexSettingsCancelBtn = document.getElementById('latex-settings-cancel-btn');
+    const latexSettingsResetBtn = document.getElementById('latex-settings-reset-btn');
     const statusToastEl = document.getElementById('status-toast');
     const statusToastMessageEl = document.getElementById('status-toast-message');
     let statusToastTimer = null;
@@ -4455,6 +4498,10 @@ window.onload = () => {
         });
     }
 
+    // El exportador los consulta al generar LaTeX, no al arrancar, pero
+    // publicarlos aquí evita que la primera exportación salga sin ellos.
+    publishLatexSettings(readLatexSettings());
+
     // --- Carga inicial de documentos y autoguardado ---
     const savedDocsList = loadSavedDocsList();
     if (savedDocsList.length > 0) {
@@ -4747,6 +4794,57 @@ window.onload = () => {
     }
     if (latexImportConvertBtn) {
         latexImportConvertBtn.addEventListener('click', handleLatexImportConversion);
+    }
+
+    function fillLatexSettingsForm(settings) {
+        if (latexClassSelect) latexClassSelect.value = settings.documentClass || 'article';
+        if (latexClassOptionsInput) latexClassOptionsInput.value = settings.classOptions || '';
+        if (latexPreambleTextarea) latexPreambleTextarea.value = settings.preamble || '';
+    }
+
+    function toggleLatexSettingsModal(show) {
+        if (!latexSettingsOverlay) return;
+        latexSettingsOverlay.style.display = show ? 'flex' : 'none';
+        if (show) {
+            // Siempre desde lo guardado: cancelar tiene que descartar de verdad.
+            fillLatexSettingsForm(readLatexSettings());
+            setTimeout(() => latexClassSelect && latexClassSelect.focus(), 0);
+        }
+    }
+
+    if (latexSettingsBtn) {
+        latexSettingsBtn.addEventListener('click', () => {
+            closeActionsMenu();
+            closeSettingsMenu();
+            toggleLatexSettingsModal(true);
+        });
+    }
+    if (latexSettingsCancelBtn) {
+        latexSettingsCancelBtn.addEventListener('click', () => toggleLatexSettingsModal(false));
+    }
+    if (latexSettingsOverlay) {
+        latexSettingsOverlay.addEventListener('click', (event) => {
+            if (event.target === latexSettingsOverlay) toggleLatexSettingsModal(false);
+        });
+    }
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !latexSettingsOverlay) return;
+        if (latexSettingsOverlay.style.display === 'flex') toggleLatexSettingsModal(false);
+    });
+    if (latexSettingsResetBtn) {
+        // Deja el formulario en los valores de fábrica; hasta guardar no se aplica.
+        latexSettingsResetBtn.addEventListener('click', () => fillLatexSettingsForm(LATEX_SETTINGS_DEFAULTS));
+    }
+    if (latexSettingsSaveBtn) {
+        latexSettingsSaveBtn.addEventListener('click', () => {
+            storeLatexSettings({
+                documentClass: latexClassSelect ? latexClassSelect.value : 'article',
+                classOptions: latexClassOptionsInput ? latexClassOptionsInput.value.trim() : '',
+                preamble: latexPreambleTextarea ? latexPreambleTextarea.value : '',
+            });
+            toggleLatexSettingsModal(false);
+            updateExportStatus(getTranslation('latex_settings_saved', 'Ajustes de LaTeX guardados.'));
+        });
     }
 
     createTableBtn.addEventListener('click', () => {

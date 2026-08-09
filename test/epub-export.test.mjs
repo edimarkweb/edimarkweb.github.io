@@ -22,6 +22,7 @@ import {
   normalizeThematicBreaks,
   trimInlineMath,
   buildImportArgs,
+  prepareLatexStandalone,
   stripEpubAnchorPrefixes,
   inlineArchiveImages,
   restoreOdtTableHeaders,
@@ -507,4 +508,55 @@ test('las fórmulas conviven con tablas e imágenes al importar un ODT', { timeo
   assert.match(conTablas, /E = mc\^\{?2\}?/, `fórmula perdida:\n${conTablas}`);
   assert.match(conTablas, /\|\s*Nombre\s*\|\s*Valor\s*\|/, `encabezado de tabla perdido:\n${conTablas}`);
   assert.match(conTablas, /!\[[^\]]*\]\(/, `imagen perdida:\n${conTablas}`);
+});
+
+/*
+  El LaTeX autónomo sin metadatos salía siempre en inglés (sin babel, con la
+  partición silábica por defecto) y con el título del documento convertido en
+  una sección más, donde correspondía una portada.
+*/
+function latexStandalone(markdown, lang, settings = {}) {
+  const prepared = prepareLatexStandalone(markdown, { lang, ...settings });
+  let args = `-s -f ${MARKDOWN_READER_NO_AUTO_IDS} -t latex --no-highlight`;
+  if (prepared.shiftHeadings) args += ' --shift-heading-level-by=-1';
+  return runPandoc(args, prepared.markdown);
+}
+
+test('el LaTeX autónomo lleva el idioma de la interfaz y el título del documento', { timeout: 180000 }, async () => {
+  const source = '# Ecuaciones\n\n## Planteamiento\n\nTexto con $E=mc^2$.\n\n### Detalle\n\nMás texto.\n';
+  const { bytes } = await latexStandalone(source, 'es');
+  const latex = new TextDecoder().decode(bytes);
+
+  assert.match(latex, /\\babelprovide\[main,import\]\{spanish\}/, `sin babel español:\n${latex.slice(0, 800)}`);
+  assert.match(latex, /\\title\{Ecuaciones\}/, 'el encabezado inicial debe ser el título');
+  assert.match(latex, /\\maketitle/, 'falta la portada');
+  // Con el título fuera del cuerpo, los encabezados suben un nivel.
+  assert.match(latex, /\\section\{Planteamiento\}/);
+  assert.match(latex, /\\subsection\{Detalle\}/);
+  assert.equal(/\\section\{Ecuaciones\}/.test(latex), false, 'el título no debe repetirse como sección');
+});
+
+test('con varios encabezados de nivel 1 solo se añade el idioma', { timeout: 180000 }, async () => {
+  const { bytes } = await latexStandalone('# Tema 1\n\nTexto.\n\n# Tema 2\n\nMás.\n', 'ca');
+  const latex = new TextDecoder().decode(bytes);
+
+  assert.match(latex, /\\babelprovide\[main,import\]\{catalan\}/);
+  assert.equal(/\\maketitle/.test(latex), false, 'sin un título claro no se inventa portada');
+  assert.match(latex, /\\section\{Tema 1\}/);
+  assert.match(latex, /\\section\{Tema 2\}/);
+});
+
+test('los ajustes de LaTeX del usuario llegan al documento generado', { timeout: 180000 }, async () => {
+  const { bytes } = await latexStandalone('# Apuntes\n\nTexto.\n', 'es', {
+    documentClass: 'report',
+    classOptions: '12pt, a4paper',
+    preamble: '\\usepackage{amsthm}\n\\newcommand{\\R}{\\mathbb{R}}',
+  });
+  const latex = new TextDecoder().decode(bytes);
+
+  assert.match(latex, /\\documentclass\[[\s\S]*?12pt,[\s\S]*?a4paper,?[\s\S]*?\]\{report\}/, `clase u opciones perdidas:\n${latex.slice(0, 400)}`);
+  assert.match(latex, /\\usepackage\{amsthm\}/, 'falta el paquete del preámbulo');
+  assert.match(latex, /\\newcommand\{\\R\}\{\\mathbb\{R\}\}/, 'falta la macro del preámbulo');
+  // El preámbulo va antes del cuerpo, no dentro de él.
+  assert.ok(latex.indexOf('\\usepackage{amsthm}') < latex.indexOf('\\begin{document}'));
 });

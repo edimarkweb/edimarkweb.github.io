@@ -76,6 +76,7 @@ La barra del costat del logotip agrupa les opcions globals de l'aplicació i con
   * **Tema**: `Sistema` segueix el de l'equip i canvia amb ell; `Clar` i `Fosc` el fixen. L'elecció es recorda el pròxim cop que obris l'aplicació.
   * **Amplada ampliada**: eixampla la superfície de treball.
   * **Finestra independent**: obre EdiMarkWeb en una finestra pròpia, a manera d'aplicació d'escriptori.
+  * **Document LaTeX…**: obre els ajustos del `.tex` que genera l'aplicació, explicats més avall.
 * **Imprimir (Ctrl+P)**: genera una vista preparada per a paper o PDF amb els estils actuals.
 * **Cercar (Ctrl+F)** i **Manual (Ctrl+H)**: obren el cercador avançat o aquest mateix document.
 * **Esborrar-ho tot**: buida completament el document actiu després de demanar confirmació.
@@ -160,9 +161,19 @@ Obre el botó **Fitxer** i selecciona `Exportar` per baixar versions llestes per
 * **ODT (LibreOffice)**: pensat per a suites lliures com LibreOffice o OnlyOffice.
 * **EPUB (llibre digital)**: crea un llibre electrònic compatible amb lectors d'EPUB 3 (Calibre, Apple Llibres, Thorium, tinta electrònica…). El títol es pren del primer encapçalament de nivell 1 (o del nom del document) i l'idioma, del seleccionat a l'aplicació.
 * **HTML (pàgina web)**: genera un fitxer autònom amb estils i fórmules incrustats, a punt per allotjar-lo al web.
-* **TEX (LaTeX)**: crea un document `.tex` complet amb la capçalera preparada per compilar.
+* **TEX (LaTeX)**: crea un document `.tex` complet amb la capçalera preparada per compilar. Porta l'idioma de la interfície, de manera que la partició de mots i els rètols automàtics surten en la teva llengua, i si el document comença amb un únic encapçalament de nivell 1 aquest passa a ser el títol (`\title` i `\maketitle`) en lloc d'una secció més.
 
 Durant l'exportació, la barra superior mostra missatges d'estat (progrés, èxit o errors).
+
+### Ajustar el document LaTeX
+
+**Configuració → Document LaTeX…** desa tres preferències que es reutilitzen en cada exportació a TEX i en cada còpia de *LaTeX – document complet*, també la propera vegada que obris l'aplicació:
+
+* **Classe de document**: `article` (la predeterminada), `report` o `book`.
+* **Opcions de classe**: el que va entre claudàtors a `\documentclass`, separat per comes (`12pt, a4paper`).
+* **Preàmbul**: els teus paquets i macros, que s'insereixen tal qual al final del preàmbul, just abans de `\begin{document}`.
+
+Els tres afecten només el LaTeX: DOCX, ODT, EPUB i HTML s'exporten igual que sempre. I si el document comença amb metadades YAML pròpies, manen elles i aquests ajustos no s'apliquen. Tingues en compte que un preàmbul amb errors no avisarà de res aquí: la fallada apareixerà en compilar el `.tex`.
 
 ---
 
@@ -172,7 +183,7 @@ Durant l'exportació, la barra superior mostra missatges d'estat (progrés, èxi
 * **Copiar des de la vista prèvia**: el botó de còpia del plafó dret recorda la teva última elecció entre:
   * *Copiar HTML* (representat tal com el veus).
   * *Copiar LaTeX* (només el fragment actual).
-  * *Copiar LaTeX – document complet* (inclou capçalera i entorn a punt per compilar).
+  * *Copiar LaTeX – document complet* (inclou capçalera i entorn a punt per compilar, amb el mateix idioma i títol que l'exportació a TEX).
 
 Cada opció mostra una notificació d'èxit i, quan escau, prepara automàticament el marcatge LaTeX a partir de la vista prèvia representada.
 
