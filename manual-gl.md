@@ -14,6 +14,8 @@ Benvido/a a EdiMarkWeb, un **editor de textos en Markdown** deseñado para docen
 - Menú de fórmulas renovado e acceso directo a EdiCuaTeX para construír expresións complexas.
 - Apertura de varios ficheiros, ou de cartafoles enteiros, arrastrándoos ao editor (cada ficheiro na súa lapela): Markdown e tamén DOCX, ODT, EPUB, HTML ou TEX, que se converten ao voo con Pandoc.
 - Busca con expresións regulares e modo de edición a pantalla completa para traballar sen distraccións.
+- **Idioma de cada documento**, gardado dentro do propio ficheiro e visible xunto ao contador de caracteres. Os cinco formatos decláranno, así que Word e LibreOffice deixan de corrixir en inglés un texto en galego.
+- **Axustes do documento exportado** nun mesmo sitio: autor, portada do EPUB, índice automático, numeración de apartados e, para LaTeX, a clase, as súas opcións e un preámbulo propio.
 
 ## Pega calquera contido
 
@@ -130,7 +132,7 @@ Podes arrastrar a barra central para dar máis espazo a calquera dos paneis, max
 
 Xunto ao contador de caracteres hai un botón curto co idioma do documento: `ES`, `CA`, `FR`… Se se ve atenuado, ese documento non ten idioma propio e usa o **idioma xeral** de *Configuración → Documento exportado…*, que é o normal.
 
-Ao escoller un idioma concreto, a aplicación gárdao **dentro do propio documento**, de xeito que viaxa co ficheiro: se o gardas e o abres mañá, aquí ou noutro equipo, ou llo pasas a alguén, seguirá sendo ese. Para volver ao anterior, escolle *Idioma xeral*. E con *Outro idioma…* podes escribir o código de calquera lingua (`fr`, `de`, `pt-BR`).
+Ao escoller un idioma concreto, a aplicación gárdao **dentro do propio documento**, de xeito que viaxa co ficheiro: se o gardas e o abres mañá, aquí ou noutro equipo, ou llo pasas a alguén, seguirá sendo ese. Para volver ao anterior, escolle *Idioma xeral*. E con *Outro idioma…* podes escribir o código de calquera lingua (`fr`, `de`, `pt-BR`). Nese mesmo menú, *Autor deste documento…* fai o propio co autor.
 
 Se algunha vez abres o teu `.md` cun editor de texto plano, verás esa preferencia arriba de todo, nunhas liñas entre raias:
 
@@ -175,9 +177,9 @@ Abre o botón **Arquivo** e selecciona `Exportar` para descargar versións lista
 
 * **DOCX (Microsoft Word)**: ideal para compartir con alumnado ou colegas que usan Word, e compatible con Google Docs.
 * **ODT (LibreOffice)**: pensado para suites libres como LibreOffice ou OnlyOffice.
-* **EPUB (libro dixital)**: crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). O título tómase da primeira cabeceira de nivel 1 (ou do nome do documento) e o idioma, do seleccionado na aplicación.
+* **EPUB (libro dixital)**: crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). O título tómase da primeira cabeceira de nivel 1 (ou do nome do documento), e o autor, a portada e o idioma saen dos axustes que se explican máis abaixo.
 * **HTML (páxina web)**: xera un ficheiro autónomo con estilos e fórmulas incrustados, listo para aloxar na web. O título da lapela do navegador tómase do primeiro encabezamento, ou do nome do documento se non o hai.
-* **TEX (LaTeX)**: crea un documento `.tex` completo con cabeceira preparada para compilar. Leva o idioma da interface, de xeito que a partición de palabras e os rótulos automáticos saen na túa lingua, e se o documento comeza cun único encabezamento de nivel 1 este pasa a ser o título (`\title` e `\maketitle`) no canto dunha sección máis.
+* **TEX (LaTeX)**: crea un documento `.tex` completo con cabeceira preparada para compilar. Leva o idioma do documento, de xeito que a partición de palabras e os rótulos automáticos saen na túa lingua, e se o documento comeza cun único encabezamento de nivel 1 este pasa a ser o título (`\title` e `\maketitle`) no canto dunha sección máis.
 
 Durante a exportación, a barra superior mostra mensaxes de estado (progreso, éxito ou erros).
 

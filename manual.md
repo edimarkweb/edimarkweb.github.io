@@ -14,6 +14,8 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 - Menú de fórmulas renovado y acceso directo a EdiCuaTeX para construir expresiones complejas.
 - Apertura de múltiples archivos, o de carpetas enteras, arrastrándolos al editor (cada archivo en su pestaña): Markdown y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo con Pandoc.
 - Búsqueda con expresiones regulares y modo de edición a pantalla completa para trabajar sin distracciones.
+- **Idioma de cada documento**, guardado dentro del propio archivo y visible junto al contador de caracteres. Los cinco formatos lo declaran, así que Word y LibreOffice dejan de corregir en inglés un texto en castellano.
+- **Ajustes del documento exportado** en un mismo sitio: autor, portada del EPUB, índice automático, numeración de apartados y, para LaTeX, la clase, sus opciones y un preámbulo propio.
 
 ## ¡Pega cualquier contenido!
 
@@ -125,7 +127,7 @@ Puedes arrastrar la barra central para dar más espacio a cualquiera de los pane
 
 Junto al contador de caracteres hay un botón corto con el idioma del documento: `ES`, `CA`, `FR`… Si se ve atenuado, ese documento no tiene idioma propio y usa el **idioma general** de *Configuración → Documento exportado…*, que es lo normal.
 
-Al elegir un idioma concreto, la aplicación lo guarda **dentro del propio documento**, de modo que viaja con el archivo: si lo guardas y lo abres mañana, aquí o en otro equipo, o se lo pasas a alguien, seguirá siendo ese. Para volver a lo anterior, elige *Idioma general*. Y con *Otro idioma…* puedes escribir el código de cualquier lengua (`fr`, `de`, `pt-BR`).
+Al elegir un idioma concreto, la aplicación lo guarda **dentro del propio documento**, de modo que viaja con el archivo: si lo guardas y lo abres mañana, aquí o en otro equipo, o se lo pasas a alguien, seguirá siendo ese. Para volver a lo anterior, elige *Idioma general*. Y con *Otro idioma…* puedes escribir el código de cualquier lengua (`fr`, `de`, `pt-BR`). En ese mismo menú, *Autor de este documento…* hace lo propio con el autor.
 
 Si alguna vez abres tu `.md` con un editor de texto plano, verás esa preferencia arriba del todo, en unas líneas entre rayas:
 
@@ -170,9 +172,9 @@ Abre el botón **Archivo** y selecciona `Exportar` para descargar versiones list
 
 * **DOCX (Microsoft Word)**: Ideal para compartir con alumnado o colegas que usan Word, y compatible con Google Docs.
 * **ODT (LibreOffice)**: Pensado para suites libres como LibreOffice u OnlyOffice.
-* **EPUB (libro digital)**: Crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). El título se toma del primer encabezado de nivel 1 (o del nombre del documento) y el idioma, del seleccionado en la aplicación.
+* **EPUB (libro digital)**: Crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). El título se toma del primer encabezado de nivel 1 (o del nombre del documento), y el autor, la portada y el idioma salen de los ajustes que se explican más abajo.
 * **HTML (página web)**: Genera un archivo autónomo con estilos y fórmulas incrustadas, listo para alojar en la web. El título de la pestaña del navegador se toma del primer encabezado, o del nombre del documento si no lo hay.
-* **TEX (LaTeX)**: Crea un documento `.tex` completo con cabecera preparada para compilar. Lleva el idioma de la interfaz, de modo que la partición de palabras y los rótulos automáticos salen en tu lengua, y si el documento empieza con un único encabezado de nivel 1 este pasa a ser el título (`\title` y `\maketitle`) en lugar de una sección más.
+* **TEX (LaTeX)**: Crea un documento `.tex` completo con cabecera preparada para compilar. Lleva el idioma del documento, de modo que la partición de palabras y los rótulos automáticos salen en tu lengua, y si el documento empieza con un único encabezado de nivel 1 este pasa a ser el título (`\title` y `\maketitle`) en lugar de una sección más.
 
 Durante la exportación, la barra superior muestra mensajes de estado (progreso, éxito o errores).
 

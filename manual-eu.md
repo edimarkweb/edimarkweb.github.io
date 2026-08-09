@@ -14,6 +14,8 @@ Ongi etorri EdiMarkWeb-era, **Markdown testu-editore** bat, azkar lan egin, hain
 - Formulen menu berritua eta EdiCuaTeX-erako sarbide zuzena adierazpen konplexuak eraikitzeko.
 - Hainbat fitxategi, edo karpeta osoak, ireki editorera arrastatuz (fitxategi bakoitza bere fitxan): Markdown eta baita DOCX, ODT, EPUB, HTML edo TEX ere, Pandoc-ekin bat-batean bihurtzen direnak.
 - Adierazpen erregularrekin bilatzeko aukera eta pantaila osoko edizio-modua, distrakziorik gabe lan egiteko.
+- **Dokumentu bakoitzaren hizkuntza**, fitxategiaren barruan bertan gordeta eta karaktere-kontagailuaren ondoan ikusgai. Bost formatuek adierazten dute, eta, beraz, Word-ek eta LibreOffice-k ez dute ingelesez zuzentzen euskarazko testu bat.
+- **Esportatutako dokumentuaren ezarpenak** leku berean: egilea, EPUBaren azala, aurkibide automatikoa, atalen zenbakitzea eta, LaTeX-erako, klasea, bere aukerak eta atariko propio bat.
 
 ## Itsatsi edozein eduki
 
@@ -130,7 +132,7 @@ Erdiko barra arrasta dezakezu edozein paneli leku gehiago emateko, bietako bat m
 
 Karaktere-kontagailuaren ondoan botoi labur bat dago, dokumentuaren hizkuntzarekin: `ES`, `CA`, `FR`… Itzalita ikusten bada, dokumentu horrek ez du hizkuntza propiorik eta *Ezarpenak → Esportatutako dokumentua…* atalean dagoen **hizkuntza orokorra** erabiltzen du, ohikoena dena.
 
-Hizkuntza jakin bat aukeratzean, aplikazioak **dokumentuaren barruan bertan** gordetzen du, eta, beraz, fitxategiarekin batera bidaiatzen du: gorde eta bihar irekitzen baduzu, hemen edo beste ordenagailu batean, edo norbaiti pasatzen badiozu, hura izaten jarraituko du. Atzera egiteko, aukeratu *Hizkuntza orokorra*. Eta *Beste hizkuntza bat…* aukerarekin edozein hizkuntzaren kodea idatz dezakezu (`fr`, `de`, `pt-BR`).
+Hizkuntza jakin bat aukeratzean, aplikazioak **dokumentuaren barruan bertan** gordetzen du, eta, beraz, fitxategiarekin batera bidaiatzen du: gorde eta bihar irekitzen baduzu, hemen edo beste ordenagailu batean, edo norbaiti pasatzen badiozu, hura izaten jarraituko du. Atzera egiteko, aukeratu *Hizkuntza orokorra*. Eta *Beste hizkuntza bat…* aukerarekin edozein hizkuntzaren kodea idatz dezakezu (`fr`, `de`, `pt-BR`). Menu horretan bertan, *Dokumentu honen egilea…* aukerak gauza bera egiten du egilearekin.
 
 Inoiz zure `.md` fitxategia testu-editore soil batekin irekitzen baduzu, hobespen hori goian ikusiko duzu, marren arteko lerro batzuetan:
 
@@ -175,9 +177,9 @@ Ireki **Fitxategia** botoia eta hautatu `Esportatu` entregatzeko edo argitaratze
 
 * **DOCX (Microsoft Word)**: aproposa Word erabiltzen duten ikasleekin edo lankideekin partekatzeko, eta Google Docs-ekin bateragarria.
 * **ODT (LibreOffice)**: LibreOffice edo OnlyOffice bezalako suite libreetarako pentsatua.
-* **EPUB (liburu digitala)**: EPUB 3 irakurgailuekin bateragarria den liburu elektroniko bat sortzen du (Calibre, Apple Liburuak, Thorium, tinta elektronikoa…). Izenburua 1. mailako lehen goiburutik hartzen da (edo dokumentuaren izenetik), eta hizkuntza, aplikazioan hautatutakotik.
+* **EPUB (liburu digitala)**: EPUB 3 irakurgailuekin bateragarria den liburu elektroniko bat sortzen du (Calibre, Apple Liburuak, Thorium, tinta elektronikoa…). Izenburua 1. mailako lehen goiburutik hartzen da (edo dokumentuaren izenetik), eta egilea, azala eta hizkuntza behean azaltzen diren ezarpenetatik ateratzen dira.
 * **HTML (web-orria)**: fitxategi autonomo bat sortzen du, estiloak eta formulak kapsulatuta dituena, webean ostatatzeko prest. Nabigatzailearen fitxaren titulua lehen izenburutik hartzen da, edo dokumentuaren izenetik halakorik ez badago.
-* **TEX (LaTeX)**: `.tex` dokumentu oso bat sortzen du, konpilatzeko prest dagoen goiburuarekin. Interfazearen hizkuntza darama, beraz hitz-zatiketa eta etiketa automatikoak zure hizkuntzan ateratzen dira, eta dokumentua 1. mailako izenburu bakar batekin hasten bada, izenburu hori dokumentuaren titulu bihurtzen da (`\title` eta `\maketitle`), beste atal bat izan beharrean.
+* **TEX (LaTeX)**: `.tex` dokumentu oso bat sortzen du, konpilatzeko prest dagoen goiburuarekin. Dokumentuaren hizkuntza darama, beraz hitz-zatiketa eta etiketa automatikoak zure hizkuntzan ateratzen dira, eta dokumentua 1. mailako izenburu bakar batekin hasten bada, izenburu hori dokumentuaren titulu bihurtzen da (`\title` eta `\maketitle`), beste atal bat izan beharrean.
 
 Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapena, arrakasta edo erroreak).
 

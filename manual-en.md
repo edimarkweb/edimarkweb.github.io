@@ -14,6 +14,8 @@ Welcome to EdiMarkWeb, a **Markdown text editor** designed for teachers and cont
 - Redesigned formula menu and direct access to EdiCuaTeX for building complex expressions.
 - Open several files, or whole folders, by dragging them onto the editor (each file in its own tab): Markdown and also DOCX, ODT, EPUB, HTML or TEX, converted on the fly with Pandoc.
 - Regular-expression search and a full-screen editing mode for distraction-free work.
+- **A language for each document**, stored inside the file itself and shown next to the character counter. All five formats declare it, so Word and LibreOffice stop spell-checking a Spanish text against an English dictionary.
+- **Exported document settings** gathered in one place: author, EPUB cover, table of contents, section numbering and, for LaTeX, the class, its options and a preamble of your own.
 
 ## Paste anything
 
@@ -130,7 +132,7 @@ You can drag the central bar to give more room to either pane, maximise one of t
 
 Next to the character counter there is a short button with the document language: `ES`, `CA`, `FR`… When it looks dimmed, that document has no language of its own and uses the **general language** from *Settings → Exported document…*, which is the usual case.
 
-Pick a specific language and the application stores it **inside the document itself**, so it travels with the file: save it and open it tomorrow, here or on another computer, or hand it to someone else, and it stays. To go back, choose *General language*. And with *Other language…* you can type the code of any language (`fr`, `de`, `pt-BR`).
+Pick a specific language and the application stores it **inside the document itself**, so it travels with the file: save it and open it tomorrow, here or on another computer, or hand it to someone else, and it stays. To go back, choose *General language*. And with *Other language…* you can type the code of any language (`fr`, `de`, `pt-BR`). In that same menu, *This document's author…* does the same for the author.
 
 If you ever open your `.md` in a plain text editor, you will see that preference at the very top, in a few lines between dashes:
 
@@ -175,9 +177,9 @@ Open the **File** button and choose `Export` to download versions ready to hand 
 
 * **DOCX (Microsoft Word)**: ideal for sharing with students or colleagues who use Word, and compatible with Google Docs.
 * **ODT (LibreOffice)**: intended for free suites such as LibreOffice or OnlyOffice.
-* **EPUB (e-book)**: creates an e-book compatible with EPUB 3 readers (Calibre, Apple Books, Thorium, e-ink devices…). The title comes from the first level-1 heading (or from the document name) and the language from the one selected in the application.
+* **EPUB (e-book)**: creates an e-book compatible with EPUB 3 readers (Calibre, Apple Books, Thorium, e-ink devices…). The title comes from the first level-1 heading (or from the document name), and the author, the cover and the language come from the settings explained below.
 * **HTML (web page)**: produces a self-contained file with embedded styles and formulas, ready to host on the web. The browser tab title comes from the first heading, or from the document name if there is none.
-* **TEX (LaTeX)**: creates a complete `.tex` document with a preamble ready to compile. It carries the interface language, so hyphenation and the automatic labels come out in your language, and if the document opens with a single level-1 heading that heading becomes the title (`\title` and `\maketitle`) instead of just another section.
+* **TEX (LaTeX)**: creates a complete `.tex` document with a preamble ready to compile. It carries the document language, so hyphenation and the automatic labels come out in your language, and if the document opens with a single level-1 heading that heading becomes the title (`\title` and `\maketitle`) instead of just another section.
 
 While exporting, the top bar shows status messages (progress, success or errors).
 
