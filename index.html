@@ -561,6 +561,30 @@
                     </label>
                 </div>
                 <div class="border-t border-slate-200 pt-4 dark:border-slate-700">
+                    <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200" data-i18n-key="doc_settings_cover_section">Portada del EPUB</h4>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_cover_hint">Es la imagen que se ve en la estantería del lector de libros. Solo afecta al EPUB.</p>
+                    <div class="mt-2 space-y-2">
+                        <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                            <input type="radio" name="epub-cover" value="auto" class="text-blue-600 focus:ring-blue-500" checked>
+                            <span data-i18n-key="doc_settings_cover_auto">Generada con el título y el autor</span>
+                        </label>
+                        <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                            <input type="radio" name="epub-cover" value="custom" class="text-blue-600 focus:ring-blue-500">
+                            <span data-i18n-key="doc_settings_cover_custom">Una imagen mía</span>
+                        </label>
+                        <div id="epub-cover-picker" class="ml-6 hidden items-center gap-3">
+                            <button type="button" id="epub-cover-btn" class="px-3 py-1.5 text-sm bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="doc_settings_cover_choose">Elegir imagen…</button>
+                            <img id="epub-cover-preview" class="hidden h-16 w-auto rounded border border-slate-200 dark:border-slate-700" alt="">
+                            <span id="epub-cover-name" class="text-xs text-slate-500 dark:text-slate-400"></span>
+                            <input type="file" id="epub-cover-input" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp">
+                        </div>
+                        <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                            <input type="radio" name="epub-cover" value="none" class="text-blue-600 focus:ring-blue-500">
+                            <span data-i18n-key="doc_settings_cover_none">Sin portada</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="border-t border-slate-200 pt-4 dark:border-slate-700">
                     <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200" data-i18n-key="doc_settings_latex_section">Solo para LaTeX</h4>
                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_latex_section_hint">Se aplica al exportar a TEX y al copiar LaTeX como documento completo.</p>
                 </div>

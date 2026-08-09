@@ -3,7 +3,7 @@
   llevan un marcador {version} en los cinco idiomas. La otra copia vive en
   package.json y una prueba comprueba que ambas coinciden.
 */
-const APP_VERSION = '2.14.1';
+const APP_VERSION = '2.15.0';
 
 // Declaración de variables globales
 let turndownService;
@@ -2719,6 +2719,11 @@ const LATEX_SETTINGS_DEFAULTS = {
     documentAuthor: '',
     documentToc: false,
     documentNumberSections: false,
+    // La portada generada es el valor de partida: un EPUB sin imagen aparece
+    // con el icono genérico en la estantería del lector.
+    epubCover: 'auto',
+    epubCoverImage: '',
+    epubCoverName: '',
     documentClass: 'article',
     classOptions: '',
     preamble: '',
@@ -2737,6 +2742,9 @@ function readLatexSettings() {
             documentAuthor: typeof parsed.documentAuthor === 'string' ? parsed.documentAuthor : '',
             documentToc: parsed.documentToc === true,
             documentNumberSections: parsed.documentNumberSections === true,
+            epubCover: ['none', 'auto', 'custom'].includes(parsed.epubCover) ? parsed.epubCover : LATEX_SETTINGS_DEFAULTS.epubCover,
+            epubCoverImage: typeof parsed.epubCoverImage === 'string' ? parsed.epubCoverImage : '',
+            epubCoverName: typeof parsed.epubCoverName === 'string' ? parsed.epubCoverName : '',
             documentClass: typeof parsed.documentClass === 'string' ? parsed.documentClass : LATEX_SETTINGS_DEFAULTS.documentClass,
             classOptions: typeof parsed.classOptions === 'string' ? parsed.classOptions : '',
             preamble: typeof parsed.preamble === 'string' ? parsed.preamble : '',
@@ -3427,6 +3435,17 @@ window.onload = () => {
     const docAuthorInput = document.getElementById('doc-author');
     const docTocCheckbox = document.getElementById('doc-toc');
     const docNumberingCheckbox = document.getElementById('doc-number-sections');
+    const coverRadios = Array.from(document.querySelectorAll('input[name="epub-cover"]'));
+    const coverPicker = document.getElementById('epub-cover-picker');
+    const coverBtn = document.getElementById('epub-cover-btn');
+    const coverInput = document.getElementById('epub-cover-input');
+    const coverPreview = document.getElementById('epub-cover-preview');
+    const coverName = document.getElementById('epub-cover-name');
+    // La imagen vive en el almacenamiento del navegador, junto a los documentos
+    // autoguardados: una portada enorme dejaría sin sitio a lo que de verdad
+    // importa. Para la miniatura de una estantería, esto sobra.
+    const MAX_COVER_BYTES = 1024 * 1024;
+    let pendingCover = { image: '', name: '' };
     const latexClassSelect = document.getElementById('latex-documentclass');
     const latexClassOptionsInput = document.getElementById('latex-classoption');
     const latexPreambleTextarea = document.getElementById('latex-preamble');
@@ -5044,6 +5063,24 @@ window.onload = () => {
         return code || 'auto';
     }
 
+    function readCoverMode() {
+        const chosen = coverRadios.find(radio => radio.checked);
+        return chosen ? chosen.value : 'auto';
+    }
+
+    function syncCoverPicker() {
+        if (!coverPicker) return;
+        const custom = readCoverMode() === 'custom';
+        coverPicker.classList.toggle('hidden', !custom);
+        coverPicker.classList.toggle('flex', custom);
+        if (coverPreview) {
+            const hasImage = Boolean(pendingCover.image);
+            coverPreview.classList.toggle('hidden', !hasImage);
+            if (hasImage) coverPreview.src = pendingCover.image;
+        }
+        if (coverName) coverName.textContent = pendingCover.name || '';
+    }
+
     function fillLatexSettingsForm(settings) {
         const language = settings.documentLanguage || 'auto';
         const listed = LISTED_DOC_LANGUAGES.includes(language);
@@ -5051,11 +5088,40 @@ window.onload = () => {
         if (docLanguageCodeInput) docLanguageCodeInput.value = listed ? '' : language;
         syncDocLanguageCodeField();
         if (docAuthorInput) docAuthorInput.value = settings.documentAuthor || '';
+        pendingCover = { image: settings.epubCoverImage || '', name: settings.epubCoverName || '' };
+        const coverMode = settings.epubCover || 'auto';
+        coverRadios.forEach((radio) => { radio.checked = radio.value === coverMode; });
+        syncCoverPicker();
         if (docTocCheckbox) docTocCheckbox.checked = settings.documentToc === true;
         if (docNumberingCheckbox) docNumberingCheckbox.checked = settings.documentNumberSections === true;
         if (latexClassSelect) latexClassSelect.value = settings.documentClass || 'article';
         if (latexClassOptionsInput) latexClassOptionsInput.value = settings.classOptions || '';
         if (latexPreambleTextarea) latexPreambleTextarea.value = settings.preamble || '';
+    }
+
+    coverRadios.forEach(radio => radio.addEventListener('change', syncCoverPicker));
+    if (coverBtn && coverInput) {
+        coverBtn.addEventListener('click', () => coverInput.click());
+        coverInput.addEventListener('change', () => {
+            const file = coverInput.files && coverInput.files[0];
+            coverInput.value = '';
+            if (!file) return;
+            if (file.size > MAX_COVER_BYTES) {
+                alert(formatTranslation(
+                    'doc_settings_cover_too_big',
+                    'La imagen ocupa {size} y el máximo es 1 MB. Prueba con una más pequeña.',
+                    { size: `${Math.round(file.size / 1024)} KB` },
+                ));
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                pendingCover = { image: String(reader.result || ''), name: file.name };
+                syncCoverPicker();
+            };
+            reader.onerror = () => alert(getTranslation('doc_settings_cover_error', 'No se pudo leer la imagen.'));
+            reader.readAsDataURL(file);
+        });
     }
 
     if (docLanguageSelect) {
@@ -5103,6 +5169,9 @@ window.onload = () => {
             storeLatexSettings({
                 documentLanguage: readDocLanguageFromForm(),
                 documentAuthor: docAuthorInput ? docAuthorInput.value.trim() : '',
+                epubCover: readCoverMode(),
+                epubCoverImage: readCoverMode() === 'custom' ? pendingCover.image : '',
+                epubCoverName: readCoverMode() === 'custom' ? pendingCover.name : '',
                 documentToc: docTocCheckbox ? docTocCheckbox.checked : false,
                 documentNumberSections: docNumberingCheckbox ? docNumberingCheckbox.checked : false,
                 documentClass: latexClassSelect ? latexClassSelect.value : 'article',

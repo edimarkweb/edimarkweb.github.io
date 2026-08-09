@@ -24,7 +24,7 @@ function loadModule() {
   return modulePromise;
 }
 
-export async function runPandoc(argsString, input) {
+export async function runPandoc(argsString, input, extraFiles = {}) {
   const wasmModule = await loadModule();
   const args = ['pandoc.wasm', '+RTS', '-H64m', '-RTS'];
   // Igual que pandoc-wasm.js: las longitudes son bytes UTF-8, no UTF-16.
@@ -36,7 +36,11 @@ export async function runPandoc(argsString, input) {
     new OpenFile(new File(new Uint8Array(), { readonly: true })),
     ConsoleStdout.lineBuffered(() => {}),
     ConsoleStdout.lineBuffered(line => stderr.push(line)),
-    new PreopenDirectory('/', [['in', inFile], ['out', outFile]]),
+    new PreopenDirectory('/', [
+      ['in', inFile],
+      ['out', outFile],
+      ...Object.entries(extraFiles).map(([name, bytes]) => [name, new File(bytes, { readonly: true })]),
+    ]),
   ];
 
   const wasi = new WASI(args, [], fds);

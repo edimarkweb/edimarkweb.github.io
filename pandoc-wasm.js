@@ -13,7 +13,12 @@ import {
   PreopenDirectory,
 } from "https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.4.2/dist/index.js";
 
-export async function pandoc(args_str, inputData, base64Wasm) {
+/*
+  `extraFiles` monta archivos junto a la entrada, en el sistema de ficheros
+  virtual: dentro del WASM no hay disco, así que una opción como
+  --epub-cover-image solo encuentra su imagen si se le deja ahí.
+*/
+export async function pandoc(args_str, inputData, base64Wasm, extraFiles = {}) {
   const bytes = Uint8Array.from(atob(base64Wasm), c => c.charCodeAt(0));
 
   const args = ["pandoc.wasm", "+RTS", "-H64m", "-RTS"];
@@ -28,7 +33,14 @@ export async function pandoc(args_str, inputData, base64Wasm) {
     new OpenFile(new File(new Uint8Array(), { readonly: true })),
     ConsoleStdout.lineBuffered(msg => console.log(`[stdout] ${msg}`)),
     ConsoleStdout.lineBuffered(msg => console.warn(`[stderr] ${msg}`)),
-    new PreopenDirectory("/", [["in", in_file], ["out", out_file]]),
+    new PreopenDirectory("/", [
+      ["in", in_file],
+      ["out", out_file],
+      ...Object.entries(extraFiles || {}).map(([name, bytes]) => [
+        name,
+        new File(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), { readonly: true }),
+      ]),
+    ]),
   ];
 
   const wasi = new WASI(args, env, fds);

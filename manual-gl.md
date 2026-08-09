@@ -189,6 +189,8 @@ Durante a exportación, a barra superior mostra mensaxes de estado (progreso, é
 
 **Autor**, que se garda nas propiedades do ficheiro e aparece como autor do libro no EPUB e na portada do LaTeX. En DOCX e ODT, ademais, Pandoc escribe unha liña co nome ao principio do documento; se non queres que apareza, deixa o campo baleiro. Un documento concreto pode levar outro autor: *Autor deste documento…*, no menú do botón de idioma.
 
+**Portada do EPUB**, con tres posibilidades. De partida, EdiMarkWeb **xera unha** co título e o autor do documento, porque un libro sen imaxe aparece coa icona xenérica no estante do lector. Podes poñer **unha imaxe túa** —ata 1 MB, que para unha portada sobra: gárdase no navegador, no mesmo espazo que os teus documentos— ou deixar o libro **sen portada**. Só afecta ao EPUB.
+
 **Índice automático**, que engade ao principio do documento un índice cos apartados. En DOCX é un índice de Word de verdade e en ODT un nativo de LibreOffice; o EPUB non o precisa, porque o lector xa trae o seu índice de navegación.
 
 > **Se o índice aparece baleiro**, non é un fallo do documento: en DOCX e ODT o índice non é texto, senón un campo que calcula o procesador de textos, porque hai que maquetar as páxinas para saber en cal cae cada apartado. EdiMarkWeb marca o documento para que se actualice só ao abrilo, pero algúns programas piden confirmación ou agardan a que llelo mandes: en Word, clic dereito sobre o índice → *Actualizar campos*; en LibreOffice, *Ferramentas → Actualizar → Índices*.

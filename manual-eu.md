@@ -189,6 +189,8 @@ Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapen
 
 **Egilea**, fitxategiaren propietateetan gordetzen dena eta EPUBean liburuaren egile gisa eta LaTeX-en azalean agertzen dena. DOCX eta ODT formatuetan, gainera, Pandoc-ek izena duen lerro bat idazten du dokumentuaren hasieran; agertzerik nahi ez baduzu, utzi eremua hutsik. Dokumentu jakin batek beste egile bat eraman dezake: *Dokumentu honen egilea…*, hizkuntza-botoiaren menuan.
 
+**EPUBaren azala**, hiru aukerarekin. Hasieran, EdiMarkWeb-ek **bat sortzen du** dokumentuaren tituluarekin eta egilearekin, irudirik gabeko liburu bat ikono generikoarekin agertzen baita irakurgailuaren apalean. **Zure irudi bat** jar dezakezu —1 MB arte, azal baterako nahikoa baino gehiago: nabigatzailean gordetzen da, zure dokumentuen espazio berean— edo liburua **azalik gabe** utzi. EPUBari baino ez dio eragiten.
+
 **Aurkibide automatikoa**, dokumentuaren hasieran atalen zerrenda bat gehitzen duena. DOCX formatuan Word-en benetako aurkibide bat da eta ODT formatuan LibreOffice-ren jatorrizko bat; EPUBak ez du behar, irakurgailuak bere nabigazio-aurkibidea baitakar.
 
 > **Aurkibidea hutsik agertzen bada**, ez da dokumentuaren akatsa: DOCX eta ODT formatuetan aurkibidea ez da testua, testu-prozesadoreak kalkulatzen duen eremu bat baizik, orrialdeak maketatu behar baitira atal bakoitza non erortzen den jakiteko. EdiMarkWeb-ek dokumentua markatzen du irekitzean bakarrik egunera dadin, baina programa batzuek berrespena eskatzen dute edo agindu arte itxaroten dute: Word-en, egin klik eskuineko botoiarekin aurkibidean → *Eguneratu eremuak*; LibreOffice-n, *Tresnak → Eguneratu → Aurkibideak*.

@@ -676,3 +676,34 @@ test('sin pedirlo, nada cambia', { timeout: 180000 }, async () => {
   assert.match(texto, /\|Tema 1\|/, 'el encabezado no debe llevar número');
   assert.equal(/\|1\|Tema 1\|/.test(texto), false);
 });
+
+/*
+  Un EPUB sin imagen de portada aparece con el icono genérico en la estantería
+  del lector. Pandoc la acepta, pero dentro del WASM no hay disco: la imagen
+  tiene que ir montada en su sistema de ficheros virtual.
+*/
+test('la portada llega al EPUB cuando se le monta la imagen', { timeout: 180000 }, async () => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64',
+  );
+  const preparado = ensureEpubMetadata('# Mi libro\n\nTexto.\n', {
+    fallbackTitle: 'libro', lang: 'es', author: 'Juan José',
+  });
+  const base = buildExportArgs('epub3', { mathml: true, titleFromHeading: preparado.titleFromHeading });
+
+  const conPortada = readZipEntries((await runPandoc(
+    `${base} --epub-cover-image=/cover.png`,
+    preparado.markdown,
+    { 'cover.png': new Uint8Array(png) },
+  )).bytes);
+  const nombres = [...conPortada.keys()];
+  const opf = conPortada.get(nombres.find(name => name.endsWith('.opf'))).toString('utf8');
+  assert.ok(nombres.some(name => name.endsWith('media/cover.png')), `la imagen no está: ${nombres.join(', ')}`);
+  assert.ok(nombres.some(name => /cover\.xhtml$/.test(name)), 'falta la página de portada');
+  assert.match(opf, /properties="cover-image"/, 'el OPF debe marcar cuál es la portada');
+
+  // Sin montarla, el mismo libro sale sin nada de esto.
+  const sinPortada = readZipEntries((await runPandoc(base, preparado.markdown)).bytes);
+  assert.equal([...sinPortada.keys()].some(name => /cover\.xhtml$/.test(name)), false);
+});

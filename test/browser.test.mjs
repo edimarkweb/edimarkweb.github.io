@@ -822,6 +822,9 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
       documentAuthor: '',
       documentToc: false,
       documentNumberSections: false,
+      epubCover: 'auto',
+      epubCoverImage: '',
+      epubCoverName: '',
       documentClass: 'report',
       classOptions: '12pt, a4paper',
       preamble: '\\usepackage{amsthm}',
@@ -1013,4 +1016,61 @@ test('el índice y la numeración se recuerdan como ajuste', async (t) => {
   await page.locator('#latex-settings-btn').click();
   assert.equal(await page.locator('#doc-toc').isChecked(), true);
   assert.equal(await page.locator('#doc-number-sections').isChecked(), true);
+});
+
+/*
+  La imagen elegida se guarda en el almacenamiento del navegador, el mismo del
+  autoguardado de los documentos: por eso hay un tope de tamaño.
+*/
+test('la portada del EPUB ofrece los tres modos y limita el peso de la imagen', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+
+  // De fábrica, la generada; el selector de archivo solo aparece con «una imagen mía».
+  assert.equal(await page.locator('input[name="epub-cover"][value="auto"]').isChecked(), true);
+  await assert.doesNotReject(page.locator('#epub-cover-picker.hidden').waitFor({ state: 'attached' }));
+
+  await page.locator('input[name="epub-cover"][value="custom"]').check();
+  await page.locator('#epub-cover-picker').waitFor({ state: 'visible' });
+
+  // Una imagen de más de 1 MB se rechaza con un aviso y no se guarda.
+  const avisos = [];
+  page.on('dialog', dialog => { avisos.push(dialog.message()); dialog.accept(); });
+  await page.locator('#epub-cover-input').setInputFiles({
+    name: 'enorme.png', mimeType: 'image/png', buffer: Buffer.alloc(1024 * 1024 + 10, 1),
+  });
+  await page.waitForFunction(() => document.getElementById('epub-cover-name').textContent === '');
+  assert.equal(avisos.length, 1, `se esperaba un aviso: ${JSON.stringify(avisos)}`);
+  assert.match(avisos[0], /1 MB/);
+
+  // Una pequeña sí entra y se recuerda tras recargar.
+  await page.locator('#epub-cover-input').setInputFiles({
+    name: 'portada.png', mimeType: 'image/png', buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  });
+  await page.locator('#epub-cover-name').getByText('portada.png').waitFor();
+  await page.locator('#latex-settings-save-btn').click();
+  assert.equal(await page.evaluate(() => window.__edimarkLatexSettings.epubCover), 'custom');
+  assert.match(await page.evaluate(() => window.__edimarkLatexSettings.epubCoverImage), /^data:image\/png;base64,/);
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('.tab-name').first().waitFor();
+  await page.waitForFunction(() => window.__edimarkReady === true);
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  assert.equal(await page.locator('input[name="epub-cover"][value="custom"]').isChecked(), true);
+  assert.equal(await page.locator('#epub-cover-name').textContent(), 'portada.png');
+
+  // Al volver a «sin portada», la imagen deja de ocupar espacio guardado.
+  await page.locator('input[name="epub-cover"][value="none"]').check();
+  await page.locator('#latex-settings-save-btn').click();
+  assert.deepEqual(
+    await page.evaluate(() => [window.__edimarkLatexSettings.epubCover, window.__edimarkLatexSettings.epubCoverImage]),
+    ['none', ''],
+  );
 });

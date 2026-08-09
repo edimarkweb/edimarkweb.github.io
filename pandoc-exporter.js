@@ -185,6 +185,107 @@ function documentAuthor() {
 }
 
 /*
+  Portada del EPUB.
+
+  Sin imagen de portada, el libro sale con el icono genérico en la estantería
+  del lector. Hay tres modos: ninguna, una generada con el título y el autor, y
+  la que elija el usuario.
+*/
+const COVER_MIME_EXTENSIONS = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+};
+
+function dataUriToBytes(dataUri) {
+  const match = /^data:([^;,]+)(;base64)?,(.*)$/s.exec(String(dataUri || ''));
+  if (!match) return null;
+  const [, mime, isBase64, payload] = match;
+  try {
+    const binary = isBase64 ? atob(payload) : decodeURIComponent(payload);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return { bytes, mime };
+  } catch (error) {
+    console.warn('La imagen de portada guardada no se pudo leer:', error);
+    return null;
+  }
+}
+
+/*
+  Portada dibujada al vuelo: proporción de libro, el título grande y el autor
+  al pie. Se genera en cada exportación en lugar de guardarse, que es una cosa
+  menos ocupando el almacenamiento del navegador.
+*/
+function drawCover({ title, author }) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 1800;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(0, canvas.height - 220, canvas.width, 18);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = '600 96px Georgia, "Times New Roman", serif';
+
+  // El título se parte por palabras: una línea única se saldría del lienzo.
+  const words = String(title || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = '';
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (ctx.measureText(candidate).width > canvas.width - 240 && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+
+  const visible = lines.slice(0, 6);
+  const startY = canvas.height / 2 - ((visible.length - 1) * 120) / 2;
+  visible.forEach((line, index) => ctx.fillText(line, canvas.width / 2, startY + index * 120));
+
+  if (author) {
+    ctx.font = '400 56px Georgia, "Times New Roman", serif';
+    ctx.fillStyle = '#cbd5f5';
+    ctx.fillText(author, canvas.width / 2, canvas.height - 120);
+  }
+
+  const dataUri = canvas.toDataURL('image/jpeg', 0.85);
+  return dataUriToBytes(dataUri);
+}
+
+/*
+  Devuelve el nombre del archivo montado y sus bytes, o null si no hay portada.
+  El nombre lleva extensión porque Pandoc deduce de ella el tipo de imagen.
+*/
+function epubCoverFile({ title, author }) {
+  const settings = documentSettings();
+  const mode = String(settings.epubCover || 'none');
+  let image = null;
+  if (mode === 'custom') {
+    image = dataUriToBytes(settings.epubCoverImage);
+  } else if (mode === 'auto') {
+    try {
+      image = drawCover({ title, author });
+    } catch (error) {
+      console.warn('No se pudo generar la portada del EPUB:', error);
+    }
+  }
+  if (!image || !image.bytes.length) return null;
+  const extension = COVER_MIME_EXTENSIONS[image.mime] || 'png';
+  return { name: `cover.${extension}`, bytes: image.bytes };
+}
+
+/*
   Índice y numeración de apartados. Son opciones del conversor, no datos del
   documento: `toc: true` en los metadatos lo entienden LaTeX y HTML, pero el
   escritor DOCX lo ignora, y la numeración solo funciona con la bandera.
@@ -556,12 +657,27 @@ async function exportDocument({
 
   try {
     const base64 = await loadPandocWasm({ onStatus });
-    const pandocArgs = buildExportArgs(config.pandocFormat || normalizedFormat, {
+    let pandocArgs = buildExportArgs(config.pandocFormat || normalizedFormat, {
       mathml: normalizedFormat === 'odt' || normalizedFormat === 'epub',
       titleFromHeading,
       ...documentOutlineOptions(),
     });
-    const resultadoBytes = await pandoc(pandocArgs, normalized, base64);
+    /*
+      La portada solo existe en el EPUB, y la imagen tiene que estar montada en
+      el sistema de ficheros del WASM para que Pandoc la encuentre.
+    */
+    const extraFiles = {};
+    if (normalizedFormat === 'epub') {
+      const cover = epubCoverFile({
+        title: extractMarkdownTitle(normalized) || String(documentTitle || '').trim(),
+        author: documentAuthor(),
+      });
+      if (cover) {
+        extraFiles[cover.name] = cover.bytes;
+        pandocArgs += ` --epub-cover-image=/${cover.name}`;
+      }
+    }
+    const resultadoBytes = await pandoc(pandocArgs, normalized, base64, extraFiles);
     if (iosTimer) clearTimeout(iosTimer);
 
     // Pandoc reports internal failures by leaving the output file empty rather
