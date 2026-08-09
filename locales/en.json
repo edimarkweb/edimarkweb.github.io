@@ -178,7 +178,7 @@
   "import_file_error": "The file could not be imported.",
   "import_file_unsupported": "File format not supported for import.",
   "drop_title": "Drop here to open in a new tab",
-  "drop_subtitle": "Markdown (.md, .markdown) or DOCX, ODT, EPUB, HTML and TEX documents. You can also drop multiple files.",
+  "drop_subtitle": "Markdown (.md, .markdown) or DOCX, ODT, EPUB, HTML and TEX documents. You can also drop several files or whole folders.",
   "drop_unsupported": "You can only drop Markdown files (.md, .markdown) or DOCX, ODT, EPUB, HTML and TEX documents.",
   "heading5": "Heading 5",
   "heading6": "Heading 6",

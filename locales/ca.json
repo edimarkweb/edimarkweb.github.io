@@ -178,7 +178,7 @@
   "import_file_error": "No s'ha pogut importar el fitxer.",
   "import_file_unsupported": "Format no admès per a la importació.",
   "drop_title": "Deixa anar aquí per obrir en una nova pestanya",
-  "drop_subtitle": "Markdown (.md, .markdown) o documents DOCX, ODT, EPUB, HTML i TEX. També en pots deixar diversos.",
+  "drop_subtitle": "Markdown (.md, .markdown) o documents DOCX, ODT, EPUB, HTML i TEX. També pots deixar-hi diversos fitxers o carpetes senceres.",
   "drop_unsupported": "Només s'hi poden deixar fitxers Markdown (.md, .markdown) o documents DOCX, ODT, EPUB, HTML i TEX.",
   "heading5": "Títol 5",
   "heading6": "Títol 6",

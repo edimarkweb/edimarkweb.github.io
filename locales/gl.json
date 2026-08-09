@@ -178,7 +178,7 @@
   "import_file_error": "Non se puido importar o ficheiro.",
   "import_file_unsupported": "Formato non compatíbel para importar.",
   "drop_title": "Solta aquí para abrir nunha nova lapela",
-  "drop_subtitle": "Markdown (.md, .markdown) ou documentos DOCX, ODT, EPUB, HTML e TEX. Tamén podes soltar varios.",
+  "drop_subtitle": "Markdown (.md, .markdown) ou documentos DOCX, ODT, EPUB, HTML e TEX. Tamén podes soltar varios ficheiros ou cartafoles enteiros.",
   "drop_unsupported": "Só se poden soltar ficheiros Markdown (.md, .markdown) ou documentos DOCX, ODT, EPUB, HTML e TEX.",
   "heading5": "Título 5",
   "heading6": "Título 6",

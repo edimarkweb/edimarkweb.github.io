@@ -12,7 +12,8 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 - Menú **Configuración** con el idioma, el tamaño de letra, el tema, el ancho de trabajo y la ventana independiente reunidos en un mismo sitio.
 - Tema de la interfaz con tres opciones —Sistema, Claro y Oscuro— que se recuerda entre sesiones.
 - Menú de fórmulas renovado y acceso directo a EdiCuaTeX para construir expresiones complejas.
-- Apertura de múltiples archivos arrastrándolos al editor (cada uno en su pestaña): Markdown y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo con Pandoc.
+- Apertura de múltiples archivos, o de carpetas enteras, arrastrándolos al editor (cada archivo en su pestaña): Markdown y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo con Pandoc.
+- Búsqueda con expresiones regulares y modo de edición a pantalla completa para trabajar sin distracciones.
 
 ## ¡Pega cualquier contenido!
 
@@ -51,7 +52,7 @@ Cuando hacemos un canvas le podemos pedir a Gemini que haga un PDF. Este PDF uti
 Trabaja con varios documentos a la vez, cada uno en su propia pestaña.
 
 * **Crear pestañas**: Pulsa el botón `+` (o `Ctrl+T`) para abrir un nuevo documento en blanco.
-* **Cambiar de pestaña**: Haz clic en el nombre para mostrar su contenido.
+* **Cambiar de pestaña**: Haz clic en el nombre para mostrar su contenido, o pasa de una a otra con `Ctrl+Tab`.
 * **Renombrar**: Haz doble clic sobre el título para poner un nombre más descriptivo (ej. “Tema 3 – Ecuaciones”).
 * **Cerrar pestañas**: Pulsa la `X`. Si hay cambios sin guardar, la aplicación mostrará un aviso.
 * **Cambios sin guardar**: Un punto rojo (`●`) indica que hay modificaciones pendientes.
@@ -74,7 +75,7 @@ La barra junto al logotipo agrupa las opciones globales de la aplicación y ahor
 * **Buscar (Ctrl+F)** y **Manual (Ctrl+H)**: abren el buscador avanzado o este mismo documento.
 * **Borrar todo**: limpia por completo el documento activo tras pedir confirmación.
 
-El diseño de los paneles se cambia con `Ctrl+L` o con las flechas de las cabeceras de cada panel.
+El diseño de los paneles se cambia con `Ctrl+L` o con las flechas de las cabeceras de cada panel. En pantallas pequeñas, la barra se pliega en dos botones —**Acciones** y **Formato**— que muestran cada grupo cuando lo necesitas.
 
 ---
 
@@ -82,11 +83,13 @@ El diseño de los paneles se cambia con `Ctrl+L` o con las flechas de las cabece
 
 La franja gris bajo la barra superior contiene accesos rápidos a formateo y elementos:
 
+* **Deshacer y rehacer**: Las dos flechas del extremo izquierdo (`Ctrl+Z` y `Ctrl+Mayús+Z`).
 * **Estilos básicos**: Negrita, cursiva y un menú de encabezados (H1…H6).
 * **Listas y citas**: Viñetas, numeración y bloques de cita con atajos asociados.
 * **Código, enlaces, imágenes y tablas**: Inserciones guiadas mediante modales.
+* **Pegar**: Trae al documento lo que haya en el portapapeles, como se explica más arriba.
 * **Fórmulas LaTeX**: Menú para insertar comandos en línea o en bloque con la sintaxis correcta.
-* **EdiCuaTeX**: Abre el asistente externo en una ventana nueva. Al aceptar, la fórmula vuelve insertada en el editor.
+* **Editor de fórmulas (EdiCuaTeX)**: Abre el asistente externo en una ventana nueva. Al aceptar, la fórmula vuelve insertada en el editor.
 
 Cada botón muestra una descripción al pasar el ratón e indica el atajo de teclado equivalente.
 
@@ -99,9 +102,11 @@ El botón de la lupa (o `Ctrl+F`) abre un panel con búsqueda avanzada:
 * El cuadro de búsqueda resalta todas las coincidencias, aunque ignores tildes o mayúsculas.
 * Usa `Enter` para saltar a la siguiente coincidencia y `Mayús+Enter` para retroceder.
 * Pulsa la flecha lateral para mostrar el panel de reemplazo. Puedes sustituir coincidencias una a una o todas a la vez (con confirmación).
+* El botón **Regex** interpreta lo que escribas como una expresión regular. En este modo las tildes sí cuentan (las mayúsculas se siguen ignorando) y puedes usar grupos como `(\d+)`; en el reemplazo se recuperan con las referencias numeradas habituales de JavaScript (el signo de dólar seguido del número de grupo).
 * El contador `actual / total` te ayuda a seguir el progreso.
+* `Esc` cierra el buscador y devuelve el foco al editor.
 
-La búsqueda funciona tanto en la vista de Markdown como en la vista HTML según dónde tengas el foco.
+La búsqueda funciona tanto en la vista de Markdown como en la vista HTML según dónde tengas el foco. Mientras el buscador está abierto, los atajos de formato quedan en pausa para no interferir con lo que escribas en él.
 
 ---
 
@@ -109,11 +114,15 @@ La búsqueda funciona tanto en la vista de Markdown como en la vista HTML según
 
 La zona de trabajo se divide en dos paneles redimensionables:
 
-* **Markdown** (izquierda): editor de texto con resaltado, numeración opcional y controles de copia. Todo lo que escribas aquí se refleja de inmediato en el panel derecho.
+* **Markdown** (izquierda): editor de texto sencillo con un contador de caracteres y su botón de copia. Todo lo que escribas aquí se refleja de inmediato en el panel derecho.
 * **HTML / Previsualización** (derecha): muestra el resultado final y también permite editar el contenido directamente. Usa el botón con el icono de código para alternar entre la previsualización rica y el código HTML generado.
 * **Copiar contenido**: Botones específicos para copiar Markdown o el HTML generado (incluye fórmulas convertidas a LaTeX cuando copias HTML).
 
-Puedes arrastrar la barra central para dar más espacio a cualquiera de los paneles.
+Puedes arrastrar la barra central para dar más espacio a cualquiera de los paneles, maximizar uno de los dos con las flechas de su cabecera o usar el botón de la derecha de las pestañas para **maximizar el área de edición**, que oculta las barras superiores y deja la pantalla para el texto.
+
+### Imágenes incrustadas
+
+Cuando un documento lleva imágenes en base64 —al importar un DOCX, al pegar desde otra aplicación—, su código ocupa miles de caracteres y hace ilegible el Markdown. EdiMarkWeb las pliega automáticamente: en el editor aparece una marca corta del tipo `__EDIMARK_B64_1__` y, bajo el panel, una lista con cada imagen oculta, su formato, su tamaño y un botón **Ver código** para consultarla o copiarla. El contenido real se conserva intacto al guardar, copiar o exportar.
 
 ---
 
@@ -170,7 +179,8 @@ Arrastra uno o varios archivos sobre la aplicación. Se admiten `.md` y `.markdo
 
 * Verás un marco iluminado que confirma que puedes soltarlos.
 * Cada archivo se abrirá en su propia pestaña con el nombre original.
-* El contenido queda disponible offline gracias al autoguardado. También puedes arrastrar carpetas completas desde el explorador del sistema; cada archivo compatible se abrirá en su propia pestaña.
+* También puedes arrastrar carpetas completas desde el explorador del sistema: se recorren sus subcarpetas y cada archivo compatible se abre en su pestaña, en orden alfabético. Lo que no sea compatible se ignora y, si no hay nada aprovechable, la aplicación te lo advierte.
+* El contenido queda disponible offline gracias al autoguardado.
 
 ---
 
@@ -184,18 +194,30 @@ Arrastra uno o varios archivos sobre la aplicación. Se admiten `.md` y `.markdo
 | Encabezados 1-6 | `Ctrl` + `1..6` | `Cmd` + `1..6` |
 | Lista con viñetas | `Ctrl` + `Shift` + `L` | `Cmd` + `Shift` + `L` |
 | Lista numerada | `Ctrl` + `Shift` + `O` | `Cmd` + `Shift` + `O` |
+| Cita | `Ctrl` + `Shift` + `Q` | `Cmd` + `Shift` + `Q` |
 | Código | `Ctrl` + `` ` `` | `Cmd` + `` ` `` |
+| Enlace | `Ctrl` + `K` | `Cmd` + `K` |
+| Imagen | `Ctrl` + `Shift` + `I` | `Cmd` + `Shift` + `I` |
+| Tabla | `Ctrl` + `Shift` + `T` | `Cmd` + `Shift` + `T` |
+| Fórmula en línea | `Ctrl` + `M` | `Cmd` + `M` |
+| Fórmula en bloque | `Ctrl` + `Shift` + `M` | `Cmd` + `Shift` + `M` |
+| Deshacer / Rehacer | `Ctrl` + `Z` / `Ctrl` + `Shift` + `Z` | `Cmd` + `Z` / `Cmd` + `Shift` + `Z` |
 | **Gestión de documentos** | | |
 | Nueva pestaña | `Ctrl` + `T` | `Cmd` + `T` |
 | Cerrar pestaña | `Ctrl` + `W` | `Cmd` + `W` |
+| Pestaña siguiente / anterior | `Ctrl` + `Tab` / `Ctrl` + `Shift` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Shift` + `Tab` |
 | Guardar | `Ctrl` + `S` | `Cmd` + `S` |
 | Abrir archivo | `Ctrl` + `O` | `Cmd` + `O` |
 | Pegar LaTeX (abrir modal) | `Ctrl` + `Shift` + `V` | `Cmd` + `Shift` + `V` |
 | **Interfaz** | | |
 | Cambiar diseño | `Ctrl` + `L` | `Cmd` + `L` |
 | Buscar | `Ctrl` + `F` | `Cmd` + `F` |
+| Aumentar / reducir el texto | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Manual de uso | `Ctrl` + `H` | `Cmd` + `H` |
+| Recargar el manual | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Imprimir | `Ctrl` + `P` | `Cmd` + `P` |
+
+Los atajos de una sola letra actúan sobre el documento, así que quedan en pausa mientras el buscador está abierto.
 
 ---
 

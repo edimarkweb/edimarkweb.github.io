@@ -4860,10 +4860,19 @@ window.onload = () => {
             }
 
             if (!accel) return;
-            switch (e.key.toLowerCase()) {
+            /*
+              Los atajos sin Shift se comprueban aparte: con Shift pulsado esas
+              mismas letras pertenecen a shortcutMap (Ctrl+Shift+L es la lista con
+              viñetas y Ctrl+Shift+O la numerada), y atenderlas también aquí
+              ejecutaría las dos acciones a la vez.
+            */
+            switch (e.shiftKey ? null : e.key.toLowerCase()) {
+                case 'o': e.preventDefault(); openFileBtn.click(); break;
                 case 's': e.preventDefault(); saveBtn.click(); break;
                 case 'p': e.preventDefault(); printBtn.click(); break;
                 case 'l': e.preventDefault(); cycleLayout(); break;
+            }
+            switch (e.key.toLowerCase()) {
                 case 'h': e.preventDefault(); openManualDoc(e.shiftKey); break;
                 case 'v':
                     if (e.shiftKey) {
@@ -5087,7 +5096,7 @@ window.onload = () => {
       <div class="flex flex-col items-center gap-3 text-center">
         <i data-lucide="upload" class="w-10 h-10 text-indigo-600 dark:text-indigo-400"></i>
         <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100" data-i18n-key="drop_title">Suelta aquí para abrir en una pestaña nueva</h3>
-        <p class="text-sm text-slate-700 dark:text-slate-300" data-i18n-key="drop_subtitle">Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX. También puedes soltar varios.</p>
+        <p class="text-sm text-slate-700 dark:text-slate-300" data-i18n-key="drop_subtitle">Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX. También puedes soltar varios archivos o carpetas enteras.</p>
       </div>
     </div>
   `;
@@ -5145,13 +5154,68 @@ window.onload = () => {
     }
   });
 
+  /*
+    Las tandas que devuelve readEntries no agotan el directorio: hay que seguir
+    pidiendo hasta que llegue una vacía.
+  */
+  function readAllDirectoryEntries(reader) {
+    const collected = [];
+    return new Promise((resolve) => {
+      const readBatch = () => reader.readEntries((batch) => {
+        if (!batch.length) { resolve(collected); return; }
+        collected.push(...batch);
+        readBatch();
+      }, () => resolve(collected));
+      readBatch();
+    });
+  }
+
+  function filesFromEntry(entry) {
+    if (!entry) return Promise.resolve([]);
+    if (entry.isFile) {
+      return new Promise((resolve) => entry.file((file) => resolve([file]), () => resolve([])));
+    }
+    if (entry.isDirectory) {
+      return readAllDirectoryEntries(entry.createReader())
+        .then((children) => Promise.all(children.map(filesFromEntry)))
+        .then((lists) => lists.flat());
+    }
+    return Promise.resolve([]);
+  }
+
+  /*
+    Con carpetas de por medio, dataTransfer.files solo trae una entrada inútil
+    por directorio; hay que recorrerlo con la API de entradas. Los entries se
+    piden de forma síncrona porque el DataTransfer se vacía en cuanto termina
+    el manejador del evento.
+  */
+  function collectDroppedFiles(dataTransfer) {
+    const entries = Array.from(dataTransfer?.items || [])
+      .map((item) => (typeof item.webkitGetAsEntry === 'function' ? item.webkitGetAsEntry() : null))
+      .filter(Boolean);
+    const plainFiles = Array.from(dataTransfer?.files || []);
+    if (!entries.length) return Promise.resolve(plainFiles);
+    return Promise.all(entries.map(filesFromEntry))
+      .then((lists) => lists.flat())
+      // Las tandas de un directorio no llegan ordenadas: sin esto las pestañas
+      // aparecerían en un orden distinto en cada navegador.
+      .then((files) => files.sort((a, b) => (a.name || '').localeCompare(b.name || '')))
+      .catch((err) => {
+        console.error('No se pudieron leer las carpetas arrastradas:', err);
+        return plainFiles;
+      });
+  }
+
   function handleDrop(e) {
     e.preventDefault();
     backdrop.classList.add('hidden');
     removeHalo();
     dragDepth = 0;
 
-    const files = Array.from(e.dataTransfer?.files || []);
+    collectDroppedFiles(e.dataTransfer).then(openDroppedFiles);
+  }
+
+  function openDroppedFiles(files) {
     if (!files.length) return;
 
     const isMarkdown = (f) => {

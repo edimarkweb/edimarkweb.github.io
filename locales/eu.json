@@ -178,7 +178,7 @@
   "import_file_error": "Ezin izan da fitxategia inportatu.",
   "import_file_unsupported": "Formatu hau ezin da inportatu.",
   "drop_title": "Utzi hemen fitxa berri batean irekitzeko",
-  "drop_subtitle": "Markdown (.md, .markdown) edo DOCX, ODT, EPUB, HTML eta TEX dokumentuak. Hainbat ere jaregin ditzakezu.",
+  "drop_subtitle": "Markdown (.md, .markdown) edo DOCX, ODT, EPUB, HTML eta TEX dokumentuak. Hainbat fitxategi edo karpeta osoak ere jaregin ditzakezu.",
   "drop_unsupported": "Markdown fitxategiak (.md, .markdown) edo DOCX, ODT, EPUB, HTML eta TEX dokumentuak baino ezin dira jaregin.",
   "heading5": "5. goiburua",
   "heading6": "6. goiburua",

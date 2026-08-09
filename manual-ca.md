@@ -12,7 +12,8 @@ Benvingut/uda a EdiMarkWeb, un **editor de textos en Markdown** dissenyat per a 
 - Menú **Configuració** amb l'idioma, la mida de la lletra, el tema, l'amplada de treball i la finestra independent reunits en un mateix lloc.
 - Tema de la interfície amb tres opcions —Sistema, Clar i Fosc— que es recorda entre sessions.
 - Menú de fórmules renovat i accés directe a EdiCuaTeX per construir expressions complexes.
-- Obertura de diversos fitxers arrossegant-los a l'editor (cadascun en la seva pestanya): Markdown i també DOCX, ODT, EPUB, HTML o TEX, que es converteixen al vol amb Pandoc.
+- Obertura de diversos fitxers, o de carpetes senceres, arrossegant-los a l'editor (cada fitxer en la seva pestanya): Markdown i també DOCX, ODT, EPUB, HTML o TEX, que es converteixen al vol amb Pandoc.
+- Cerca amb expressions regulars i mode d'edició a pantalla completa per treballar sense distraccions.
 
 ## Enganxa qualsevol contingut
 
@@ -56,7 +57,7 @@ Quan fem un canvas li podem demanar a Gemini que faci un PDF. Aquest PDF utilitz
 Treballa amb diversos documents alhora, cadascun a la seva pestanya.
 
 * **Crear pestanyes**: prem el botó `+` (o `Ctrl+T`) per obrir un document en blanc.
-* **Canviar de pestanya**: fes clic al nom per mostrar-ne el contingut.
+* **Canviar de pestanya**: fes clic al nom per mostrar-ne el contingut, o passa d'una a l'altra amb `Ctrl+Tab`.
 * **Reanomenar**: fes doble clic al títol per posar-hi un nom més descriptiu (p. ex. «Tema 3 – Equacions»).
 * **Tancar pestanyes**: prem la `X`. Si hi ha canvis sense desar, l'aplicació t'ho advertirà.
 * **Canvis sense desar**: un punt vermell (`●`) indica que hi ha modificacions pendents.
@@ -79,7 +80,7 @@ La barra del costat del logotip agrupa les opcions globals de l'aplicació i con
 * **Cercar (Ctrl+F)** i **Manual (Ctrl+H)**: obren el cercador avançat o aquest mateix document.
 * **Esborrar-ho tot**: buida completament el document actiu després de demanar confirmació.
 
-La disposició dels plafons es canvia amb `Ctrl+L` o amb les fletxes de les capçaleres de cada plafó.
+La disposició dels plafons es canvia amb `Ctrl+L` o amb les fletxes de les capçaleres de cada plafó. En pantalles petites, la barra es plega en dos botons —**Accions** i **Format**— que mostren cada grup quan el necessites.
 
 ---
 
@@ -87,11 +88,13 @@ La disposició dels plafons es canvia amb `Ctrl+L` o amb les fletxes de les cap�
 
 La franja grisa sota la barra superior conté accessos ràpids a format i elements:
 
+* **Desfer i refer**: les dues fletxes de l'extrem esquerre (`Ctrl+Z` i `Ctrl+Maj+Z`).
 * **Estils bàsics**: negreta, cursiva i un menú d'encapçalaments (H1…H6).
 * **Llistes i cites**: pics, numeració i blocs de cita amb dreceres associades.
 * **Codi, enllaços, imatges i taules**: insercions guiades mitjançant diàlegs.
+* **Enganxar**: porta al document el que hi hagi al porta-retalls, tal com s'explica més amunt.
 * **Fórmules LaTeX**: menú per inserir ordres en línia o en bloc amb la sintaxi correcta.
-* **EdiCuaTeX**: obre l'assistent extern en una finestra nova. En acceptar, la fórmula torna inserida a l'editor.
+* **Editor de fórmules (EdiCuaTeX)**: obre l'assistent extern en una finestra nova. En acceptar, la fórmula torna inserida a l'editor.
 
 Cada botó mostra una descripció en passar-hi el ratolí i indica la drecera de teclat equivalent.
 
@@ -104,9 +107,11 @@ El botó de la lupa (o `Ctrl+F`) obre un plafó amb cerca avançada:
 * El quadre de cerca ressalta totes les coincidències, encara que ignoris accents o majúscules.
 * Fes servir `Enter` per saltar a la coincidència següent i `Maj+Enter` per retrocedir.
 * Prem la fletxa lateral per mostrar el plafó de reemplaçament. Pots substituir les coincidències una a una o totes alhora (amb confirmació).
+* El botó **Regex** interpreta el que escriguis com una expressió regular. En aquest mode els accents sí que compten (les majúscules se segueixen ignorant) i pots fer servir grups com ara `(\d+)`; al reemplaçament es recuperen amb les referències numerades habituals de JavaScript (el signe de dòlar seguit del número de grup).
 * El comptador `actual / total` t'ajuda a seguir el progrés.
+* `Esc` tanca el cercador i retorna el focus a l'editor.
 
-La cerca funciona tant a la vista de Markdown com a la vista HTML, segons on tinguis el focus.
+La cerca funciona tant a la vista de Markdown com a la vista HTML, segons on tinguis el focus. Mentre el cercador és obert, les dreceres de format queden en pausa per no interferir amb el que hi escriguis.
 
 ---
 
@@ -114,11 +119,15 @@ La cerca funciona tant a la vista de Markdown com a la vista HTML, segons on tin
 
 La zona de treball es divideix en dos plafons redimensionables:
 
-* **Markdown** (esquerra): editor de text amb ressaltat, numeració opcional i controls de còpia. Tot el que hi escriguis es reflecteix immediatament al plafó dret.
+* **Markdown** (esquerra): editor de text senzill amb un comptador de caràcters i el seu botó de còpia. Tot el que hi escriguis es reflecteix immediatament al plafó dret.
 * **HTML / Vista prèvia** (dreta): mostra el resultat final i també permet editar el contingut directament. Fes servir el botó amb la icona de codi per alternar entre la vista prèvia rica i el codi HTML generat.
 * **Copiar contingut**: botons específics per copiar el Markdown o l'HTML generat (inclou fórmules convertides a LaTeX quan copies HTML).
 
-Pots arrossegar la barra central per donar més espai a qualsevol dels plafons.
+Pots arrossegar la barra central per donar més espai a qualsevol dels plafons, maximitzar-ne un amb les fletxes de la seva capçalera o fer servir el botó de la dreta de les pestanyes per **maximitzar l'àrea d'edició**, que amaga les barres superiors i deixa la pantalla per al text.
+
+### Imatges incrustades
+
+Quan un document porta imatges en base64 —en importar un DOCX, en enganxar des d'una altra aplicació—, el seu codi ocupa milers de caràcters i fa il·legible el Markdown. EdiMarkWeb les plega automàticament: a l'editor apareix una marca curta del tipus `__EDIMARK_B64_1__` i, sota el plafó, una llista amb cada imatge amagada, el seu format, la seva mida i un botó **Veure codi** per consultar-la o copiar-la. El contingut real es conserva intacte en desar, copiar o exportar.
 
 ---
 
@@ -175,7 +184,8 @@ Arrossega un o diversos fitxers sobre l'aplicació. S'admeten `.md` i `.markdown
 
 * Veuràs un marc il·luminat que confirma que els pots deixar anar.
 * Cada fitxer s'obrirà a la seva pestanya amb el nom original.
-* El contingut queda disponible fora de línia gràcies al desament automàtic. També pots arrossegar carpetes senceres des del gestor de fitxers; cada fitxer compatible s'obrirà a la seva pestanya.
+* També pots arrossegar carpetes senceres des del gestor de fitxers: se'n recorren les subcarpetes i cada fitxer compatible s'obre a la seva pestanya, en ordre alfabètic. La resta s'ignora i, si no hi ha res aprofitable, l'aplicació t'ho adverteix.
+* El contingut queda disponible fora de línia gràcies al desament automàtic.
 
 ---
 
@@ -189,18 +199,30 @@ Arrossega un o diversos fitxers sobre l'aplicació. S'admeten `.md` i `.markdown
 | Encapçalaments 1-6 | `Ctrl` + `1..6` | `Cmd` + `1..6` |
 | Llista amb pics | `Ctrl` + `Maj` + `L` | `Cmd` + `Maj` + `L` |
 | Llista numerada | `Ctrl` + `Maj` + `O` | `Cmd` + `Maj` + `O` |
+| Cita | `Ctrl` + `Maj` + `Q` | `Cmd` + `Maj` + `Q` |
 | Codi | `Ctrl` + `` ` `` | `Cmd` + `` ` `` |
+| Enllaç | `Ctrl` + `K` | `Cmd` + `K` |
+| Imatge | `Ctrl` + `Maj` + `I` | `Cmd` + `Maj` + `I` |
+| Taula | `Ctrl` + `Maj` + `T` | `Cmd` + `Maj` + `T` |
+| Fórmula en línia | `Ctrl` + `M` | `Cmd` + `M` |
+| Fórmula en bloc | `Ctrl` + `Maj` + `M` | `Cmd` + `Maj` + `M` |
+| Desfer / Refer | `Ctrl` + `Z` / `Ctrl` + `Maj` + `Z` | `Cmd` + `Z` / `Cmd` + `Maj` + `Z` |
 | **Gestió de documents** | | |
 | Pestanya nova | `Ctrl` + `T` | `Cmd` + `T` |
 | Tancar pestanya | `Ctrl` + `W` | `Cmd` + `W` |
+| Pestanya següent / anterior | `Ctrl` + `Tab` / `Ctrl` + `Maj` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Maj` + `Tab` |
 | Desar | `Ctrl` + `S` | `Cmd` + `S` |
 | Obrir fitxer | `Ctrl` + `O` | `Cmd` + `O` |
 | Enganxar LaTeX (obrir diàleg) | `Ctrl` + `Maj` + `V` | `Cmd` + `Maj` + `V` |
 | **Interfície** | | |
 | Canviar disposició | `Ctrl` + `L` | `Cmd` + `L` |
 | Cercar | `Ctrl` + `F` | `Cmd` + `F` |
+| Augmentar / reduir el text | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Manual d'ús | `Ctrl` + `H` | `Cmd` + `H` |
+| Recarregar el manual | `Ctrl` + `Maj` + `H` | `Cmd` + `Maj` + `H` |
 | Imprimir | `Ctrl` + `P` | `Cmd` + `P` |
+
+Les dreceres d'una sola lletra actuen sobre el document, així que queden en pausa mentre el cercador és obert.
 
 ---
 

@@ -12,7 +12,8 @@ Welcome to EdiMarkWeb, a **Markdown text editor** designed for teachers and cont
 - A **Settings** menu gathering the language, font size, theme, working width and separate window in one place.
 - Interface theme with three options — System, Light and Dark — remembered between sessions.
 - Redesigned formula menu and direct access to EdiCuaTeX for building complex expressions.
-- Open several files by dragging them onto the editor (each in its own tab): Markdown and also DOCX, ODT, EPUB, HTML or TEX, converted on the fly with Pandoc.
+- Open several files, or whole folders, by dragging them onto the editor (each file in its own tab): Markdown and also DOCX, ODT, EPUB, HTML or TEX, converted on the fly with Pandoc.
+- Regular-expression search and a full-screen editing mode for distraction-free work.
 
 ## Paste anything
 
@@ -56,7 +57,7 @@ When working on a canvas you can ask Gemini for a PDF. That PDF uses LaTeX code 
 Work on several documents at once, each in its own tab.
 
 * **New tabs**: press the `+` button (or `Ctrl+T`) to open a blank document.
-* **Switching tabs**: click the name to show its contents.
+* **Switching tabs**: click the name to show its contents, or move from one to the next with `Ctrl+Tab`.
 * **Renaming**: double-click the title to give it a more descriptive name (e.g. “Unit 3 – Equations”).
 * **Closing tabs**: press the `X`. If there are unsaved changes, the application will warn you.
 * **Unsaved changes**: a red dot (`●`) marks pending modifications.
@@ -79,7 +80,7 @@ The bar next to the logo holds the application's global options and gathers ever
 * **Search (Ctrl+F)** and **Manual (Ctrl+H)**: open the advanced search panel or this very document.
 * **Clear all**: empties the active document after asking for confirmation.
 
-The pane layout is changed with `Ctrl+L` or with the arrows in each pane's header.
+The pane layout is changed with `Ctrl+L` or with the arrows in each pane's header. On small screens the bar folds into two buttons — **Actions** and **Format** — that show each group when you need it.
 
 ---
 
@@ -87,11 +88,13 @@ The pane layout is changed with `Ctrl+L` or with the arrows in each pane's heade
 
 The grey strip below the top bar holds quick access to formatting and elements:
 
+* **Undo and redo**: the two arrows at the far left (`Ctrl+Z` and `Ctrl+Shift+Z`).
 * **Basic styles**: bold, italic and a headings menu (H1…H6).
 * **Lists and quotes**: bullets, numbering and quote blocks with their own shortcuts.
 * **Code, links, images and tables**: guided insertion through dialogs.
+* **Paste**: brings whatever is on the clipboard into the document, as explained above.
 * **LaTeX formulas**: a menu for inserting inline or block commands with the correct syntax.
-* **EdiCuaTeX**: opens the external assistant in a new window. On accepting, the formula comes back inserted in the editor.
+* **Formula editor (EdiCuaTeX)**: opens the external assistant in a new window. On accepting, the formula comes back inserted in the editor.
 
 Each button shows a description on hover and states the equivalent keyboard shortcut.
 
@@ -104,9 +107,11 @@ The magnifying glass button (or `Ctrl+F`) opens an advanced search panel:
 * The search box highlights every match, even if you ignore accents or capitals.
 * Use `Enter` to jump to the next match and `Shift+Enter` to go back.
 * Press the side arrow to show the replace panel. You can replace matches one by one or all at once (with confirmation).
+* The **Regex** button reads what you type as a regular expression. In this mode accents do count (letter case is still ignored) and you can use groups such as `(\d+)`; in the replacement you refer back to them with JavaScript's usual numbered references (a dollar sign followed by the group number).
 * The `current / total` counter helps you follow your progress.
+* `Esc` closes the search box and returns the focus to the editor.
 
-Search works both in the Markdown view and in the HTML view, depending on where the focus is.
+Search works both in the Markdown view and in the HTML view, depending on where the focus is. While the search box is open the formatting shortcuts are paused, so they don't interfere with what you type in it.
 
 ---
 
@@ -114,11 +119,15 @@ Search works both in the Markdown view and in the HTML view, depending on where 
 
 The working area is split into two resizable panes:
 
-* **Markdown** (left): text editor with highlighting, optional line numbers and copy controls. Everything you type here is immediately reflected in the right pane.
+* **Markdown** (left): a plain text editor with a character counter and its copy button. Everything you type here is immediately reflected in the right pane.
 * **HTML / Preview** (right): shows the final result and also lets you edit the content directly. Use the code icon button to switch between the rich preview and the generated HTML.
 * **Copying content**: dedicated buttons to copy the Markdown or the generated HTML (including formulas converted to LaTeX when copying HTML).
 
-You can drag the central bar to give more room to either pane.
+You can drag the central bar to give more room to either pane, maximise one of them with the arrows in its header, or use the button to the right of the tabs to **maximise the editing area**, which hides the top bars and leaves the screen to the text.
+
+### Embedded images
+
+When a document carries base64 images — after importing a DOCX, after pasting from another application — their code runs to thousands of characters and makes the Markdown unreadable. EdiMarkWeb folds them away automatically: a short marker such as `__EDIMARK_B64_1__` appears in the editor and, below the pane, a list shows every hidden image with its format, its size and a **View code** button to inspect or copy it. The real content is kept intact when you save, copy or export.
 
 ---
 
@@ -175,7 +184,8 @@ Drag one or more files onto the application. `.md` and `.markdown` open as they 
 
 * A highlighted frame confirms that you can drop them.
 * Each file opens in its own tab, under its original name.
-* The content stays available offline thanks to autosave. You can also drag whole folders from your file manager; every compatible file opens in its own tab.
+* You can also drag whole folders from your file manager: their subfolders are walked through and every compatible file opens in its own tab, in alphabetical order. Anything else is ignored and, if nothing usable is found, the application tells you.
+* The content stays available offline thanks to autosave.
 
 ---
 
@@ -189,18 +199,30 @@ Drag one or more files onto the application. `.md` and `.markdown` open as they 
 | Headings 1-6 | `Ctrl` + `1..6` | `Cmd` + `1..6` |
 | Bulleted list | `Ctrl` + `Shift` + `L` | `Cmd` + `Shift` + `L` |
 | Numbered list | `Ctrl` + `Shift` + `O` | `Cmd` + `Shift` + `O` |
+| Quote | `Ctrl` + `Shift` + `Q` | `Cmd` + `Shift` + `Q` |
 | Code | `Ctrl` + `` ` `` | `Cmd` + `` ` `` |
+| Link | `Ctrl` + `K` | `Cmd` + `K` |
+| Image | `Ctrl` + `Shift` + `I` | `Cmd` + `Shift` + `I` |
+| Table | `Ctrl` + `Shift` + `T` | `Cmd` + `Shift` + `T` |
+| Inline formula | `Ctrl` + `M` | `Cmd` + `M` |
+| Block formula | `Ctrl` + `Shift` + `M` | `Cmd` + `Shift` + `M` |
+| Undo / Redo | `Ctrl` + `Z` / `Ctrl` + `Shift` + `Z` | `Cmd` + `Z` / `Cmd` + `Shift` + `Z` |
 | **Managing documents** | | |
 | New tab | `Ctrl` + `T` | `Cmd` + `T` |
 | Close tab | `Ctrl` + `W` | `Cmd` + `W` |
+| Next / previous tab | `Ctrl` + `Tab` / `Ctrl` + `Shift` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Shift` + `Tab` |
 | Save | `Ctrl` + `S` | `Cmd` + `S` |
 | Open file | `Ctrl` + `O` | `Cmd` + `O` |
 | Paste LaTeX (open dialog) | `Ctrl` + `Shift` + `V` | `Cmd` + `Shift` + `V` |
 | **Interface** | | |
 | Change layout | `Ctrl` + `L` | `Cmd` + `L` |
 | Search | `Ctrl` + `F` | `Cmd` + `F` |
+| Larger / smaller text | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Manual | `Ctrl` + `H` | `Cmd` + `H` |
+| Reload the manual | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Print | `Ctrl` + `P` | `Cmd` + `P` |
+
+Single-letter shortcuts act on the document, so they are paused while the search box is open.
 
 ---
 

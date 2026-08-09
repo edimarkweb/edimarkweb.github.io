@@ -180,7 +180,7 @@
   "import_file_error": "No se pudo importar el archivo.",
   "import_file_unsupported": "Formato no soportado para importar.",
   "drop_title": "Suelta aquí para abrir en una pestaña nueva",
-  "drop_subtitle": "Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX. También puedes soltar varios.",
+  "drop_subtitle": "Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX. También puedes soltar varios archivos o carpetas enteras.",
   "drop_unsupported": "Solo se pueden soltar archivos Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX.",
   "footer_name": "EdiMarkWeb",
   "footer_tagline": "Editor de textos Markdown.",

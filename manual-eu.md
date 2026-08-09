@@ -12,7 +12,8 @@ Ongi etorri EdiMarkWeb-era, **Markdown testu-editore** bat, azkar lan egin, hain
 - **Ezarpenak** menua, hizkuntza, testuaren tamaina, gaia, lan-zabalera eta leiho independentea leku berean bilduta.
 - Interfazearen gaia hiru aukerarekin —Sistemakoa, Argia eta Iluna— eta saioen artean gogoratzen da.
 - Formulen menu berritua eta EdiCuaTeX-erako sarbide zuzena adierazpen konplexuak eraikitzeko.
-- Hainbat fitxategi ireki editorera arrastatuz (bakoitza bere fitxan): Markdown eta baita DOCX, ODT, EPUB, HTML edo TEX ere, Pandoc-ekin bat-batean bihurtzen direnak.
+- Hainbat fitxategi, edo karpeta osoak, ireki editorera arrastatuz (fitxategi bakoitza bere fitxan): Markdown eta baita DOCX, ODT, EPUB, HTML edo TEX ere, Pandoc-ekin bat-batean bihurtzen direnak.
+- Adierazpen erregularrekin bilatzeko aukera eta pantaila osoko edizio-modua, distrakziorik gabe lan egiteko.
 
 ## Itsatsi edozein eduki
 
@@ -56,7 +57,7 @@ Canvas bat egiten dugunean, Gemini-ri PDF bat egiteko eska diezaiokegu. PDF horr
 Egin lan hainbat dokumenturekin aldi berean, bakoitza bere fitxan.
 
 * **Fitxak sortu**: sakatu `+` botoia (edo `Ctrl+T`) dokumentu huts bat irekitzeko.
-* **Fitxaz aldatu**: egin klik izenean bere edukia erakusteko.
+* **Fitxaz aldatu**: egin klik izenean bere edukia erakusteko, edo pasa batetik bestera `Ctrl+Tab` erabiliz.
 * **Berrizendatu**: egin klik bikoitza izenburuan izen deskribatzaileago bat jartzeko (adib. «3. gaia – Ekuazioak»).
 * **Fitxak itxi**: sakatu `X`. Gorde gabeko aldaketarik badago, aplikazioak abisu bat erakutsiko du.
 * **Gorde gabeko aldaketak**: puntu gorri batek (`●`) adierazten du aldaketak zain daudela.
@@ -79,7 +80,7 @@ Logotipoaren ondoko barrak aplikazioaren aukera orokorrak biltzen ditu eta fitxa
 * **Bilatu (Ctrl+F)** eta **Eskuliburua (Ctrl+H)**: bilatzaile aurreratua edo dokumentu hau bera irekitzen dituzte.
 * **Ezabatu dena**: dokumentu aktiboa erabat hustutzen du, berrespena eskatu ondoren.
 
-Panelen antolaketa `Ctrl+L` teklarekin edo panel bakoitzaren goiburuko geziekin aldatzen da.
+Panelen antolaketa `Ctrl+L` teklarekin edo panel bakoitzaren goiburuko geziekin aldatzen da. Pantaila txikietan, barra bi botoitan tolesten da —**Ekintzak** eta **Formatua**— eta talde bakoitza behar duzunean erakusten dute.
 
 ---
 
@@ -87,11 +88,13 @@ Panelen antolaketa `Ctrl+L` teklarekin edo panel bakoitzaren goiburuko geziekin 
 
 Goiko barraren azpiko marra grisak formaturako eta elementuetarako sarbide azkarrak ditu:
 
+* **Desegin eta berregin**: ezker muturreko bi geziak (`Ctrl+Z` eta `Ctrl+Shift+Z`).
 * **Oinarrizko estiloak**: lodia, etzana eta izenburuen menua (H1…H6).
 * **Zerrendak eta aipuak**: buletak, zenbakitzea eta aipu-blokeak, beren lasterbideekin.
 * **Kodea, estekak, irudiak eta taulak**: elkarrizketa-koadroen bidezko txertaketa gidatua.
+* **Itsatsi**: arbelean dagoena dokumentura ekartzen du, goian azaldu bezala.
 * **LaTeX formulak**: lerroko edo blokeko aginduak sintaxi zuzenarekin txertatzeko menua.
-* **EdiCuaTeX**: kanpoko laguntzailea leiho berri batean irekitzen du. Onartzean, formula editorean txertatuta itzultzen da.
+* **Formulen editorea (EdiCuaTeX)**: kanpoko laguntzailea leiho berri batean irekitzen du. Onartzean, formula editorean txertatuta itzultzen da.
 
 Botoi bakoitzak deskribapen bat erakusten du sagua gainetik pasatzean, eta baliokidea den teklatu-lasterbidea adierazten du.
 
@@ -104,9 +107,11 @@ Lupa-botoiak (edo `Ctrl+F`) bilaketa aurreratuko panel bat irekitzen du:
 * Bilaketa-koadroak bat-etortze guztiak nabarmentzen ditu, azenturik edo maiuskularik kontuan hartu gabe ere.
 * Erabili `Enter` hurrengo bat-etortzera joateko eta `Shift+Enter` atzera egiteko.
 * Sakatu alboko gezia ordezkatze-panela erakusteko. Bat-etortzeak banan-banan edo denak batera ordezka ditzakezu (berrespenarekin).
+* **Regex** botoiak idazten duzuna adierazpen erregular gisa interpretatzen du. Modu honetan azentuek balio dute (maiuskulak oraindik ez dira bereizten) eta `(\d+)` moduko taldeak erabil ditzakezu; ordezkapenean JavaScripten ohiko erreferentzia zenbakituekin berreskuratzen dira (dolar ikurra eta taldearen zenbakia).
 * `unekoa / guztira` kontagailuak aurrerapena jarraitzen laguntzen dizu.
+* `Esc` teklak bilatzailea ixten du eta fokua editoreari itzultzen dio.
 
-Bilaketak Markdown ikuspegian zein HTML ikuspegian funtzionatzen du, fokua non duzun.
+Bilaketak Markdown ikuspegian zein HTML ikuspegian funtzionatzen du, fokua non duzun. Bilatzailea irekita dagoen bitartean, formatu-lasterbideak eten egiten dira, bertan idazten duzunarekin ez oztopatzeko.
 
 ---
 
@@ -114,11 +119,15 @@ Bilaketak Markdown ikuspegian zein HTML ikuspegian funtzionatzen du, fokua non d
 
 Lan-eremua tamainaz alda daitezkeen bi paneletan banatzen da:
 
-* **Markdown** (ezkerra): testu-editorea nabarmentzearekin, aukerako zenbakitzearekin eta kopiatzeko kontrolekin. Hemen idazten duzun guztia berehala islatzen da eskuineko panelean.
+* **Markdown** (ezkerra): testu-editore soila, karaktere-kontagailu batekin eta kopiatzeko bere botoiarekin. Hemen idazten duzun guztia berehala islatzen da eskuineko panelean.
 * **HTML / Aurrebista** (eskuina): azken emaitza erakusten du eta edukia zuzenean editatzeko aukera ere ematen du. Erabili kode-ikonoa duen botoia aurrebista aberatsaren eta sortutako HTML kodearen artean txandakatzeko.
 * **Edukia kopiatu**: Markdown-a edo sortutako HTMLa kopiatzeko botoi zehatzak (HTMLa kopiatzean LaTeX-era bihurtutako formulak barne).
 
-Erdiko barra arrasta dezakezu edozein paneli leku gehiago emateko.
+Erdiko barra arrasta dezakezu edozein paneli leku gehiago emateko, bietako bat maximiza dezakezu bere goiburuko geziekin, edo fitxen eskuineko botoia erabil dezakezu **edizio-eremua maximizatzeko**: goiko barrak ezkutatzen ditu eta pantaila testuarentzat uzten du.
+
+### Kapsulatutako irudiak
+
+Dokumentu batek base64 irudiak dituenean —DOCX bat inportatzean, beste aplikazio batetik itsastean—, haien kodeak milaka karaktere hartzen ditu eta Markdown-a irakurtezin bihurtzen du. EdiMarkWeb-ek automatikoki tolesten ditu: editorean `__EDIMARK_B64_1__` moduko marka labur bat agertzen da eta, panelaren azpian, zerrenda batek ezkutuko irudi bakoitza erakusten du, bere formatua, bere tamaina eta **Ikusi kodea** botoi bat kontsultatzeko edo kopiatzeko. Benetako edukia osorik mantentzen da gordetzean, kopiatzean edo esportatzean.
 
 ---
 
@@ -175,7 +184,8 @@ Arrastatu fitxategi bat edo gehiago aplikazioaren gainera. `.md` eta `.markdown`
 
 * Marko argiztatu bat ikusiko duzu, jaregin ditzakezula berresten duena.
 * Fitxategi bakoitza bere fitxan irekiko da, jatorrizko izenarekin.
-* Edukia lineaz kanpo erabilgarri geratzen da gordetze automatikoari esker. Karpeta osoak ere arrasta ditzakezu sistemaren fitxategi-kudeatzailetik; fitxategi bateragarri bakoitza bere fitxan irekiko da.
+* Karpeta osoak ere arrasta ditzakezu sistemaren fitxategi-kudeatzailetik: azpikarpetak ere zeharkatzen dira eta fitxategi bateragarri bakoitza bere fitxan irekitzen da, ordena alfabetikoan. Gainerakoa alde batera uzten da eta, ezer baliagarririk ez badago, aplikazioak abisatu egiten dizu.
+* Edukia lineaz kanpo erabilgarri geratzen da gordetze automatikoari esker.
 
 ---
 
@@ -189,18 +199,30 @@ Arrastatu fitxategi bat edo gehiago aplikazioaren gainera. `.md` eta `.markdown`
 | 1-6 izenburuak | `Ctrl` + `1..6` | `Cmd` + `1..6` |
 | Buletadun zerrenda | `Ctrl` + `Shift` + `L` | `Cmd` + `Shift` + `L` |
 | Zenbakidun zerrenda | `Ctrl` + `Shift` + `O` | `Cmd` + `Shift` + `O` |
+| Aipua | `Ctrl` + `Shift` + `Q` | `Cmd` + `Shift` + `Q` |
 | Kodea | `Ctrl` + `` ` `` | `Cmd` + `` ` `` |
+| Esteka | `Ctrl` + `K` | `Cmd` + `K` |
+| Irudia | `Ctrl` + `Shift` + `I` | `Cmd` + `Shift` + `I` |
+| Taula | `Ctrl` + `Shift` + `T` | `Cmd` + `Shift` + `T` |
+| Lerroko formula | `Ctrl` + `M` | `Cmd` + `M` |
+| Blokeko formula | `Ctrl` + `Shift` + `M` | `Cmd` + `Shift` + `M` |
+| Desegin / Berregin | `Ctrl` + `Z` / `Ctrl` + `Shift` + `Z` | `Cmd` + `Z` / `Cmd` + `Shift` + `Z` |
 | **Dokumentuen kudeaketa** | | |
 | Fitxa berria | `Ctrl` + `T` | `Cmd` + `T` |
 | Fitxa itxi | `Ctrl` + `W` | `Cmd` + `W` |
+| Hurrengo / aurreko fitxa | `Ctrl` + `Tab` / `Ctrl` + `Shift` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Shift` + `Tab` |
 | Gorde | `Ctrl` + `S` | `Cmd` + `S` |
 | Fitxategia ireki | `Ctrl` + `O` | `Cmd` + `O` |
 | Itsatsi LaTeX (elkarrizketa ireki) | `Ctrl` + `Shift` + `V` | `Cmd` + `Shift` + `V` |
 | **Interfazea** | | |
 | Antolaketa aldatu | `Ctrl` + `L` | `Cmd` + `L` |
 | Bilatu | `Ctrl` + `F` | `Cmd` + `F` |
+| Testua handitu / txikitu | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Erabiltzailearen eskuliburua | `Ctrl` + `H` | `Cmd` + `H` |
+| Eskuliburua birkargatu | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Inprimatu | `Ctrl` + `P` | `Cmd` + `P` |
+
+Letra bakarreko lasterbideek dokumentuaren gainean eragiten dute, beraz eten egiten dira bilatzailea irekita dagoen bitartean.
 
 ---
 

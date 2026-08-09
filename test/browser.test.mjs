@@ -736,3 +736,62 @@ test('importar varios archivos indica por cuál va y resume al final', async (t)
   // resumen tiene que reflejar el fracaso en vez de dar por buena la tanda.
   await toast.getByText('0 de 2 archivos importados.', { exact: true }).waitFor();
 });
+
+/*
+  Ctrl+O se anunciaba en el menú y en el manual, pero no estaba conectado: la
+  combinación se la quedaba el navegador. Ctrl+Mayús+O comparte letra con la
+  lista numerada, así que la prueba vigila también que no se disparen las dos.
+*/
+test('Ctrl+O abre el selector de archivos sin pisar Ctrl+Mayús+O', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const selector = page.waitForEvent('filechooser');
+  await page.keyboard.press('Control+o');
+  assert.equal(await (await selector).element().getAttribute('id'), 'file-input');
+
+  let seleccionesExtra = 0;
+  page.on('filechooser', () => { seleccionesExtra += 1; });
+  await page.locator('#new-tab-btn').click();
+  const markdown = page.locator('#markdown-input');
+  await markdown.fill('Punto');
+  await markdown.selectText();
+  await page.keyboard.press('Control+Shift+O');
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('1. Punto'));
+  assert.equal(seleccionesExtra, 0, 'Ctrl+Mayús+O no debe abrir además el selector de archivos');
+});
+
+/*
+  Al soltar una carpeta, dataTransfer.files solo trae una entrada por directorio
+  que no supera el filtro de extensiones: sin recorrer las entradas, la carpeta
+  se rechazaba con el aviso de formato no admitido.
+*/
+test('soltar una carpeta abre los archivos que contiene', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.evaluate(() => {
+    const archivo = new File(['# Desde la carpeta'], 'apuntes.md', { type: 'text/markdown' });
+    const entradaArchivo = { isFile: true, isDirectory: false, file: (cb) => cb(archivo) };
+    let entregado = false;
+    const entradaCarpeta = {
+      isFile: false,
+      isDirectory: true,
+      createReader: () => ({
+        readEntries: (cb) => {
+          if (entregado) { cb([]); return; }
+          entregado = true;
+          cb([entradaArchivo]);
+        },
+      }),
+    };
+    const evento = new Event('drop', { bubbles: true, cancelable: true });
+    Object.defineProperty(evento, 'dataTransfer', {
+      value: { items: [{ webkitGetAsEntry: () => entradaCarpeta }], files: [], types: ['Files'] },
+    });
+    document.dispatchEvent(evento);
+  });
+
+  await page.locator('.tab-name').getByText('apuntes.md', { exact: true }).waitFor();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('# Desde la carpeta'));
+});

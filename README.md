@@ -15,9 +15,9 @@ EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores t
 - **Menú Archivo unificado**: abrir (`Ctrl+O`), importar vía Pandoc (DOCX, ODT, EPUB, HTML, TEX), pegar LaTeX (`Ctrl+Mayús+V`), guardar (`Ctrl+S`) y exportar a DOCX, ODT, EPUB, HTML autónomo o LaTeX completo.
 - **Soporte matemático avanzado**: integración con KaTeX y acceso directo a EdiCuaTeX para insertar expresiones complejas.
 - **Panel de previsualización editable**: edita sobre el resultado final, copia HTML o genera variantes LaTeX desde un menú contextual.
-- **Búsqueda y reemplazo inteligente**: ignora tildes y mayúsculas, resalta coincidencias y ofrece navegación rápida.
+- **Búsqueda y reemplazo inteligente**: ignora tildes y mayúsculas, resalta coincidencias, admite expresiones regulares y ofrece navegación rápida.
 - **Internacionalización y accesibilidad**: selector de idioma, control del tamaño de fuente, modo claro/oscuro y atajos visibles.
-- **Diseño adaptable**: barras plegables, modo escritorio independiente y posibilidad de ampliar el ancho de trabajo.
+- **Diseño adaptable**: barras plegables, modo escritorio independiente, área de edición a pantalla completa y posibilidad de ampliar el ancho de trabajo.
 
 ## Flujo de trabajo destacado
 
@@ -25,14 +25,14 @@ EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores t
 | --- | --- |
 | **Barra superior** | Gestión de archivos, idioma, tamaño de fuente, tema, ancho expandido, ventana independiente, impresión y acceso directo al manual (`Ctrl+H`). |
 | **Barra de herramientas** | Formatos básicos, listas, citas, bloques de código, enlaces, imágenes, tablas y un menú de fórmulas con snippets listos. |
-| **Panel Markdown** | Editor CodeMirror con numeración opcional, resaltado de sintaxis, botón de copia y soporte de arrastrar y soltar (`.md` y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo). |
+| **Panel Markdown** | Editor de texto con contador de caracteres, plegado de imágenes base64, botón de copia y soporte de arrastrar y soltar archivos o carpetas enteras (`.md` y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo). |
 | **Panel HTML / Vista previa** | Cambia entre vista renderizada y código HTML, copia contenido con distintos perfiles (HTML, LaTeX parcial o completo). |
 
 Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pueden renombrarse con doble clic. El autoguardado del navegador recupera automáticamente el contenido tras recargar la página.
 
 ## Importación, exportación y copia rápida
 
-- **Importar**: abre Markdown locales, pega documentos LaTeX completos o convierte ficheros mediante Pandoc (DOCX, ODT, EPUB, HTML, TEX). Las imágenes de los documentos DOCX, ODT y EPUB se extraen del archivo y se incrustan en el Markdown.
+- **Importar**: abre Markdown locales, pega documentos LaTeX completos o convierte ficheros mediante Pandoc (DOCX, ODT, EPUB, HTML, TEX). Al arrastrar y soltar se admiten carpetas enteras, que se recorren en busca de archivos compatibles. Las imágenes de los documentos DOCX, ODT y EPUB se extraen del archivo y se incrustan en el Markdown.
 - **Exportar**: genera descargas inmediatas en DOCX, ODT, EPUB (libro digital), HTML autónomo (con estilos y fórmulas incrustados) o LaTeX preparado para compilar.
 - **Copiar**: botones dedicados para copiar Markdown del panel izquierdo o seleccionar, desde el panel derecho, qué formato enviar al portapapeles.
 
@@ -44,6 +44,8 @@ Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pu
 | Encabezados H1–H6 | `Ctrl+1..6` | `Cmd+1..6` |
 | Lista / Lista numerada | `Ctrl+Mayús+L` / `Ctrl+Mayús+O` | `Cmd+Mayús+L` / `Cmd+Mayús+O` |
 | Nueva pestaña / Cerrar | `Ctrl+T` / `Ctrl+W` | `Cmd+T` / `Cmd+W` |
+| Fórmula en línea / en bloque | `Ctrl+M` / `Ctrl+Mayús+M` | `Cmd+M` / `Cmd+Mayús+M` |
+| Deshacer / Rehacer | `Ctrl+Z` / `Ctrl+Mayús+Z` | `Cmd+Z` / `Cmd+Mayús+Z` |
 | Abrir / Guardar | `Ctrl+O` / `Ctrl+S` | `Cmd+O` / `Cmd+S` |
 | Pegar LaTeX | `Ctrl+Mayús+V` | `Cmd+Mayús+V` |
 | Cambiar diseño | `Ctrl+L` | `Cmd+L` |
@@ -90,7 +92,7 @@ que evitan que una exportación rota llegue al usuario como una descarga de 0 by
 
 - **HTML5 / CSS3 / JavaScript** sin framework.
 - **Tailwind CSS** y `@tailwindcss/typography` para la capa visual.
-- **CodeMirror** como editor embebido de Markdown y HTML.
+- **CodeMirror** para la vista de código HTML.
 - **Marked.js** y **Turndown + plugin GFM** para las conversiones Markdown ↔ HTML.
 - **KaTeX** y **EdiCuaTeX** para matemáticas.
 - **Split.js** para la distribución de paneles y **Lucide Icons** para los iconos.
