@@ -76,7 +76,7 @@ La barra del costat del logotip agrupa les opcions globals de l'aplicació i con
   * **Tema**: `Sistema` segueix el de l'equip i canvia amb ell; `Clar` i `Fosc` el fixen. L'elecció es recorda el pròxim cop que obris l'aplicació.
   * **Amplada ampliada**: eixampla la superfície de treball.
   * **Finestra independent**: obre EdiMarkWeb en una finestra pròpia, a manera d'aplicació d'escriptori.
-  * **Document LaTeX…**: obre els ajustos del `.tex` que genera l'aplicació, explicats més avall.
+  * **Document exportat…**: obre els ajustos dels fitxers que genera l'aplicació (idioma i, per al LaTeX, classe i preàmbul), explicats més avall.
 * **Imprimir (Ctrl+P)**: genera una vista preparada per a paper o PDF amb els estils actuals.
 * **Cercar (Ctrl+F)** i **Manual (Ctrl+H)**: obren el cercador avançat o aquest mateix document.
 * **Esborrar-ho tot**: buida completament el document actiu després de demanar confirmació.
@@ -120,11 +120,27 @@ La cerca funciona tant a la vista de Markdown com a la vista HTML, segons on tin
 
 La zona de treball es divideix en dos plafons redimensionables:
 
-* **Markdown** (esquerra): editor de text senzill amb un comptador de caràcters i el seu botó de còpia. Tot el que hi escriguis es reflecteix immediatament al plafó dret.
+* **Markdown** (esquerra): editor de text senzill amb un comptador de caràcters, l'indicador d'idioma del document i el seu botó de còpia. Tot el que hi escriguis es reflecteix immediatament al plafó dret.
 * **HTML / Vista prèvia** (dreta): mostra el resultat final i també permet editar el contingut directament. Fes servir el botó amb la icona de codi per alternar entre la vista prèvia rica i el codi HTML generat.
 * **Copiar contingut**: botons específics per copiar el Markdown o l'HTML generat (inclou fórmules convertides a LaTeX quan copies HTML).
 
 Pots arrossegar la barra central per donar més espai a qualsevol dels plafons, maximitzar-ne un amb les fletxes de la seva capçalera o fer servir el botó de la dreta de les pestanyes per **maximitzar l'àrea d'edició**, que amaga les barres superiors i deixa la pantalla per al text.
+
+### L'idioma de cada document
+
+Al costat del comptador de caràcters hi ha un botó curt amb l'idioma del document: `ES`, `CA`, `FR`… Si es veu atenuat, aquest document no té idioma propi i fa servir l'**idioma general** de *Configuració → Document exportat…*, que és el més habitual.
+
+En triar un idioma concret, l'aplicació el desa **dins del document mateix**, de manera que viatja amb el fitxer: si el deses i l'obres demà, aquí o en un altre equip, o l'hi passes a algú, continuarà sent aquell. Per tornar enrere, tria *Idioma general*. I amb *Un altre idioma…* pots escriure el codi de qualsevol llengua (`fr`, `de`, `pt-BR`).
+
+Si algun dia obres el teu `.md` amb un editor de text pla, veuràs aquesta preferència a dalt de tot, en unes línies entre ratlles:
+
+```
+---
+lang: "ca"
+---
+```
+
+És la manera estàndard de desar dades sobre un document i molts programes l'entenen. EdiMarkWeb no la mostra a la vista prèvia, perquè no és contingut, però sí al plafó Markdown, que és el codi font. Pots esborrar-la o canviar-la a mà si vols.
 
 ### Imatges incrustades
 
@@ -165,15 +181,19 @@ Obre el botó **Fitxer** i selecciona `Exportar` per baixar versions llestes per
 
 Durant l'exportació, la barra superior mostra missatges d'estat (progrés, èxit o errors).
 
-### Ajustar el document LaTeX
+### Ajustos del document exportat
 
-**Configuració → Document LaTeX…** desa tres preferències que es reutilitzen en cada exportació a TEX i en cada còpia de *LaTeX – document complet*, també la propera vegada que obris l'aplicació:
+**Configuració → Document exportat…** desa preferències que es reutilitzen en cada exportació, també la propera vegada que obris l'aplicació.
+
+**Idioma del document**, que s'aplica als cinc formats. És el que decideix en quina llengua corregeixen l'ortografia el Word i el LibreOffice en obrir un DOCX o un ODT, com parteix els mots el LaTeX i quin idioma declaren l'HTML i l'EPUB per als lectors de pantalla. Per defecte és **Igual que la interfície**: si canvies l'idioma d'EdiMarkWeb, els documents el segueixen. Pots fixar qualsevol dels cinc idiomes de l'aplicació o triar **Altre…** i escriure'n el codi (`fr`, `de`, `pt-BR`).
+
+I tres ajustos **només per a LaTeX**, que s'apliquen en exportar a TEX i en copiar *LaTeX – document complet*:
 
 * **Classe de document**: `article` (la predeterminada), `report` o `book`.
 * **Opcions de classe**: el que va entre claudàtors a `\documentclass`, separat per comes (`12pt, a4paper`).
 * **Preàmbul**: els teus paquets i macros, que s'insereixen tal qual al final del preàmbul, just abans de `\begin{document}`.
 
-Els tres afecten només el LaTeX: DOCX, ODT, EPUB i HTML s'exporten igual que sempre. I si el document comença amb metadades YAML pròpies, manen elles i aquests ajustos no s'apliquen. Tingues en compte que un preàmbul amb errors no avisarà de res aquí: la fallada apareixerà en compilar el `.tex`.
+Si el document comença amb metadades YAML pròpies, manen elles i cap d'aquests ajustos s'aplica. I tingues en compte que un preàmbul amb errors no avisarà de res aquí: la fallada apareixerà en compilar el `.tex`.
 
 ---
 

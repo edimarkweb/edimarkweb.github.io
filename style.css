@@ -470,6 +470,12 @@ body.desktop-mode #main-container {
     border-color: rgba(148, 163, 184, 0.25);
     background: rgba(30, 41, 59, 0.7);
 }
+/*
+  Idioma heredado del ajuste general: se distingue del que el documento declara
+  por su cuenta, que va a plena intensidad.
+*/
+#doc-lang-btn.doc-lang-inherited { opacity: 0.65; }
+#doc-lang-btn.doc-lang-inherited:hover { opacity: 1; }
 .dark select.action-btn { background-color: #0f172a; }
 
 .select-trigger {

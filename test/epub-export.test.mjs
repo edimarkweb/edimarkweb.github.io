@@ -23,6 +23,7 @@ import {
   trimInlineMath,
   buildImportArgs,
   prepareLatexStandalone,
+  ensureDocumentLanguage,
   stripEpubAnchorPrefixes,
   inlineArchiveImages,
   restoreOdtTableHeaders,
@@ -559,4 +560,31 @@ test('los ajustes de LaTeX del usuario llegan al documento generado', { timeout:
   assert.match(latex, /\\newcommand\{\\R\}\{\\mathbb\{R\}\}/, 'falta la macro del preámbulo');
   // El preámbulo va antes del cuerpo, no dentro de él.
   assert.ok(latex.indexOf('\\usepackage{amsthm}') < latex.indexOf('\\begin{document}'));
+});
+
+/*
+  Sin metadato de idioma, Pandoc marca los DOCX y los ODT como inglés de EE. UU.
+  y el corrector de Word o LibreOffice subraya el texto entero; el HTML autónomo
+  sale con lang="" , que para un lector de pantalla es peor que nada.
+*/
+test('el idioma del documento llega a DOCX, ODT y HTML', { timeout: 240000 }, async () => {
+  const fuente = '# Título\n\nUn texto cualquiera para revisar.\n';
+  const conIdioma = ensureDocumentLanguage(fuente, { lang: 'es' }).markdown;
+
+  const docx = readZipEntries((await runPandoc(buildExportArgs('docx', {}), conIdioma)).bytes);
+  const estilosDocx = docx.get('word/styles.xml').toString('utf8');
+  assert.match(estilosDocx, /w:lang[^>]*w:val="es"/, 'el DOCX sigue en inglés');
+
+  const odt = readZipEntries((await runPandoc(buildExportArgs('odt', {}), conIdioma)).bytes);
+  const estilosOdt = odt.get('styles.xml').toString('utf8');
+  assert.match(estilosOdt, /fo:language="es"/, 'el ODT sigue en inglés');
+
+  const html = new TextDecoder().decode(
+    (await runPandoc(`-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --mathjax -s`, conIdioma)).bytes
+  );
+  assert.match(html, /<html[^>]*\blang="es"/, `el HTML no declara el idioma:\n${html.slice(0, 200)}`);
+
+  // Sin el metadato, el idioma inglés por defecto es lo que se colaba antes.
+  const sinIdioma = readZipEntries((await runPandoc(buildExportArgs('docx', {}), fuente)).bytes);
+  assert.match(sinIdioma.get('word/styles.xml').toString('utf8'), /w:lang[^>]*w:val="en-US"/);
 });

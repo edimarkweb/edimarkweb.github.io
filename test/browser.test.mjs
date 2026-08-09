@@ -797,10 +797,10 @@ test('soltar una carpeta abre los archivos que contiene', async (t) => {
 });
 
 /*
-  Los ajustes de LaTeX solo sirven si sobreviven a la sesión: se guardan en el
+  Los ajustes solo sirven si sobreviven a la sesión: se guardan en el
   almacenamiento local y el exportador los recoge de window.
 */
-test('los ajustes de LaTeX se guardan y se recuperan al volver', async (t) => {
+test('los ajustes del documento se guardan y se recuperan al volver', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
 
@@ -813,7 +813,7 @@ test('los ajustes de LaTeX se guardan y se recuperan al volver', async (t) => {
 
   assert.deepEqual(
     await page.evaluate(() => window.__edimarkLatexSettings),
-    { documentClass: 'report', classOptions: '12pt, a4paper', preamble: '\\usepackage{amsthm}' }
+    { documentLanguage: 'auto', documentClass: 'report', classOptions: '12pt, a4paper', preamble: '\\usepackage{amsthm}' }
   );
 
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -830,4 +830,116 @@ test('los ajustes de LaTeX se guardan y se recuperan al volver', async (t) => {
     await page.evaluate(() => window.__edimarkLatexSettings.preamble),
     '\\usepackage{amsthm}'
   );
+});
+
+/*
+  El idioma por omisión sigue al de la interfaz en cada exportación: guardarlo
+  resuelto dejaría los documentos en un idioma que el usuario ya no usa.
+*/
+test('el idioma del documento admite un código libre y por omisión sigue a la interfaz', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  // El campo del código solo aparece al elegir «Otro…».
+  await assert.doesNotReject(page.locator('#doc-language-code-field.hidden').waitFor({ state: 'attached' }));
+  await page.locator('#doc-language').selectOption('other');
+  await page.locator('#doc-language-code-field').waitFor({ state: 'visible' });
+  await page.locator('#doc-language-code').fill('pt-BR');
+  await page.locator('#latex-settings-save-btn').click();
+  assert.equal(await page.evaluate(() => window.__edimarkLatexSettings.documentLanguage), 'pt-BR');
+
+  // Al reabrir, un código no listado vuelve a presentarse como «Otro…».
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  assert.equal(await page.locator('#doc-language').inputValue(), 'other');
+  assert.equal(await page.locator('#doc-language-code').inputValue(), 'pt-BR');
+
+  // «Otro…» sin código no significa nada y vuelve al automático.
+  await page.locator('#doc-language-code').fill('   ');
+  await page.locator('#latex-settings-save-btn').click();
+  assert.equal(await page.evaluate(() => window.__edimarkLatexSettings.documentLanguage), 'auto');
+});
+
+/*
+  Los metadatos son datos sobre el documento, no contenido. marked no los
+  conoce y los pintaba como una raya horizontal y un encabezado falso con el
+  texto crudo dentro.
+*/
+test('el bloque de metadatos no se ve en la vista previa y sobrevive a editarla', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('---\nlang: "fr"\ntitle: "Mi documento"\n---\n\n# Encabezado\n\nTexto normal.\n');
+  await page.locator('#html-output h1').getByText('Encabezado', { exact: true }).waitFor();
+
+  const preview = page.locator('#html-output');
+  assert.equal((await preview.innerText()).includes('lang:'), false, 'los metadatos no deben verse');
+  assert.equal(await preview.locator('hr').count(), 0, 'el --- no debe salir como raya horizontal');
+  // El editor de Markdown sí los muestra: es el código fuente.
+  assert.match(await page.locator('#markdown-input').inputValue(), /^---\nlang: "fr"/);
+
+  // Editar en la vista previa devuelve Markdown sin metadatos: hay que reponerlos.
+  await page.evaluate(() => {
+    const output = document.getElementById('html-output');
+    output.focus();
+    output.querySelector('p').textContent = 'Texto editado en la vista previa.';
+    output.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('editado en la vista previa'));
+  const markdown = await page.locator('#markdown-input').inputValue();
+  assert.match(markdown, /^---\nlang: "fr"\ntitle: "Mi documento"\n---\n/, `metadatos perdidos:\n${markdown}`);
+});
+
+/*
+  El idioma de un documento concreto vive en su propio bloque de metadatos, no
+  en los ajustes de la aplicación: así viaja con el archivo.
+*/
+test('el idioma del documento se elige desde el panel y se guarda en el archivo', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('# Notas\n\nTexto.\n');
+  await page.locator('#html-output h1').getByText('Notas', { exact: true }).waitFor();
+
+  // Sin idioma propio: hereda el general y el botón se ve atenuado.
+  const boton = page.locator('#doc-lang-btn');
+  assert.equal(await page.locator('#doc-lang-label').textContent(), 'ES');
+  assert.equal(await boton.evaluate(b => b.classList.contains('doc-lang-inherited')), true);
+
+  await boton.click();
+  await page.locator('[data-doc-lang="ca"]').click();
+  assert.equal(await page.locator('#doc-lang-label').textContent(), 'CA');
+  assert.equal(await boton.evaluate(b => b.classList.contains('doc-lang-inherited')), false);
+
+  // Queda escrito en el documento, y sin ensuciar la vista previa.
+  assert.equal(await page.locator('#markdown-input').inputValue(), '---\nlang: "ca"\n---\n\n# Notas\n\nTexto.\n');
+  assert.equal((await page.locator('#html-output').innerText()).includes('lang'), false);
+
+  // Volver al idioma general retira la línea y el bloque, que se queda vacío.
+  await boton.click();
+  await page.locator('[data-doc-lang=""]').click();
+  assert.equal(await page.locator('#markdown-input').inputValue(), '# Notas\n\nTexto.\n');
+  assert.equal(await page.locator('#doc-lang-label').textContent(), 'ES');
+});
+
+test('un documento sin idioma propio sigue al ajuste general', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('Texto suelto\n');
+  assert.equal(await page.locator('#doc-lang-label').textContent(), 'ES');
+
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  await page.locator('#doc-language').selectOption('eu');
+  await page.locator('#latex-settings-save-btn').click();
+
+  assert.equal(await page.locator('#doc-lang-label').textContent(), 'EU');
+  // El documento sigue limpio: el idioma general no se escribe en el archivo.
+  assert.equal(await page.locator('#markdown-input').inputValue(), 'Texto suelto\n');
 });

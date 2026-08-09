@@ -71,7 +71,7 @@ La barra junto al logotipo agrupa las opciones globales de la aplicación y ahor
   * **Tema**: `Sistema` sigue el del equipo y cambia con él; `Claro` y `Oscuro` lo fijan. La elección se recuerda la próxima vez que abras la aplicación.
   * **Ancho expandido**: amplía la superficie de trabajo.
   * **Ventana independiente**: abre EdiMarkWeb en una ventana propia, a modo de aplicación de escritorio.
-  * **Documento LaTeX…**: abre los ajustes del `.tex` que genera la aplicación, explicados más abajo.
+  * **Documento exportado…**: abre los ajustes de los archivos que genera la aplicación (idioma y, para LaTeX, clase y preámbulo), explicados más abajo.
 * **Imprimir (Ctrl+P)**: genera una vista preparada para papel o PDF con los estilos actuales.
 * **Buscar (Ctrl+F)** y **Manual (Ctrl+H)**: abren el buscador avanzado o este mismo documento.
 * **Borrar todo**: limpia por completo el documento activo tras pedir confirmación.
@@ -115,11 +115,27 @@ La búsqueda funciona tanto en la vista de Markdown como en la vista HTML según
 
 La zona de trabajo se divide en dos paneles redimensionables:
 
-* **Markdown** (izquierda): editor de texto sencillo con un contador de caracteres y su botón de copia. Todo lo que escribas aquí se refleja de inmediato en el panel derecho.
+* **Markdown** (izquierda): editor de texto sencillo con un contador de caracteres, el indicador de idioma del documento y su botón de copia. Todo lo que escribas aquí se refleja de inmediato en el panel derecho.
 * **HTML / Previsualización** (derecha): muestra el resultado final y también permite editar el contenido directamente. Usa el botón con el icono de código para alternar entre la previsualización rica y el código HTML generado.
 * **Copiar contenido**: Botones específicos para copiar Markdown o el HTML generado (incluye fórmulas convertidas a LaTeX cuando copias HTML).
 
 Puedes arrastrar la barra central para dar más espacio a cualquiera de los paneles, maximizar uno de los dos con las flechas de su cabecera o usar el botón de la derecha de las pestañas para **maximizar el área de edición**, que oculta las barras superiores y deja la pantalla para el texto.
+
+### El idioma de cada documento
+
+Junto al contador de caracteres hay un botón corto con el idioma del documento: `ES`, `CA`, `FR`… Si se ve atenuado, ese documento no tiene idioma propio y usa el **idioma general** de *Configuración → Documento exportado…*, que es lo normal.
+
+Al elegir un idioma concreto, la aplicación lo guarda **dentro del propio documento**, de modo que viaja con el archivo: si lo guardas y lo abres mañana, aquí o en otro equipo, o se lo pasas a alguien, seguirá siendo ese. Para volver a lo anterior, elige *Idioma general*. Y con *Otro idioma…* puedes escribir el código de cualquier lengua (`fr`, `de`, `pt-BR`).
+
+Si alguna vez abres tu `.md` con un editor de texto plano, verás esa preferencia arriba del todo, en unas líneas entre rayas:
+
+```
+---
+lang: "ca"
+---
+```
+
+Es la forma estándar de guardar datos sobre un documento y la entienden muchos programas. EdiMarkWeb no la muestra en la previsualización, porque no es contenido, pero sí en el panel Markdown, que es el código fuente. Puedes borrarla o cambiarla a mano si quieres.
 
 ### Imágenes incrustadas
 
@@ -160,15 +176,19 @@ Abre el botón **Archivo** y selecciona `Exportar` para descargar versiones list
 
 Durante la exportación, la barra superior muestra mensajes de estado (progreso, éxito o errores).
 
-### Ajustar el documento LaTeX
+### Ajustes del documento exportado
 
-**Configuración → Documento LaTeX…** guarda tres preferencias que se reutilizan en cada exportación a TEX y en cada copia de *LaTeX – documento completo*, también la próxima vez que abras la aplicación:
+**Configuración → Documento exportado…** guarda preferencias que se reutilizan en cada exportación, también la próxima vez que abras la aplicación.
+
+**Idioma del documento**, que se aplica a los cinco formatos. Es el que decide en qué lengua corrigen la ortografía Word y LibreOffice al abrir un DOCX o un ODT, cómo parte las palabras LaTeX y qué idioma declaran el HTML y el EPUB para los lectores de pantalla. Por omisión es **Igual que la interfaz**: si cambias el idioma de EdiMarkWeb, los documentos lo siguen. Puedes fijar cualquiera de los cinco idiomas de la aplicación o elegir **Otro…** y escribir su código (`fr`, `de`, `pt-BR`).
+
+Y tres ajustes **solo para LaTeX**, que se aplican al exportar a TEX y al copiar *LaTeX – documento completo*:
 
 * **Clase de documento**: `article` (la predeterminada), `report` o `book`.
 * **Opciones de clase**: lo que va entre corchetes en `\documentclass`, separado por comas (`12pt, a4paper`).
 * **Preámbulo**: tus paquetes y macros, que se insertan tal cual al final del preámbulo, justo antes de `\begin{document}`.
 
-Los tres afectan solo al LaTeX: DOCX, ODT, EPUB y HTML se exportan igual que siempre. Y si el documento empieza con sus propios metadatos YAML, mandan ellos y estos ajustes no se aplican. Ten en cuenta que un preámbulo con errores no dará ningún aviso aquí: el fallo aparecerá al compilar el `.tex`.
+Si el documento empieza con sus propios metadatos YAML, mandan ellos y ninguno de estos ajustes se aplica. Y ten en cuenta que un preámbulo con errores no dará ningún aviso aquí: el fallo aparecerá al compilar el `.tex`.
 
 ---
 

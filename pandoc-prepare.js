@@ -184,6 +184,79 @@ export function hasYamlFrontMatter(markdown) {
   return false;
 }
 
+/*
+  The YAML block split from the body.
+
+  `frontMatter` keeps the raw text, delimiters included, so that it can be put
+  back untouched: anything the user wrote there (comments, quoting style, key
+  order) survives a round trip through the preview.
+
+  `keys` only lists the top-level keys, which is all the callers need to know:
+  whether the document already says something about a piece of metadata. The
+  values of nested or multi-line entries are not parsed, and do not need to be.
+*/
+export function splitFrontMatter(markdown) {
+  const source = typeof markdown === 'string' ? markdown : '';
+  const empty = { frontMatter: '', body: source, keys: [], lang: '' };
+  if (!hasYamlFrontMatter(source)) return empty;
+
+  const lines = source.split('\n');
+  let open = 0;
+  while (open < lines.length && lines[open].trim() === '') open += 1;
+  let close = -1;
+  for (let i = open + 1; i < lines.length; i += 1) {
+    const trimmed = lines[i].trim();
+    if (trimmed === '---' || trimmed === '...') { close = i; break; }
+  }
+  if (close === -1) return empty;
+
+  const keys = [];
+  let lang = '';
+  for (let i = open + 1; i < close; i += 1) {
+    // Solo el primer nivel: lo indentado pertenece a la clave anterior.
+    const match = lines[i].match(/^([A-Za-z][\w-]*)\s*:(.*)$/);
+    if (!match) continue;
+    keys.push(match[1]);
+    if (match[1] === 'lang') {
+      lang = match[2].trim().replace(/^["']|["']$/g, '');
+    }
+  }
+
+  // El salto en blanco que separa los metadatos del cuerpo se va con ellos.
+  let bodyStart = close + 1;
+  if (bodyStart < lines.length && lines[bodyStart].trim() === '') bodyStart += 1;
+
+  return {
+    frontMatter: lines.slice(0, close + 1).join('\n'),
+    body: lines.slice(bodyStart).join('\n'),
+    keys,
+    lang,
+  };
+}
+
+/*
+  Adds the entries the document does not already declare, keeping its own block
+  as it is. Each entry brings its YAML lines already formatted, because a value
+  can be a scalar, a list or a literal block.
+*/
+export function mergeFrontMatter(markdown, entries = []) {
+  const source = typeof markdown === 'string' ? markdown : '';
+  const { frontMatter, body, keys } = splitFrontMatter(source);
+  const missing = entries.filter(entry => entry && entry.key && !keys.includes(entry.key));
+  if (!missing.length) return { markdown: source, added: [] };
+
+  const added = missing.flatMap(entry => entry.lines);
+  if (!frontMatter) {
+    return { markdown: `---\n${added.join('\n')}\n---\n\n${source}`, added: missing.map(e => e.key) };
+  }
+  const lines = frontMatter.split('\n');
+  const closing = lines.pop();
+  return {
+    markdown: `${[...lines, ...added, closing].join('\n')}\n\n${body}`,
+    added: missing.map(e => e.key),
+  };
+}
+
 // First level-1 heading, skipping fenced code blocks so that a shell comment
 // such as `# npm install` cannot be mistaken for the document title.
 export function extractMarkdownTitle(markdown) {
@@ -259,6 +332,10 @@ export function normalizeThematicBreaks(markdown) {
   Returns the markdown to convert plus `titleFromHeading`, which tells the
   caller whether the body already displays the title (so that Pandoc's
   generated title page would repeat it).
+
+  What the document declares is kept and only the rest is filled in: since the
+  language can now live in the document's own block, an all-or-nothing rule
+  would cost it its title as soon as the user picked a language.
 */
 export function ensureEpubMetadata(markdown, {
   fallbackTitle = '',
@@ -266,24 +343,39 @@ export function ensureEpubMetadata(markdown, {
   lang = 'es',
 } = {}) {
   const source = typeof markdown === 'string' ? markdown : '';
-  if (hasYamlFrontMatter(source)) {
-    return { markdown: source, titleFromHeading: false, injected: false };
-  }
-  const headingTitle = extractMarkdownTitle(source);
+  const { keys } = splitFrontMatter(source);
+  const headingTitle = keys.includes('title') ? '' : extractMarkdownTitle(source);
   const title = headingTitle || String(fallbackTitle || '').trim() || untitledLabel;
-  const frontMatter = [
-    '---',
-    `title: "${escapeYamlValue(title)}"`,
-    `lang: "${escapeYamlValue(lang || 'es')}"`,
-    '---',
-    '',
-    '',
-  ].join('\n');
+  const { markdown: merged, added } = mergeFrontMatter(source, [
+    { key: 'title', lines: [`title: "${escapeYamlValue(title)}"`] },
+    { key: 'lang', lines: [`lang: "${escapeYamlValue(lang || 'es')}"`] },
+  ]);
   return {
-    markdown: frontMatter + source,
+    markdown: merged,
     titleFromHeading: Boolean(headingTitle),
-    injected: true,
+    injected: added.length > 0,
   };
+}
+
+/*
+  The document language, for the formats that carry no other metadata.
+
+  Without it Pandoc writes `w:lang w:val="en-US"` into the DOCX styles and
+  `fo:language="en" fo:country="US"` into the ODT ones, so Word and LibreOffice
+  spell-check a Spanish text against an English dictionary and underline every
+  other word. Standalone HTML is worse off: it gets `lang=""`, which tells a
+  screen reader nothing at all.
+
+  A document that states its own language keeps it; this only fills the gap.
+*/
+export function ensureDocumentLanguage(markdown, { lang = 'es' } = {}) {
+  const source = typeof markdown === 'string' ? markdown : '';
+  const code = String(lang || '').trim();
+  if (!code) return { markdown: source, injected: false };
+  const { markdown: merged, added } = mergeFrontMatter(source, [
+    { key: 'lang', lines: [`lang: "${escapeYamlValue(code)}"`] },
+  ]);
+  return { markdown: merged, injected: added.length > 0 };
 }
 
 /*
@@ -352,9 +444,12 @@ function yamlClassOptions(options) {
   The promotion is deliberately conservative. With several level-1 headings the
   document is using them as sections, so touching them would break its
   structure; `shiftHeadings` then stays false and only the language is added.
-  A document that already carries its own YAML block is left untouched: its
-  author has said what the metadata should be, and that includes the settings
-  coming from the app.
+  A title the document already declares is respected as it is, heading included:
+  removing the heading then would delete a title the author never asked to move.
+
+  Each key the document declares wins over the app setting, and the rest are
+  added. Anything else would mean that picking a language for a document —which
+  writes `lang` into its block— silently dropped its class and preamble.
 
   `documentClass` and `classOptions` cannot be part of the preamble: the
   template has already emitted \documentclass by the time `header-includes`
@@ -367,38 +462,41 @@ export function prepareLatexStandalone(markdown, {
   preamble = '',
 } = {}) {
   const source = typeof markdown === 'string' ? markdown : '';
-  if (hasYamlFrontMatter(source)) {
-    return { markdown: source, shiftHeadings: false, injected: false };
-  }
+  const { keys, body: sourceBody, frontMatter } = splitFrontMatter(source);
 
-  const lines = source.split('\n');
-  const { headings, firstContentLine } = scanTopLevelHeadings(lines);
-  const opensWithTitle = headings.length === 1
+  const bodyLines = sourceBody.split('\n');
+  const { headings, firstContentLine } = scanTopLevelHeadings(bodyLines);
+  const opensWithTitle = !keys.includes('title')
+    && headings.length === 1
     && headings[0].index === firstContentLine
     && Boolean(headings[0].text);
 
-  const meta = ['---'];
-  if (opensWithTitle) meta.push(`title: "${escapeYamlValue(headings[0].text)}"`);
-  meta.push(`lang: "${escapeYamlValue(lang || 'es')}"`);
+  const entries = [];
+  if (opensWithTitle) {
+    entries.push({ key: 'title', lines: [`title: "${escapeYamlValue(headings[0].text)}"`] });
+  }
+  entries.push({ key: 'lang', lines: [`lang: "${escapeYamlValue(lang || 'es')}"`] });
 
   const cls = String(documentClass || '').trim();
   if (LATEX_DOCUMENT_CLASSES.includes(cls)) {
-    meta.push(`documentclass: "${escapeYamlValue(cls)}"`);
+    entries.push({ key: 'documentclass', lines: [`documentclass: "${escapeYamlValue(cls)}"`] });
   }
-  meta.push(...yamlClassOptions(classOptions || ''));
+  const optionLines = yamlClassOptions(classOptions || '');
+  if (optionLines.length) entries.push({ key: 'classoption', lines: optionLines });
   if (String(preamble || '').trim()) {
-    meta.push(...yamlLiteralBlock('header-includes', preamble));
+    entries.push({ key: 'header-includes', lines: yamlLiteralBlock('header-includes', preamble) });
   }
-  meta.push('---', '', '');
 
-  const body = opensWithTitle
-    ? lines.filter((_, index) => index !== headings[0].index).join('\n')
+  // El encabezado promovido sale del cuerpo para no repetirse bajo \maketitle.
+  const withoutTitle = opensWithTitle
+    ? `${frontMatter ? `${frontMatter}\n\n` : ''}${bodyLines.filter((_, i) => i !== headings[0].index).join('\n')}`
     : source;
+  const { markdown: merged, added } = mergeFrontMatter(withoutTitle, entries);
 
   return {
-    markdown: meta.join('\n') + body,
+    markdown: merged,
     shiftHeadings: opensWithTitle,
-    injected: true,
+    injected: added.length > 0,
   };
 }
 

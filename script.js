@@ -3,7 +3,7 @@
   llevan un marcador {version} en los cinco idiomas. La otra copia vive en
   package.json y una prueba comprueba que ambas coinciden.
 */
-const APP_VERSION = '2.11.0';
+const APP_VERSION = '2.12.0';
 
 // Declaración de variables globales
 let turndownService;
@@ -2468,14 +2468,34 @@ function openManualDoc(forceReload = false) {
 }
 
 
+/*
+  El bloque de metadatos del documento (`---` … `---`), separado del cuerpo.
+
+  Son datos sobre el documento, no contenido: Pandoc los lee al exportar, pero
+  marked no los conoce y los pintaba como una raya horizontal y un encabezado
+  falso con el texto crudo dentro. La vista previa muestra solo el cuerpo; el
+  editor de Markdown, que es el código fuente, los sigue mostrando.
+
+  Si el módulo del exportador aún no ha cargado, no hay nada que esconder y el
+  documento se trata entero, como antes.
+*/
+function splitDocumentFrontMatter(markdown) {
+    const api = window.PandocExporter;
+    if (api && typeof api.splitFrontMatter === 'function') {
+        return api.splitFrontMatter(markdown);
+    }
+    return { frontMatter: '', body: typeof markdown === 'string' ? markdown : '', keys: [], lang: '' };
+}
+
 // --- Funciones principales ---
 function updateHtml() {
     if (isUpdating) return;
     isUpdating = true;
-    const markdownText = markdownEditor.getValue();
+    const fullMarkdown = markdownEditor.getValue();
+    const markdownText = splitDocumentFrontMatter(fullMarkdown).body;
     const htmlOutput = document.getElementById('html-output');
-    updateMarkdownCharCounter(markdownText);
-    
+    updateMarkdownCharCounter(fullMarkdown);
+
     const { text: markdownWithoutMath, segments: mathSegments } = protectMathSegments(markdownText);
     const sanitizedText = preserveMarkdownEscapes(markdownWithoutMath);
     
@@ -2520,6 +2540,10 @@ function updateHtml() {
             updateDirtyIndicator(currentId, markdownEditor.getValue() !== doc.lastSaved);
         }
     }
+    // El indicador muestra el idioma efectivo del documento activo.
+    if (typeof window.__refreshDocLanguageIndicator === 'function') {
+        window.__refreshDocLanguageIndicator();
+    }
     isUpdating = false;
 }
 
@@ -2550,6 +2574,13 @@ function updateMarkdown() {
         markdownFromPreview = restoreMathSegments(markdownFromPreview, previewMathSegments);
         markdownFromPreview = normalizeMathEscapes(markdownFromPreview);
         const currentMarkdown = markdownEditor.getValue();
+        /*
+          La vista previa no muestra los metadatos, así que lo que vuelve de
+          ella no los trae: sin reponerlos, escribir una letra en el panel
+          derecho borraría el idioma del documento.
+        */
+        const { frontMatter } = splitDocumentFrontMatter(currentMarkdown);
+        if (frontMatter) markdownFromPreview = `${frontMatter}\n\n${markdownFromPreview}`;
         if (currentMarkdown !== markdownFromPreview) {
             skipNextMarkdownSync = true;
             skipNextCursorSync = true;
@@ -2680,7 +2711,15 @@ function toggleImageModal(show, presetText = '') {
   reutilicen de una sesión a otra, y se publican en window para que
   pandoc-exporter.js los recoja sin depender de este archivo.
 */
-const LATEX_SETTINGS_DEFAULTS = { documentClass: 'article', classOptions: '', preamble: '' };
+const LATEX_SETTINGS_DEFAULTS = {
+    // 'auto' es el idioma de la interfaz resuelto en cada exportación, no el de
+    // hoy congelado: quien cambie de idioma la aplicación no debería seguir
+    // exportando en el anterior sin saber por qué.
+    documentLanguage: 'auto',
+    documentClass: 'article',
+    classOptions: '',
+    preamble: '',
+};
 
 function readLatexSettings() {
     const raw = safeLocalStorageGet(LATEX_SETTINGS_KEY);
@@ -2689,12 +2728,15 @@ function readLatexSettings() {
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== 'object') return { ...LATEX_SETTINGS_DEFAULTS };
         return {
+            documentLanguage: typeof parsed.documentLanguage === 'string' && parsed.documentLanguage.trim()
+                ? parsed.documentLanguage.trim()
+                : LATEX_SETTINGS_DEFAULTS.documentLanguage,
             documentClass: typeof parsed.documentClass === 'string' ? parsed.documentClass : LATEX_SETTINGS_DEFAULTS.documentClass,
             classOptions: typeof parsed.classOptions === 'string' ? parsed.classOptions : '',
             preamble: typeof parsed.preamble === 'string' ? parsed.preamble : '',
         };
     } catch (error) {
-        console.warn('Ajustes de LaTeX ilegibles, se usan los predeterminados:', error);
+        console.warn('Ajustes del documento ilegibles, se usan los predeterminados:', error);
         return { ...LATEX_SETTINGS_DEFAULTS };
     }
 }
@@ -2707,6 +2749,10 @@ function publishLatexSettings(settings) {
 function storeLatexSettings(settings) {
     publishLatexSettings(settings);
     safeLocalStorageSet(LATEX_SETTINGS_KEY, JSON.stringify(settings));
+    // Los documentos sin idioma propio siguen al general: el indicador cambia.
+    if (typeof window.__refreshDocLanguageIndicator === 'function') {
+        window.__refreshDocLanguageIndicator();
+    }
 }
 
 function toggleLatexImportModal(show) {
@@ -3369,6 +3415,9 @@ window.onload = () => {
     latexImportCancelBtn = document.getElementById('latex-import-cancel-btn');
     const latexSettingsBtn = document.getElementById('latex-settings-btn');
     const latexSettingsOverlay = document.getElementById('latex-settings-modal-overlay');
+    const docLanguageSelect = document.getElementById('doc-language');
+    const docLanguageCodeField = document.getElementById('doc-language-code-field');
+    const docLanguageCodeInput = document.getElementById('doc-language-code');
     const latexClassSelect = document.getElementById('latex-documentclass');
     const latexClassOptionsInput = document.getElementById('latex-classoption');
     const latexPreambleTextarea = document.getElementById('latex-preamble');
@@ -3543,6 +3592,125 @@ window.onload = () => {
         if (event.key === 'Escape') {
             closeFormulaOptions();
         }
+    });
+
+    /*
+      Idioma de este documento.
+
+      Vive en el bloque de metadatos del propio Markdown, así que viaja con el
+      archivo: al guardarlo y volver a abrirlo, aquí o en otro equipo, sigue
+      siendo el suyo. Sin declarar, el documento usa el idioma general de
+      Configuración, que es lo que ocurre con casi todos.
+    */
+    const docLangContainer = document.getElementById('doc-lang-container');
+    const docLangBtn = document.getElementById('doc-lang-btn');
+    const docLangLabel = document.getElementById('doc-lang-label');
+    const docLangMenu = document.getElementById('doc-lang-menu');
+    const docLangOtherBtn = document.getElementById('doc-lang-other-btn');
+    const docLangOptions = docLangMenu ? Array.from(docLangMenu.querySelectorAll('[data-doc-lang]')) : [];
+
+    const closeDocLangMenu = () => {
+        if (docLangMenu) docLangMenu.classList.add('hidden');
+        if (docLangBtn) docLangBtn.setAttribute('aria-expanded', 'false');
+    };
+
+    function generalDocumentLanguage() {
+        const settings = window.__edimarkLatexSettings || {};
+        const chosen = String(settings.documentLanguage || '').trim();
+        if (chosen && chosen !== 'auto') return chosen;
+        return window.__edimarkLang || document.documentElement.lang || 'es';
+    }
+
+    function refreshDocLanguageIndicator() {
+        if (!docLangBtn || !markdownEditor) return;
+        const own = splitDocumentFrontMatter(markdownEditor.getValue()).lang;
+        const effective = own || generalDocumentLanguage();
+        if (docLangLabel) docLangLabel.textContent = effective.toUpperCase();
+        // Sin idioma propio, el botón se ve más apagado: lo hereda.
+        docLangBtn.classList.toggle('doc-lang-inherited', !own);
+        docLangBtn.setAttribute('aria-label', formatTranslation(
+            own ? 'doc_lang_btn_own' : 'doc_lang_btn_inherited',
+            own ? 'Idioma de este documento: {lang}' : 'Idioma general: {lang}',
+            { lang: effective },
+        ));
+        docLangOptions.forEach((option) => {
+            const selected = (option.dataset.docLang || '') === own;
+            option.setAttribute('aria-checked', selected ? 'true' : 'false');
+            const check = option.querySelector('.doc-lang-check');
+            if (check) check.classList.toggle('hidden', !selected);
+        });
+    }
+    window.__refreshDocLanguageIndicator = refreshDocLanguageIndicator;
+
+    /*
+      Escribe (o quita) el idioma del documento sin tocar el resto de sus
+      metadatos ni su contenido.
+    */
+    function setDocumentLanguage(code) {
+        if (!markdownEditor) return;
+        const api = window.PandocExporter;
+        const current = markdownEditor.getValue();
+        const { frontMatter, body } = splitDocumentFrontMatter(current);
+        const clean = String(code || '').trim();
+
+        let updated;
+        if (!clean) {
+            // Volver al idioma general: fuera la línea, y fuera el bloque si se
+            // queda sin nada dentro.
+            if (!frontMatter) return;
+            const kept = frontMatter.split('\n').filter(line => !/^lang\s*:/.test(line));
+            const hasFields = kept.slice(1).some(line => line.trim() && line.trim() !== '---');
+            updated = hasFields ? `${kept.join('\n')}\n\n${body}` : body;
+        } else if (frontMatter && /^lang\s*:/m.test(frontMatter)) {
+            const replaced = frontMatter.replace(/^lang\s*:.*$/m, `lang: "${clean.replace(/"/g, '\\"')}"`);
+            updated = `${replaced}\n\n${body}`;
+        } else if (api && typeof api.mergeFrontMatter === 'function') {
+            updated = api.mergeFrontMatter(current, [
+                { key: 'lang', lines: [`lang: "${clean.replace(/"/g, '\\"')}"`] },
+            ]).markdown;
+        } else {
+            updated = `---\nlang: "${clean.replace(/"/g, '\\"')}"\n---\n\n${current}`;
+        }
+
+        if (updated === current) return;
+        markdownEditor.setValue(updated);
+        updateHtml();
+        refreshDocLanguageIndicator();
+    }
+
+    if (docLangBtn) {
+        docLangBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!docLangMenu) return;
+            const hidden = docLangMenu.classList.contains('hidden');
+            docLangMenu.classList.toggle('hidden', !hidden);
+            docLangBtn.setAttribute('aria-expanded', hidden ? 'true' : 'false');
+        });
+    }
+    docLangOptions.forEach((option) => {
+        option.addEventListener('click', () => {
+            setDocumentLanguage(option.dataset.docLang || '');
+            closeDocLangMenu();
+        });
+    });
+    if (docLangOtherBtn) {
+        docLangOtherBtn.addEventListener('click', () => {
+            closeDocLangMenu();
+            const current = splitDocumentFrontMatter(markdownEditor.getValue()).lang;
+            const answer = prompt(
+                getTranslation('doc_lang_other_prompt', 'Código del idioma (por ejemplo fr, de o pt-BR):'),
+                current,
+            );
+            if (answer === null) return;
+            setDocumentLanguage(answer.trim());
+        });
+    }
+    document.addEventListener('click', (event) => {
+        if (docLangContainer && !docLangContainer.contains(event.target)) closeDocLangMenu();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeDocLangMenu();
     });
 
     if (window.lucide) lucide.createIcons();
@@ -4796,10 +4964,38 @@ window.onload = () => {
         latexImportConvertBtn.addEventListener('click', handleLatexImportConversion);
     }
 
+    const LISTED_DOC_LANGUAGES = ['auto', 'es', 'en', 'ca', 'gl', 'eu'];
+
+    // El campo del código solo estorba mientras no haga falta.
+    function syncDocLanguageCodeField() {
+        if (!docLanguageCodeField || !docLanguageSelect) return;
+        docLanguageCodeField.classList.toggle('hidden', docLanguageSelect.value !== 'other');
+    }
+
+    function readDocLanguageFromForm() {
+        if (!docLanguageSelect) return 'auto';
+        if (docLanguageSelect.value !== 'other') return docLanguageSelect.value;
+        const code = docLanguageCodeInput ? docLanguageCodeInput.value.trim() : '';
+        // Un «Otro…» sin código no significa nada: vuelve al automático.
+        return code || 'auto';
+    }
+
     function fillLatexSettingsForm(settings) {
+        const language = settings.documentLanguage || 'auto';
+        const listed = LISTED_DOC_LANGUAGES.includes(language);
+        if (docLanguageSelect) docLanguageSelect.value = listed ? language : 'other';
+        if (docLanguageCodeInput) docLanguageCodeInput.value = listed ? '' : language;
+        syncDocLanguageCodeField();
         if (latexClassSelect) latexClassSelect.value = settings.documentClass || 'article';
         if (latexClassOptionsInput) latexClassOptionsInput.value = settings.classOptions || '';
         if (latexPreambleTextarea) latexPreambleTextarea.value = settings.preamble || '';
+    }
+
+    if (docLanguageSelect) {
+        docLanguageSelect.addEventListener('change', () => {
+            syncDocLanguageCodeField();
+            if (docLanguageSelect.value === 'other' && docLanguageCodeInput) docLanguageCodeInput.focus();
+        });
     }
 
     function toggleLatexSettingsModal(show) {
@@ -4838,12 +5034,13 @@ window.onload = () => {
     if (latexSettingsSaveBtn) {
         latexSettingsSaveBtn.addEventListener('click', () => {
             storeLatexSettings({
+                documentLanguage: readDocLanguageFromForm(),
                 documentClass: latexClassSelect ? latexClassSelect.value : 'article',
                 classOptions: latexClassOptionsInput ? latexClassOptionsInput.value.trim() : '',
                 preamble: latexPreambleTextarea ? latexPreambleTextarea.value : '',
             });
             toggleLatexSettingsModal(false);
-            updateExportStatus(getTranslation('latex_settings_saved', 'Ajustes de LaTeX guardados.'));
+            updateExportStatus(getTranslation('doc_settings_saved', 'Ajustes del documento guardados.'));
         });
     }
 

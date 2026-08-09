@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 import {
   ensureEpubMetadata,
+  ensureDocumentLanguage,
   prepareLatexStandalone,
   extractMarkdownTitle,
   hasYamlFrontMatter,
@@ -44,11 +45,17 @@ test('extractMarkdownTitle ignora los bloques de código', () => {
   assert.equal(extractMarkdownTitle('# Con cierre ###\n'), 'Con cierre');
 });
 
-test('ensureEpubMetadata respeta el front matter propio del documento', () => {
+test('ensureEpubMetadata respeta lo que el documento declara y completa el resto', () => {
   const original = '---\ntitle: "Mío"\nauthor: Ana\n---\n\n# Cuerpo\n';
   const result = ensureEpubMetadata(original, { fallbackTitle: 'otro', lang: 'es' });
-  assert.equal(result.markdown, original);
-  assert.equal(result.injected, false);
+  // El título es suyo; el idioma faltaba y se añade sin tocar lo demás.
+  assert.match(result.markdown, /title: "Mío"\nauthor: Ana\nlang: "es"/);
+  assert.equal(result.markdown.includes('title: "otro"'), false);
+  assert.equal(result.titleFromHeading, false);
+
+  const completo = '---\ntitle: "Mío"\nlang: "de"\n---\n\n# Cuerpo\n';
+  assert.equal(ensureEpubMetadata(completo, { lang: 'es' }).markdown, completo);
+  assert.equal(ensureEpubMetadata(completo, { lang: 'es' }).injected, false);
 });
 
 test('ensureEpubMetadata inyecta título e idioma cuando faltan', () => {
@@ -68,6 +75,22 @@ test('ensureEpubMetadata encadena encabezado, nombre del documento y sin título
 
   const sinNada = ensureEpubMetadata('Texto\n', { fallbackTitle: '', untitledLabel: 'Sin título', lang: 'es' });
   assert.match(sinNada.markdown, /title: "Sin título"/);
+});
+
+test('ensureDocumentLanguage marca el idioma cuando el documento no lo trae', () => {
+  const result = ensureDocumentLanguage('# Apuntes\n\nTexto\n', { lang: 'gl' });
+  assert.equal(result.injected, true);
+  assert.match(result.markdown, /^---\nlang: "gl"\n---\n\n# Apuntes/);
+});
+
+test('ensureDocumentLanguage no pisa el front matter del documento ni inventa idiomas', () => {
+  const propio = '---\nlang: "de"\n---\n\nTexto\n';
+  assert.equal(ensureDocumentLanguage(propio, { lang: 'es' }).markdown, propio);
+  assert.equal(ensureDocumentLanguage(propio, { lang: 'es' }).injected, false);
+
+  const sinIdioma = ensureDocumentLanguage('Texto\n', { lang: '  ' });
+  assert.equal(sinIdioma.markdown, 'Texto\n');
+  assert.equal(sinIdioma.injected, false);
 });
 
 test('prepareLatexStandalone promueve a título el único encabezado inicial', () => {
@@ -97,10 +120,13 @@ test('prepareLatexStandalone solo asciende el encabezado que abre el documento',
   assert.equal(enCodigo.shiftHeadings, false);
 });
 
-test('prepareLatexStandalone respeta el front matter propio y añade siempre el idioma', () => {
+test('prepareLatexStandalone no mueve un título que el documento ya declara', () => {
   const propio = '---\ntitle: "Mío"\n---\n\n# Cuerpo\n';
-  assert.equal(prepareLatexStandalone(propio, { lang: 'eu' }).markdown, propio);
-  assert.equal(prepareLatexStandalone(propio, { lang: 'eu' }).injected, false);
+  const result = prepareLatexStandalone(propio, { lang: 'eu' });
+  assert.match(result.markdown, /title: "Mío"\nlang: "eu"/);
+  // El encabezado no se promueve ni se borra: el título ya estaba puesto.
+  assert.match(result.markdown, /# Cuerpo/);
+  assert.equal(result.shiftHeadings, false);
 
   const soloTexto = prepareLatexStandalone('Texto suelto\n', { lang: 'gl' });
   assert.match(soloTexto.markdown, /^---\nlang: "gl"\n---\n/);
@@ -142,10 +168,31 @@ test('prepareLatexStandalone ignora los ajustes vacíos o desconocidos', () => {
   assert.equal(result.markdown, '---\nlang: "es"\n---\n\nTexto\n');
 });
 
-test('prepareLatexStandalone tampoco aplica los ajustes si el documento trae su YAML', () => {
-  const propio = '---\ntitle: "Mío"\n---\n\nTexto\n';
-  const result = prepareLatexStandalone(propio, { lang: 'es', documentClass: 'book', preamble: '\\usepackage{tikz}' });
-  assert.equal(result.markdown, propio);
+/*
+  Elegir idioma para un documento le escribe `lang` en su bloque. Con la regla
+  de todo o nada, eso le habría costado la clase y el preámbulo configurados.
+*/
+test('prepareLatexStandalone completa los ajustes que el documento no declara', () => {
+  const conIdioma = '---\nlang: "fr"\n---\n\n# Notas\n\nTexto\n';
+  const result = prepareLatexStandalone(conIdioma, {
+    lang: 'es',
+    documentClass: 'book',
+    preamble: '\\usepackage{tikz}',
+  });
+  // Su idioma manda; el resto de ajustes llegan igualmente.
+  assert.match(result.markdown, /lang: "fr"/);
+  assert.equal(result.markdown.includes('lang: "es"'), false);
+  assert.match(result.markdown, /documentclass: "book"/);
+  assert.match(result.markdown, /header-includes: \|\n {2}\\usepackage\{tikz\}/);
+  // Sigue promoviendo el título, porque el documento no declara ninguno.
+  assert.match(result.markdown, /title: "Notas"/);
+  assert.equal(result.shiftHeadings, true);
+  assert.equal(result.markdown.includes('# Notas'), false);
+
+  const suyo = '---\nlang: "fr"\ndocumentclass: "memoir"\n---\n\nTexto\n';
+  const respetado = prepareLatexStandalone(suyo, { lang: 'es', documentClass: 'book' });
+  assert.match(respetado.markdown, /documentclass: "memoir"/);
+  assert.equal(respetado.markdown.includes('"book"'), false);
 });
 
 test('ensureEpubMetadata escapa comillas en el título y el idioma', () => {

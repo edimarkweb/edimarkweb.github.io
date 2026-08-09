@@ -76,7 +76,7 @@ The bar next to the logo holds the application's global options and gathers ever
   * **Theme**: `System` follows your computer's setting and changes with it; `Light` and `Dark` fix it. Your choice is remembered next time you open the application.
   * **Expanded width**: widens the working area.
   * **Separate window**: opens EdiMarkWeb in a window of its own, like a desktop application.
-  * **LaTeX document…**: opens the settings for the `.tex` the application generates, explained below.
+  * **Exported document…**: opens the settings for the files the application generates (language, plus class and preamble for LaTeX), explained below.
 * **Print (Ctrl+P)**: produces a view ready for paper or PDF using the current styles.
 * **Search (Ctrl+F)** and **Manual (Ctrl+H)**: open the advanced search panel or this very document.
 * **Clear all**: empties the active document after asking for confirmation.
@@ -120,11 +120,27 @@ Search works both in the Markdown view and in the HTML view, depending on where 
 
 The working area is split into two resizable panes:
 
-* **Markdown** (left): a plain text editor with a character counter and its copy button. Everything you type here is immediately reflected in the right pane.
+* **Markdown** (left): a plain text editor with a character counter, the document language indicator and its copy button. Everything you type here is immediately reflected in the right pane.
 * **HTML / Preview** (right): shows the final result and also lets you edit the content directly. Use the code icon button to switch between the rich preview and the generated HTML.
 * **Copying content**: dedicated buttons to copy the Markdown or the generated HTML (including formulas converted to LaTeX when copying HTML).
 
 You can drag the central bar to give more room to either pane, maximise one of them with the arrows in its header, or use the button to the right of the tabs to **maximise the editing area**, which hides the top bars and leaves the screen to the text.
+
+### Each document's language
+
+Next to the character counter there is a short button with the document language: `ES`, `CA`, `FR`… When it looks dimmed, that document has no language of its own and uses the **general language** from *Settings → Exported document…*, which is the usual case.
+
+Pick a specific language and the application stores it **inside the document itself**, so it travels with the file: save it and open it tomorrow, here or on another computer, or hand it to someone else, and it stays. To go back, choose *General language*. And with *Other language…* you can type the code of any language (`fr`, `de`, `pt-BR`).
+
+If you ever open your `.md` in a plain text editor, you will see that preference at the very top, in a few lines between dashes:
+
+```
+---
+lang: "ca"
+---
+```
+
+That is the standard way of storing data about a document and many programs understand it. EdiMarkWeb does not show it in the preview, because it is not content, but it does show it in the Markdown pane, which is the source. You can delete or change it by hand if you want.
 
 ### Embedded images
 
@@ -165,15 +181,19 @@ Open the **File** button and choose `Export` to download versions ready to hand 
 
 While exporting, the top bar shows status messages (progress, success or errors).
 
-### Tuning the LaTeX document
+### Exported document settings
 
-**Settings → LaTeX document…** stores three preferences that are reused in every TEX export and every *LaTeX – full document* copy, including the next time you open the application:
+**Settings → Exported document…** stores preferences that are reused in every export, including the next time you open the application.
+
+**Document language**, which applies to all five formats. It decides which dictionary Word and LibreOffice spell-check a DOCX or an ODT against, how LaTeX hyphenates, and which language HTML and EPUB declare to screen readers. It defaults to **Same as the interface**: change the language of EdiMarkWeb and your documents follow. You can pin any of the five interface languages, or choose **Other…** and type a code (`fr`, `de`, `pt-BR`).
+
+Plus three **LaTeX only** settings, applied when exporting to TEX and when copying *LaTeX – full document*:
 
 * **Document class**: `article` (the default), `report` or `book`.
 * **Class options**: whatever goes in brackets in `\documentclass`, comma separated (`12pt, a4paper`).
 * **Preamble**: your packages and macros, inserted verbatim at the end of the preamble, right before `\begin{document}`.
 
-All three affect LaTeX only: DOCX, ODT, EPUB and HTML export exactly as before. And if the document starts with its own YAML metadata, that wins and these settings are not applied. Bear in mind that a faulty preamble raises no warning here: the failure shows up when compiling the `.tex`.
+If the document starts with its own YAML metadata, that wins and none of these settings apply. And bear in mind that a faulty preamble raises no warning here: the failure shows up when compiling the `.tex`.
 
 ---
 

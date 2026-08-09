@@ -14,6 +14,9 @@ import {
   normalizeThematicBreaks,
   trimInlineMath,
   ensureEpubMetadata,
+  ensureDocumentLanguage,
+  splitFrontMatter,
+  mergeFrontMatter,
   prepareLatexStandalone,
   extractMarkdownTitle,
   collectFetchableImageUrls,
@@ -157,11 +160,26 @@ function currentLanguage() {
   return window.__edimarkLang || document.documentElement.lang || 'es';
 }
 
-// Ajustes de LaTeX del usuario, publicados por script.js al leerlos del
-// almacenamiento local. Solo afectan al documento completo.
-function currentLatexSettings() {
+// Ajustes de exportación del usuario, publicados por script.js al leerlos del
+// almacenamiento local.
+function documentSettings() {
   const settings = window.__edimarkLatexSettings;
-  if (!settings || typeof settings !== 'object') return {};
+  return settings && typeof settings === 'object' ? settings : {};
+}
+
+/*
+  Idioma del documento exportado. Por omisión sigue al de la interfaz: fijarlo
+  al valor de hoy dejaría los documentos de mañana en un idioma que el usuario
+  ya no está usando y no sabría de dónde sale.
+*/
+function documentLanguage() {
+  const chosen = String(documentSettings().documentLanguage || '').trim();
+  return chosen && chosen !== 'auto' ? chosen : currentLanguage();
+}
+
+// Los tres ajustes de LaTeX solo afectan al documento completo.
+function currentLatexSettings() {
+  const settings = documentSettings();
   return {
     documentClass: settings.documentClass || '',
     classOptions: settings.classOptions || '',
@@ -441,10 +459,14 @@ async function exportDocument({
     const prepared = ensureEpubMetadata(normalized, {
       fallbackTitle: documentTitle,
       untitledLabel: translate('untitled_document', 'Documento sin título'),
-      lang: currentLanguage(),
+      lang: documentLanguage(),
     });
     normalized = prepared.markdown;
     titleFromHeading = prepared.titleFromHeading;
+  } else {
+    // DOCX y ODT sin idioma salen marcados como inglés de EE. UU. y el
+    // corrector subraya el texto entero.
+    normalized = ensureDocumentLanguage(normalized, { lang: documentLanguage() }).markdown;
   }
 
   triggerStatus(onStatus, config.preparingKey, config.preparingFallback);
@@ -521,6 +543,13 @@ async function generateHtml({
     const message = translate('no_content', 'No hay contenido para exportar.');
     throw new Error(message || 'No content');
   }
+  /*
+    Solo la página completa lleva <html lang>; el fragmento se incrusta en una
+    página ajena, que es la que declara su idioma.
+  */
+  const withLanguage = standalone
+    ? ensureDocumentLanguage(normalized, { lang: documentLanguage() }).markdown
+    : normalized;
 
   triggerStatus(onStatus, 'html_export_preparing', 'Preparando HTML, espera...');
 
@@ -530,7 +559,7 @@ async function generateHtml({
     if (standalone) {
       pandocArgs += ' -s';
     }
-    const resultadoBytes = await pandoc(pandocArgs, normalized, base64);
+    const resultadoBytes = await pandoc(pandocArgs, withLanguage, base64);
     if (!resultadoBytes || resultadoBytes.length === 0) {
       throw new Error('pandoc_empty_output');
     }
@@ -573,7 +602,7 @@ async function generateLatex({
   let shiftHeadings = false;
   if (standalone) {
     const prepared = prepareLatexStandalone(normalized, {
-      lang: currentLanguage(),
+      lang: documentLanguage(),
       ...currentLatexSettings(),
     });
     normalized = prepared.markdown;
@@ -749,6 +778,10 @@ window.PandocExporter = {
   importToMarkdown,
   trimInlineMath,
   warmUpExporter,
+  // La interfaz las necesita para esconder el bloque de metadatos de la vista
+  // previa y para escribir el idioma del documento.
+  splitFrontMatter,
+  mergeFrontMatter,
 };
 
-export { exportDocument, generateHtml, generateLatex, convertLatexToMarkdown, importToMarkdown, trimInlineMath, warmUpExporter };
+export { exportDocument, generateHtml, generateLatex, convertLatexToMarkdown, importToMarkdown, trimInlineMath, warmUpExporter, splitFrontMatter, mergeFrontMatter };

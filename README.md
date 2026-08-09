@@ -25,7 +25,7 @@ EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores t
 | --- | --- |
 | **Barra superior** | Gestión de archivos, idioma, tamaño de fuente, tema, ancho expandido, ventana independiente, impresión y acceso directo al manual (`Ctrl+H`). |
 | **Barra de herramientas** | Formatos básicos, listas, citas, bloques de código, enlaces, imágenes, tablas y un menú de fórmulas con snippets listos. |
-| **Panel Markdown** | Editor de texto con contador de caracteres, plegado de imágenes base64, botón de copia y soporte de arrastrar y soltar archivos o carpetas enteras (`.md` y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo). |
+| **Panel Markdown** | Editor de texto con contador de caracteres, indicador de idioma del documento, plegado de imágenes base64, botón de copia y soporte de arrastrar y soltar archivos o carpetas enteras (`.md` y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo). |
 | **Panel HTML / Vista previa** | Cambia entre vista renderizada y código HTML, copia contenido con distintos perfiles (HTML, LaTeX parcial o completo). |
 
 Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pueden renombrarse con doble clic. El autoguardado del navegador recupera automáticamente el contenido tras recargar la página.
@@ -33,7 +33,7 @@ Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pu
 ## Importación, exportación y copia rápida
 
 - **Importar**: abre Markdown locales, pega documentos LaTeX completos o convierte ficheros mediante Pandoc (DOCX, ODT, EPUB, HTML, TEX). Al arrastrar y soltar se admiten carpetas enteras, que se recorren en busca de archivos compatibles. Las imágenes de los documentos DOCX, ODT y EPUB se extraen del archivo y se incrustan en el Markdown.
-- **Exportar**: genera descargas inmediatas en DOCX, ODT, EPUB (libro digital), HTML autónomo (con estilos y fórmulas incrustados) o LaTeX preparado para compilar. El `.tex` lleva el idioma de la interfaz y usa el primer encabezado como título; desde **Configuración → Documento LaTeX…** se fijan la clase, sus opciones y un preámbulo propio que se reutiliza en cada exportación.
+- **Exportar**: genera descargas inmediatas en DOCX, ODT, EPUB (libro digital), HTML autónomo (con estilos y fórmulas incrustados) o LaTeX preparado para compilar. Todos los formatos declaran el idioma del documento —corrector ortográfico en DOCX y ODT, partición de palabras en LaTeX, atributo `lang` en HTML y EPUB— y el `.tex` usa el primer encabezado como título. Desde **Configuración → Documento exportado…** se fijan ese idioma y, para LaTeX, la clase, sus opciones y un preámbulo propio que se reutiliza en cada exportación. Cada documento puede además llevar el suyo: el botón de idioma del panel Markdown lo guarda como `lang` en el front matter del `.md`, de modo que viaja con el archivo.
 - **Copiar**: botones dedicados para copiar Markdown del panel izquierdo o seleccionar, desde el panel derecho, qué formato enviar al portapapeles.
 
 ## Atajos esenciales

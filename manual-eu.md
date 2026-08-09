@@ -76,7 +76,7 @@ Logotipoaren ondoko barrak aplikazioaren aukera orokorrak biltzen ditu eta fitxa
   * **Gaia**: `Sistemakoa` aukerak ekipoarena jarraitzen du eta harekin batera aldatzen da; `Argia` eta `Iluna` aukerek finkatu egiten dute. Aukeraketa gogoratu egiten da aplikazioa hurrengoan irekitzean.
   * **Zabalera hedatua**: lan-azalera zabaltzen du.
   * **Leiho independentea**: EdiMarkWeb bere leiho batean irekitzen du, mahaigaineko aplikazio gisa.
-  * **LaTeX dokumentua…**: aplikazioak sortzen duen `.tex` fitxategiaren ezarpenak irekitzen ditu, behean azalduta.
+  * **Esportatutako dokumentua…**: aplikazioak sortzen dituen fitxategien ezarpenak irekitzen ditu (hizkuntza eta, LaTeX-erako, klasea eta atarikoa), behean azalduta.
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia sortzen du uneko estiloekin.
 * **Bilatu (Ctrl+F)** eta **Eskuliburua (Ctrl+H)**: bilatzaile aurreratua edo dokumentu hau bera irekitzen dituzte.
 * **Ezabatu dena**: dokumentu aktiboa erabat hustutzen du, berrespena eskatu ondoren.
@@ -120,11 +120,27 @@ Bilaketak Markdown ikuspegian zein HTML ikuspegian funtzionatzen du, fokua non d
 
 Lan-eremua tamainaz alda daitezkeen bi paneletan banatzen da:
 
-* **Markdown** (ezkerra): testu-editore soila, karaktere-kontagailu batekin eta kopiatzeko bere botoiarekin. Hemen idazten duzun guztia berehala islatzen da eskuineko panelean.
+* **Markdown** (ezkerra): testu-editore soila, karaktere-kontagailu batekin, dokumentuaren hizkuntza-adierazlearekin eta kopiatzeko bere botoiarekin. Hemen idazten duzun guztia berehala islatzen da eskuineko panelean.
 * **HTML / Aurrebista** (eskuina): azken emaitza erakusten du eta edukia zuzenean editatzeko aukera ere ematen du. Erabili kode-ikonoa duen botoia aurrebista aberatsaren eta sortutako HTML kodearen artean txandakatzeko.
 * **Edukia kopiatu**: Markdown-a edo sortutako HTMLa kopiatzeko botoi zehatzak (HTMLa kopiatzean LaTeX-era bihurtutako formulak barne).
 
 Erdiko barra arrasta dezakezu edozein paneli leku gehiago emateko, bietako bat maximiza dezakezu bere goiburuko geziekin, edo fitxen eskuineko botoia erabil dezakezu **edizio-eremua maximizatzeko**: goiko barrak ezkutatzen ditu eta pantaila testuarentzat uzten du.
+
+### Dokumentu bakoitzaren hizkuntza
+
+Karaktere-kontagailuaren ondoan botoi labur bat dago, dokumentuaren hizkuntzarekin: `ES`, `CA`, `FR`… Itzalita ikusten bada, dokumentu horrek ez du hizkuntza propiorik eta *Ezarpenak → Esportatutako dokumentua…* atalean dagoen **hizkuntza orokorra** erabiltzen du, ohikoena dena.
+
+Hizkuntza jakin bat aukeratzean, aplikazioak **dokumentuaren barruan bertan** gordetzen du, eta, beraz, fitxategiarekin batera bidaiatzen du: gorde eta bihar irekitzen baduzu, hemen edo beste ordenagailu batean, edo norbaiti pasatzen badiozu, hura izaten jarraituko du. Atzera egiteko, aukeratu *Hizkuntza orokorra*. Eta *Beste hizkuntza bat…* aukerarekin edozein hizkuntzaren kodea idatz dezakezu (`fr`, `de`, `pt-BR`).
+
+Inoiz zure `.md` fitxategia testu-editore soil batekin irekitzen baduzu, hobespen hori goian ikusiko duzu, marren arteko lerro batzuetan:
+
+```
+---
+lang: "ca"
+---
+```
+
+Dokumentu bati buruzko datuak gordetzeko modu estandarra da eta programa askok ulertzen dute. EdiMarkWeb-ek ez du aurrebistan erakusten, edukia ez delako, baina bai Markdown panelean, iturburu-kodea baita. Nahi baduzu, eskuz ezaba edo alda dezakezu.
 
 ### Kapsulatutako irudiak
 
@@ -165,15 +181,19 @@ Ireki **Fitxategia** botoia eta hautatu `Esportatu` entregatzeko edo argitaratze
 
 Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapena, arrakasta edo erroreak).
 
-### LaTeX dokumentua doitu
+### Esportatutako dokumentuaren ezarpenak
 
-**Ezarpenak → LaTeX dokumentua…** hiru hobespen gordetzen ditu, TEX esportazio bakoitzean eta *LaTeX – dokumentu osoa* kopia bakoitzean berrerabiltzen direnak, baita aplikazioa hurrengoan irekitzean ere:
+**Ezarpenak → Esportatutako dokumentua…** esportazio bakoitzean berrerabiltzen diren hobespenak gordetzen ditu, baita aplikazioa hurrengoan irekitzean ere.
+
+**Dokumentuaren hizkuntza**, bost formatuei aplikatzen zaiena. Horrek erabakitzen du zein hizkuntzatan zuzentzen duten ortografia Word-ek eta LibreOffice-k DOCX edo ODT bat irekitzean, nola zatitzen dituen hitzak LaTeX-ek eta zein hizkuntza adierazten duten HTMLak eta EPUBak pantaila-irakurgailuentzat. Lehenespenez **Interfazearen berbera** da: EdiMarkWeb-en hizkuntza aldatzen baduzu, dokumentuek jarraitu egiten diote. Aplikazioaren bost hizkuntzetako edozein finka dezakezu, edo **Bestelakoa…** aukeratu eta bere kodea idatzi (`fr`, `de`, `pt-BR`).
+
+Eta hiru ezarpen **LaTeX-erako soilik**, TEX formatura esportatzean eta *LaTeX – dokumentu osoa* kopiatzean aplikatzen direnak:
 
 * **Dokumentu-klasea**: `article` (lehenetsia), `report` edo `book`.
 * **Klase-aukerak**: `\documentclass` aginduan kortxete artean doana, komaz bereizita (`12pt, a4paper`).
 * **Atarikoa**: zure paketeak eta makroak, atarikoaren amaieran dauden bezala txertatzen direnak, `\begin{document}` baino lehen.
 
-Hirurek LaTeX-i baino ez diote eragiten: DOCX, ODT, EPUB eta HTML beti bezala esportatzen dira. Eta dokumentua bere YAML metadatuekin hasten bada, haiek agintzen dute eta ezarpen hauek ez dira aplikatzen. Kontuan izan akatsak dituen atariko batek ez duela hemen abisurik emango: hutsegitea `.tex` konpilatzean agertuko da.
+Dokumentua bere YAML metadatuekin hasten bada, haiek agintzen dute eta ezarpen hauetako bat ere ez da aplikatzen. Eta kontuan izan akatsak dituen atariko batek ez duela hemen abisurik emango: hutsegitea `.tex` konpilatzean agertuko da.
 
 ---
 
