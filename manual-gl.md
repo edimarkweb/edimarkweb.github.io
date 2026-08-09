@@ -193,7 +193,7 @@ Durante a exportación, a barra superior mostra mensaxes de estado (progreso, é
 
 **Índice automático**, que engade ao principio do documento un índice cos apartados. En DOCX é un índice de Word de verdade e en ODT un nativo de LibreOffice; o EPUB non o precisa, porque o lector xa trae o seu índice de navegación.
 
-> **Se o índice aparece baleiro**, non é un fallo do documento: en DOCX e ODT o índice non é texto, senón un campo que calcula o procesador de textos, porque hai que maquetar as páxinas para saber en cal cae cada apartado. EdiMarkWeb marca o documento para que se actualice só ao abrilo, pero algúns programas piden confirmación ou agardan a que llelo mandes: en Word, clic dereito sobre o índice → *Actualizar campos*; en LibreOffice, *Ferramentas → Actualizar → Índices*.
+> **Sobre os números de páxina**: en DOCX e ODT o índice é un campo que calcula o procesador de textos, porque hai que maquetar as páxinas para saber en cal cae cada apartado. EdiMarkWeb escríbelle dentro a lista de apartados, así que o documento ábrese co índice á vista, pero sen números. Para que aparezan, actualízao: en Word, clic dereito sobre o índice → *Actualizar campos*; en LibreOffice, *Ferramentas → Actualizar → Índices*.
 
 **Numerar os apartados**, que antepón 1, 1.1, 1.2… aos encabezamentos. Funciona en DOCX, HTML e LaTeX; o ODT non admite esta numeración e sae sen ela.
 

@@ -698,16 +698,66 @@ export async function prepareOdtForImport(archiveBytes) {
   return createZip(rebuilt);
 }
 
-/*
-  Makes Word and LibreOffice fill in the table of contents when they open the
-  document.
+// El texto sacado del XML llega con sus entidades: hay que deshacerlas antes de
+// volver a escaparlo, o un título con & acabaría mostrando «&amp;».
+function unescapeXmlText(text) {
+  return String(text)
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+}
 
-  Pandoc does not write the entries: it writes a Word TOC field, and the entries
-  and their page numbers are calculated by the word processor. The field is
-  marked dirty, which should be enough, but on its own the document still opens
-  with an empty index unless the reader is told to refresh its fields — so
-  `<w:updateFields w:val="true"/>` goes into settings.xml, which is the switch
-  both Word and LibreOffice honour.
+function escapeXmlText(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Encabezados de nivel 1 a 3 tal como quedaron en el documento, con su número
+// de apartado si se pidió numeración.
+const DOCX_HEADING_RE = /<w:p\b[^>]*>(?:(?!<\/w:p>)[\s\S])*?<w:pStyle w:val="Heading([1-3])"\s*\/>(?:(?!<\/w:p>)[\s\S])*?<\/w:p>/g;
+
+export function collectDocxHeadings(documentXml) {
+  const headings = [];
+  for (const match of String(documentXml || '').matchAll(DOCX_HEADING_RE)) {
+    const text = match[0]
+      // El número del apartado y su título van separados por una tabulación.
+      .replace(/<w:tab\s*\/>/g, ' ')
+      .replace(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g, (_, value) => value)
+      .replace(/<[^>]+>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (text) headings.push({ level: Number(match[1]), text: unescapeXmlText(text) });
+  }
+  return headings;
+}
+
+function tocEntriesXml(headings) {
+  return headings.map(({ level, text }) => {
+    const indent = (level - 1) * 340; // ~0,6 cm por nivel
+    return '<w:p><w:pPr>'
+      + (indent ? `<w:ind w:left="${indent}"/>` : '')
+      + '<w:spacing w:after="0"/></w:pPr>'
+      + `<w:r><w:t xml:space="preserve">${escapeXmlText(text)}</w:t></w:r></w:p>`;
+  }).join('');
+}
+
+/*
+  Fills in the table of contents of a DOCX and asks the reader to refresh it.
+
+  Pandoc writes a Word TOC field and leaves its result empty, because the
+  entries and their page numbers belong to whoever lays out the pages. The field
+  is flagged dirty and `<w:updateFields w:val="true"/>` goes into settings.xml,
+  but neither is enough on its own: LibreOffice opens the document with the
+  index still blank, and Word only refreshes if the user agrees to the prompt.
+
+  So the entries are written into the field's cached result, between `separate`
+  and `end`. The document then opens with a readable index —headings, numbered
+  if the user asked for numbering, indented by level— and updating the field
+  replaces it with the real one, page numbers and links included.
 
   Any failure leaves the original file untouched: an index that needs a manual
   refresh is a nuisance, a corrupted DOCX is a lost document.
@@ -717,21 +767,45 @@ export async function requestDocxFieldUpdate(archiveBytes) {
   try {
     const entries = await readZipEntries(archiveBytes);
     const settings = entries.get('word/settings.xml');
-    if (!settings) return archiveBytes;
-    const xml = new TextDecoder().decode(settings);
-    if (/<w:updateFields\b/.test(xml)) return archiveBytes;
+    const document = entries.get('word/document.xml');
+    if (!settings || !document) return archiveBytes;
+
+    const settingsXml = new TextDecoder().decode(settings);
     // El elemento va al principio de <w:settings>, que es donde el esquema lo
     // espera; fuera de orden, Word considera el archivo dañado.
-    const updated = xml.replace(/(<w:settings\b[^>]*>)/, '$1<w:updateFields w:val="true"/>');
-    if (updated === xml) return archiveBytes;
+    const updatedSettings = /<w:updateFields\b/.test(settingsXml)
+      ? settingsXml
+      : settingsXml.replace(/(<w:settings\b[^>]*>)/, '$1<w:updateFields w:val="true"/>');
 
+    const documentXml = new TextDecoder().decode(document);
+    let updatedDocument = documentXml;
+    const emptyResult = /<w:fldChar w:fldCharType="separate"\s*\/>\s*<w:fldChar w:fldCharType="end"\s*\/>/;
+    const headings = collectDocxHeadings(documentXml);
+    if (headings.length && emptyResult.test(documentXml)) {
+      /*
+        El resultado del campo ocupa sus propios párrafos, así que el que abre
+        el campo se cierra tras `separate` y otro nuevo lleva el `end`.
+      */
+      updatedDocument = documentXml.replace(
+        emptyResult,
+        '<w:fldChar w:fldCharType="separate"/></w:r></w:p>'
+        + tocEntriesXml(headings)
+        + '<w:p><w:r><w:fldChar w:fldCharType="end"/>',
+      );
+    }
+
+    if (updatedSettings === settingsXml && updatedDocument === documentXml) return archiveBytes;
+
+    const encoder = new TextEncoder();
     const rebuilt = new Map();
     for (const [name, bytes] of entries) {
-      rebuilt.set(name, name === 'word/settings.xml' ? new TextEncoder().encode(updated) : bytes);
+      if (name === 'word/settings.xml') rebuilt.set(name, encoder.encode(updatedSettings));
+      else if (name === 'word/document.xml') rebuilt.set(name, encoder.encode(updatedDocument));
+      else rebuilt.set(name, bytes);
     }
     return createZip(rebuilt);
   } catch (error) {
-    console.warn('No se pudo pedir la actualización del índice del DOCX:', error);
+    console.warn('No se pudo completar el índice del DOCX:', error);
     return archiveBytes;
   }
 }

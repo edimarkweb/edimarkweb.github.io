@@ -23,6 +23,7 @@ import {
   inlineArchiveImages,
   prepareOdtForImport,
   requestDocxFieldUpdate,
+  collectDocxHeadings,
 } from '../pandoc-prepare.js';
 import { readZipEntries, mimeForPath } from '../zip-reader.js';
 import { createZip } from '../zip-writer.js';
@@ -527,6 +528,49 @@ test('normalizeFormulaHrefs no toca un ODT de LibreOffice ni las imágenes', () 
   textos. Sin pedir la actualización de campos, el documento se abre con el
   índice vacío.
 */
+test('collectDocxHeadings lee los encabezados con su número de apartado', () => {
+  const xml = '<w:body>'
+    + '<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>1</w:t></w:r><w:r><w:tab/><w:t>Tema 1</w:t></w:r></w:p>'
+    + '<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t xml:space="preserve">1.1</w:t></w:r><w:r><w:tab/><w:t>Copiar &amp; pegar</w:t></w:r></w:p>'
+    + '<w:p><w:pPr><w:pStyle w:val="FirstParagraph"/></w:pPr><w:r><w:t>Texto normal</w:t></w:r></w:p>'
+    + '<w:p><w:pPr><w:pStyle w:val="Heading4"/></w:pPr><w:r><w:t>Demasiado hondo</w:t></w:r></w:p>'
+    + '</w:body>';
+  assert.deepEqual(collectDocxHeadings(xml), [
+    { level: 1, text: '1 Tema 1' },
+    // Las entidades del XML vuelven a ser texto legible.
+    { level: 2, text: '1.1 Copiar & pegar' },
+  ]);
+});
+
+/*
+  Ni el campo marcado como pendiente ni updateFields bastan: LibreOffice abre el
+  documento con el índice en blanco y Word solo lo rellena si el usuario acepta
+  el aviso. Las entradas se escriben en el resultado guardado del campo.
+*/
+test('requestDocxFieldUpdate escribe las entradas dentro del campo del índice', async () => {
+  const document = '<w:document xmlns:w="x"><w:body>'
+    + '<w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/>'
+    + '<w:instrText xml:space="preserve">TOC \\o "1-3"</w:instrText>'
+    + '<w:fldChar w:fldCharType="separate"/><w:fldChar w:fldCharType="end"/></w:r></w:p>'
+    + '<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>Tema &amp; uno</w:t></w:r></w:p>'
+    + '<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t>Apartado</w:t></w:r></w:p>'
+    + '</w:body></w:document>';
+  const docx = await createZip(new Map([
+    ['word/settings.xml', '<w:settings xmlns:w="x"/>'],
+    ['word/document.xml', document],
+  ]));
+  const entries = await readZipEntries(await requestDocxFieldUpdate(docx));
+  const resultado = new TextDecoder().decode(entries.get('word/document.xml'));
+
+  assert.match(resultado, /<w:t xml:space="preserve">Tema &amp; uno<\/w:t>/, 'el texto se escapa, no se rompe el XML');
+  assert.match(resultado, /<w:ind w:left="340"\/>/, 'el segundo nivel va sangrado');
+  // El campo sigue siendo un campo: begin … separate … entradas … end.
+  const orden = ['fldCharType="begin"', 'fldCharType="separate"', 'Apartado', 'fldCharType="end"']
+    .map(fragmento => resultado.indexOf(fragmento));
+  assert.deepEqual(orden, [...orden].sort((a, b) => a - b), `orden inesperado: ${orden}`);
+  assert.equal(resultado.split('<w:fldChar w:fldCharType="end"').length - 1, 1, 'un solo cierre de campo');
+});
+
 test('requestDocxFieldUpdate pide actualizar los campos sin tocar nada más', async () => {
   const docx = await createZip(new Map([
     ['[Content_Types].xml', '<?xml version="1.0"?><Types/>'],

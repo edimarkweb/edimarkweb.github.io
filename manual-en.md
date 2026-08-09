@@ -193,7 +193,7 @@ While exporting, the top bar shows status messages (progress, success or errors)
 
 **Table of contents**, which adds a list of the sections at the start of the document. In DOCX it is a real Word table of contents and in ODT a native LibreOffice one; the EPUB does not need it, since the reader already provides its navigation index.
 
-> **If the table of contents looks empty**, the document is not broken: in DOCX and ODT it is not text but a field the word processor calculates, because the pages have to be laid out before it knows where each section falls. EdiMarkWeb marks the document so that it refreshes on opening, but some programs ask first or wait until told: in Word, right-click the table of contents → *Update field*; in LibreOffice, *Tools → Update → Indexes*.
+> **About page numbers**: in DOCX and ODT the table of contents is a field the word processor calculates, because the pages have to be laid out before it knows where each section falls. EdiMarkWeb writes the list of sections into it, so the document opens with the table of contents visible, but without numbers. To get them, refresh it: in Word, right-click the table of contents → *Update field*; in LibreOffice, *Tools → Update → Indexes*.
 
 **Number the sections**, which puts 1, 1.1, 1.2… before the headings. It works in DOCX, HTML and LaTeX; ODT does not support this numbering and comes out without it.
 

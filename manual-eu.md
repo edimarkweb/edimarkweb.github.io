@@ -193,7 +193,7 @@ Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapen
 
 **Aurkibide automatikoa**, dokumentuaren hasieran atalen zerrenda bat gehitzen duena. DOCX formatuan Word-en benetako aurkibide bat da eta ODT formatuan LibreOffice-ren jatorrizko bat; EPUBak ez du behar, irakurgailuak bere nabigazio-aurkibidea baitakar.
 
-> **Aurkibidea hutsik agertzen bada**, ez da dokumentuaren akatsa: DOCX eta ODT formatuetan aurkibidea ez da testua, testu-prozesadoreak kalkulatzen duen eremu bat baizik, orrialdeak maketatu behar baitira atal bakoitza non erortzen den jakiteko. EdiMarkWeb-ek dokumentua markatzen du irekitzean bakarrik egunera dadin, baina programa batzuek berrespena eskatzen dute edo agindu arte itxaroten dute: Word-en, egin klik eskuineko botoiarekin aurkibidean → *Eguneratu eremuak*; LibreOffice-n, *Tresnak → Eguneratu → Aurkibideak*.
+> **Orrialde-zenbakiei buruz**: DOCX eta ODT formatuetan aurkibidea testu-prozesadoreak kalkulatzen duen eremu bat da, orrialdeak maketatu behar baitira atal bakoitza non erortzen den jakiteko. EdiMarkWeb-ek atalen zerrenda idazten dio barruan, beraz dokumentua aurkibidea ikusgai duela irekitzen da, baina zenbakirik gabe. Horiek agertzeko, eguneratu ezazu: Word-en, egin klik eskuineko botoiarekin aurkibidean → *Eguneratu eremuak*; LibreOffice-n, *Tresnak → Eguneratu → Aurkibideak*.
 
 **Atalak zenbakitu**, izenburuen aurretik 1, 1.1, 1.2… jartzen dituena. DOCX, HTML eta LaTeX formatuetan funtzionatzen du; ODTk ez du zenbakitze hori onartzen eta gabe ateratzen da.
 

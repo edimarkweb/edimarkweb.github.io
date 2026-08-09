@@ -24,6 +24,7 @@ import {
   buildImportArgs,
   prepareLatexStandalone,
   ensureExportMetadata,
+  requestDocxFieldUpdate,
   stripEpubAnchorPrefixes,
   inlineArchiveImages,
   restoreOdtTableHeaders,
@@ -706,4 +707,38 @@ test('la portada llega al EPUB cuando se le monta la imagen', { timeout: 180000 
   // Sin montarla, el mismo libro sale sin nada de esto.
   const sinPortada = readZipEntries((await runPandoc(base, preparado.markdown)).bytes);
   assert.equal([...sinPortada.keys()].some(name => /cover\.xhtml$/.test(name)), false);
+});
+
+/*
+  El recorrido completo del índice del DOCX: Pandoc deja el campo vacío y la
+  aplicación le escribe dentro las entradas, que es lo que hace que el
+  documento se abra con el índice a la vista en lugar de en blanco.
+*/
+test('el DOCX se abre con el índice ya escrito', { timeout: 240000 }, async () => {
+  const fuente = ensureExportMetadata(
+    '# Tema 1\n\nTexto.\n\n## Apartado A\n\nMás.\n\n# Tema 2\n\nFin.\n',
+    { lang: 'es', tocTitle: 'Índice' },
+  ).markdown;
+  const generado = (await runPandoc(
+    buildExportArgs('docx', { toc: true, numberSections: true }), fuente,
+  )).bytes;
+
+  // Tal como sale de Pandoc: el campo está, pero su resultado va vacío.
+  const antes = readZipEntries(generado).get('word/document.xml').toString('utf8');
+  assert.match(antes, /<w:fldChar w:fldCharType="separate"\s*\/>\s*<w:fldChar w:fldCharType="end"\s*\/>/);
+
+  const entries = await readZipEntries(await requestDocxFieldUpdate(new Uint8Array(generado)));
+  const despues = new TextDecoder().decode(entries.get('word/document.xml'));
+  const settings = new TextDecoder().decode(entries.get('word/settings.xml'));
+
+  assert.match(settings, /<w:updateFields w:val="true"\/>/);
+  // Las entradas van dentro del campo, entre separate y end.
+  const dentro = despues.slice(
+    despues.indexOf('fldCharType="separate"'),
+    despues.indexOf('fldCharType="end"'),
+  );
+  assert.match(dentro, /1 Tema 1/);
+  assert.match(dentro, /1\.1 Apartado A/);
+  assert.match(dentro, /2 Tema 2/);
+  assert.match(dentro, /<w:ind w:left="340"\/>/, 'el subapartado va sangrado');
 });
