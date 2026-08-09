@@ -3,7 +3,7 @@
   llevan un marcador {version} en los cinco idiomas. La otra copia vive en
   package.json y una prueba comprueba que ambas coinciden.
 */
-const APP_VERSION = '2.12.0';
+const APP_VERSION = '2.13.0';
 
 // Declaración de variables globales
 let turndownService;
@@ -2716,6 +2716,7 @@ const LATEX_SETTINGS_DEFAULTS = {
     // hoy congelado: quien cambie de idioma la aplicación no debería seguir
     // exportando en el anterior sin saber por qué.
     documentLanguage: 'auto',
+    documentAuthor: '',
     documentClass: 'article',
     classOptions: '',
     preamble: '',
@@ -2731,6 +2732,7 @@ function readLatexSettings() {
             documentLanguage: typeof parsed.documentLanguage === 'string' && parsed.documentLanguage.trim()
                 ? parsed.documentLanguage.trim()
                 : LATEX_SETTINGS_DEFAULTS.documentLanguage,
+            documentAuthor: typeof parsed.documentAuthor === 'string' ? parsed.documentAuthor : '',
             documentClass: typeof parsed.documentClass === 'string' ? parsed.documentClass : LATEX_SETTINGS_DEFAULTS.documentClass,
             classOptions: typeof parsed.classOptions === 'string' ? parsed.classOptions : '',
             preamble: typeof parsed.preamble === 'string' ? parsed.preamble : '',
@@ -3418,6 +3420,7 @@ window.onload = () => {
     const docLanguageSelect = document.getElementById('doc-language');
     const docLanguageCodeField = document.getElementById('doc-language-code-field');
     const docLanguageCodeInput = document.getElementById('doc-language-code');
+    const docAuthorInput = document.getElementById('doc-author');
     const latexClassSelect = document.getElementById('latex-documentclass');
     const latexClassOptionsInput = document.getElementById('latex-classoption');
     const latexPreambleTextarea = document.getElementById('latex-preamble');
@@ -3704,6 +3707,58 @@ window.onload = () => {
             );
             if (answer === null) return;
             setDocumentLanguage(answer.trim());
+        });
+    }
+
+    /*
+      Autor de este documento, en el mismo bloque de metadatos que el idioma.
+      Vacío significa el autor general de Configuración, o ninguno.
+    */
+    function currentDocumentAuthor() {
+        const { frontMatter } = splitDocumentFrontMatter(markdownEditor.getValue());
+        const match = frontMatter ? frontMatter.match(/^author\s*:\s*(.*)$/m) : null;
+        return match ? match[1].trim().replace(/^["']|["']$/g, '') : '';
+    }
+
+    function setDocumentAuthor(name) {
+        if (!markdownEditor) return;
+        const api = window.PandocExporter;
+        const current = markdownEditor.getValue();
+        const { frontMatter, body } = splitDocumentFrontMatter(current);
+        const clean = String(name || '').trim();
+
+        let updated;
+        if (!clean) {
+            if (!frontMatter) return;
+            const kept = frontMatter.split('\n').filter(line => !/^author\s*:/.test(line));
+            const hasFields = kept.slice(1).some(line => line.trim() && line.trim() !== '---');
+            updated = hasFields ? `${kept.join('\n')}\n\n${body}` : body;
+        } else if (frontMatter && /^author\s*:/m.test(frontMatter)) {
+            const replaced = frontMatter.replace(/^author\s*:.*$/m, `author: "${clean.replace(/"/g, '\\"')}"`);
+            updated = `${replaced}\n\n${body}`;
+        } else if (api && typeof api.mergeFrontMatter === 'function') {
+            updated = api.mergeFrontMatter(current, [
+                { key: 'author', lines: [`author: "${clean.replace(/"/g, '\\"')}"`] },
+            ]).markdown;
+        } else {
+            updated = `---\nauthor: "${clean.replace(/"/g, '\\"')}"\n---\n\n${current}`;
+        }
+
+        if (updated === current) return;
+        markdownEditor.setValue(updated);
+        updateHtml();
+    }
+
+    const docAuthorBtn = document.getElementById('doc-author-btn');
+    if (docAuthorBtn) {
+        docAuthorBtn.addEventListener('click', () => {
+            closeDocLangMenu();
+            const answer = prompt(
+                getTranslation('doc_author_prompt', 'Autor de este documento (deja vacío para usar el general):'),
+                currentDocumentAuthor(),
+            );
+            if (answer === null) return;
+            setDocumentAuthor(answer);
         });
     }
     document.addEventListener('click', (event) => {
@@ -4296,6 +4351,9 @@ window.onload = () => {
                 try {
                     htmlResult = await exporter.generateHtml({
                         markdown: rawMarkdown,
+                        // Si el documento no abre con un encabezado, el nombre
+                        // de la pestaña es mejor título que «in».
+                        documentTitle: safeName,
                         standalone: true,
                         onStatus: updateExportStatus,
                     });
@@ -4986,6 +5044,7 @@ window.onload = () => {
         if (docLanguageSelect) docLanguageSelect.value = listed ? language : 'other';
         if (docLanguageCodeInput) docLanguageCodeInput.value = listed ? '' : language;
         syncDocLanguageCodeField();
+        if (docAuthorInput) docAuthorInput.value = settings.documentAuthor || '';
         if (latexClassSelect) latexClassSelect.value = settings.documentClass || 'article';
         if (latexClassOptionsInput) latexClassOptionsInput.value = settings.classOptions || '';
         if (latexPreambleTextarea) latexPreambleTextarea.value = settings.preamble || '';
@@ -5035,6 +5094,7 @@ window.onload = () => {
         latexSettingsSaveBtn.addEventListener('click', () => {
             storeLatexSettings({
                 documentLanguage: readDocLanguageFromForm(),
+                documentAuthor: docAuthorInput ? docAuthorInput.value.trim() : '',
                 documentClass: latexClassSelect ? latexClassSelect.value : 'article',
                 classOptions: latexClassOptionsInput ? latexClassOptionsInput.value.trim() : '',
                 preamble: latexPreambleTextarea ? latexPreambleTextarea.value : '',

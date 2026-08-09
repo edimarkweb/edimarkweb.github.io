@@ -176,7 +176,7 @@ Open the **File** button and choose `Export` to download versions ready to hand 
 * **DOCX (Microsoft Word)**: ideal for sharing with students or colleagues who use Word, and compatible with Google Docs.
 * **ODT (LibreOffice)**: intended for free suites such as LibreOffice or OnlyOffice.
 * **EPUB (e-book)**: creates an e-book compatible with EPUB 3 readers (Calibre, Apple Books, Thorium, e-ink devices…). The title comes from the first level-1 heading (or from the document name) and the language from the one selected in the application.
-* **HTML (web page)**: produces a self-contained file with embedded styles and formulas, ready to host on the web.
+* **HTML (web page)**: produces a self-contained file with embedded styles and formulas, ready to host on the web. The browser tab title comes from the first heading, or from the document name if there is none.
 * **TEX (LaTeX)**: creates a complete `.tex` document with a preamble ready to compile. It carries the interface language, so hyphenation and the automatic labels come out in your language, and if the document opens with a single level-1 heading that heading becomes the title (`\title` and `\maketitle`) instead of just another section.
 
 While exporting, the top bar shows status messages (progress, success or errors).
@@ -186,6 +186,8 @@ While exporting, the top bar shows status messages (progress, success or errors)
 **Settings → Exported document…** stores preferences that are reused in every export, including the next time you open the application.
 
 **Document language**, which applies to all five formats. It decides which dictionary Word and LibreOffice spell-check a DOCX or an ODT against, how LaTeX hyphenates, and which language HTML and EPUB declare to screen readers. It defaults to **Same as the interface**: change the language of EdiMarkWeb and your documents follow. You can pin any of the five interface languages, or choose **Other…** and type a code (`fr`, `de`, `pt-BR`).
+
+**Author**, stored in the file properties and shown as the book author in the EPUB and on the LaTeX title page. In DOCX and ODT, Pandoc also writes a line with the name at the start of the document; leave the field empty if you would rather it did not appear. A particular document can carry a different author: *This document's author…*, in the language button menu.
 
 Plus three **LaTeX only** settings, applied when exporting to TEX and when copying *LaTeX – full document*:
 

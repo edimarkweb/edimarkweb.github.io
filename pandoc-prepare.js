@@ -341,15 +341,21 @@ export function ensureEpubMetadata(markdown, {
   fallbackTitle = '',
   untitledLabel = 'Documento sin título',
   lang = 'es',
+  author = '',
 } = {}) {
   const source = typeof markdown === 'string' ? markdown : '';
   const { keys } = splitFrontMatter(source);
   const headingTitle = keys.includes('title') ? '' : extractMarkdownTitle(source);
   const title = headingTitle || String(fallbackTitle || '').trim() || untitledLabel;
-  const { markdown: merged, added } = mergeFrontMatter(source, [
+  const entries = [
     { key: 'title', lines: [`title: "${escapeYamlValue(title)}"`] },
     { key: 'lang', lines: [`lang: "${escapeYamlValue(lang || 'es')}"`] },
-  ]);
+  ];
+  // En un lector de libros el autor es un campo visible, y salía vacío.
+  if (String(author || '').trim()) {
+    entries.push({ key: 'author', lines: [`author: "${escapeYamlValue(String(author).trim())}"`] });
+  }
+  const { markdown: merged, added } = mergeFrontMatter(source, entries);
   return {
     markdown: merged,
     titleFromHeading: Boolean(headingTitle),
@@ -358,23 +364,34 @@ export function ensureEpubMetadata(markdown, {
 }
 
 /*
-  The document language, for the formats that carry no other metadata.
+  Metadata for the formats that carry no block of their own: DOCX, ODT and
+  standalone HTML.
 
-  Without it Pandoc writes `w:lang w:val="en-US"` into the DOCX styles and
+  Without `lang` Pandoc writes `w:lang w:val="en-US"` into the DOCX styles and
   `fo:language="en" fo:country="US"` into the ODT ones, so Word and LibreOffice
   spell-check a Spanish text against an English dictionary and underline every
   other word. Standalone HTML is worse off: it gets `lang=""`, which tells a
   screen reader nothing at all.
 
-  A document that states its own language keeps it; this only fills the gap.
+  `pageTitle` becomes `pagetitle`, which is the HTML `<title>` and nothing else.
+  Plain `title` would fill it too, but it also makes the template print a title
+  block into the body, repeating the heading the document already opens with —
+  and in DOCX and ODT it prints a "Title" paragraph above that same heading.
+  That is why the title only travels to HTML, and through the back door.
+
+  Whatever the document declares wins; this only fills what is missing.
 */
-export function ensureDocumentLanguage(markdown, { lang = 'es' } = {}) {
+export function ensureExportMetadata(markdown, { lang = 'es', author = '', pageTitle = '' } = {}) {
   const source = typeof markdown === 'string' ? markdown : '';
+  const entries = [];
   const code = String(lang || '').trim();
-  if (!code) return { markdown: source, injected: false };
-  const { markdown: merged, added } = mergeFrontMatter(source, [
-    { key: 'lang', lines: [`lang: "${escapeYamlValue(code)}"`] },
-  ]);
+  if (code) entries.push({ key: 'lang', lines: [`lang: "${escapeYamlValue(code)}"`] });
+  const writer = String(author || '').trim();
+  if (writer) entries.push({ key: 'author', lines: [`author: "${escapeYamlValue(writer)}"`] });
+  const heading = String(pageTitle || '').trim();
+  if (heading) entries.push({ key: 'pagetitle', lines: [`pagetitle: "${escapeYamlValue(heading)}"`] });
+  if (!entries.length) return { markdown: source, injected: false };
+  const { markdown: merged, added } = mergeFrontMatter(source, entries);
   return { markdown: merged, injected: added.length > 0 };
 }
 
@@ -457,6 +474,7 @@ function yamlClassOptions(options) {
 */
 export function prepareLatexStandalone(markdown, {
   lang = 'es',
+  author = '',
   documentClass = '',
   classOptions = '',
   preamble = '',
@@ -476,6 +494,10 @@ export function prepareLatexStandalone(markdown, {
     entries.push({ key: 'title', lines: [`title: "${escapeYamlValue(headings[0].text)}"`] });
   }
   entries.push({ key: 'lang', lines: [`lang: "${escapeYamlValue(lang || 'es')}"`] });
+  // Aquí el autor sí va en la portada: es donde \maketitle lo espera.
+  if (String(author || '').trim()) {
+    entries.push({ key: 'author', lines: [`author: "${escapeYamlValue(String(author).trim())}"`] });
+  }
 
   const cls = String(documentClass || '').trim();
   if (LATEX_DOCUMENT_CLASSES.includes(cls)) {

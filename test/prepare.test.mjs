@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 
 import {
   ensureEpubMetadata,
-  ensureDocumentLanguage,
+  ensureExportMetadata,
   prepareLatexStandalone,
   extractMarkdownTitle,
   hasYamlFrontMatter,
@@ -77,20 +77,37 @@ test('ensureEpubMetadata encadena encabezado, nombre del documento y sin título
   assert.match(sinNada.markdown, /title: "Sin título"/);
 });
 
-test('ensureDocumentLanguage marca el idioma cuando el documento no lo trae', () => {
-  const result = ensureDocumentLanguage('# Apuntes\n\nTexto\n', { lang: 'gl' });
+test('ensureExportMetadata marca el idioma cuando el documento no lo trae', () => {
+  const result = ensureExportMetadata('# Apuntes\n\nTexto\n', { lang: 'gl' });
   assert.equal(result.injected, true);
   assert.match(result.markdown, /^---\nlang: "gl"\n---\n\n# Apuntes/);
 });
 
-test('ensureDocumentLanguage no pisa el front matter del documento ni inventa idiomas', () => {
-  const propio = '---\nlang: "de"\n---\n\nTexto\n';
-  assert.equal(ensureDocumentLanguage(propio, { lang: 'es' }).markdown, propio);
-  assert.equal(ensureDocumentLanguage(propio, { lang: 'es' }).injected, false);
+test('ensureExportMetadata no pisa el front matter del documento ni inventa idiomas', () => {
+  const propio = '---\nlang: "de"\nauthor: "Ana"\n---\n\nTexto\n';
+  const result = ensureExportMetadata(propio, { lang: 'es', author: 'Otro' });
+  assert.equal(result.markdown, propio);
+  assert.equal(result.injected, false);
 
-  const sinIdioma = ensureDocumentLanguage('Texto\n', { lang: '  ' });
-  assert.equal(sinIdioma.markdown, 'Texto\n');
-  assert.equal(sinIdioma.injected, false);
+  const sinNada = ensureExportMetadata('Texto\n', { lang: '  ', author: '  ' });
+  assert.equal(sinNada.markdown, 'Texto\n');
+  assert.equal(sinNada.injected, false);
+});
+
+/*
+  `pagetitle` es el <title> de la página y nada más. Con `title` a secas, la
+  plantilla imprime además un bloque de título en el cuerpo que repite el
+  encabezado con el que ya empieza el documento.
+*/
+test('ensureExportMetadata añade autor y título de página sin tocar el cuerpo', () => {
+  const result = ensureExportMetadata('# Ecuaciones\n\nTexto\n', {
+    lang: 'es',
+    author: 'Juan José',
+    pageTitle: 'Ecuaciones',
+  });
+  assert.match(result.markdown, /^---\nlang: "es"\nauthor: "Juan José"\npagetitle: "Ecuaciones"\n---\n/);
+  assert.equal(result.markdown.includes('\ntitle:'), false, 'title duplicaría el encabezado en el cuerpo');
+  assert.match(result.markdown, /# Ecuaciones\n\nTexto/);
 });
 
 test('prepareLatexStandalone promueve a título el único encabezado inicial', () => {

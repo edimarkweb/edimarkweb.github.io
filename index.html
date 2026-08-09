@@ -405,6 +405,10 @@
                                 <button type="button" id="doc-lang-other-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
                                     <span data-i18n-key="doc_lang_other">Otro idioma…</span>
                                 </button>
+                                <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
+                                <button type="button" id="doc-author-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
+                                    <span data-i18n-key="doc_author_btn">Autor de este documento…</span>
+                                </button>
                             </div>
                         </div>
                         <button id="copy-md-btn" class="copy-btn flex items-center gap-2 px-3 py-2 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="copy_md_btn_title" title="Copiar Markdown"><i data-lucide="copy"></i><span class="hidden sm:inline" data-i18n-key="copy_md_btn_text">Copiar</span></button>
@@ -511,8 +515,8 @@
         </div>
     </div>
 
-    <div id="latex-settings-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="latex-settings-modal-title">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl dark:bg-slate-800">
+    <div id="latex-settings-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center overflow-y-auto p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="latex-settings-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-slate-800">
             <h3 id="latex-settings-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_settings_modal_title">Documento exportado</h3>
             <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" data-i18n-key="doc_settings_modal_description">Ajustes que se recuerdan de una sesión a otra. Si tu documento empieza con sus propios metadatos YAML, mandan ellos.</p>
             <div class="space-y-4">
@@ -535,6 +539,11 @@
                     </div>
                 </div>
                 <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_language_hint">Marca el idioma en los cinco formatos: corrector ortográfico en DOCX y ODT, partición de palabras en LaTeX y atributo de idioma en HTML y EPUB.</p>
+                <div>
+                    <label for="doc-author" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_settings_author_label">Autor</label>
+                    <input type="text" id="doc-author" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="Tu nombre" data-i18n-key="doc_settings_author_placeholder">
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_author_hint">Se guarda en las propiedades del archivo y aparece en el EPUB y en la portada del LaTeX. En DOCX y ODT también se escribe una línea con el nombre al principio del documento. Déjalo vacío para no incluir autor.</p>
+                </div>
                 <div class="border-t border-slate-200 pt-4 dark:border-slate-700">
                     <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200" data-i18n-key="doc_settings_latex_section">Solo para LaTeX</h4>
                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_latex_section_hint">Se aplica al exportar a TEX y al copiar LaTeX como documento completo.</p>
@@ -560,9 +569,9 @@
                 </div>
             </div>
             <div class="mt-6 flex flex-wrap justify-end gap-3">
-                <button id="latex-settings-reset-btn" type="button" class="mr-auto px-4 py-2 text-slate-600 rounded-md hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-700" data-i18n-key="latex_settings_reset_btn">Restablecer</button>
+                <button id="latex-settings-reset-btn" type="button" class="mr-auto px-4 py-2 text-slate-600 rounded-md hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-700" data-i18n-key="doc_settings_reset_btn">Restablecer</button>
                 <button id="latex-settings-cancel-btn" type="button" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
-                <button id="latex-settings-save-btn" type="button" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="latex_settings_save_btn">Guardar</button>
+                <button id="latex-settings-save-btn" type="button" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="doc_settings_save_btn">Guardar</button>
             </div>
         </div>
     </div>

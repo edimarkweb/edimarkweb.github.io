@@ -14,7 +14,7 @@ import {
   normalizeThematicBreaks,
   trimInlineMath,
   ensureEpubMetadata,
-  ensureDocumentLanguage,
+  ensureExportMetadata,
   splitFrontMatter,
   mergeFrontMatter,
   prepareLatexStandalone,
@@ -175,6 +175,12 @@ function documentSettings() {
 function documentLanguage() {
   const chosen = String(documentSettings().documentLanguage || '').trim();
   return chosen && chosen !== 'auto' ? chosen : currentLanguage();
+}
+
+// Autor por omisión. Vacío salvo que el usuario lo escriba, y siempre por
+// detrás del que el documento declare por su cuenta.
+function documentAuthor() {
+  return String(documentSettings().documentAuthor || '').trim();
 }
 
 // Los tres ajustes de LaTeX solo afectan al documento completo.
@@ -460,13 +466,21 @@ async function exportDocument({
       fallbackTitle: documentTitle,
       untitledLabel: translate('untitled_document', 'Documento sin título'),
       lang: documentLanguage(),
+      author: documentAuthor(),
     });
     normalized = prepared.markdown;
     titleFromHeading = prepared.titleFromHeading;
   } else {
-    // DOCX y ODT sin idioma salen marcados como inglés de EE. UU. y el
-    // corrector subraya el texto entero.
-    normalized = ensureDocumentLanguage(normalized, { lang: documentLanguage() }).markdown;
+    /*
+      DOCX y ODT sin idioma salen marcados como inglés de EE. UU. y el corrector
+      subraya el texto entero. El título no se les pasa: Pandoc imprimiría un
+      párrafo con estilo «Título» encima del encabezado que el documento ya
+      tiene, duplicándolo.
+    */
+    normalized = ensureExportMetadata(normalized, {
+      lang: documentLanguage(),
+      author: documentAuthor(),
+    }).markdown;
   }
 
   triggerStatus(onStatus, config.preparingKey, config.preparingFallback);
@@ -534,6 +548,7 @@ async function exportDocument({
 
 async function generateHtml({
   markdown = '',
+  documentTitle = '',
   standalone = true,
   onStatus = () => {},
   onNotification = () => {},
@@ -544,11 +559,19 @@ async function generateHtml({
     throw new Error(message || 'No content');
   }
   /*
-    Solo la página completa lleva <html lang>; el fragmento se incrusta en una
-    página ajena, que es la que declara su idioma.
+    Solo la página completa lleva idioma y título; el fragmento se incrusta en
+    una página ajena, que es la que los declara.
+
+    Sin título, Pandoc rellena el <title> con el nombre de su archivo temporal:
+    la página acababa titulada «in» en la pestaña del navegador y en las
+    búsquedas. El primer encabezado, o el nombre de la pestaña, lo arreglan.
   */
   const withLanguage = standalone
-    ? ensureDocumentLanguage(normalized, { lang: documentLanguage() }).markdown
+    ? ensureExportMetadata(normalized, {
+      lang: documentLanguage(),
+      author: documentAuthor(),
+      pageTitle: extractMarkdownTitle(normalized) || String(documentTitle || '').trim(),
+    }).markdown
     : normalized;
 
   triggerStatus(onStatus, 'html_export_preparing', 'Preparando HTML, espera...');
@@ -603,6 +626,7 @@ async function generateLatex({
   if (standalone) {
     const prepared = prepareLatexStandalone(normalized, {
       lang: documentLanguage(),
+      author: documentAuthor(),
       ...currentLatexSettings(),
     });
     normalized = prepared.markdown;

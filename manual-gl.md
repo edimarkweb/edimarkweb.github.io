@@ -176,7 +176,7 @@ Abre o botón **Arquivo** e selecciona `Exportar` para descargar versións lista
 * **DOCX (Microsoft Word)**: ideal para compartir con alumnado ou colegas que usan Word, e compatible con Google Docs.
 * **ODT (LibreOffice)**: pensado para suites libres como LibreOffice ou OnlyOffice.
 * **EPUB (libro dixital)**: crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). O título tómase da primeira cabeceira de nivel 1 (ou do nome do documento) e o idioma, do seleccionado na aplicación.
-* **HTML (páxina web)**: xera un ficheiro autónomo con estilos e fórmulas incrustados, listo para aloxar na web.
+* **HTML (páxina web)**: xera un ficheiro autónomo con estilos e fórmulas incrustados, listo para aloxar na web. O título da lapela do navegador tómase do primeiro encabezamento, ou do nome do documento se non o hai.
 * **TEX (LaTeX)**: crea un documento `.tex` completo con cabeceira preparada para compilar. Leva o idioma da interface, de xeito que a partición de palabras e os rótulos automáticos saen na túa lingua, e se o documento comeza cun único encabezamento de nivel 1 este pasa a ser o título (`\title` e `\maketitle`) no canto dunha sección máis.
 
 Durante a exportación, a barra superior mostra mensaxes de estado (progreso, éxito ou erros).
@@ -186,6 +186,8 @@ Durante a exportación, a barra superior mostra mensaxes de estado (progreso, é
 **Configuración → Documento exportado…** garda preferencias que se reutilizan en cada exportación, tamén a próxima vez que abras a aplicación.
 
 **Idioma do documento**, que se aplica aos cinco formatos. É o que decide en que lingua corrixen a ortografía Word e LibreOffice ao abrir un DOCX ou un ODT, como parte as palabras LaTeX e que idioma declaran o HTML e o EPUB para os lectores de pantalla. Por omisión é **Igual ca a interface**: se cambias o idioma de EdiMarkWeb, os documentos ségueno. Podes fixar calquera dos cinco idiomas da aplicación ou escoller **Outro…** e escribir o seu código (`fr`, `de`, `pt-BR`).
+
+**Autor**, que se garda nas propiedades do ficheiro e aparece como autor do libro no EPUB e na portada do LaTeX. En DOCX e ODT, ademais, Pandoc escribe unha liña co nome ao principio do documento; se non queres que apareza, deixa o campo baleiro. Un documento concreto pode levar outro autor: *Autor deste documento…*, no menú do botón de idioma.
 
 E tres axustes **só para LaTeX**, que se aplican ao exportar a TEX e ao copiar *LaTeX – documento completo*:
 

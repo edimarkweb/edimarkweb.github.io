@@ -23,7 +23,7 @@ import {
   trimInlineMath,
   buildImportArgs,
   prepareLatexStandalone,
-  ensureDocumentLanguage,
+  ensureExportMetadata,
   stripEpubAnchorPrefixes,
   inlineArchiveImages,
   restoreOdtTableHeaders,
@@ -569,7 +569,7 @@ test('los ajustes de LaTeX del usuario llegan al documento generado', { timeout:
 */
 test('el idioma del documento llega a DOCX, ODT y HTML', { timeout: 240000 }, async () => {
   const fuente = '# Título\n\nUn texto cualquiera para revisar.\n';
-  const conIdioma = ensureDocumentLanguage(fuente, { lang: 'es' }).markdown;
+  const conIdioma = ensureExportMetadata(fuente, { lang: 'es' }).markdown;
 
   const docx = readZipEntries((await runPandoc(buildExportArgs('docx', {}), conIdioma)).bytes);
   const estilosDocx = docx.get('word/styles.xml').toString('utf8');
@@ -587,4 +587,49 @@ test('el idioma del documento llega a DOCX, ODT y HTML', { timeout: 240000 }, as
   // Sin el metadato, el idioma inglés por defecto es lo que se colaba antes.
   const sinIdioma = readZipEntries((await runPandoc(buildExportArgs('docx', {}), fuente)).bytes);
   assert.match(sinIdioma.get('word/styles.xml').toString('utf8'), /w:lang[^>]*w:val="en-US"/);
+});
+
+/*
+  Sin título, Pandoc rellena el <title> con el nombre de su archivo temporal: la
+  página exportada salía titulada «in» en la pestaña del navegador, en los
+  resultados de búsqueda y al guardarla.
+*/
+test('la página HTML sale titulada, no como «in», y sin repetir el encabezado', { timeout: 180000 }, async () => {
+  const fuente = '# Ecuaciones de segundo grado\n\nTexto.\n';
+  const antes = new TextDecoder().decode(
+    (await runPandoc(`-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --mathjax -s`, fuente)).bytes
+  );
+  assert.match(antes, /<title>in<\/title>/, 'referencia: así salía antes');
+
+  const preparado = ensureExportMetadata(fuente, {
+    lang: 'es',
+    author: 'Juan José',
+    pageTitle: 'Ecuaciones de segundo grado',
+  }).markdown;
+  const html = new TextDecoder().decode(
+    (await runPandoc(`-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --mathjax -s`, preparado)).bytes
+  );
+
+  assert.match(html, /<title>Ecuaciones de segundo grado<\/title>/);
+  assert.match(html, /<meta name="author" content="Juan José"/);
+  // El cuerpo no gana un bloque de título que repita el encabezado.
+  assert.equal(/<header[^>]*id="title-block-header"/.test(html), false, 'el título no debe repetirse en el cuerpo');
+  assert.equal((html.match(/Ecuaciones de segundo grado/g) || []).length, 2, 'solo en <title> y en el encabezado');
+});
+
+test('el autor llega a las propiedades del DOCX y del EPUB', { timeout: 240000 }, async () => {
+  const fuente = '# Apuntes\n\nTexto.\n';
+  const docx = readZipEntries((await runPandoc(
+    buildExportArgs('docx', {}),
+    ensureExportMetadata(fuente, { lang: 'es', author: 'Juan José' }).markdown,
+  )).bytes);
+  assert.match(docx.get('docProps/core.xml').toString('utf8'), /<dc:creator>Juan José<\/dc:creator>/);
+
+  const preparado = ensureEpubMetadata(fuente, { fallbackTitle: 'apuntes', lang: 'es', author: 'Juan José' });
+  const epub = readZipEntries((await runPandoc(
+    buildExportArgs('epub3', { mathml: true, titleFromHeading: preparado.titleFromHeading }),
+    preparado.markdown,
+  )).bytes);
+  const opf = [...epub.keys()].find(name => name.endsWith('.opf'));
+  assert.match(epub.get(opf).toString('utf8'), /<dc:creator[^>]*>Juan José<\/dc:creator>/);
 });

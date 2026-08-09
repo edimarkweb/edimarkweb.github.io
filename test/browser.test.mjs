@@ -813,7 +813,13 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
 
   assert.deepEqual(
     await page.evaluate(() => window.__edimarkLatexSettings),
-    { documentLanguage: 'auto', documentClass: 'report', classOptions: '12pt, a4paper', preamble: '\\usepackage{amsthm}' }
+    {
+      documentLanguage: 'auto',
+      documentAuthor: '',
+      documentClass: 'report',
+      classOptions: '12pt, a4paper',
+      preamble: '\\usepackage{amsthm}',
+    }
   );
 
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -942,4 +948,36 @@ test('un documento sin idioma propio sigue al ajuste general', async (t) => {
   assert.equal(await page.locator('#doc-lang-label').textContent(), 'EU');
   // El documento sigue limpio: el idioma general no se escribe en el archivo.
   assert.equal(await page.locator('#markdown-input').inputValue(), 'Texto suelto\n');
+});
+
+test('el autor se guarda como ajuste general y por documento', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  await page.locator('#doc-author').fill('Juan José');
+  await page.locator('#latex-settings-save-btn').click();
+  assert.equal(await page.evaluate(() => window.__edimarkLatexSettings.documentAuthor), 'Juan José');
+
+  // El autor general no se escribe en el documento: solo el propio.
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('# Notas\n\nTexto.\n');
+  await page.locator('#html-output h1').getByText('Notas', { exact: true }).waitFor();
+  assert.equal(await page.locator('#markdown-input').inputValue(), '# Notas\n\nTexto.\n');
+
+  page.once('dialog', dialog => dialog.accept('Ana Ruiz'));
+  await page.locator('#doc-lang-btn').click();
+  await page.locator('#doc-author-btn').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('author:'));
+  assert.equal(await page.locator('#markdown-input').inputValue(), '---\nauthor: "Ana Ruiz"\n---\n\n# Notas\n\nTexto.\n');
+  // Y sigue sin verse en la vista previa.
+  assert.equal((await page.locator('#html-output').innerText()).includes('Ana Ruiz'), false);
+
+  // Vaciarlo retira la línea y el bloque vacío.
+  page.once('dialog', dialog => dialog.accept('   '));
+  await page.locator('#doc-lang-btn').click();
+  await page.locator('#doc-author-btn').click();
+  await page.waitForFunction(() => !document.getElementById('markdown-input').value.includes('author:'));
+  assert.equal(await page.locator('#markdown-input').inputValue(), '# Notas\n\nTexto.\n');
 });

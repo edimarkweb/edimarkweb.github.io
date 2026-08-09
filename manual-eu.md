@@ -176,7 +176,7 @@ Ireki **Fitxategia** botoia eta hautatu `Esportatu` entregatzeko edo argitaratze
 * **DOCX (Microsoft Word)**: aproposa Word erabiltzen duten ikasleekin edo lankideekin partekatzeko, eta Google Docs-ekin bateragarria.
 * **ODT (LibreOffice)**: LibreOffice edo OnlyOffice bezalako suite libreetarako pentsatua.
 * **EPUB (liburu digitala)**: EPUB 3 irakurgailuekin bateragarria den liburu elektroniko bat sortzen du (Calibre, Apple Liburuak, Thorium, tinta elektronikoa…). Izenburua 1. mailako lehen goiburutik hartzen da (edo dokumentuaren izenetik), eta hizkuntza, aplikazioan hautatutakotik.
-* **HTML (web-orria)**: fitxategi autonomo bat sortzen du, estiloak eta formulak kapsulatuta dituena, webean ostatatzeko prest.
+* **HTML (web-orria)**: fitxategi autonomo bat sortzen du, estiloak eta formulak kapsulatuta dituena, webean ostatatzeko prest. Nabigatzailearen fitxaren titulua lehen izenburutik hartzen da, edo dokumentuaren izenetik halakorik ez badago.
 * **TEX (LaTeX)**: `.tex` dokumentu oso bat sortzen du, konpilatzeko prest dagoen goiburuarekin. Interfazearen hizkuntza darama, beraz hitz-zatiketa eta etiketa automatikoak zure hizkuntzan ateratzen dira, eta dokumentua 1. mailako izenburu bakar batekin hasten bada, izenburu hori dokumentuaren titulu bihurtzen da (`\title` eta `\maketitle`), beste atal bat izan beharrean.
 
 Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapena, arrakasta edo erroreak).
@@ -186,6 +186,8 @@ Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapen
 **Ezarpenak → Esportatutako dokumentua…** esportazio bakoitzean berrerabiltzen diren hobespenak gordetzen ditu, baita aplikazioa hurrengoan irekitzean ere.
 
 **Dokumentuaren hizkuntza**, bost formatuei aplikatzen zaiena. Horrek erabakitzen du zein hizkuntzatan zuzentzen duten ortografia Word-ek eta LibreOffice-k DOCX edo ODT bat irekitzean, nola zatitzen dituen hitzak LaTeX-ek eta zein hizkuntza adierazten duten HTMLak eta EPUBak pantaila-irakurgailuentzat. Lehenespenez **Interfazearen berbera** da: EdiMarkWeb-en hizkuntza aldatzen baduzu, dokumentuek jarraitu egiten diote. Aplikazioaren bost hizkuntzetako edozein finka dezakezu, edo **Bestelakoa…** aukeratu eta bere kodea idatzi (`fr`, `de`, `pt-BR`).
+
+**Egilea**, fitxategiaren propietateetan gordetzen dena eta EPUBean liburuaren egile gisa eta LaTeX-en azalean agertzen dena. DOCX eta ODT formatuetan, gainera, Pandoc-ek izena duen lerro bat idazten du dokumentuaren hasieran; agertzerik nahi ez baduzu, utzi eremua hutsik. Dokumentu jakin batek beste egile bat eraman dezake: *Dokumentu honen egilea…*, hizkuntza-botoiaren menuan.
 
 Eta hiru ezarpen **LaTeX-erako soilik**, TEX formatura esportatzean eta *LaTeX – dokumentu osoa* kopiatzean aplikatzen direnak:
 
