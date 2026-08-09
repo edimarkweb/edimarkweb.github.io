@@ -16,6 +16,7 @@ import {
   ensureEpubMetadata,
   ensureExportMetadata,
   requestDocxFieldUpdate,
+  fillOdtTableOfContents,
   splitFrontMatter,
   mergeFrontMatter,
   prepareLatexStandalone,
@@ -690,9 +691,11 @@ async function exportDocument({
       El índice del DOCX es un campo que calcula Word, no texto: sin pedir la
       actualización de campos, el documento se abre con el índice vacío.
     */
-    const finalBytes = (normalizedFormat === 'docx' && documentOutlineOptions().toc)
-      ? await requestDocxFieldUpdate(resultadoBytes)
-      : resultadoBytes;
+    let finalBytes = resultadoBytes;
+    if (documentOutlineOptions().toc) {
+      if (normalizedFormat === 'docx') finalBytes = await requestDocxFieldUpdate(resultadoBytes);
+      else if (normalizedFormat === 'odt') finalBytes = await fillOdtTableOfContents(resultadoBytes);
+    }
 
     const blob = new Blob([finalBytes], { type: config.mime });
     saveBlob(blob, outputFilename || config.defaultFilename);

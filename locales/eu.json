@@ -32,7 +32,7 @@
   "doc_author_btn": "Dokumentu honen egilea…",
   "doc_author_prompt": "Dokumentu honen egilea (utzi hutsik orokorra erabiltzeko):",
   "doc_settings_toc_label": "Aurkibide automatikoa",
-  "doc_settings_toc_hint": "Aurkibide bat gehitzen du dokumentuaren hasieran, atalekin eta haien estekekin. DOCX eta ODT formatuetan aurkibidea irakurtzeko prest idazten da, baina orrialde-zenbakirik gabe: horiek agertzeko, eguneratu ezazu zure programan (Word-en, egin klik eskuineko botoiarekin gainean → Eguneratu eremuak; LibreOffice-n, Tresnak → Eguneratu → Aurkibideak). EPUBean ez da beharrezkoa: irakurgailuak berea du jada.",
+  "doc_settings_toc_hint": "Aurkibide bat gehitzen du dokumentuaren hasieran, atalekin. DOCX eta ODT formatuetan irakurtzeko prest idazten da, baina orrialde-zenbakirik gabe: horiek agertzeko, eguneratu ezazu zure programan (Word-en, egin klik eskuineko botoiarekin gainean → Eguneratu eremuak; LibreOffice-n, Tresnak → Eguneratu → Aurkibideak). EPUBean ez da beharrezkoa: irakurgailuak berea du jada.",
   "doc_settings_numbering_label": "Atalak zenbakitu",
   "doc_settings_numbering_hint": "Izenburuak zenbakitzen ditu (1, 1.1, 1.2…). ODTk ez du zenbakitze hori onartzen eta gabe ateratzen da.",
   "doc_settings_cover_section": "EPUBaren azala",

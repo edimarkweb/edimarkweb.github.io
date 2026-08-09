@@ -25,6 +25,7 @@ import {
   prepareLatexStandalone,
   ensureExportMetadata,
   requestDocxFieldUpdate,
+  fillOdtTableOfContents,
   stripEpubAnchorPrefixes,
   inlineArchiveImages,
   restoreOdtTableHeaders,
@@ -741,4 +742,25 @@ test('el DOCX se abre con el índice ya escrito', { timeout: 240000 }, async () 
   assert.match(dentro, /1\.1 Apartado A/);
   assert.match(dentro, /2 Tema 2/);
   assert.match(dentro, /<w:ind w:left="340"\/>/, 'el subapartado va sangrado');
+});
+
+test('el ODT se abre con el índice ya escrito', { timeout: 240000 }, async () => {
+  const fuente = ensureExportMetadata(
+    '# Tema 1\n\nTexto.\n\n## Apartado A\n\nMás.\n',
+    { lang: 'es', tocTitle: 'Índice' },
+  ).markdown;
+  const generado = (await runPandoc(buildExportArgs('odt', { toc: true }), fuente)).bytes;
+
+  // Pandoc deja la plantilla del índice, pero no lo que el lector muestra.
+  const antes = readZipEntries(generado).get('content.xml').toString('utf8');
+  assert.match(antes, /<text:table-of-content\b/);
+  assert.equal(antes.includes('<text:index-body'), false);
+
+  const entries = await readZipEntries(await fillOdtTableOfContents(new Uint8Array(generado)));
+  const despues = new TextDecoder().decode(entries.get('content.xml'));
+  assert.match(despues, /<text:index-body>/);
+  assert.match(despues, /EdimarkToc1">Tema 1</);
+  assert.match(despues, /EdimarkToc2">Apartado A</);
+  assert.match(despues, /<text:p[^>]*>Índice</, 'el rótulo se reutiliza de la plantilla');
+  assert.equal([...entries.keys()][0], 'mimetype', 'el ODT exige que mimetype vaya primero');
 });

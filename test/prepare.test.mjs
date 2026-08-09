@@ -24,6 +24,8 @@ import {
   prepareOdtForImport,
   requestDocxFieldUpdate,
   collectDocxHeadings,
+  collectOdtHeadings,
+  fillOdtTableOfContents,
 } from '../pandoc-prepare.js';
 import { readZipEntries, mimeForPath } from '../zip-reader.js';
 import { createZip } from '../zip-writer.js';
@@ -569,6 +571,61 @@ test('requestDocxFieldUpdate escribe las entradas dentro del campo del índice',
     .map(fragmento => resultado.indexOf(fragmento));
   assert.deepEqual(orden, [...orden].sort((a, b) => a - b), `orden inesperado: ${orden}`);
   assert.equal(resultado.split('<w:fldChar w:fldCharType="end"').length - 1, 1, 'un solo cierre de campo');
+});
+
+/*
+  El ODT tiene el mismo problema por otra vía: Pandoc escribe la plantilla del
+  índice pero no <text:index-body>, que es lo que el lector muestra.
+*/
+test('fillOdtTableOfContents escribe el cuerpo del índice que falta', async () => {
+  const content = '<office:document-content xmlns:text="t" xmlns:style="s" xmlns:fo="f" xmlns:office="o">'
+    + '<office:automatic-styles/><office:body><office:text>'
+    + '<text:table-of-content><text:table-of-content-source text:outline-level="3">'
+    + '<text:index-title-template text:style-name="Contents_20_Heading">Índice</text:index-title-template>'
+    + '</text:table-of-content-source></text:table-of-content>'
+    + '<text:h text:style-name="Heading_20_1" text:outline-level="1">Tema &amp; uno</text:h>'
+    + '<text:h text:style-name="Heading_20_2" text:outline-level="2">Apartado</text:h>'
+    + '</office:text></office:body></office:document-content>';
+  const odt = await createZip(new Map([
+    ['mimetype', 'application/vnd.oasis.opendocument.text'],
+    ['content.xml', content],
+  ]));
+  const entries = await readZipEntries(await fillOdtTableOfContents(odt));
+  const resultado = new TextDecoder().decode(entries.get('content.xml'));
+
+  assert.match(resultado, /<text:index-body>/);
+  assert.match(resultado, /<text:p text:style-name="EdimarkToc1">Tema &amp; uno<\/text:p>/);
+  assert.match(resultado, /<text:p text:style-name="EdimarkToc2">Apartado<\/text:p>/);
+  // El rótulo se reutiliza de la plantilla, ya traducido por Pandoc.
+  assert.match(resultado, /<text:index-title[^>]*><text:p[^>]*>Índice</);
+  // Los estilos van dentro del propio archivo: los de la plantilla no existen.
+  assert.match(resultado, /style:name="EdimarkToc2"[\s\S]*?fo:margin-left="0.6cm"/);
+  // mimetype sigue siendo la primera entrada, o el ODT deja de ser válido.
+  assert.equal([...entries.keys()][0], 'mimetype');
+});
+
+test('fillOdtTableOfContents no toca un archivo sin índice ni uno ya relleno', async () => {
+  const sinIndice = await createZip(new Map([
+    ['mimetype', 'application/vnd.oasis.opendocument.text'],
+    ['content.xml', '<office:text xmlns:text="t"><text:h text:outline-level="1">Tema</text:h></office:text>'],
+  ]));
+  assert.equal(await fillOdtTableOfContents(sinIndice), sinIndice);
+
+  const yaRelleno = await createZip(new Map([
+    ['content.xml', '<text:table-of-content xmlns:text="t"><text:index-body/></text:table-of-content>'],
+  ]));
+  assert.equal(await fillOdtTableOfContents(yaRelleno), yaRelleno);
+});
+
+test('collectOdtHeadings solo recoge los tres primeros niveles', () => {
+  const xml = '<text:h text:outline-level="1">Uno</text:h>'
+    + '<text:h text:outline-level="3">Tres <text:span>con formato</text:span></text:h>'
+    + '<text:h text:outline-level="4">Cuatro</text:h>'
+    + '<text:p>Un párrafo normal</text:p>';
+  assert.deepEqual(collectOdtHeadings(xml), [
+    { level: 1, text: 'Uno' },
+    { level: 3, text: 'Tres con formato' },
+  ]);
 });
 
 test('requestDocxFieldUpdate pide actualizar los campos sin tocar nada más', async () => {

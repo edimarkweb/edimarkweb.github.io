@@ -810,6 +810,103 @@ export async function requestDocxFieldUpdate(archiveBytes) {
   }
 }
 
+// Encabezados del ODT, con su nivel tomado del atributo de esquema.
+const ODT_HEADING_RE = /<text:h\b[^>]*text:outline-level="([1-3])"[^>]*>([\s\S]*?)<\/text:h>/g;
+
+export function collectOdtHeadings(contentXml) {
+  const headings = [];
+  for (const match of String(contentXml || '').matchAll(ODT_HEADING_RE)) {
+    const text = unescapeXmlText(
+      match[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
+    );
+    if (text) headings.push({ level: Number(match[1]), text });
+  }
+  return headings;
+}
+
+/*
+  Estilos propios para el índice, definidos dentro del propio content.xml.
+  La plantilla del índice de Pandoc menciona Contents_20_1 y compañía, pero
+  esos estilos no existen en el archivo: un párrafo que los use se vería sin
+  formato ninguno.
+*/
+const ODT_TOC_STYLES = [1, 2, 3].map(level => (
+  `<style:style style:name="EdimarkToc${level}" style:family="paragraph" style:parent-style-name="Standard">`
+  + `<style:paragraph-properties fo:margin-left="${(level - 1) * 0.6}cm" fo:margin-top="0cm" fo:margin-bottom="0.05cm"/>`
+  + '</style:style>'
+)).join('')
+  + '<style:style style:name="EdimarkTocHead" style:family="paragraph" style:parent-style-name="Standard">'
+  + '<style:paragraph-properties fo:margin-bottom="0.25cm"/>'
+  + '<style:text-properties fo:font-size="16pt" fo:font-weight="bold"/>'
+  + '</style:style>';
+
+/*
+  Fills in the table of contents of an ODT.
+
+  Pandoc writes `<text:table-of-content>` with its template but no
+  `<text:index-body>`, which is the part that holds what the reader displays, so
+  LibreOffice opens the document showing nothing where the index should be. The
+  entries go in there, as the DOCX ones go into the field's cached result, and
+  updating the index in LibreOffice replaces them with the real thing —page
+  numbers and links included, which cannot be known before laying out the pages.
+
+  Any failure leaves the original file untouched.
+*/
+export async function fillOdtTableOfContents(archiveBytes) {
+  if (!archiveBytes || archiveBytes.length === 0) return archiveBytes;
+  try {
+    const entries = await readZipEntries(archiveBytes);
+    const content = entries.get('content.xml');
+    if (!content) return archiveBytes;
+    const xml = new TextDecoder().decode(content);
+    // Ya relleno (o sin índice): no hay nada que hacer.
+    if (!xml.includes('<text:table-of-content') || xml.includes('<text:index-body')) return archiveBytes;
+
+    const headings = collectOdtHeadings(xml);
+    if (!headings.length) return archiveBytes;
+
+    const titleMatch = /<text:index-title-template[^>]*>([\s\S]*?)<\/text:index-title-template>/.exec(xml);
+    const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+
+    const body = '<text:index-body>'
+      + (title
+        ? `<text:index-title text:name="EdimarkTocHead"><text:p text:style-name="EdimarkTocHead">${escapeXmlText(title)}</text:p></text:index-title>`
+        : '')
+      + headings.map(({ level, text }) => (
+        `<text:p text:style-name="EdimarkToc${level}">${escapeXmlText(text)}</text:p>`
+      )).join('')
+      + '</text:index-body>';
+
+    let updated = xml.replace('</text:table-of-content>', `${body}</text:table-of-content>`);
+    /*
+      Un documento sin estilos automáticos trae la etiqueta cerrada sobre sí
+      misma, y entonces no hay ningún `</office:automatic-styles>` donde
+      colgarlos: sin contemplarlo, el índice salía sin sangría.
+    */
+    if (updated.includes('</office:automatic-styles>')) {
+      updated = updated.replace('</office:automatic-styles>', `${ODT_TOC_STYLES}</office:automatic-styles>`);
+    } else {
+      updated = updated.replace(
+        /<office:automatic-styles\s*\/>/,
+        `<office:automatic-styles>${ODT_TOC_STYLES}</office:automatic-styles>`,
+      );
+    }
+    if (updated === xml) return archiveBytes;
+
+    const rebuilt = new Map();
+    // El mimetype tiene que seguir siendo la primera entrada del archivo.
+    if (entries.has('mimetype')) rebuilt.set('mimetype', entries.get('mimetype'));
+    for (const [name, bytes] of entries) {
+      if (name === 'mimetype') continue;
+      rebuilt.set(name, name === 'content.xml' ? new TextEncoder().encode(updated) : bytes);
+    }
+    return createZip(rebuilt);
+  } catch (error) {
+    console.warn('No se pudo completar el índice del ODT:', error);
+    return archiveBytes;
+  }
+}
+
 /*
   Pandoc's ODT reader ignores <table:table-header-rows>, so imported tables lose
   their header row. Read it back out of the uploaded file.
