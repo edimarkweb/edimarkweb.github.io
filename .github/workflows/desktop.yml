@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing release tag to receive the installers (for example, v2.20.0)
+        description: Existing release tag to receive the installers (for example, v2.20.1)
         required: false
         type: string
   push:
