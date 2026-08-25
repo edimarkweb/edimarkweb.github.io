@@ -309,5 +309,18 @@
   "html_code_panel_title": "HTML code",
   "table_header_placeholder": "Header",
   "table_cell_placeholder": "Cell",
-  "replace_all_confirm": "Replace all {count} matches?"
+  "replace_all_confirm": "Replace all {count} matches?",
+  "missing_assets_one": "One image in this document cannot be found.",
+  "missing_assets_many": "{count} images in this document cannot be found.",
+  "missing_assets_link_folder": "Find its folder…",
+  "missing_assets_folder_linked": "Linked folder: {name} ({count} images).",
+  "missing_assets_folder_empty": "That folder contains no images.",
+  "image_insert_mode_label": "How to insert it",
+  "image_insert_mode_relative": "As a relative path (recommended)",
+  "image_insert_mode_relative_help": "The image stays in its folder and the document just names it. The text stays small and the image can be replaced without touching it.",
+  "image_insert_mode_embedded": "Inside the document",
+  "image_insert_mode_embedded_help": "The image travels embedded in the file itself, which becomes self-contained but much heavier.",
+  "image_insert_mode_unsaved_warning": "This document has not been saved yet, so there is no folder to work the path out from: only the file name will be written. Save it next to the image or embed the image instead.",
+  "image_insert_mode_browser_warning": "In the browser the image folder is unknown: only its name will be written, and the document will find it if both sit side by side.",
+  "image_insert_mode_outside_warning": "The image is outside the document folder: the path climbs with “../” and will only work if both are moved together."
 }

@@ -309,5 +309,18 @@
   "html_code_panel_title": "HTML kodea",
   "table_header_placeholder": "Goiburua",
   "table_cell_placeholder": "Gelaxka",
-  "replace_all_confirm": "{count} bat-etortzeak ordeztu nahi dituzu?"
+  "replace_all_confirm": "{count} bat-etortzeak ordeztu nahi dituzu?",
+  "missing_assets_one": "Dokumentuko irudi 1 ez da aurkitzen.",
+  "missing_assets_many": "Dokumentuko {count} irudi ez dira aurkitzen.",
+  "missing_assets_link_folder": "Bilatu bere karpeta…",
+  "missing_assets_folder_linked": "Lotutako karpeta: {name} ({count} irudi).",
+  "missing_assets_folder_empty": "Karpeta horretan ez dago irudirik.",
+  "image_insert_mode_label": "Nola txertatu",
+  "image_insert_mode_relative": "Bide erlatiboarekin (gomendatua)",
+  "image_insert_mode_relative_help": "Irudia bere karpetan geratzen da eta dokumentuak izendatu baino ez du egiten. Testua arina da eta irudia alda daiteke testua ukitu gabe.",
+  "image_insert_mode_embedded": "Dokumentuaren barruan",
+  "image_insert_mode_embedded_help": "Irudia fitxategiaren barruan txertatuta doa: dokumentua bere kabuz nahikoa da, baina askoz astunagoa.",
+  "image_insert_mode_unsaved_warning": "Dokumentua ez da oraindik gorde, eta ez dago bidea kalkulatzeko karpetarik: fitxategiaren izena baino ez da idatziko. Gorde ezazu irudiaren ondoan edo txertatu irudia dokumentuaren barruan.",
+  "image_insert_mode_browser_warning": "Nabigatzailean ez da ezagutzen irudiaren karpeta: izena baino ez da idatziko, eta dokumentuak aurkituko du ondoan badago.",
+  "image_insert_mode_outside_warning": "Irudia dokumentuaren karpetatik kanpo dago: bideak «../» erabiliz igotzen du eta biak batera mugitzen badira baino ez du funtzionatuko."
 }

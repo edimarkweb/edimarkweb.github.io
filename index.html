@@ -281,7 +281,7 @@
     <section id="desktop-release-banner" class="desktop-release-banner" role="status" hidden>
         <i data-lucide="monitor-down" class="desktop-release-banner-icon" aria-hidden="true"></i>
         <div class="desktop-release-banner-content">
-            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.20.1 está disponible para Linux, Windows y macOS.</p>
+            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.21.0 está disponible para Linux, Windows y macOS.</p>
             <a id="desktop-banner-download-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="desktop_banner_download">Ver descargas</a>
             <label class="desktop-release-banner-never">
                 <input id="desktop-banner-never-show" type="checkbox">
@@ -524,6 +524,15 @@
                             </div>
                         </div>
                     </div>
+                </div>
+                <div id="missing-assets-notice" class="hidden mb-2 flex flex-wrap items-center gap-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
+                    <i data-lucide="image-off" class="w-4 h-4 shrink-0"></i>
+                    <span id="missing-assets-message" class="min-w-0 flex-1"></span>
+                    <label for="assets-folder-input" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-200 focus-within:ring-2 focus-within:ring-amber-500 dark:bg-amber-500/20 dark:text-amber-100 dark:hover:bg-amber-500/30">
+                        <i data-lucide="folder-open" class="w-4 h-4"></i>
+                        <span data-i18n-key="missing_assets_link_folder">Buscar su carpeta…</span>
+                        <input id="assets-folder-input" type="file" webkitdirectory directory multiple class="sr-only">
+                    </label>
                 </div>
                 <div id="html-output" contenteditable="true" spellcheck="false" class="editor-pane w-full prose max-w-none"></div>
                 <textarea id="html-source-view" class="hidden"></textarea>
@@ -777,6 +786,26 @@
                     <input id="image-url" type="url" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
                 </div>
                 <div>
+                    <span class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="image_insert_mode_label">Cómo insertarla</span>
+                    <div class="mt-1 space-y-2">
+                        <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                            <input type="radio" name="image-insert-mode" value="relative" class="mt-1" checked>
+                            <span>
+                                <span class="font-medium" data-i18n-key="image_insert_mode_relative">Con ruta relativa (recomendado)</span>
+                                <span class="block text-xs text-slate-500 dark:text-slate-400" data-i18n-key="image_insert_mode_relative_help">La imagen se queda en su carpeta y el documento la nombra. El texto se mantiene ligero y la imagen se puede cambiar sin tocarlo.</span>
+                            </span>
+                        </label>
+                        <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                            <input type="radio" name="image-insert-mode" value="embedded" class="mt-1">
+                            <span>
+                                <span class="font-medium" data-i18n-key="image_insert_mode_embedded">Dentro del documento</span>
+                                <span class="block text-xs text-slate-500 dark:text-slate-400" data-i18n-key="image_insert_mode_embedded_help">La imagen viaja incrustada en el propio archivo, que se vuelve autónomo pero mucho más pesado.</span>
+                            </span>
+                        </label>
+                    </div>
+                    <p id="image-insert-mode-warning" class="mt-2 hidden text-xs text-amber-700 dark:text-amber-300"></p>
+                </div>
+                <div>
                     <span class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="image_file_label">Imagen del disco</span>
                     <div class="mt-1 flex items-center gap-3">
                         <label for="image-file-input" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-800 hover:bg-slate-200 focus-within:ring-2 focus-within:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">
@@ -806,6 +835,7 @@
         </div>
     </div>
 
+    <script src="asset-paths.js"></script>
     <script src="platform-api.js"></script>
     <script src="desktop-updater.js"></script>
     <script type="module" src="pandoc-exporter.js"></script>

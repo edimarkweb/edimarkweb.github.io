@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.20.1';
+const APP_VERSION = '2.21.0';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -904,6 +904,24 @@ async function insertFilesIntoHtmlTarget(files, { mirrorToMarkdown = false, mark
             }
         }
     }
+}
+
+/*
+  Igual que `readFileAsDataUrl`, pero partiendo de una ruta del disco: es lo que
+  hace falta para incrustar una imagen elegida con el diálogo nativo, que
+  devuelve la ruta y no el archivo.
+*/
+async function readDesktopImageAsDataUrl(path) {
+    const platform = window.EdiMarkPlatform;
+    if (!platform?.isDesktop || typeof platform.readDocumentAsset !== 'function') {
+        throw new Error('No hay acceso al archivo.');
+    }
+    const bytes = await platform.readDocumentAsset(path);
+    if (!bytes || !bytes.length) throw new Error('No se pudo leer la imagen.');
+    const mimeType = window.EdiMarkAssetPaths
+        ? window.EdiMarkAssetPaths.mimeTypeFor(path)
+        : 'application/octet-stream';
+    return readFileAsDataUrl(new Blob([bytes], { type: mimeType }));
 }
 
 function readFileAsDataUrl(file) {
@@ -2461,6 +2479,7 @@ function switchTo(id) {
 }
 
 function closeDoc(id) {
+    releaseDocumentAssets(id);
     const docIndex = docs.findIndex(d => d.id === id);
     if (docIndex === -1) return;
 
@@ -2596,6 +2615,231 @@ function splitDocumentFrontMatter(markdown) {
     return { frontMatter: '', body: typeof markdown === 'string' ? markdown : '', keys: [], lang: '' };
 }
 
+/*
+  ---------------------------------------------------------------------------
+  Imágenes con ruta relativa
+  ---------------------------------------------------------------------------
+
+  Un `.md` normal guarda las imágenes fuera del texto y las referencia con una
+  ruta relativa a su carpeta (`imagenes/01.png`). El navegador no puede leer
+  esas rutas por su cuenta —la vista previa vive en una página, no en el disco—,
+  así que aquí se traducen a algo que sí sabe cargar:
+
+  - en la aplicación de escritorio, leyendo el archivo que hay junto al
+    documento abierto y convirtiéndolo en un blob;
+  - en el navegador, buscándolo entre los archivos de la carpeta que el usuario
+    haya vinculado o arrastrado, que es lo único a lo que se tiene acceso.
+
+  El Markdown no se toca nunca: la ruta original se guarda en `data-edimark-src`
+  y se restaura antes de copiar, exportar o volcar la vista previa al Markdown.
+*/
+const assetPathUtils = (typeof window !== 'undefined' && window.EdiMarkAssetPaths) || null;
+const documentAssetCache = new Map();
+const droppedAssetIndexes = [];
+let previewAssetToken = 0;
+
+function documentAssetEntry(docId) {
+    if (!documentAssetCache.has(docId)) {
+        documentAssetCache.set(docId, { urls: new Map(), pending: new Map(), assetIndex: null, folderName: '' });
+    }
+    return documentAssetCache.get(docId);
+}
+
+/* Los blobs ocupan memoria hasta que se revocan: al cerrar la pestaña, fuera. */
+function releaseDocumentAssets(docId) {
+    const entry = documentAssetCache.get(docId);
+    if (!entry) return;
+    entry.urls.forEach(url => { try { URL.revokeObjectURL(url); } catch (_) {} });
+    documentAssetCache.delete(docId);
+}
+
+/*
+  Olvida las imágenes que no se encontraron para que vuelvan a intentarse: se
+  llama al vincular una carpeta nueva, cuando lo que antes faltaba puede estar.
+*/
+function forgetMissingAssets(docId) {
+    const entry = documentAssetCache.get(docId);
+    if (entry) entry.pending.clear();
+}
+
+function registerAssetFolder(files, { docId = null, folderName = '' } = {}) {
+    if (!assetPathUtils || !files || !files.length) return 0;
+    const entries = Array.from(files)
+        .map(file => ({ path: file.__edimarkPath || file.webkitRelativePath || file.name, file }))
+        .filter(item => assetPathUtils.isImagePath(item.path));
+    if (!entries.length) return 0;
+    const assetIndex = assetPathUtils.buildAssetIndex(entries);
+    if (docId) {
+        const entry = documentAssetEntry(docId);
+        entry.assetIndex = assetIndex;
+        entry.folderName = folderName;
+    } else {
+        droppedAssetIndexes.push(assetIndex);
+    }
+    docs.forEach(doc => forgetMissingAssets(doc.id));
+    return entries.length;
+}
+
+function lookupAssetFile(doc, relativePath) {
+    if (!assetPathUtils) return null;
+    const entry = documentAssetEntry(doc.id);
+    const found = assetPathUtils.lookupAsset(entry.assetIndex, relativePath);
+    if (found) return found;
+    for (let i = droppedAssetIndexes.length - 1; i >= 0; i -= 1) {
+        const candidate = assetPathUtils.lookupAsset(droppedAssetIndexes[i], relativePath);
+        if (candidate) return candidate;
+    }
+    return null;
+}
+
+async function loadAssetUrl(doc, relativePath) {
+    const file = lookupAssetFile(doc, relativePath);
+    if (file) return URL.createObjectURL(file);
+
+    const platform = window.EdiMarkPlatform;
+    if (platform?.isDesktop && doc.filePath && typeof platform.readDocumentAsset === 'function') {
+        const baseDir = assetPathUtils.directoryOf(doc.filePath);
+        const absolutePath = assetPathUtils.resolveAgainstDirectory(baseDir, relativePath);
+        try {
+            const bytes = await platform.readDocumentAsset(absolutePath);
+            if (bytes && bytes.length) {
+                return URL.createObjectURL(new Blob([bytes], { type: assetPathUtils.mimeTypeFor(relativePath) }));
+            }
+        } catch (error) {
+            // Que falte una imagen es corriente mientras se escribe: no se
+            // interrumpe la vista previa por ello.
+            console.debug('No se pudo leer la imagen del documento:', absolutePath, error);
+        }
+    }
+    return null;
+}
+
+function assetUrlFor(doc, relativePath) {
+    const entry = documentAssetEntry(doc.id);
+    const key = assetPathUtils.normalizeRelativePath(relativePath);
+    if (!key) return Promise.resolve(null);
+    if (entry.urls.has(key)) return Promise.resolve(entry.urls.get(key));
+    if (entry.pending.has(key)) return entry.pending.get(key);
+    const request = loadAssetUrl(doc, key)
+        .then(url => {
+            if (url) entry.urls.set(key, url);
+            return url;
+        })
+        .catch(() => null);
+    entry.pending.set(key, request);
+    return request;
+}
+
+/* ¿Ha conseguido el navegador cargar la imagen por su cuenta? */
+function whenImageSettles(img) {
+    if (img.complete) return Promise.resolve(img.naturalWidth > 0);
+    return new Promise(resolve => {
+        const finish = loaded => {
+            img.removeEventListener('load', onLoad);
+            img.removeEventListener('error', onError);
+            resolve(loaded);
+        };
+        const onLoad = () => finish(true);
+        const onError = () => finish(false);
+        img.addEventListener('load', onLoad, { once: true });
+        img.addEventListener('error', onError, { once: true });
+    });
+}
+
+/*
+  Sustituye en la vista previa las rutas que el navegador no ha sabido cargar
+  por URL que sí entiende. Lo que ya está en la caché se aplica de inmediato,
+  sin esperar a nada, para que el documento no parpadee con cada tecla.
+
+  Se espera a ver si la imagen carga sola antes de tocarla: en la versión web,
+  una ruta relativa se resuelve contra la dirección de la página, así que las
+  imágenes publicadas junto al sitio —el logotipo del manual, sin ir más lejos—
+  ya se ven y no hay nada que arreglar. Solo se interviene cuando fallan, que es
+  lo que ocurre siempre en la aplicación de escritorio y con los documentos
+  abiertos desde el disco.
+*/
+function applyRelativeImageSources(container, doc) {
+    if (!assetPathUtils || !container || !doc) return;
+    const token = ++previewAssetToken;
+    const entry = documentAssetEntry(doc.id);
+    const candidates = [];
+
+    container.querySelectorAll('img[src]').forEach(img => {
+        const original = img.getAttribute('src') || '';
+        if (!assetPathUtils.isRelativeAssetPath(original)) return;
+        img.dataset.edimarkSrc = original;
+        const key = assetPathUtils.normalizeRelativePath(original);
+        const cached = entry.urls.get(key);
+        if (cached) {
+            img.setAttribute('src', cached);
+            return;
+        }
+        candidates.push({ img, original });
+    });
+
+    if (!candidates.length) {
+        updateMissingAssetsNotice(container, doc);
+        return;
+    }
+
+    Promise.all(candidates.map(({ img, original }) => whenImageSettles(img)
+        .then(loaded => {
+            if (loaded || token !== previewAssetToken || !img.isConnected) return null;
+            return assetUrlFor(doc, original).then(url => {
+                if (token !== previewAssetToken || !img.isConnected) return null;
+                if (url) img.setAttribute('src', url);
+                else img.classList.add('edimark-missing-asset');
+                return null;
+            });
+        })))
+        .then(() => {
+            if (token !== previewAssetToken) return;
+            updateMissingAssetsNotice(container, doc);
+        });
+}
+
+/*
+  El Markdown es la fuente: cualquier cosa que salga de la vista previa —la
+  conversión a Markdown, el HTML copiado, lo que se exporta— tiene que llevar la
+  ruta que escribió el usuario, no el blob temporal de esta sesión.
+*/
+function restoreOriginalImageSources(root) {
+    if (!root || typeof root.querySelectorAll !== 'function') return root;
+    root.querySelectorAll('img[data-edimark-src]').forEach(img => {
+        img.setAttribute('src', img.dataset.edimarkSrc);
+        delete img.dataset.edimarkSrc;
+        img.classList.remove('edimark-missing-asset');
+        if (!img.getAttribute('class')) img.removeAttribute('class');
+    });
+    return root;
+}
+
+/*
+  Aviso de las imágenes que no se han podido encontrar, con el botón para
+  vincular la carpeta del documento. En el navegador es el único camino posible:
+  ninguna página puede leer una carpeta del disco sin que el usuario la elija.
+*/
+function updateMissingAssetsNotice(container, doc) {
+    const notice = document.getElementById('missing-assets-notice');
+    if (!notice) return;
+    const missing = container
+        ? container.querySelectorAll('img.edimark-missing-asset').length
+        : 0;
+    const messageEl = document.getElementById('missing-assets-message');
+    if (!missing) {
+        notice.classList.add('hidden');
+        return;
+    }
+    if (messageEl) {
+        const template = missing === 1
+            ? getTranslation('missing_assets_one', 'No se encuentra 1 imagen del documento.')
+            : getTranslation('missing_assets_many', 'No se encuentran {count} imágenes del documento.');
+        messageEl.textContent = template.replace('{count}', String(missing));
+    }
+    notice.classList.remove('hidden');
+    notice.dataset.docId = doc ? doc.id : '';
+}
+
 // --- Funciones principales ---
 function updateHtml() {
     if (isUpdating) return;
@@ -2612,6 +2856,10 @@ function updateHtml() {
         const parsedHtml = marked.parse(sanitizedText);
         const restoredHtml = restoreMathSegments(parsedHtml, mathSegments);
         htmlOutput.innerHTML = restoredHtml;
+
+        // Las rutas relativas se resuelven sobre el DOM ya montado; el HTML
+        // que acaba de recibir el editor conserva las originales.
+        applyRelativeImageSources(htmlOutput, docs.find(d => d.id === currentId));
 
         htmlOutput.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
           if (!h.id) {
@@ -3217,7 +3465,7 @@ async function writeTextToClipboard(text) {
 function buildHtmlWithTex() {
   const htmlOutput = document.getElementById('html-output');
   if (!htmlOutput) return '';
-  const clone = htmlOutput.cloneNode(true);
+  const clone = restoreOriginalImageSources(htmlOutput.cloneNode(true));
   const inlineFallback = tex => `$${tex}$`;
   const displayFallback = tex => `\n\\[\n${tex}\n\\]\n`;
   const replaceNode = (node, fallbackBuilder) => {
@@ -5731,31 +5979,160 @@ window.onload = () => {
     cancelLinkBtn.addEventListener('click', () => toggleLinkModal(false));
     linkModalOverlay.addEventListener('click', e => { if (e.target === linkModalOverlay) toggleLinkModal(false); });
     
+    /*
+      Vincular a mano la carpeta del documento. Es el único camino en el
+      navegador —ninguna página puede leer el disco sin que el usuario elija—, y
+      también sirve en la aplicación de escritorio para un documento que aún no
+      se ha guardado y por tanto no tiene carpeta propia.
+    */
+    const assetsFolderInput = document.getElementById('assets-folder-input');
+    if (assetsFolderInput) {
+        assetsFolderInput.addEventListener('change', () => {
+            const files = Array.from(assetsFolderInput.files || []);
+            assetsFolderInput.value = '';
+            const doc = docs.find(d => d.id === currentId);
+            if (!doc || !files.length) return;
+            const folderName = (files[0].webkitRelativePath || '').split('/')[0] || '';
+            const count = registerAssetFolder(files, { docId: doc.id, folderName });
+            if (!count) {
+                reportStatus(getTranslation('missing_assets_folder_empty', 'En esa carpeta no hay ninguna imagen.'));
+                return;
+            }
+            reportStatus(getTranslation('missing_assets_folder_linked', 'Carpeta vinculada: {name} ({count} imágenes).')
+                .replace('{name}', folderName)
+                .replace('{count}', String(count)));
+            updateHtml();
+        });
+    }
+
     const imageFileInput = document.getElementById('image-file-input');
     const imageFileName = document.getElementById('image-file-name');
-    if (imageFileInput && imageFileName) {
+    const imageModeWarning = document.getElementById('image-insert-mode-warning');
+
+    /*
+      La imagen elegida del disco. En la aplicación de escritorio se pide con el
+      diálogo nativo, que devuelve la ruta completa: sin ella no hay forma de
+      escribir una ruta relativa, porque un `<input type="file">` solo entrega
+      el nombre del archivo.
+    */
+    let pickedImage = null;
+
+    function selectedInsertMode() {
+      const checked = document.querySelector('input[name="image-insert-mode"]:checked');
+      return checked ? checked.value : 'relative';
+    }
+
+    function showImageFileName(name) {
+      if (!imageFileName) return;
+      imageFileName.textContent = name || getTranslation('image_file_none', 'Ninguna seleccionada');
+      if (name) imageFileName.removeAttribute('data-i18n-key');
+      else imageFileName.setAttribute('data-i18n-key', 'image_file_none');
+    }
+
+    /*
+      Ruta que se escribirá en el Markdown, contada desde la carpeta del
+      documento. Devuelve también el aviso que corresponda, porque hay tres
+      casos en los que lo que se escribe no es lo que el usuario espera:
+      documento sin guardar, navegador (sin rutas) e imagen fuera del árbol.
+    */
+    function relativeReferenceForImage() {
+      const doc = docs.find(d => d.id === currentId);
+      const name = pickedImage?.name || '';
+      if (!assetPathUtils || !pickedImage) return { path: name, warning: '' };
+
+      if (!pickedImage.path) {
+        return {
+          path: name,
+          warning: getTranslation('image_insert_mode_browser_warning',
+            'En el navegador no se conoce la carpeta de la imagen: se escribirá solo su nombre, y el documento la encontrará si está a su lado.'),
+        };
+      }
+      if (!doc || !doc.filePath) {
+        return {
+          path: name,
+          warning: getTranslation('image_insert_mode_unsaved_warning',
+            'El documento todavía no se ha guardado, así que no hay ninguna carpeta desde la que contar la ruta: se escribirá solo el nombre del archivo. Guárdalo junto a la imagen o insértala dentro del documento.'),
+        };
+      }
+      const relative = assetPathUtils.relativePathFrom(assetPathUtils.directoryOf(doc.filePath), pickedImage.path);
+      if (!relative) return { path: name, warning: '' };
+      return {
+        path: relative,
+        warning: relative.startsWith('../')
+          ? getTranslation('image_insert_mode_outside_warning',
+            'La imagen está fuera de la carpeta del documento: la ruta sube con «../» y solo funcionará si se mueven las dos juntas.')
+          : '',
+      };
+    }
+
+    function refreshImageModeWarning() {
+      if (!imageModeWarning) return;
+      const message = (pickedImage && selectedInsertMode() === 'relative')
+        ? relativeReferenceForImage().warning
+        : '';
+      imageModeWarning.textContent = message;
+      imageModeWarning.classList.toggle('hidden', !message);
+    }
+
+    document.querySelectorAll('input[name="image-insert-mode"]').forEach(radio => {
+      radio.addEventListener('change', refreshImageModeWarning);
+    });
+
+    if (imageFileInput) {
       imageFileInput.addEventListener('change', () => {
         const file = imageFileInput.files && imageFileInput.files[0];
-        imageFileName.textContent = file ? file.name : getTranslation('image_file_none', 'Ninguna seleccionada');
-        if (file) imageFileName.removeAttribute('data-i18n-key');
-        else imageFileName.setAttribute('data-i18n-key', 'image_file_none');
+        pickedImage = file ? { file, name: file.name, path: '' } : null;
+        showImageFileName(pickedImage?.name || '');
+        refreshImageModeWarning();
+      });
+      /*
+        En el escritorio se toma el diálogo nativo: el del navegador no da la
+        ruta del archivo y dejaría la ruta relativa en un simple nombre.
+      */
+      imageFileInput.addEventListener('click', event => {
+        const platform = window.EdiMarkPlatform;
+        if (!platform?.isDesktop || typeof platform.pickImageFile !== 'function') return;
+        event.preventDefault();
+        platform.pickImageFile().then(chosen => {
+          if (!chosen) return;
+          pickedImage = { file: null, name: chosen.name, path: chosen.path };
+          showImageFileName(chosen.name);
+          refreshImageModeWarning();
+        }).catch(error => {
+          console.error('No se pudo elegir la imagen:', error);
+        });
       });
     }
+
     insertImageBtn.addEventListener('click', async () => {
-      const selectedFile = imageFileInput?.files?.[0] || null;
-      let url = document.getElementById('image-url').value.trim();
-      if (selectedFile) {
-        try {
-          url = await readFileAsDataUrl(selectedFile);
-        } catch (error) {
-          console.error('No se pudo leer la imagen seleccionada:', error);
-          alert(getTranslation('image_file_error', 'No se pudo leer la imagen seleccionada.'));
-          return;
+      const typedUrl = document.getElementById('image-url').value.trim();
+      const mode = selectedInsertMode();
+      let reference = typedUrl;
+
+      if (pickedImage) {
+        if (mode === 'embedded') {
+          try {
+            reference = pickedImage.file
+              ? await readFileAsDataUrl(pickedImage.file)
+              : await readDesktopImageAsDataUrl(pickedImage.path);
+          } catch (error) {
+            console.error('No se pudo leer la imagen seleccionada:', error);
+            alert(getTranslation('image_file_error', 'No se pudo leer la imagen seleccionada.'));
+            return;
+          }
+        } else {
+          // Los espacios rompen el `![](…)` de Markdown en muchos visores.
+          reference = relativeReferenceForImage().path.replace(/ /g, '%20');
         }
       }
-      const defaultAlt = selectedFile?.name || getTranslation('base64_image_default_alt', 'imagen');
+
+      const defaultAlt = pickedImage?.name || getTranslation('base64_image_default_alt', 'imagen');
       const alt = document.getElementById('image-alt-text').value.trim() || defaultAlt;
-      markdownEditor.replaceSelection(`![${alt}](${url || '#'})`);
+      markdownEditor.replaceSelection(`![${alt}](${reference || '#'})`);
+      pickedImage = null;
+      showImageFileName('');
+      refreshImageModeWarning();
+      if (imageFileInput) imageFileInput.value = '';
       toggleImageModal(false);
       markdownEditor.focus();
     });
@@ -5995,6 +6372,7 @@ window.onload = () => {
         const editorHtml = htmlEditor.getValue();
         if (htmlOutputEl.innerHTML !== editorHtml) {
           htmlOutputEl.innerHTML = editorHtml;
+          applyRelativeImageSources(htmlOutputEl, docs.find(d => d.id === currentId));
         }
         if (!shouldSyncMarkdown) return;
         updateMarkdown();
@@ -6158,7 +6536,13 @@ window.onload = () => {
   function filesFromEntry(entry) {
     if (!entry) return Promise.resolve([]);
     if (entry.isFile) {
-      return new Promise((resolve) => entry.file((file) => resolve([file]), () => resolve([])));
+      return new Promise((resolve) => entry.file((file) => {
+        // La ruta dentro de lo arrastrado es lo que permite luego emparejar
+        // `imagenes/01.png` con el archivo real; el File por sí solo solo sabe
+        // su nombre.
+        try { file.__edimarkPath = (entry.fullPath || file.name).replace(/^\//, ''); } catch (_) {}
+        resolve([file]);
+      }, () => resolve([])));
     }
     if (entry.isDirectory) {
       return readAllDirectoryEntries(entry.createReader())
@@ -6202,6 +6586,15 @@ window.onload = () => {
 
   function openDroppedFiles(files) {
     if (!files.length) return;
+
+    /*
+      Una carpeta arrastrada trae también sus imágenes. Se indexan antes de
+      abrir nada para que los documentos que la acompañan muestren sus figuras
+      desde el primer momento.
+    */
+    if (typeof registerAssetFolder === 'function') {
+      registerAssetFolder(files);
+    }
 
     const isMarkdown = (f) => {
       const name = (f.name || '').toLowerCase();

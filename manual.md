@@ -28,7 +28,12 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 
 Esto elimina la necesidad de pasos intermedios: copia desde tu origen favorito y haz clic en **Pegar** para seguir editando sin interrupciones.
 
-El botón **Imagen** también permite elegir un archivo del disco, además de escribir una URL. La imagen se incrusta en el Markdown, por lo que seguirá disponible al guardar o mover el documento.
+El botón **Imagen** también permite elegir un archivo del disco, además de escribir una URL, y pregunta cómo quieres insertarlo:
+
+* **Con ruta relativa** (lo recomendado y lo que viene marcado): el documento se limita a nombrar la imagen —`![Gráfico](imagenes/01.png)`—, que se queda donde está. Es lo que hace cualquier editor de Markdown y lo que mantiene el `.md` ligero y legible; a cambio, el documento y su carpeta de imágenes viajan juntos.
+* **Dentro del documento**: la imagen se incrusta en el propio archivo, que pasa a ser autónomo pero mucho más pesado. Útil para enviar un `.md` suelto por correo.
+
+En la aplicación de escritorio la ruta se calcula sola desde la carpeta del documento. En el navegador no hay forma de conocer la carpeta de la imagen, así que se escribe solo su nombre y se avisa de ello.
 
 ---
 
@@ -121,6 +126,16 @@ lang: "ca"
 ```
 
 Es la forma estándar de guardar datos sobre un documento y la entienden muchos programas. EdiMarkWeb no la muestra en la previsualización, porque no es contenido, pero sí en el panel Markdown, que es el código fuente. Puedes borrarla o cambiarla a mano si quieres.
+
+### Imágenes con ruta relativa
+
+Un `.md` corriente no lleva las imágenes dentro: las guarda en una carpeta al lado y las nombra con una ruta relativa, `imagenes/01.png`. EdiMarkWeb resuelve esas rutas y muestra las imágenes en la previsualización.
+
+* En la **aplicación de escritorio** no hay que hacer nada: al abrir el documento, las imágenes se buscan en su carpeta y aparecen.
+* En el **navegador** ninguna página puede leer una carpeta del disco sin permiso. Si el documento nombra imágenes que no se encuentran, sobre la previsualización aparece un aviso con el botón **Buscar su carpeta…**: al elegir la carpeta del documento, todas sus imágenes se ven. Basta hacerlo una vez por sesión.
+* Arrastrar una carpeta entera al editor abre sus documentos **y** registra sus imágenes de una vez.
+
+El Markdown no cambia en ningún momento: lo que se guarda, se copia o se exporta sigue llevando la ruta que escribiste. Las imágenes que no se encuentran se marcan con un recuadro discontinuo en lugar del icono roto del navegador.
 
 ### Imágenes incrustadas
 

@@ -7,6 +7,7 @@ const projectRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outputRoot = join(projectRoot, 'dist');
 
 const appFiles = [
+  'asset-paths.js',
   'desktop-updater.js',
   'favicon.ico',
   'i18n.js',

@@ -1,6 +1,6 @@
 {
   "name": "edimarkweb.github.io",
-  "version": "2.20.1",
+  "version": "2.21.0",
   "description": "> **Nota**   > Este repositorio ha sido trasladado a [edimarkweb/edimarkweb.github.io](https://github.com/edimarkweb/edimarkweb.github.io). La aplicación se publica ahora en [https://edimarkweb.github.io/](https://edimarkweb.github.io/).",
   "main": "i18n.js",
   "scripts": {
@@ -10,11 +10,12 @@
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
     "test": "node --test test/prepare.test.mjs",
+    "test:assets": "node --test test/asset-paths.test.mjs",
     "test:platform": "node --test test/platform-api.test.mjs",
     "test:updater": "node --test test/desktop-updater.test.mjs",
     "test:browser": "node --test --test-concurrency=1 test/browser.test.mjs",
     "test:export": "node --test --test-concurrency=1 test/epub-export.test.mjs",
-    "test:all": "npm run test && npm run test:platform && npm run test:updater && npm run test:export"
+    "test:all": "npm run test && npm run test:assets && npm run test:platform && npm run test:updater && npm run test:export"
   },
   "repository": {
     "type": "git",

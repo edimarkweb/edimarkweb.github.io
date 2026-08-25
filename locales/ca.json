@@ -309,5 +309,18 @@
   "html_code_panel_title": "Codi HTML",
   "table_header_placeholder": "Capçalera",
   "table_cell_placeholder": "Cel·la",
-  "replace_all_confirm": "Vols reemplaçar les {count} coincidències?"
+  "replace_all_confirm": "Vols reemplaçar les {count} coincidències?",
+  "missing_assets_one": "No es troba 1 imatge del document.",
+  "missing_assets_many": "No es troben {count} imatges del document.",
+  "missing_assets_link_folder": "Cerca la seva carpeta…",
+  "missing_assets_folder_linked": "Carpeta vinculada: {name} ({count} imatges).",
+  "missing_assets_folder_empty": "En aquesta carpeta no hi ha cap imatge.",
+  "image_insert_mode_label": "Com inserir-la",
+  "image_insert_mode_relative": "Amb ruta relativa (recomanat)",
+  "image_insert_mode_relative_help": "La imatge es queda a la seva carpeta i el document només l'anomena. El text es manté lleuger i la imatge es pot canviar sense tocar-lo.",
+  "image_insert_mode_embedded": "Dins del document",
+  "image_insert_mode_embedded_help": "La imatge viatja incrustada dins del fitxer, que esdevé autònom però molt més pesant.",
+  "image_insert_mode_unsaved_warning": "El document encara no s'ha desat i no hi ha cap carpeta des d'on comptar la ruta: només s'escriurà el nom del fitxer. Deseu-lo al costat de la imatge o inseriu-la dins del document.",
+  "image_insert_mode_browser_warning": "Al navegador no es coneix la carpeta de la imatge: només se n'escriurà el nom, i el document la trobarà si és al seu costat.",
+  "image_insert_mode_outside_warning": "La imatge és fora de la carpeta del document: la ruta puja amb «../» i només funcionarà si es mouen totes dues juntes."
 }

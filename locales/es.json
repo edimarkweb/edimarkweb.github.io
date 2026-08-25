@@ -309,5 +309,18 @@
   "html_code_panel_title": "Código HTML",
   "table_header_placeholder": "Cabecera",
   "table_cell_placeholder": "Celda",
-  "replace_all_confirm": "¿Reemplazar las {count} coincidencias?"
+  "replace_all_confirm": "¿Reemplazar las {count} coincidencias?",
+  "missing_assets_one": "No se encuentra 1 imagen del documento.",
+  "missing_assets_many": "No se encuentran {count} imágenes del documento.",
+  "missing_assets_link_folder": "Buscar su carpeta…",
+  "missing_assets_folder_linked": "Carpeta vinculada: {name} ({count} imágenes).",
+  "missing_assets_folder_empty": "En esa carpeta no hay ninguna imagen.",
+  "image_insert_mode_label": "Cómo insertarla",
+  "image_insert_mode_relative": "Con ruta relativa (recomendado)",
+  "image_insert_mode_relative_help": "La imagen se queda en su carpeta y el documento la nombra. El texto se mantiene ligero y la imagen se puede cambiar sin tocarlo.",
+  "image_insert_mode_embedded": "Dentro del documento",
+  "image_insert_mode_embedded_help": "La imagen viaja incrustada en el propio archivo, que se vuelve autónomo pero mucho más pesado.",
+  "image_insert_mode_unsaved_warning": "El documento todavía no se ha guardado, así que no hay ninguna carpeta desde la que contar la ruta: se escribirá solo el nombre del archivo. Guárdalo junto a la imagen o insértala dentro del documento.",
+  "image_insert_mode_browser_warning": "En el navegador no se conoce la carpeta de la imagen: se escribirá solo su nombre, y el documento la encontrará si está a su lado.",
+  "image_insert_mode_outside_warning": "La imagen está fuera de la carpeta del documento: la ruta sube con «../» y solo funcionará si se mueven las dos juntas."
 }

@@ -309,5 +309,18 @@
   "html_code_panel_title": "Código HTML",
   "table_header_placeholder": "Cabeceira",
   "table_cell_placeholder": "Cela",
-  "replace_all_confirm": "Queres substituír as {count} coincidencias?"
+  "replace_all_confirm": "Queres substituír as {count} coincidencias?",
+  "missing_assets_one": "Non se atopa 1 imaxe do documento.",
+  "missing_assets_many": "Non se atopan {count} imaxes do documento.",
+  "missing_assets_link_folder": "Buscar o seu cartafol…",
+  "missing_assets_folder_linked": "Cartafol vinculado: {name} ({count} imaxes).",
+  "missing_assets_folder_empty": "Nese cartafol non hai ningunha imaxe.",
+  "image_insert_mode_label": "Como inserila",
+  "image_insert_mode_relative": "Con ruta relativa (recomendado)",
+  "image_insert_mode_relative_help": "A imaxe queda no seu cartafol e o documento só a nomea. O texto mantense lixeiro e a imaxe pódese cambiar sen tocalo.",
+  "image_insert_mode_embedded": "Dentro do documento",
+  "image_insert_mode_embedded_help": "A imaxe viaxa incrustada no propio ficheiro, que se volve autónomo pero moito máis pesado.",
+  "image_insert_mode_unsaved_warning": "O documento aínda non se gardou, así que non hai ningún cartafol desde o que contar a ruta: escribirase só o nome do ficheiro. Gárdao xunto á imaxe ou insírea dentro do documento.",
+  "image_insert_mode_browser_warning": "No navegador non se coñece o cartafol da imaxe: escribirase só o seu nome, e o documento atoparaa se está ao seu carón.",
+  "image_insert_mode_outside_warning": "A imaxe está fóra do cartafol do documento: a ruta sobe con «../» e só funcionará se se moven as dúas xuntas."
 }

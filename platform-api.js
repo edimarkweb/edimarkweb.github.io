@@ -102,6 +102,42 @@
         };
       },
 
+      /*
+        Bytes de una imagen que acompaña al documento abierto, para que la vista
+        previa pueda mostrar las rutas relativas del Markdown. Devuelve null en
+        el navegador, donde no hay acceso al disco y las imágenes salen de la
+        carpeta que el usuario vincule.
+      */
+      async readDocumentAsset(path) {
+        if (!desktop || !app || typeof app.readDocumentAsset !== 'function') return null;
+        const data = await app.readDocumentAsset(path);
+        if (!data) return null;
+        if (data instanceof Uint8Array) return data;
+        if (data instanceof ArrayBuffer) return new Uint8Array(data);
+        if (Array.isArray(data)) return new Uint8Array(data);
+        if (ArrayBuffer.isView(data)) {
+          return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+        }
+        return null;
+      },
+
+      /* Diálogo nativo para elegir una imagen: devuelve su ruta en el disco,
+         que es lo que permite escribirla en el Markdown como ruta relativa. */
+      async pickImageFile() {
+        if (!desktop) return null;
+        const selected = await dialog.open({
+          multiple: false,
+          directory: false,
+          filters: [{
+            name: 'Imágenes',
+            extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif', 'ico'],
+          }],
+        });
+        const path = Array.isArray(selected) ? selected[0] : selected;
+        if (!path) return null;
+        return { path, name: fileNameFromPath(path) };
+      },
+
       async initialTextDocumentPaths() {
         if (!desktop || !app || typeof app.initialMarkdownPaths !== 'function') return [];
         const paths = await app.initialMarkdownPaths();

@@ -52,6 +52,7 @@ if (window.__TAURI_INTERNALS__) {
       quit: () => getCurrentWindow().close(),
       initialMarkdownPaths: () => invoke('initial_markdown_paths'),
       readMarkdownDocument: path => invoke('read_markdown_document', { path }),
+      readDocumentAsset: path => invoke('read_document_asset', { path }),
       onOpenMarkdownPaths(callback) {
         openPathSubscribers.add(callback);
         while (pendingOpenPathBatches.length) callback(pendingOpenPathBatches.shift());
