@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { createServer } from 'node:http';
 import { existsSync } from 'node:fs';
-import { readFile, stat } from 'node:fs/promises';
-import { dirname, extname, resolve, sep } from 'node:path';
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, firefox } from '@playwright/test';
 
@@ -11,6 +12,24 @@ const defaultRepoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = process.env.EDIMARK_STATIC_ROOT
   ? resolve(defaultRepoRoot, process.env.EDIMARK_STATIC_ROOT)
   : defaultRepoRoot;
+// PNG de un píxel: sirve para comprobar que la imagen llega a la vista previa
+// sin arrastrar un archivo binario al repositorio.
+const PNG_PIXEL = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/*
+  Carpeta de trabajo con una imagen dentro, como la que acompaña a cualquier
+  artículo. Playwright exige una carpeta de verdad para los `webkitdirectory`.
+*/
+async function crearCarpetaConImagen() {
+  const raiz = await mkdtemp(join(tmpdir(), 'edimark-imagenes-'));
+  await mkdir(join(raiz, 'imagenes'), { recursive: true });
+  await writeFile(join(raiz, 'imagenes', '01-grafico.png'), PNG_PIXEL);
+  return raiz;
+}
+
 const mimeTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
   ['.gif', 'image/gif'],
@@ -921,7 +940,7 @@ test('el menú único cambia entre las tres disposiciones y respeta el orden de 
   assert.equal(await page.locator('#html-panel').isVisible(), true);
 });
 
-test('el selector de imagen incrusta un archivo del disco en Markdown', async (t) => {
+test('el selector de imagen escribe la ruta del archivo, que es lo predeterminado', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
 
@@ -933,10 +952,89 @@ test('el selector de imagen incrusta un archivo del disco en Markdown', async (t
     buffer: Buffer.from([137, 80, 78, 71]),
   });
   assert.equal(await page.locator('#image-file-name').textContent(), 'microscopio.png');
+  assert.equal(await page.locator('input[name="image-insert-mode"][value="relative"]').isChecked(), true);
+  // En el navegador no se conoce la carpeta del archivo y hay que advertirlo.
+  await page.waitForSelector('#image-insert-mode-warning:not(.hidden)');
+  await page.locator('#image-alt-text').fill('Microscopio');
+  await page.locator('#insert-image-btn').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('microscopio.png'));
+  assert.match(await page.locator('#markdown-input').inputValue(), /!\[Microscopio\]\(microscopio\.png\)/);
+});
+
+test('el selector de imagen incrusta el archivo cuando se elige dentro del documento', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('button[data-format="image"]').click();
+  await page.locator('#image-file-input').setInputFiles({
+    name: 'microscopio.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from([137, 80, 78, 71]),
+  });
+  await page.locator('input[name="image-insert-mode"][value="embedded"]').check();
   await page.locator('#image-alt-text').fill('Microscopio');
   await page.locator('#insert-image-btn').click();
   await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('data:image/png;base64,'));
   assert.match(await page.locator('#markdown-input').inputValue(), /!\[Microscopio\]\(data:image\/png;base64,/);
+});
+
+test('una imagen relativa que el propio sitio sirve se deja en paz', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  // `logo_100px.png` existe junto a la página: el navegador la carga solo y no
+  // hay que avisar de nada ni sustituir su ruta.
+  await page.locator('#markdown-input').fill('![Logotipo](logo_100px.png)');
+  await page.waitForFunction(() => {
+    const img = document.querySelector('#html-output img');
+    return Boolean(img && img.complete && img.naturalWidth > 0);
+  });
+  assert.equal(await page.locator('#html-output img').getAttribute('src'), 'logo_100px.png');
+  assert.equal(await page.locator('#missing-assets-notice').evaluate(el => el.classList.contains('hidden')), true);
+});
+
+test('las imágenes con ruta relativa se ven al vincular su carpeta', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('![Gráfico](imagenes/01-grafico.png)');
+
+  // Sin carpeta vinculada no hay forma de encontrarla: se avisa y se marca.
+  await page.waitForSelector('#missing-assets-notice:not(.hidden)');
+  assert.equal(await page.locator('#html-output img.edimark-missing-asset').count(), 1);
+
+  const carpeta = await crearCarpetaConImagen();
+  t.after(() => rm(carpeta, { recursive: true, force: true }));
+  await page.locator('#assets-folder-input').setInputFiles(carpeta);
+
+  // El aviso desaparece en cuanto la imagen se encuentra.
+  await page.waitForSelector('#missing-assets-notice.hidden', { state: 'attached' });
+  const src = await page.locator('#html-output img').first().getAttribute('src');
+  assert.match(src, /^blob:/);
+  // El Markdown no se toca: la ruta original sigue siendo la del documento.
+  assert.equal(await page.locator('#markdown-input').inputValue(), '![Gráfico](imagenes/01-grafico.png)');
+});
+
+test('lo que sale de la vista previa conserva la ruta relativa, no el blob', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('![Gráfico](imagenes/01-grafico.png)');
+  const carpeta = await crearCarpetaConImagen();
+  t.after(() => rm(carpeta, { recursive: true, force: true }));
+  await page.locator('#assets-folder-input').setInputFiles(carpeta);
+  await page.waitForFunction(() => {
+    const img = document.querySelector('#html-output img');
+    return Boolean(img && img.getAttribute('src').startsWith('blob:'));
+  });
+
+  const exportedHtml = await page.evaluate(() => window.buildHtmlWithTex());
+  assert.match(exportedHtml, /src="imagenes\/01-grafico\.png"/);
+  assert.ok(!exportedHtml.includes('blob:'), 'el HTML exportado no debe llevar blobs de esta sesión');
 });
 
 test('pegar detecta imágenes publicadas solo en clipboardData.items', async (t) => {

@@ -28,7 +28,12 @@ Welcome to EdiMarkWeb, a **Markdown text editor** designed for teachers and cont
 
 This removes any intermediate steps: copy from your source of choice and click **Paste** to carry on editing.
 
-The **Image** button also lets you choose a file from disk instead of entering a URL. The image is embedded in the Markdown, so it remains available when the document is saved or moved.
+The **Image** button also lets you choose a file from disk instead of entering a URL, and it asks how you want to insert it:
+
+* **As a relative path** (recommended, and the option already selected): the document simply names the image —`![Chart](images/01.png)`— and the file stays where it is. This is what every Markdown editor does and what keeps the `.md` small and readable; in exchange, the document and its image folder travel together.
+* **Inside the document**: the image is embedded in the file itself, which becomes self-contained but much heavier. Handy for emailing a single `.md`.
+
+In the desktop application the path is worked out from the document folder. In the browser there is no way to know the image folder, so only its name is written and you are told about it.
 
 ---
 
@@ -121,6 +126,16 @@ lang: "ca"
 ```
 
 That is the standard way of storing data about a document and many programs understand it. EdiMarkWeb does not show it in the preview, because it is not content, but it does show it in the Markdown pane, which is the source. You can delete or change it by hand if you want.
+
+### Images with a relative path
+
+An ordinary `.md` does not carry its images inside: it keeps them in a folder next to it and names them with a relative path, `images/01.png`. EdiMarkWeb resolves those paths and shows the images in the preview.
+
+* In the **desktop application** there is nothing to do: when the document opens, its images are looked up in its folder and appear.
+* In the **browser** no page can read a folder from disk without permission. If the document names images that cannot be found, a notice appears above the preview with a **Find its folder…** button: choose the document folder and every image shows up. Once per session is enough.
+* Dragging a whole folder onto the editor opens its documents **and** registers its images in one go.
+
+The Markdown never changes: what you save, copy or export still carries the path you wrote. Images that cannot be found are marked with a dashed frame instead of the browser's broken icon.
 
 ### Embedded images
 

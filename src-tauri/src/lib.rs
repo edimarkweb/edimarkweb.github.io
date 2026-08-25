@@ -55,6 +55,50 @@ fn read_markdown_document(path: String) -> Result<String, String> {
     std::fs::read_to_string(safe_path).map_err(|error| error.to_string())
 }
 
+const IMAGE_EXTENSIONS: [&str; 9] = [
+    "png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "avif", "ico",
+];
+
+/// Un `.md` corriente no lleva las imágenes dentro, sino que las referencia con
+/// rutas relativas a su carpeta. La vista previa las pide por aquí, ya
+/// resueltas contra la ruta del documento abierto.
+///
+/// Solo se sirven imágenes: la interfaz no debe poder leer un archivo
+/// cualquiera del disco por el hecho de nombrarlo en un `![](…)`.
+#[tauri::command]
+fn read_document_asset(path: String) -> Result<tauri::ipc::Response, String> {
+    // En binario, como el instalador: una imagen serializada a JSON multiplica
+    // su tamaño y bloquea el webview mientras se descodifica.
+    document_asset_bytes(&path).map(tauri::ipc::Response::new)
+}
+
+fn document_asset_bytes(path: &str) -> Result<Vec<u8>, String> {
+    // 64 MB: una foto de móvil cabe de sobra y un vídeo o un disco de máquina
+    // virtual, que no pintan nada en una vista previa, no se cargan en memoria.
+    const MAX_BYTES: u64 = 64 * 1024 * 1024;
+
+    let candidate = Path::new(path);
+    if !candidate.is_absolute() {
+        return Err("La ruta de la imagen debe ser absoluta.".to_string());
+    }
+    let extension = candidate
+        .extension()
+        .map(|ext| ext.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
+    if !IMAGE_EXTENSIONS.contains(&extension.as_str()) {
+        return Err("Solo se pueden abrir imágenes.".to_string());
+    }
+    let metadata = std::fs::metadata(candidate).map_err(|error| error.to_string())?;
+    if !metadata.is_file() {
+        return Err("La ruta no corresponde a un archivo.".to_string());
+    }
+    if metadata.len() > MAX_BYTES {
+        return Err("La imagen es demasiado grande para la vista previa.".to_string());
+    }
+
+    std::fs::read(candidate).map_err(|error| error.to_string())
+}
+
 /// Sistema y arquitectura del binario en marcha, para elegir el instalador
 /// adecuado entre los adjuntos de la publicación de GitHub.
 #[tauri::command]
@@ -193,6 +237,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             initial_markdown_paths,
             read_markdown_document,
+            read_document_asset,
             update_target,
             install_downloaded_update
         ])
@@ -218,4 +263,45 @@ pub fn run() {
                 deliver_markdown_paths(app, paths);
             }
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::document_asset_bytes;
+
+    /// Carpeta de trabajo con un documento y su imagen al lado, como la de
+    /// cualquier artículo.
+    fn carpeta_con_imagen(nombre: &str) -> std::path::PathBuf {
+        let raiz = std::env::temp_dir().join(format!("edimark-test-{nombre}"));
+        let imagenes = raiz.join("imagenes");
+        std::fs::create_dir_all(&imagenes).expect("no se pudo crear la carpeta de prueba");
+        std::fs::write(imagenes.join("01.png"), [137, 80, 78, 71]).expect("no se pudo escribir");
+        std::fs::write(raiz.join("apuntes.md"), "# Apuntes").expect("no se pudo escribir");
+        raiz
+    }
+
+    #[test]
+    fn sirve_la_imagen_que_acompana_al_documento() {
+        let raiz = carpeta_con_imagen("imagen");
+        let ruta = raiz.join("imagenes").join("01.png");
+        let bytes = document_asset_bytes(&ruta.to_string_lossy()).expect("debería leerse");
+        assert_eq!(bytes, vec![137, 80, 78, 71]);
+        let _ = std::fs::remove_dir_all(raiz);
+    }
+
+    #[test]
+    fn no_sirve_archivos_que_no_son_imagenes() {
+        let raiz = carpeta_con_imagen("markdown");
+        let ruta = raiz.join("apuntes.md");
+        // Un `![](apuntes.md)` no debe convertirse en una forma de leer
+        // cualquier archivo del disco desde la interfaz.
+        assert!(document_asset_bytes(&ruta.to_string_lossy()).is_err());
+        let _ = std::fs::remove_dir_all(raiz);
+    }
+
+    #[test]
+    fn exige_rutas_absolutas_y_archivos_existentes() {
+        assert!(document_asset_bytes("imagenes/01.png").is_err());
+        assert!(document_asset_bytes("/no/existe/01.png").is_err());
+    }
 }

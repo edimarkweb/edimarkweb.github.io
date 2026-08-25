@@ -28,7 +28,12 @@ Ongi etorri EdiMarkWeb-era, **Markdown testu-editore** bat, azkar lan egin, hain
 
 Horrek tarteko urratsak ezabatzen ditu: kopiatu zure iturri gogokoenetik eta egin klik **Itsatsi** aukeran, etenik gabe editatzen jarraitzeko.
 
-**Irudia** botoiak diskoko fitxategi bat aukeratzeko aukera ere ematen du, URL bat idazteaz gain. Irudia Markdown-ean kapsulatzen da, eta dokumentua gordetzean edo mugitzean erabilgarri jarraituko du.
+**Irudia** botoiak diskoko fitxategi bat aukeratzeko aukera ere ematen du, URL bat idazteaz gain, eta nola txertatu nahi duzun galdetzen dizu:
+
+* **Bide erlatiboarekin** (gomendatua, eta markatuta datorrena): dokumentuak irudia izendatzen du besterik ez —`![Grafikoa](irudiak/01.png)`—, eta irudia dagoen lekuan geratzen da. Markdown editore orok egiten duena da, eta horrek `.md` fitxategia arina eta irakurgarria mantentzen du; horren truke, dokumentua eta bere irudi-karpeta elkarrekin bidaiatzen dute.
+* **Dokumentuaren barruan**: irudia fitxategiaren barruan kapsulatzen da; dokumentua bere kabuz nahikoa da, baina askoz astunagoa. Egokia `.md` bakar bat postaz bidaltzeko.
+
+Mahaigaineko aplikazioan bidea dokumentuaren karpetatik kalkulatzen da. Nabigatzailean ez dago irudiaren karpeta ezagutzerik, beraz izena baino ez da idazten, eta horren berri ematen zaizu.
 
 ---
 
@@ -121,6 +126,16 @@ lang: "ca"
 ```
 
 Dokumentu bati buruzko datuak gordetzeko modu estandarra da eta programa askok ulertzen dute. EdiMarkWeb-ek ez du aurrebistan erakusten, edukia ez delako, baina bai Markdown panelean, iturburu-kodea baita. Nahi baduzu, eskuz ezaba edo alda dezakezu.
+
+### Bide erlatiboa duten irudiak
+
+`.md` arrunt batek ez ditu irudiak barruan eramaten: ondoko karpeta batean gordetzen ditu eta bide erlatibo batekin izendatzen, `irudiak/01.png`. EdiMarkWebek bide horiek ebazten ditu eta irudiak aurrebistan erakusten.
+
+* **Mahaigaineko aplikazioan** ez dago ezer egin beharrik: dokumentua irekitzean, irudiak bere karpetan bilatzen dira eta agertu egiten dira.
+* **Nabigatzailean** orri batek ezin du diskoko karpetarik irakurri baimenik gabe. Dokumentuak aurkitzen ez diren irudiak izendatzen baditu, aurrebistaren gainean ohar bat agertzen da **Bilatu bere karpeta…** botoiarekin: dokumentuaren karpeta aukeratuta, irudi guztiak ikusten dira. Saio bakoitzeko behin egitea nahikoa da.
+* Karpeta oso bat editorera arrastatzeak bertako dokumentuak irekitzen ditu **eta** bertako irudiak erregistratzen ditu aldi berean.
+
+Markdown-a ez da inoiz aldatzen: gordetzen, kopiatzen edo esportatzen dena idatzi zenuen bidearekin doa. Aurkitzen ez diren irudiak marra etenezko lauki batekin markatzen dira, nabigatzailearen ikono hautsiaren ordez.
 
 ### Kapsulatutako irudiak
 

@@ -1197,3 +1197,17 @@ code {
         display: none !important;
     }
 }
+
+/*
+  Imagen del documento que no se ha encontrado: se marca en la vista previa en
+  lugar de dejar el icono roto del navegador, que no explica nada. El aviso de
+  encima del panel dice cuántas son y ofrece vincular su carpeta.
+*/
+.edimark-missing-asset {
+    min-width: 3rem;
+    min-height: 3rem;
+    padding: 0.5rem;
+    border: 1px dashed rgb(217 119 6 / 0.7);
+    border-radius: 0.375rem;
+    background-color: rgb(251 191 36 / 0.08);
+}

@@ -28,7 +28,12 @@ Benvingut/uda a EdiMarkWeb, un **editor de textos en Markdown** dissenyat per a 
 
 Això elimina els passos intermedis: copia des del teu origen preferit i fes clic a **Enganxar** per continuar editant sense interrupcions.
 
-El botó **Imatge** també permet triar un fitxer del disc, a més d'escriure un URL. La imatge s'incrusta al Markdown i continuarà disponible quan desis o moguis el document.
+El botó **Imatge** també permet triar un fitxer del disc, a més d'escriure un URL, i pregunta com vols inserir-lo:
+
+* **Amb ruta relativa** (el recomanat i el que ve marcat): el document només anomena la imatge —`![Gràfic](imatges/01.png)`—, que es queda on és. És el que fa qualsevol editor de Markdown i el que manté el `.md` lleuger i llegible; a canvi, el document i la seva carpeta d'imatges viatgen junts.
+* **Dins del document**: la imatge s'incrusta dins del fitxer, que passa a ser autònom però molt més pesant. Útil per enviar un `.md` solt per correu.
+
+A l'aplicació d'escriptori la ruta es calcula sola des de la carpeta del document. Al navegador no hi ha manera de conèixer la carpeta de la imatge, així que només se n'escriu el nom i se t'avisa.
 
 ---
 
@@ -121,6 +126,16 @@ lang: "ca"
 ```
 
 És la manera estàndard de desar dades sobre un document i molts programes l'entenen. EdiMarkWeb no la mostra a la vista prèvia, perquè no és contingut, però sí al plafó Markdown, que és el codi font. Pots esborrar-la o canviar-la a mà si vols.
+
+### Imatges amb ruta relativa
+
+Un `.md` corrent no porta les imatges a dins: les desa en una carpeta al costat i les anomena amb una ruta relativa, `imatges/01.png`. EdiMarkWeb resol aquestes rutes i mostra les imatges a la previsualització.
+
+* A l'**aplicació d'escriptori** no cal fer res: en obrir el document, les imatges es busquen a la seva carpeta i apareixen.
+* Al **navegador** cap pàgina no pot llegir una carpeta del disc sense permís. Si el document anomena imatges que no es troben, sobre la previsualització apareix un avís amb el botó **Cerca la seva carpeta…**: en triar la carpeta del document, totes les imatges es veuen. N'hi ha prou de fer-ho un cop per sessió.
+* Arrossegar una carpeta sencera a l'editor obre els seus documents **i** registra les seves imatges alhora.
+
+El Markdown no canvia en cap moment: el que es desa, es copia o s'exporta continua portant la ruta que vas escriure. Les imatges que no es troben es marquen amb un requadre discontinu en lloc de la icona trencada del navegador.
 
 ### Imatges incrustades
 

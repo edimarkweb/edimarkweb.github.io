@@ -28,7 +28,12 @@ Benvido/a a EdiMarkWeb, un **editor de textos en Markdown** deseñado para docen
 
 Isto elimina os pasos intermedios: copia desde a túa orixe favorita e fai clic en **Pegar** para seguir editando sen interrupcións.
 
-O botón **Imaxe** tamén permite escoller un ficheiro do disco, ademais de escribir un URL. A imaxe incrústase no Markdown e seguirá dispoñible ao gardar ou mover o documento.
+O botón **Imaxe** tamén permite escoller un ficheiro do disco, ademais de escribir un URL, e pregunta como queres inserilo:
+
+* **Con ruta relativa** (o recomendado e o que vén marcado): o documento só nomea a imaxe —`![Gráfico](imaxes/01.png)`—, que queda onde está. É o que fai calquera editor de Markdown e o que mantén o `.md` lixeiro e lexible; a cambio, o documento e o seu cartafol de imaxes viaxan xuntos.
+* **Dentro do documento**: a imaxe incrústase no propio ficheiro, que pasa a ser autónomo pero moito máis pesado. Útil para enviar un `.md` solto por correo.
+
+Na aplicación de escritorio a ruta calcúlase soa desde o cartafol do documento. No navegador non hai forma de coñecer o cartafol da imaxe, así que se escribe só o seu nome e avísase diso.
 
 ---
 
@@ -121,6 +126,16 @@ lang: "ca"
 ```
 
 É a forma estándar de gardar datos sobre un documento e enténdena moitos programas. EdiMarkWeb non a mostra na previsualización, porque non é contido, pero si no panel Markdown, que é o código fonte. Podes borrala ou cambiala a man se queres.
+
+### Imaxes con ruta relativa
+
+Un `.md` corrente non leva as imaxes dentro: gárdaas nun cartafol ao lado e noméaas cunha ruta relativa, `imaxes/01.png`. EdiMarkWeb resolve esas rutas e mostra as imaxes na previsualización.
+
+* Na **aplicación de escritorio** non hai que facer nada: ao abrir o documento, as imaxes búscanse no seu cartafol e aparecen.
+* No **navegador** ningunha páxina pode ler un cartafol do disco sen permiso. Se o documento nomea imaxes que non se atopan, sobre a previsualización aparece un aviso co botón **Buscar o seu cartafol…**: ao escoller o cartafol do documento, todas as imaxes vense. Abonda con facelo unha vez por sesión.
+* Arrastrar un cartafol enteiro ao editor abre os seus documentos **e** rexistra as súas imaxes dunha vez.
+
+O Markdown non cambia en ningún momento: o que se garda, se copia ou se exporta segue levando a ruta que escribiches. As imaxes que non se atopan márcanse cun recadro descontinuo en lugar da icona rota do navegador.
 
 ### Imaxes incrustadas
 
