@@ -5,10 +5,10 @@ import platformModule from '../platform-api.js';
 
 const { createPlatformApi, fileNameFromPath } = platformModule;
 
-test('extrae el nombre de rutas de Linux, Windows e iOS', () => {
+test('extrae el nombre de rutas de Linux, Windows y macOS', () => {
   assert.equal(fileNameFromPath('/home/juanjo/Apuntes.md'), 'Apuntes.md');
   assert.equal(fileNameFromPath('C:\\Documentos\\Tema 1.md'), 'Tema 1.md');
-  assert.equal(fileNameFromPath('file:///private/Apuntes%20de%20clase.md'), 'Apuntes de clase.md');
+  assert.equal(fileNameFromPath('file:///Users/juanjo/Apuntes%20de%20clase.md'), 'Apuntes de clase.md');
 });
 
 test('abre un documento de texto mediante los plugins de Tauri', async () => {
@@ -117,4 +117,52 @@ test('abre los enlaces externos con el navegador del sistema en Tauri', async ()
   await platform.openExternalUrl('https://edimarkweb.github.io/');
   assert.equal(openedUrl, 'https://edimarkweb.github.io/');
   await assert.rejects(() => platform.openExternalUrl('file:///etc/passwd'));
+});
+
+test('abre las rutas Markdown recibidas al iniciar o desde una segunda instancia', async () => {
+  let subscriber;
+  const platform = createPlatformApi({
+    Blob,
+    __EDIMARK_TAURI__: {
+      dialog: {},
+      fs: {},
+      app: {
+        initialMarkdownPaths: async () => ['/tmp/inicial.md'],
+        readMarkdownDocument: async path => `Contenido de ${path}`,
+        onOpenMarkdownPaths: callback => {
+          subscriber = callback;
+          return () => { subscriber = null; };
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(await platform.initialTextDocumentPaths(), ['/tmp/inicial.md']);
+  assert.deepEqual(await platform.openTextDocumentAtPath('/tmp/inicial.md'), {
+    path: '/tmp/inicial.md',
+    name: 'inicial.md',
+    content: 'Contenido de /tmp/inicial.md',
+  });
+  let received;
+  const unsubscribe = platform.onTextDocumentPaths(paths => { received = paths; });
+  subscriber(['/tmp/segundo.markdown']);
+  assert.deepEqual(received, ['/tmp/segundo.markdown']);
+  unsubscribe();
+  assert.equal(subscriber, null);
+});
+
+test('expone la imagen del portapapeles nativo solo en escritorio', async () => {
+  const nativeImage = { rgba: new Uint8Array([255, 0, 0, 255]), size: { width: 1, height: 1 } };
+  const platform = createPlatformApi({
+    Blob,
+    __EDIMARK_TAURI__: {
+      dialog: {},
+      fs: {},
+      clipboard: { readImage: async () => nativeImage },
+    },
+  });
+  assert.deepEqual(await platform.readClipboardImage(), nativeImage);
+
+  const webPlatform = createPlatformApi({ Blob, URL, document: {}, setTimeout });
+  assert.equal(await webPlatform.readClipboardImage(), null);
 });

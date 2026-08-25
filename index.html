@@ -230,10 +230,6 @@
                         <option value="dark" data-i18n-key="theme_option_dark">Oscuro</option>
                       </select>
                     </div>
-                    <button type="button" id="toggle-width-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="toggle_width_btn_title" title="Expandir / Contraer ancho">
-                      <span class="width-icon flex"><i data-lucide="maximize" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i></span>
-                      <span data-i18n-key="toggle_width_btn_text">Ancho expandido</span>
-                    </button>
                     <button type="button" id="desktop-window-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="desktop_window_btn_title" title="Abrir como ventana independiente">
                       <i data-lucide="app-window" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
                       <span data-i18n-key="desktop_window_btn_text">Ventana independiente</span>
@@ -255,7 +251,6 @@
             <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="help-controls-group">
                 <button id="help-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="help_btn_title" title="Manual de EdiMarkWeb (F1)" aria-label="Abrir manual" aria-keyshortcuts="F1"><i data-lucide="help-circle"></i></button>
                 <button id="about-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="about_btn_title" title="Acerca de EdiMarkWeb" aria-label="Acerca de EdiMarkWeb"><i data-lucide="info"></i></button>
-                <button id="clear-all-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="clear_all_btn_title" title="Borrar todo"><i data-lucide="trash-2" class="text-red-600 dark:text-red-400"></i></button>
             </div>
             <input
               type="file"
@@ -277,7 +272,7 @@
     <section id="desktop-release-banner" class="desktop-release-banner" role="status" hidden>
         <i data-lucide="monitor-down" class="desktop-release-banner-icon" aria-hidden="true"></i>
         <div class="desktop-release-banner-content">
-            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop ya está disponible para Linux y Windows; iOS está en fase de prueba.</p>
+            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.17.0 está disponible para Linux, Windows y macOS.</p>
             <a id="desktop-banner-download-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="desktop_banner_download">Ver descargas</a>
             <label class="desktop-release-banner-never">
                 <input id="desktop-banner-never-show" type="checkbox">
@@ -377,10 +372,36 @@
         </div>
 
         <div class="flex items-center border-b border-slate-200 dark:border-slate-700 gap-1">
-            <div id="tab-bar" role="tablist" class="flex-grow flex gap-1 overflow-x-auto"></div>
+            <div id="tab-bar" role="tablist" class="flex gap-1 overflow-x-auto"></div>
             <button id="new-tab-btn" class="action-btn p-2" type="button" data-i18n-key="new_tab_btn_title" title="Nueva pestaña (Ctrl+T)"><i data-lucide="plus"></i></button>
+            <div class="flex-grow"></div>
+            <div id="layout-menu-container" class="relative">
+                <button id="layout-menu-btn" class="action-btn p-2" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-key="layout_menu_btn_title" title="Disposición de paneles">
+                    <i data-lucide="columns-2"></i>
+                </button>
+                <div id="layout-menu" class="hidden absolute right-0 top-full z-30 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800" role="menu" aria-labelledby="layout-menu-btn">
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-layout="md" role="menuitemradio" aria-checked="false">
+                        <i data-lucide="panel-left" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                        <span data-i18n-key="markdown_panel_layout_maximize">Maximizar panel Markdown</span>
+                        <i data-lucide="check" class="layout-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                    </button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-layout="html" role="menuitemradio" aria-checked="false">
+                        <i data-lucide="panel-right" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                        <span data-i18n-key="preview_panel_layout_maximize">Maximizar panel de previsualización</span>
+                        <i data-lucide="check" class="layout-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                    </button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-layout="dual" role="menuitemradio" aria-checked="true">
+                        <i data-lucide="columns-2" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                        <span data-i18n-key="panels_layout_split">Dividir paneles</span>
+                        <i data-lucide="check" class="layout-check ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                    </button>
+                </div>
+            </div>
             <button id="focus-mode-toggle" class="action-btn p-2" type="button" aria-pressed="false" data-i18n-key="focus_mode_toggle_title" title="Maximizar área de edición (Ctrl+Mayús+F)" aria-keyshortcuts="Control+Shift+F">
                 <i data-lucide="chevrons-up" class="toggle-icon"></i>
+            </button>
+            <button type="button" id="toggle-width-btn" class="action-btn flex items-center gap-2 p-2 text-sm" data-i18n-key="toggle_width_btn_title" title="Expandir / Contraer ancho">
+                <span class="width-icon flex"><i data-lucide="maximize" class="w-4 h-4 shrink-0"></i></span>
             </button>
         </div>
 
@@ -389,12 +410,9 @@
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-lg font-medium text-slate-700 dark:text-slate-200" data-i18n-key="markdown_panel_title">Markdown</h2>
                     <div class="flex items-center gap-2">
-                        <button id="markdown-layout-btn" type="button" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="markdown_panel_layout_maximize" title="Maximizar panel Markdown" aria-pressed="false">
-                            <i data-lucide="arrow-right"></i>
-                        </button>
                         <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
                         <div class="relative" id="doc-lang-container">
-                            <button id="doc-lang-btn" type="button" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" aria-haspopup="true" aria-expanded="false" data-i18n-key="doc_lang_btn_title" title="Cambiar idioma y autor">
+                            <button id="doc-lang-btn" type="button" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" aria-haspopup="true" aria-expanded="false" data-i18n-key="doc_lang_btn_title" title="Cambiar idioma y autor de este documento.">
                                 <i data-lucide="languages" class="w-4 h-4"></i>
                                 <span id="doc-lang-label" class="text-xs font-semibold uppercase">ES</span>
                             </button>
@@ -453,9 +471,6 @@
                 <div class="flex justify-between items-center mb-2">
                     <h2 id="html-panel-title" class="text-lg font-medium text-slate-700 dark:text-slate-200" data-i18n-key="html_panel_title">Previsualización</h2>
                     <div class="flex items-center gap-2">
-                        <button id="html-layout-btn" type="button" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="preview_panel_layout_maximize" title="Maximizar panel de previsualización" aria-pressed="false">
-                            <i data-lucide="arrow-left"></i>
-                        </button>
                         <button id="view-toggle-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="view_toggle_btn_title" title="Cambiar a vista de código"><i data-lucide="code-2"></i></button>
                         <div id="preview-copy-container" class="relative inline-flex items-center">
                             <button type="button" id="copy-html-btn" class="copy-btn flex items-center gap-2 px-3 py-2 focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="copy_html_btn_title" title="Copiar HTML">
@@ -705,23 +720,6 @@
             </div>
         </div>
     </div>
-    <div id="clear-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="clear-modal-title">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm dark:bg-slate-800">
-            <h3 id="clear-modal-title" class="text-lg font-bold mb-4 text-slate-800 dark:text-slate-100" data-i18n-key="clear_modal_title">
-              ¿Vaciar todo el contenido?
-            </h3>
-            <p class="text-sm text-slate-700 dark:text-slate-300 mb-4" data-i18n-key="clear_modal_text">
-              Se eliminará el documento actual y su copia automática guardada en el navegador.
-            </p>
-            <div class="mt-6 flex justify-end gap-3">
-                <button id="cancel-clear-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
-                <button id="confirm-clear-btn" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    <span data-i18n-key="clear_btn">Borrar</span>
-                </button>
-            </div>
-        </div>
-    </div>
     <div id="link-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="link-modal-title">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm dark:bg-slate-800">
             <h3 id="link-modal-title" class="text-lg font-bold mb-4 text-slate-800 dark:text-slate-100" data-i18n-key="insert_link_modal_title">Insertar enlace</h3>
@@ -752,6 +750,17 @@
                 <div>
                     <label for="image-url" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="image_url_label">URL de la imagen</label>
                     <input id="image-url" type="url" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                </div>
+                <div>
+                    <span class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="image_file_label">Imagen del disco</span>
+                    <div class="mt-1 flex items-center gap-3">
+                        <label for="image-file-input" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-800 hover:bg-slate-200 focus-within:ring-2 focus-within:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">
+                            <i data-lucide="folder-open" class="w-4 h-4"></i>
+                            <span data-i18n-key="image_file_choose">Elegir imagen…</span>
+                            <input id="image-file-input" type="file" accept="image/*" class="sr-only">
+                        </label>
+                        <span id="image-file-name" class="min-w-0 truncate text-sm text-slate-500 dark:text-slate-400" data-i18n-key="image_file_none">Ninguna seleccionada</span>
+                    </div>
                 </div>
             </div>
             <div class="mt-6 flex justify-end gap-3">

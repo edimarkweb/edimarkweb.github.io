@@ -9,7 +9,7 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 - Edición dual: puedes trabajar tanto en Markdown como directamente en la vista previa HTML, siempre sincronizadas.
 - Menú de exportación y de importación con soporte para DOCX, ODT, EPUB, HTML y LaTeX, incluyendo opciones de copia directa al portapapeles.
 - Buscador con reemplazo que resalta las coincidencias y acepta términos sin tildes ni distinción entre mayúsculas y minúsculas.
-- Menú **Configuración** con el idioma, el tamaño de letra, el tema, el ancho de trabajo y la ventana independiente reunidos en un mismo sitio.
+- Menú **Configuración** con el idioma, el tamaño de letra, el tema y la ventana independiente reunidos en un mismo sitio; el ancho de trabajo se cambia junto a los controles de paneles.
 - Tema de la interfaz con tres opciones —Sistema, Claro y Oscuro— que se recuerda entre sesiones.
 - Menú de fórmulas renovado y acceso directo a EdiCuaTeX para construir expresiones complejas.
 - Apertura de múltiples archivos, o de carpetas enteras, arrastrándolos al editor (cada archivo en su pestaña): Markdown y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo con Pandoc.
@@ -25,6 +25,8 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 - El contenido enriquecido (HTML, DOCX, pegado desde el navegador, etc.) se vuelve a calcular en el panel derecho y, al mismo tiempo, se genera el Markdown correspondiente para mantener ambas vistas sincronizadas.
 
 Esto elimina la necesidad de pasos intermedios: copia desde tu origen favorito y haz clic en **Pegar** para seguir editando sin interrupciones.
+
+El botón **Imagen** también permite elegir un archivo del disco, además de escribir una URL. La imagen se incrusta en el Markdown, por lo que seguirá disponible al guardar o mover el documento.
 
 ## Vídeos
 Los siguientes vídeos **sin audio y de reproducción continua** muestran algunas acciones comunes.
@@ -71,14 +73,12 @@ La barra junto al logotipo agrupa las opciones globales de la aplicación y ahor
   * **Idioma**: cambia el idioma de la interfaz.
   * **Tamaño de texto**: pequeño, normal, grande o muy grande.
   * **Tema**: `Sistema` sigue el del equipo y cambia con él; `Claro` y `Oscuro` lo fijan. La elección se recuerda la próxima vez que abras la aplicación.
-  * **Ancho expandido**: amplía la superficie de trabajo.
   * **Ventana independiente**: abre EdiMarkWeb en una ventana propia, a modo de aplicación de escritorio.
   * **Documento exportado…**: abre los ajustes de los archivos que genera la aplicación (idioma y, para LaTeX, clase y preámbulo), explicados más abajo.
 * **Imprimir (Ctrl+P)**: genera una vista preparada para papel o PDF con los estilos actuales.
 * **Buscar (Ctrl+F)** y **Manual (Ctrl+H)**: abren el buscador avanzado o este mismo documento.
-* **Borrar todo**: limpia por completo el documento activo tras pedir confirmación.
 
-El diseño de los paneles se cambia con `Ctrl+L` o con las flechas de las cabeceras de cada panel. En pantallas pequeñas, la barra se pliega en dos botones —**Acciones** y **Formato**— que muestran cada grupo cuando lo necesitas.
+El diseño de los paneles se cambia con `Ctrl+L` o con el botón de disposición situado junto al botón que maximiza el área de edición. Su menú permite **Maximizar panel Markdown**, **Maximizar Vista previa** o **Dividir paneles**. En pantallas pequeñas, la barra se pliega en dos botones —**Acciones** y **Formato**— que muestran cada grupo cuando lo necesitas.
 
 ---
 
@@ -121,7 +121,7 @@ La zona de trabajo se divide en dos paneles redimensionables:
 * **HTML / Previsualización** (derecha): muestra el resultado final y también permite editar el contenido directamente. Usa el botón con el icono de código para alternar entre la previsualización rica y el código HTML generado.
 * **Copiar contenido**: Botones específicos para copiar Markdown o el HTML generado (incluye fórmulas convertidas a LaTeX cuando copias HTML).
 
-Puedes arrastrar la barra central para dar más espacio a cualquiera de los paneles, maximizar uno de los dos con las flechas de su cabecera o usar el botón de la derecha de las pestañas para **maximizar el área de edición**, que oculta las barras superiores y deja la pantalla para el texto.
+Puedes arrastrar la barra central para dar más espacio a cualquiera de los paneles, elegir una de las tres disposiciones en el botón situado a la derecha o usar la doble flecha para **maximizar el área de edición**, que oculta las barras superiores y deja la pantalla para el texto. El botón `+` permanece justo después de la última pestaña.
 
 ### El idioma de cada documento
 
@@ -160,8 +160,7 @@ Cuando un documento lleva imágenes en base64 —al importar un DOCX, al pegar d
 * **Importar**: Convierte a Markdown documentos en otros formatos mediante Pandoc: `.docx`, `.odt`, `.epub`, `.html` y `.tex`. Se recuperan los encabezados, listas, tablas y enlaces, y también las imágenes: al proceder de un `.docx`, `.odt` o `.epub`, se extraen del propio archivo y quedan incrustadas en el Markdown, de modo que se ven en la previsualización y viajan contigo al exportar.
 * **Guardar (`Ctrl+S`)**: guarda el documento actual. En la aplicación de escritorio actualiza el archivo ya abierto; **Guardar como… (`Ctrl+Mayús+S`)** siempre permite elegir otro nombre o ubicación.
 * **Copiar contenido**: El panel izquierdo incluye un botón para copiar el Markdown; en la vista previa puedes elegir qué se copiará (HTML renderizado o variantes LaTeX) desde el menú desplegable junto al icono de copia.
-* **Borrar todo**: Restablece el documento tras una confirmación.
-* **Cambiar tema, diseño o ancho**: Desde el menú **Configuración** (tema y ancho) y con `Ctrl+L` (diseño de los paneles) adaptas la interfaz a cada situación: pizarra digital, portátil, etc.
+* **Cambiar tema, diseño o ancho**: usa **Configuración** para el tema, `Ctrl+L` o el menú de paneles para el diseño y el botón de ancho (solo icono), a la derecha de la doble flecha, para ampliar la superficie web.
 * **Manual**: Dispones de este documento siempre actualizado con `Ctrl+H`.
 
 ---
@@ -219,6 +218,8 @@ Cada opción muestra una notificación de éxito y, cuando corresponde, prepara 
 ## Arrastrar y soltar archivos
 
 Arrastra uno o varios archivos sobre la aplicación. Se admiten `.md` y `.markdown`, que se abren tal cual, y `.docx`, `.odt`, `.epub`, `.html` y `.tex`, que se convierten a Markdown con Pandoc antes de abrirse:
+
+En la aplicación de escritorio, los instaladores registran `.md` y `.markdown`: también puedes abrir estos documentos con un doble clic desde el explorador de archivos.
 
 * Verás un marco iluminado que confirma que puedes soltarlos.
 * Cada archivo se abrirá en su propia pestaña con el nombre original.

@@ -9,7 +9,7 @@ Ongi etorri EdiMarkWeb-era, **Markdown testu-editore** bat, azkar lan egin, hain
 - Edizio bikoitza: Markdown-en zein HTML aurrebistan zuzenean lan egin dezakezu, beti sinkronizatuta.
 - Esportatzeko eta inportatzeko menuak, DOCX, ODT, EPUB, HTML eta LaTeX onartzen dituztenak, arbelera zuzenean kopiatzeko aukerekin.
 - Bilatzailea ordezkapenarekin: bat-etortzeak nabarmentzen ditu eta azenturik gabeko terminoak onartzen ditu, maiuskulak eta minuskulak bereizi gabe.
-- **Ezarpenak** menua, hizkuntza, testuaren tamaina, gaia, lan-zabalera eta leiho independentea leku berean bilduta.
+- **Ezarpenak** menua, hizkuntza, testuaren tamaina, gaia eta leiho independentea leku berean bilduta; lan-zabalera panelen kontrolen ondoan aldatzen da.
 - Interfazearen gaia hiru aukerarekin —Sistemakoa, Argia eta Iluna— eta saioen artean gogoratzen da.
 - Formulen menu berritua eta EdiCuaTeX-erako sarbide zuzena adierazpen konplexuak eraikitzeko.
 - Hainbat fitxategi, edo karpeta osoak, ireki editorera arrastatuz (fitxategi bakoitza bere fitxan): Markdown eta baita DOCX, ODT, EPUB, HTML edo TEX ere, Pandoc-ekin bat-batean bihurtzen direnak.
@@ -25,6 +25,8 @@ Ongi etorri EdiMarkWeb-era, **Markdown testu-editore** bat, azkar lan egin, hain
 - Eduki aberastua (HTML, DOCX, nabigatzailetik itsatsia, etab.) eskuineko panelean berriro kalkulatzen da eta, aldi berean, dagokion Markdown-a sortzen da bi ikuspegiak sinkronizatuta mantentzeko.
 
 Horrek tarteko urratsak ezabatzen ditu: kopiatu zure iturri gogokoenetik eta egin klik **Itsatsi** aukeran, etenik gabe editatzen jarraitzeko.
+
+**Irudia** botoiak diskoko fitxategi bat aukeratzeko aukera ere ematen du, URL bat idazteaz gain. Irudia Markdown-ean kapsulatzen da, eta dokumentua gordetzean edo mugitzean erabilgarri jarraituko du.
 
 ## Bideoak
 
@@ -76,14 +78,12 @@ Logotipoaren ondoko barrak aplikazioaren aukera orokorrak biltzen ditu eta fitxa
   * **Hizkuntza**: interfazearen hizkuntza aldatzen du.
   * **Testuaren tamaina**: txikia, normala, handia edo oso handia.
   * **Gaia**: `Sistemakoa` aukerak ekipoarena jarraitzen du eta harekin batera aldatzen da; `Argia` eta `Iluna` aukerek finkatu egiten dute. Aukeraketa gogoratu egiten da aplikazioa hurrengoan irekitzean.
-  * **Zabalera hedatua**: lan-azalera zabaltzen du.
   * **Leiho independentea**: EdiMarkWeb bere leiho batean irekitzen du, mahaigaineko aplikazio gisa.
   * **Esportatutako dokumentua…**: aplikazioak sortzen dituen fitxategien ezarpenak irekitzen ditu (hizkuntza eta, LaTeX-erako, klasea eta atarikoa), behean azalduta.
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia sortzen du uneko estiloekin.
 * **Bilatu (Ctrl+F)** eta **Eskuliburua (Ctrl+H)**: bilatzaile aurreratua edo dokumentu hau bera irekitzen dituzte.
-* **Ezabatu dena**: dokumentu aktiboa erabat hustutzen du, berrespena eskatu ondoren.
 
-Panelen antolaketa `Ctrl+L` teklarekin edo panel bakoitzaren goiburuko geziekin aldatzen da. Pantaila txikietan, barra bi botoitan tolesten da —**Ekintzak** eta **Formatua**— eta talde bakoitza behar duzunean erakusten dute.
+Panelen antolaketa `Ctrl+L` teklarekin edo edizio-eremua maximizatzeko botoiaren ondoko antolaketa-botoiarekin aldatzen da. Menuak **Markdown panela maximizatu**, **Aurrebista panela maximizatu** eta **Panelak zatitu** aukerak eskaintzen ditu. Pantaila txikietan, barra bi botoitan tolesten da —**Ekintzak** eta **Formatua**— eta talde bakoitza behar duzunean erakusten dute.
 
 ---
 
@@ -126,7 +126,7 @@ Lan-eremua tamainaz alda daitezkeen bi paneletan banatzen da:
 * **HTML / Aurrebista** (eskuina): azken emaitza erakusten du eta edukia zuzenean editatzeko aukera ere ematen du. Erabili kode-ikonoa duen botoia aurrebista aberatsaren eta sortutako HTML kodearen artean txandakatzeko.
 * **Edukia kopiatu**: Markdown-a edo sortutako HTMLa kopiatzeko botoi zehatzak (HTMLa kopiatzean LaTeX-era bihurtutako formulak barne).
 
-Erdiko barra arrasta dezakezu edozein paneli leku gehiago emateko, bietako bat maximiza dezakezu bere goiburuko geziekin, edo fitxen eskuineko botoia erabil dezakezu **edizio-eremua maximizatzeko**: goiko barrak ezkutatzen ditu eta pantaila testuarentzat uzten du.
+Erdiko barra arrasta dezakezu edozein paneli leku gehiago emateko, eskuineko botoian hiru antolaketetako bat aukeratu edo gezi bikoitza erabili **edizio-eremua maximizatzeko**: goiko barrak ezkutatzen ditu eta pantaila testuarentzat uzten du. `+` botoia azken fitxaren ondoren geratzen da.
 
 ### Dokumentu bakoitzaren hizkuntza
 
@@ -165,8 +165,7 @@ Dokumentu batek base64 irudiak dituenean —DOCX bat inportatzean, beste aplikaz
 * **Inportatu**: beste formatu batzuetako dokumentuak Markdown-era bihurtzen ditu Pandoc bidez: `.docx`, `.odt`, `.epub`, `.html` eta `.tex`. Izenburuak, zerrendak, taulak eta estekak berreskuratzen dira, eta baita irudiak ere: `.docx`, `.odt` edo `.epub` batetik datozenean, fitxategitik bertatik ateratzen dira eta Markdown-ean kapsulatuta geratzen dira; horrela, aurrebistan ikusten dira eta zurekin bidaiatzen dute esportatzean.
 * **Gorde (`Ctrl+S`)**: uneko dokumentua gordetzen du. Mahaigaineko aplikazioan aurretik irekitako fitxategia eguneratzen du; **Gorde honela… (`Ctrl+Shift+S`)** aukerak beti uzten du beste izen edo kokapen bat hautatzen.
 * **Edukia kopiatu**: ezkerreko panelak Markdown-a kopiatzeko botoi bat du; aurrebistan zer kopiatuko den aukera dezakezu (errendatutako HTMLa edo LaTeX aldaerak) kopiatzeko ikonoaren ondoko menu zabalgarritik.
-* **Ezabatu dena**: dokumentua berrezartzen du berrespen baten ondoren.
-* **Gaia, antolaketa edo zabalera aldatu**: **Ezarpenak** menutik (gaia eta zabalera) eta `Ctrl+L` teklarekin (panelen antolaketa) interfazea egoera bakoitzera egokitzen duzu: arbel digitala, eramangarria, etab.
+* **Gaia, antolaketa edo zabalera aldatu**: erabili **Ezarpenak** gaiarentzat, `Ctrl+L` edo panelen menua antolaketarentzat eta gezi bikoitzaren eskuineko zabalera-botoia (ikonoa soilik) webguneko lan-eremua zabaltzeko.
 * **Eskuliburua**: dokumentu hau beti eguneratuta duzu `Ctrl+H` bidez.
 
 ---
@@ -224,6 +223,8 @@ Aukera bakoitzak arrakasta-jakinarazpen bat erakusten du eta, dagokionean, LaTeX
 ## Fitxategiak arrastatu eta jaregin
 
 Arrastatu fitxategi bat edo gehiago aplikazioaren gainera. `.md` eta `.markdown` onartzen dira, zuzenean irekitzen direnak, eta `.docx`, `.odt`, `.epub`, `.html` eta `.tex`, ireki aurretik Pandoc-ekin Markdown-era bihurtzen direnak:
+
+Mahaigaineko aplikazioan, instalatzaileek `.md` eta `.markdown` erregistratzen dituzte; dokumentu horiek fitxategi-kudeatzailean klik bikoitza eginez ere ireki ditzakezu.
 
 * Marko argiztatu bat ikusiko duzu, jaregin ditzakezula berresten duena.
 * Fitxategi bakoitza bere fitxan irekiko da, jatorrizko izenarekin.

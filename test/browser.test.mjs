@@ -101,6 +101,8 @@ test('un idioma no disponible recurre al español', async (t) => {
   assert.equal(requests.some(url => url.endsWith('/locales/fr.json')), false);
   assert.equal(await page.locator('.site-footer').count(), 0);
   assert.equal(await page.locator('#desktop-release-banner').isVisible(), true);
+  const packageVersion = JSON.parse(await readFile(resolve(repoRoot, 'package.json'), 'utf8')).version;
+  assert.match(await page.locator('#desktop-release-banner').innerText(), new RegExp(`v${packageVersion.replaceAll('.', '\\.')}`));
   assert.equal(
     await page.locator('#desktop-banner-download-link').getAttribute('href'),
     'https://github.com/edimarkweb/edimarkweb.github.io/releases/latest',
@@ -877,8 +879,8 @@ test('los nuevos atajos abren sus acciones y los iconos explican su función', a
   const { context, page } = await openApp();
   t.after(() => context.close());
 
-  assert.equal(await page.locator('#doc-lang-btn').getAttribute('title'), 'Cambiar idioma y autor');
-  assert.match(await page.locator('#doc-lang-btn').getAttribute('aria-label'), /^Cambiar idioma y autor\. Idioma general: /);
+  assert.equal(await page.locator('#doc-lang-btn').getAttribute('title'), 'Cambiar idioma y autor de este documento.');
+  assert.match(await page.locator('#doc-lang-btn').getAttribute('aria-label'), /^Cambiar idioma y autor de este documento\. Idioma general: /);
   assert.equal(await page.locator('#toggle-replace-btn').getAttribute('title'), 'Mostrar opciones de reemplazo');
 
   await page.keyboard.press('Control+Alt+e');
@@ -893,6 +895,72 @@ test('los nuevos atajos abren sus acciones y los iconos explican su función', a
   assert.equal(await page.locator('#focus-mode-toggle').getAttribute('aria-pressed'), 'false');
   await page.keyboard.press('Control+Shift+f');
   assert.equal(await page.locator('#focus-mode-toggle').getAttribute('aria-pressed'), 'true');
+});
+
+test('el menú único cambia entre las tres disposiciones y respeta el orden de la barra', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  assert.equal(await page.locator('#new-tab-btn').evaluate(button => button.previousElementSibling?.id), 'tab-bar');
+  assert.equal(await page.locator('#layout-menu-container').evaluate(container => container.nextElementSibling?.id), 'focus-mode-toggle');
+  assert.equal(await page.locator('#focus-mode-toggle').evaluate(button => button.nextElementSibling?.id), 'toggle-width-btn');
+
+  await page.locator('#layout-menu-btn').click();
+  await page.locator('[data-layout="md"]').click();
+  assert.equal(await page.locator('#markdown-panel').isVisible(), true);
+  assert.equal(await page.locator('#html-panel').isVisible(), false);
+  assert.equal(await page.locator('[data-layout="md"]').getAttribute('aria-checked'), 'true');
+
+  await page.locator('#layout-menu-btn').click();
+  await page.locator('[data-layout="html"]').click();
+  assert.equal(await page.locator('#markdown-panel').isVisible(), false);
+  assert.equal(await page.locator('#html-panel').isVisible(), true);
+
+  await page.locator('#layout-menu-btn').click();
+  await page.locator('[data-layout="dual"]').click();
+  assert.equal(await page.locator('#markdown-panel').isVisible(), true);
+  assert.equal(await page.locator('#html-panel').isVisible(), true);
+});
+
+test('el selector de imagen incrusta un archivo del disco en Markdown', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('button[data-format="image"]').click();
+  await page.locator('#image-file-input').setInputFiles({
+    name: 'microscopio.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from([137, 80, 78, 71]),
+  });
+  assert.equal(await page.locator('#image-file-name').textContent(), 'microscopio.png');
+  await page.locator('#image-alt-text').fill('Microscopio');
+  await page.locator('#insert-image-btn').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('data:image/png;base64,'));
+  assert.match(await page.locator('#markdown-input').inputValue(), /!\[Microscopio\]\(data:image\/png;base64,/);
+});
+
+test('pegar detecta imágenes publicadas solo en clipboardData.items', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').focus();
+  await page.evaluate(() => {
+    const file = new File([new Uint8Array([137, 80, 78, 71])], 'clipboard.png', { type: 'image/png' });
+    const event = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', {
+      value: {
+        getData: () => '',
+        files: [],
+        items: [{ kind: 'file', getAsFile: () => file }],
+        types: ['image/png'],
+      },
+    });
+    document.getElementById('markdown-input').dispatchEvent(event);
+  });
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('data:image/png;base64,'));
+  assert.match(await page.locator('#markdown-input').inputValue(), /clipboard\.png/);
 });
 
 test('Guardar como siempre pide una ruta nueva y la convierte en la ruta activa', async (t) => {

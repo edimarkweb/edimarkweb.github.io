@@ -9,7 +9,7 @@ Benvingut/uda a EdiMarkWeb, un **editor de textos en Markdown** dissenyat per a 
 - Edició dual: pots treballar tant en Markdown com directament a la vista prèvia HTML, sempre sincronitzades.
 - Menú d'exportació i d'importació compatible amb DOCX, ODT, EPUB, HTML i LaTeX, amb opcions de còpia directa al porta-retalls.
 - Cercador amb reemplaçament que ressalta les coincidències i accepta termes sense accents ni distinció entre majúscules i minúscules.
-- Menú **Configuració** amb l'idioma, la mida de la lletra, el tema, l'amplada de treball i la finestra independent reunits en un mateix lloc.
+- Menú **Configuració** amb l'idioma, la mida de la lletra, el tema i la finestra independent reunits en un mateix lloc; l'amplada de treball es canvia al costat dels controls dels plafons.
 - Tema de la interfície amb tres opcions —Sistema, Clar i Fosc— que es recorda entre sessions.
 - Menú de fórmules renovat i accés directe a EdiCuaTeX per construir expressions complexes.
 - Obertura de diversos fitxers, o de carpetes senceres, arrossegant-los a l'editor (cada fitxer en la seva pestanya): Markdown i també DOCX, ODT, EPUB, HTML o TEX, que es converteixen al vol amb Pandoc.
@@ -25,6 +25,8 @@ Benvingut/uda a EdiMarkWeb, un **editor de textos en Markdown** dissenyat per a 
 - El contingut enriquit (HTML, DOCX, enganxat des del navegador, etc.) es torna a calcular al plafó dret i, alhora, es genera el Markdown corresponent per mantenir les dues vistes sincronitzades.
 
 Això elimina els passos intermedis: copia des del teu origen preferit i fes clic a **Enganxar** per continuar editant sense interrupcions.
+
+El botó **Imatge** també permet triar un fitxer del disc, a més d'escriure un URL. La imatge s'incrusta al Markdown i continuarà disponible quan desis o moguis el document.
 
 ## Vídeos
 
@@ -76,14 +78,12 @@ La barra del costat del logotip agrupa les opcions globals de l'aplicació i con
   * **Idioma**: canvia l'idioma de la interfície.
   * **Mida del text**: petita, normal, gran o molt gran.
   * **Tema**: `Sistema` segueix el de l'equip i canvia amb ell; `Clar` i `Fosc` el fixen. L'elecció es recorda el pròxim cop que obris l'aplicació.
-  * **Amplada ampliada**: eixampla la superfície de treball.
   * **Finestra independent**: obre EdiMarkWeb en una finestra pròpia, a manera d'aplicació d'escriptori.
   * **Document exportat…**: obre els ajustos dels fitxers que genera l'aplicació (idioma i, per al LaTeX, classe i preàmbul), explicats més avall.
 * **Imprimir (Ctrl+P)**: genera una vista preparada per a paper o PDF amb els estils actuals.
 * **Cercar (Ctrl+F)** i **Manual (Ctrl+H)**: obren el cercador avançat o aquest mateix document.
-* **Esborrar-ho tot**: buida completament el document actiu després de demanar confirmació.
 
-La disposició dels plafons es canvia amb `Ctrl+L` o amb les fletxes de les capçaleres de cada plafó. En pantalles petites, la barra es plega en dos botons —**Accions** i **Format**— que mostren cada grup quan el necessites.
+La disposició dels plafons es canvia amb `Ctrl+L` o amb el botó de disposició situat al costat del botó que maximitza l'àrea d'edició. El menú permet **Maximitzar el plafó Markdown**, **Maximitzar el plafó de vista prèvia** o **Dividir els plafons**. En pantalles petites, la barra es plega en dos botons —**Accions** i **Format**— que mostren cada grup quan el necessites.
 
 ---
 
@@ -126,7 +126,7 @@ La zona de treball es divideix en dos plafons redimensionables:
 * **HTML / Vista prèvia** (dreta): mostra el resultat final i també permet editar el contingut directament. Fes servir el botó amb la icona de codi per alternar entre la vista prèvia rica i el codi HTML generat.
 * **Copiar contingut**: botons específics per copiar el Markdown o l'HTML generat (inclou fórmules convertides a LaTeX quan copies HTML).
 
-Pots arrossegar la barra central per donar més espai a qualsevol dels plafons, maximitzar-ne un amb les fletxes de la seva capçalera o fer servir el botó de la dreta de les pestanyes per **maximitzar l'àrea d'edició**, que amaga les barres superiors i deixa la pantalla per al text.
+Pots arrossegar la barra central per donar més espai a qualsevol dels plafons, triar una de les tres disposicions al botó de la dreta o fer servir la doble fletxa per **maximitzar l'àrea d'edició**, que amaga les barres superiors i deixa la pantalla per al text. El botó `+` es manté just després de l'última pestanya.
 
 ### L'idioma de cada document
 
@@ -165,8 +165,7 @@ Quan un document porta imatges en base64 —en importar un DOCX, en enganxar des
 * **Importar**: converteix a Markdown documents en altres formats mitjançant Pandoc: `.docx`, `.odt`, `.epub`, `.html` i `.tex`. Es recuperen els encapçalaments, les llistes, les taules i els enllaços, i també les imatges: quan provenen d'un `.docx`, `.odt` o `.epub` s'extreuen del mateix fitxer i queden incrustades al Markdown, de manera que es veuen a la vista prèvia i viatgen amb tu en exportar.
 * **Desar (`Ctrl+S`)**: desa el document actual. A l'aplicació d'escriptori actualitza el fitxer ja obert; **Desar com a… (`Ctrl+Maj+S`)** sempre permet triar un altre nom o ubicació.
 * **Copiar contingut**: el plafó esquerre inclou un botó per copiar el Markdown; a la vista prèvia pots triar què es copiarà (HTML representat o variants LaTeX) des del menú desplegable del costat de la icona de còpia.
-* **Esborrar-ho tot**: restableix el document després d'una confirmació.
-* **Canviar tema, disposició o amplada**: des del menú **Configuració** (tema i amplada) i amb `Ctrl+L` (disposició dels plafons) adaptes la interfície a cada situació: pissarra digital, portàtil, etc.
+* **Canviar tema, disposició o amplada**: fes servir **Configuració** per al tema, `Ctrl+L` o el menú de plafons per a la disposició i el botó d'amplada (només icona), a la dreta de la doble fletxa, per eixamplar l'espai web.
 * **Manual**: disposes d'aquest document sempre actualitzat amb `Ctrl+H`.
 
 ---
@@ -224,6 +223,8 @@ Cada opció mostra una notificació d'èxit i, quan escau, prepara automàticame
 ## Arrossegar i deixar anar fitxers
 
 Arrossega un o diversos fitxers sobre l'aplicació. S'admeten `.md` i `.markdown`, que s'obren tal qual, i `.docx`, `.odt`, `.epub`, `.html` i `.tex`, que es converteixen a Markdown amb Pandoc abans d'obrir-se:
+
+A l'aplicació d'escriptori, els instal·ladors registren `.md` i `.markdown`; també pots obrir aquests documents fent-hi doble clic des del gestor de fitxers.
 
 * Veuràs un marc il·luminat que confirma que els pots deixar anar.
 * Cada fitxer s'obrirà a la seva pestanya amb el nom original.

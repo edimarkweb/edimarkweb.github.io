@@ -54,6 +54,8 @@
     const dialog = (injected && injected.dialog) || (tauri && tauri.dialog);
     const fs = (injected && injected.fs) || (tauri && tauri.fs);
     const opener = (injected && injected.opener) || (tauri && tauri.opener);
+    const app = injected && injected.app;
+    const clipboard = injected && injected.clipboard;
     const desktop = Boolean(dialog && fs);
 
     return {
@@ -88,6 +90,31 @@
           name: fileNameFromPath(path),
           content: await fs.readTextFile(path),
         };
+      },
+
+      async openTextDocumentAtPath(path) {
+        if (!desktop || !app || typeof app.readMarkdownDocument !== 'function') return null;
+        return {
+          path,
+          name: fileNameFromPath(path),
+          content: await app.readMarkdownDocument(path),
+        };
+      },
+
+      async initialTextDocumentPaths() {
+        if (!desktop || !app || typeof app.initialMarkdownPaths !== 'function') return [];
+        const paths = await app.initialMarkdownPaths();
+        return Array.isArray(paths) ? paths : [];
+      },
+
+      onTextDocumentPaths(callback) {
+        if (!desktop || !app || typeof app.onOpenMarkdownPaths !== 'function') return () => {};
+        return app.onOpenMarkdownPaths(callback);
+      },
+
+      async readClipboardImage() {
+        if (!desktop || !clipboard || typeof clipboard.readImage !== 'function') return null;
+        return clipboard.readImage();
       },
 
       async saveFile({

@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.16.0';
+const APP_VERSION = '2.17.0';
 const DESKTOP_RELEASE_BANNER_KEY = `edimarkweb-hide-desktop-release-${APP_VERSION}`;
 
 // Declaración de variables globales
@@ -585,22 +585,35 @@ function classifyClipboardDataPayload(clipboardData) {
     const plain = clipboardData.getData('text/plain') || '';
     const rawHtml = clipboardData.getData('text/html') || '';
     const htmlFragment = extractClipboardFragment(rawHtml);
-    const files = clipboardData.files ? Array.from(clipboardData.files).filter(file => file && file.size > 0) : [];
-    const hasFiles = files.length > 0;
+    const files = [];
+    if (clipboardData.files) {
+        files.push(...Array.from(clipboardData.files));
+    }
+    // Chromium, Firefox y los WebView de escritorio no siempre publican una
+    // imagen pegada en `files`; en esos casos sí aparece como un item.
+    if (clipboardData.items) {
+        Array.from(clipboardData.items).forEach((item) => {
+            if (!item || item.kind !== 'file' || typeof item.getAsFile !== 'function') return;
+            const file = item.getAsFile();
+            if (file && !files.includes(file)) files.push(file);
+        });
+    }
+    const imageFiles = files.filter(file => file && file.size > 0 && String(file.type || '').toLowerCase().startsWith('image/'));
+    const hasFiles = imageFiles.length > 0;
     const hasRtf = clipboardData.types && Array.from(clipboardData.types).some(type => String(type).toLowerCase() === 'text/rtf');
     const isRichHtml = hasMeaningfulHtmlContent(rawHtml);
     const htmlLooksPlain = htmlFragment && isPlainTextClipboardHtml(htmlFragment);
     if (hasFiles || hasRtf) {
-        return { target: 'html', html: htmlFragment, plain, files };
+        return { target: 'html', html: htmlFragment, plain, files: imageFiles };
     }
     if (isRichHtml && (!htmlLooksPlain || !plain)) {
-        return { target: 'html', html: htmlFragment, plain, files };
+        return { target: 'html', html: htmlFragment, plain, files: imageFiles };
     }
     if (plain) {
         return { target: 'markdown', plain };
     }
     if (htmlFragment) {
-        return { target: 'html', html: htmlFragment, plain, files };
+        return { target: 'html', html: htmlFragment, plain, files: imageFiles };
     }
     return null;
 }
@@ -843,12 +856,7 @@ async function insertFilesIntoHtmlTarget(files, { mirrorToMarkdown = false, mark
     let selectionSnapshot = markdownSelection ? cloneSelection(markdownSelection) : null;
     const shouldTriggerSync = triggerHtmlToMarkdownSync && !mirrorToMarkdown;
     for (const file of files) {
-        const dataUrl = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(file);
-        });
+        const dataUrl = await readFileAsDataUrl(file).catch(() => null);
         if (!dataUrl) continue;
         const alt = file && file.name ? file.name : 'imagen';
         const imgTag = `<img src="${dataUrl}" alt="${escapeAttributeValue(alt)}">`;
@@ -867,14 +875,42 @@ async function insertFilesIntoHtmlTarget(files, { mirrorToMarkdown = false, mark
     }
 }
 
+function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) {
+            reject(new Error('No se recibió ningún archivo.'));
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo.'));
+        reader.readAsDataURL(file);
+    });
+}
+
 function handleEditorPaste(event) {
     if (!event || event.defaultPrevented) return;
     if (!isPasteTargetWithinEditors(event.target)) return;
     const payload = classifyClipboardDataPayload(event.clipboardData);
-    if (!payload) return;
-    event.preventDefault();
     const markdownHadFocus = document.activeElement === markdownTextareaEl;
     const selectionSnapshot = markdownHadFocus ? cloneSelection(getLastMarkdownSelection()) : null;
+    if (!payload) {
+        const platform = window.EdiMarkPlatform;
+        if (!platform?.isDesktop || typeof platform.readClipboardImage !== 'function') return;
+        event.preventDefault();
+        readNativeClipboardImageFile()
+            .then((file) => {
+                if (!file) return;
+                return insertFilesIntoHtmlTarget([file], {
+                    mirrorToMarkdown: markdownHadFocus,
+                    markdownSelection: selectionSnapshot,
+                    triggerHtmlToMarkdownSync: !markdownHadFocus
+                });
+            })
+            .catch(err => console.error('Error pegando la imagen del portapapeles nativo:', err));
+        return;
+    }
+    event.preventDefault();
     if (payload.target === 'markdown' && payload.plain) {
         insertPlainIntoMarkdownEditor(payload.plain, selectionSnapshot);
         return;
@@ -911,9 +947,30 @@ function blobToFile(blob, nameFallback) {
     return cloned;
 }
 
+async function readNativeClipboardImageFile() {
+    const platform = window.EdiMarkPlatform;
+    if (!platform?.isDesktop || typeof platform.readClipboardImage !== 'function') return null;
+    const nativeImage = await platform.readClipboardImage();
+    const width = Number(nativeImage?.size?.width || 0);
+    const height = Number(nativeImage?.size?.height || 0);
+    if (!width || !height || !nativeImage?.rgba) return null;
+    const rgba = nativeImage.rgba instanceof Uint8Array
+        ? nativeImage.rgba
+        : new Uint8Array(nativeImage.rgba);
+    if (rgba.byteLength !== width * height * 4) return null;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    context.putImageData(new ImageData(new Uint8ClampedArray(rgba), width, height), 0, 0);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    return blob ? blobToFile(blob, `clipboard-image-${Date.now()}.png`) : null;
+}
+
 async function readClipboardForButton() {
-    if (!navigator.clipboard) return null;
-    if (navigator.clipboard.read) {
+    if (navigator.clipboard?.read) {
         try {
             const items = await navigator.clipboard.read();
             let html = '';
@@ -949,13 +1006,19 @@ async function readClipboardForButton() {
             console.warn('navigator.clipboard.read falló:', err);
         }
     }
-    if (navigator.clipboard.readText) {
+    if (navigator.clipboard?.readText) {
         try {
             const plain = await navigator.clipboard.readText();
             if (plain) return { plain };
         } catch (err) {
             console.warn('navigator.clipboard.readText falló:', err);
         }
+    }
+    try {
+        const nativeImage = await readNativeClipboardImageFile();
+        if (nativeImage) return { files: [nativeImage] };
+    } catch (err) {
+        console.warn('No se pudo leer la imagen del portapapeles nativo:', err);
     }
     return null;
 }
@@ -984,7 +1047,11 @@ function classifyManualClipboardPayload(data) {
 
 async function handlePasteButtonClick(button) {
     if (!button || button.disabled) return;
-    if (!navigator.clipboard) {
+    const hasNativeClipboard = Boolean(
+        window.EdiMarkPlatform?.isDesktop
+        && typeof window.EdiMarkPlatform.readClipboardImage === 'function'
+    );
+    if (!navigator.clipboard && !hasNativeClipboard) {
         alert(getTranslation('clipboard_button_unsupported', 'Tu navegador no permite leer el portapapeles desde un botón. Usa Ctrl+V.'));
         return;
     }
@@ -1975,6 +2042,13 @@ function updateVersionLabel() {
     document.querySelectorAll('[data-app-version]').forEach((element) => {
         element.textContent = APP_VERSION;
     });
+    document.querySelectorAll('[data-i18n-key="desktop_banner_message"]').forEach((element) => {
+        element.textContent = formatTranslation(
+            'desktop_banner_message',
+            'EdiMarkWeb Desktop {version} está disponible para Linux, Windows y macOS.',
+            { version: `v${APP_VERSION}` },
+        );
+    });
 }
 
 window.__updateVersionLabel = updateVersionLabel;
@@ -2690,7 +2764,6 @@ function applyFormat(format) {
 }
 
 function toggleTableModal(show) { document.getElementById('table-modal-overlay').style.display = show ? 'flex' : 'none'; }
-function toggleClearModal(show) { document.getElementById('clear-modal-overlay').style.display = show ? 'flex' : 'none'; }
 
 function toggleLinkModal(show, presetText = '') {
     document.getElementById('link-modal-overlay').style.display = show ? 'flex' : 'none';
@@ -2706,6 +2779,13 @@ function toggleImageModal(show, presetText = '') {
     if (show) {
         document.getElementById('image-alt-text').value = presetText;
         document.getElementById('image-url').value  = '';
+        const fileInput = document.getElementById('image-file-input');
+        const fileName = document.getElementById('image-file-name');
+        if (fileInput) fileInput.value = '';
+        if (fileName) {
+            fileName.textContent = getTranslation('image_file_none', 'Ninguna seleccionada');
+            fileName.setAttribute('data-i18n-key', 'image_file_none');
+        }
         setTimeout(() => document.getElementById(presetText ? 'image-url' : 'image-alt-text').focus(), 0);
     }
 }
@@ -3138,8 +3218,6 @@ function applyLayout(layout) {
   const mdPanel = document.getElementById('markdown-panel');
   const htmlPanel = document.getElementById('html-panel');
   const gutters = document.querySelectorAll('.gutter');
-  const markdownLayoutBtn = document.getElementById('markdown-layout-btn');
-  const htmlLayoutBtn = document.getElementById('html-layout-btn');
   const visiblePanelDisplay = document.body.classList.contains('desktop-mode') ? 'flex' : 'block';
 
   switch (layout) {
@@ -3163,24 +3241,12 @@ function applyLayout(layout) {
       htmlPanel.style.width = '50%';
   }
 
-  const mdIsFull = layout === 'md';
-  const htmlIsFull = layout === 'html';
-  if (markdownLayoutBtn) {
-    const mdKey = mdIsFull ? 'markdown_panel_layout_restore' : 'markdown_panel_layout_maximize';
-    markdownLayoutBtn.setAttribute('aria-pressed', mdIsFull ? 'true' : 'false');
-    markdownLayoutBtn.setAttribute('data-i18n-key', mdKey);
-    markdownLayoutBtn.title = getTranslation(mdKey, mdIsFull ? 'Restaurar panel Markdown' : 'Maximizar panel Markdown');
-    const mdIcon = mdIsFull ? 'arrow-left-right' : 'arrow-right';
-    markdownLayoutBtn.innerHTML = `<i data-lucide="${mdIcon}"></i>`;
-  }
-  if (htmlLayoutBtn) {
-    const htmlKey = htmlIsFull ? 'preview_panel_layout_restore' : 'preview_panel_layout_maximize';
-    htmlLayoutBtn.setAttribute('aria-pressed', htmlIsFull ? 'true' : 'false');
-    htmlLayoutBtn.setAttribute('data-i18n-key', htmlKey);
-    htmlLayoutBtn.title = getTranslation(htmlKey, htmlIsFull ? 'Restaurar panel de previsualización' : 'Maximizar panel de previsualización');
-    const htmlIcon = htmlIsFull ? 'arrow-left-right' : 'arrow-left';
-    htmlLayoutBtn.innerHTML = `<i data-lucide="${htmlIcon}"></i>`;
-  }
+  document.querySelectorAll('#layout-menu [data-layout]').forEach((option) => {
+    const selected = option.dataset.layout === layout;
+    option.setAttribute('aria-checked', selected ? 'true' : 'false');
+    const check = option.querySelector('.layout-check');
+    if (check) check.classList.toggle('hidden', !selected);
+  });
   if(window.lucide) lucide.createIcons();
 
   setTimeout(() => {
@@ -3217,8 +3283,10 @@ window.onload = () => {
     document.addEventListener('selectionchange', captureHtmlSelection);
     const viewToggleBtn = document.getElementById('view-toggle-btn');
     const htmlPanelTitle = document.getElementById('html-panel-title');
-    const markdownLayoutBtn = document.getElementById('markdown-layout-btn');
-    const htmlLayoutBtn = document.getElementById('html-layout-btn');
+    const layoutMenuContainer = document.getElementById('layout-menu-container');
+    const layoutMenuBtn = document.getElementById('layout-menu-btn');
+    const layoutMenu = document.getElementById('layout-menu');
+    const layoutOptions = layoutMenu ? Array.from(layoutMenu.querySelectorAll('[data-layout]')) : [];
     const toolbar = document.getElementById('toolbar');
     const focusModeToggleBtn = document.getElementById('focus-mode-toggle');
     const toolbarActionsEl = document.getElementById('toolbar-actions');
@@ -3241,7 +3309,6 @@ window.onload = () => {
     const desktopReleaseBanner = document.getElementById('desktop-release-banner');
     const desktopBannerClose = document.getElementById('desktop-banner-close');
     const desktopBannerNeverShow = document.getElementById('desktop-banner-never-show');
-    const clearAllBtn = document.getElementById('clear-all-btn');
     const copyMdBtn = document.getElementById('copy-md-btn');
     const copyHtmlBtn = document.getElementById('copy-html-btn');
     const pasteBtn = document.getElementById('paste-btn');
@@ -3451,9 +3518,6 @@ window.onload = () => {
     const tableModalOverlay = document.getElementById('table-modal-overlay');
     const createTableBtn = document.getElementById('create-table-btn');
     const cancelTableBtn = document.getElementById('cancel-table-btn');
-    const clearModalOverlay = document.getElementById('clear-modal-overlay');
-    const confirmClearBtn = document.getElementById('confirm-clear-btn');
-    const cancelClearBtn = document.getElementById('cancel-clear-btn');
     const linkModalOverlay = document.getElementById('link-modal-overlay');
     const insertLinkBtn = document.getElementById('insert-link-btn');
     const cancelLinkBtn = document.getElementById('cancel-link-btn');
@@ -3706,9 +3770,9 @@ window.onload = () => {
         );
         const actionDescription = formatTranslation(
             'doc_lang_btn_title',
-            'Cambiar idioma y autor',
+            'Cambiar idioma y autor de este documento.',
         );
-        docLangBtn.setAttribute('aria-label', `${actionDescription}. ${languageDescription}`);
+        docLangBtn.setAttribute('aria-label', `${actionDescription} ${languageDescription}`);
         docLangBtn.setAttribute('title', actionDescription);
         docLangOptions.forEach((option) => {
             const selected = (option.dataset.docLang || '') === own;
@@ -4887,6 +4951,40 @@ window.onload = () => {
     publishLatexSettings(readLatexSettings());
 
     // --- Carga inicial de documentos y autoguardado ---
+    function addOpenedMarkdownDocument(opened) {
+        if (!opened) return null;
+        const normalized = normalizeNewlines(opened.content || '');
+        const doc = newDoc(opened.name, normalized, { filePath: opened.path || '' });
+        doc.lastSaved = normalized;
+        updateDirtyIndicator(doc.id, false);
+        return doc;
+    }
+
+    async function openNativeMarkdownPaths(paths) {
+        const platform = window.EdiMarkPlatform;
+        if (!platform?.isDesktop || typeof platform.openTextDocumentAtPath !== 'function') return 0;
+        let openedCount = 0;
+        for (const path of Array.from(paths || [])) {
+            try {
+                const opened = await platform.openTextDocumentAtPath(path);
+                if (addOpenedMarkdownDocument(opened)) openedCount += 1;
+            } catch (error) {
+                console.error('No se pudo abrir el documento asociado:', error);
+                reportStatus(getTranslation('open_file_error', 'No se pudo abrir el documento.'));
+            }
+        }
+        return openedCount;
+    }
+
+    const platform = window.EdiMarkPlatform;
+    if (platform?.isDesktop && typeof platform.onTextDocumentPaths === 'function') {
+        platform.onTextDocumentPaths(paths => {
+            openNativeMarkdownPaths(paths).catch(error => {
+                console.error('No se pudieron abrir los documentos recibidos:', error);
+            });
+        });
+    }
+
     const savedDocsList = loadSavedDocsList();
     if (savedDocsList.length > 0) {
         savedDocsList.forEach(docInfo => {
@@ -4898,9 +4996,18 @@ window.onload = () => {
             addTabElement(docInfo);
         });
         switchTo(docs[0].id);
-    } else {
-        openManualDoc();
     }
+    (async () => {
+        let openedAtLaunch = 0;
+        if (platform?.isDesktop && typeof platform.initialTextDocumentPaths === 'function') {
+            try {
+                openedAtLaunch = await openNativeMarkdownPaths(await platform.initialTextDocumentPaths());
+            } catch (error) {
+                console.error('No se pudo consultar el documento inicial:', error);
+            }
+        }
+        if (savedDocsList.length === 0 && openedAtLaunch === 0) openManualDoc();
+    })();
     
     /*
       Solo se escribe cuando el texto ha cambiado desde el último guardado. Antes
@@ -4993,14 +5100,27 @@ window.onload = () => {
         else if (tab) { switchTo(tab.dataset.id); }
     });
 
-    if (markdownLayoutBtn) {
-      markdownLayoutBtn.addEventListener('click', () => {
-        applyLayout(currentLayout === 'md' ? 'dual' : 'md');
+    const closeLayoutMenu = () => {
+      if (layoutMenu) layoutMenu.classList.add('hidden');
+      if (layoutMenuBtn) layoutMenuBtn.setAttribute('aria-expanded', 'false');
+    };
+    if (layoutMenuBtn && layoutMenu) {
+      layoutMenuBtn.addEventListener('click', () => {
+        const willOpen = layoutMenu.classList.contains('hidden');
+        layoutMenu.classList.toggle('hidden', !willOpen);
+        layoutMenuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
       });
-    }
-    if (htmlLayoutBtn) {
-      htmlLayoutBtn.addEventListener('click', () => {
-        applyLayout(currentLayout === 'html' ? 'dual' : 'html');
+      layoutOptions.forEach((option) => {
+        option.addEventListener('click', () => {
+          applyLayout(option.dataset.layout || 'dual');
+          closeLayoutMenu();
+        });
+      });
+      document.addEventListener('click', (event) => {
+        if (!layoutMenuContainer.contains(event.target)) closeLayoutMenu();
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeLayoutMenu();
       });
     }
 
@@ -5027,9 +5147,7 @@ window.onload = () => {
             try {
                 const opened = await platform.openTextDocument();
                 if (!opened) return;
-                const doc = newDoc(opened.name, opened.content, { filePath: opened.path });
-                doc.lastSaved = normalizeNewlines(opened.content);
-                updateDirtyIndicator(doc.id, false);
+                addOpenedMarkdownDocument(opened);
             } catch (error) {
                 console.error('No se pudo abrir el documento:', error);
                 reportStatus(getTranslation('open_file_error', 'No se pudo abrir el documento.'));
@@ -5388,21 +5506,6 @@ window.onload = () => {
         });
     }
 
-    clearAllBtn.addEventListener('click', () => toggleClearModal(true));
-    confirmClearBtn.addEventListener('click', () => {
-      markdownEditor.setValue('');
-      htmlEditor.setValue('');
-      document.getElementById('html-output').innerHTML = '';
-      if(currentId) {
-          const doc = docs.find(d => d.id === currentId);
-          if(doc) { doc.md = ''; doc.lastSaved = ''; updateDirtyIndicator(currentId, false); }
-      }
-      toggleClearModal(false);
-      markdownEditor.focus();
-    });
-    cancelClearBtn.addEventListener('click', () => toggleClearModal(false));
-    clearModalOverlay.addEventListener('click', (e) => { if (e.target === clearModalOverlay) toggleClearModal(false); });
-    
     insertLinkBtn.addEventListener('click', () => {
       const text = document.getElementById('link-text').value.trim() || 'enlace';
       const url  = document.getElementById('link-url').value.trim()  || '#';
@@ -5413,10 +5516,31 @@ window.onload = () => {
     cancelLinkBtn.addEventListener('click', () => toggleLinkModal(false));
     linkModalOverlay.addEventListener('click', e => { if (e.target === linkModalOverlay) toggleLinkModal(false); });
     
-    insertImageBtn.addEventListener('click', () => {
-      const alt = document.getElementById('image-alt-text').value.trim() || 'imagen';
-      const url = document.getElementById('image-url').value.trim() || '#';
-      markdownEditor.replaceSelection(`![${alt}](${url})`);
+    const imageFileInput = document.getElementById('image-file-input');
+    const imageFileName = document.getElementById('image-file-name');
+    if (imageFileInput && imageFileName) {
+      imageFileInput.addEventListener('change', () => {
+        const file = imageFileInput.files && imageFileInput.files[0];
+        imageFileName.textContent = file ? file.name : getTranslation('image_file_none', 'Ninguna seleccionada');
+        if (file) imageFileName.removeAttribute('data-i18n-key');
+        else imageFileName.setAttribute('data-i18n-key', 'image_file_none');
+      });
+    }
+    insertImageBtn.addEventListener('click', async () => {
+      const selectedFile = imageFileInput?.files?.[0] || null;
+      let url = document.getElementById('image-url').value.trim();
+      if (selectedFile) {
+        try {
+          url = await readFileAsDataUrl(selectedFile);
+        } catch (error) {
+          console.error('No se pudo leer la imagen seleccionada:', error);
+          alert(getTranslation('image_file_error', 'No se pudo leer la imagen seleccionada.'));
+          return;
+        }
+      }
+      const defaultAlt = selectedFile?.name || getTranslation('base64_image_default_alt', 'imagen');
+      const alt = document.getElementById('image-alt-text').value.trim() || defaultAlt;
+      markdownEditor.replaceSelection(`![${alt}](${url || '#'})`);
       toggleImageModal(false);
       markdownEditor.focus();
     });

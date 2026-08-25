@@ -9,7 +9,7 @@ Welcome to EdiMarkWeb, a **Markdown text editor** designed for teachers and cont
 - Dual editing: work either in Markdown or straight in the HTML preview, always in sync.
 - Export and import menus supporting DOCX, ODT, EPUB, HTML and LaTeX, including options to copy directly to the clipboard.
 - Search and replace that highlights matches and ignores accents and letter case.
-- A **Settings** menu gathering the language, font size, theme, working width and separate window in one place.
+- A **Settings** menu gathering the language, font size, theme and separate window in one place; the working width is changed beside the pane controls.
 - Interface theme with three options — System, Light and Dark — remembered between sessions.
 - Redesigned formula menu and direct access to EdiCuaTeX for building complex expressions.
 - Open several files, or whole folders, by dragging them onto the editor (each file in its own tab): Markdown and also DOCX, ODT, EPUB, HTML or TEX, converted on the fly with Pandoc.
@@ -25,6 +25,8 @@ Welcome to EdiMarkWeb, a **Markdown text editor** designed for teachers and cont
 - Rich content (HTML, DOCX, pasted from the browser, etc.) is re-rendered in the right pane and, at the same time, the matching Markdown is generated so both views stay in sync.
 
 This removes any intermediate steps: copy from your source of choice and click **Paste** to carry on editing.
+
+The **Image** button also lets you choose a file from disk instead of entering a URL. The image is embedded in the Markdown, so it remains available when the document is saved or moved.
 
 ## Videos
 
@@ -76,14 +78,12 @@ The bar next to the logo holds the application's global options and gathers ever
   * **Language**: changes the interface language.
   * **Font size**: small, normal, large or very large.
   * **Theme**: `System` follows your computer's setting and changes with it; `Light` and `Dark` fix it. Your choice is remembered next time you open the application.
-  * **Expanded width**: widens the working area.
   * **Separate window**: opens EdiMarkWeb in a window of its own, like a desktop application.
   * **Exported document…**: opens the settings for the files the application generates (language, plus class and preamble for LaTeX), explained below.
 * **Print (Ctrl+P)**: produces a view ready for paper or PDF using the current styles.
 * **Search (Ctrl+F)** and **Manual (Ctrl+H)**: open the advanced search panel or this very document.
-* **Clear all**: empties the active document after asking for confirmation.
 
-The pane layout is changed with `Ctrl+L` or with the arrows in each pane's header. On small screens the bar folds into two buttons — **Actions** and **Format** — that show each group when you need it.
+The pane layout is changed with `Ctrl+L` or with the layout button next to the editing-area button. Its menu offers **Maximize Markdown panel**, **Maximize preview panel** and **Split panels**. On small screens the bar folds into two buttons — **Actions** and **Format** — that show each group when you need it.
 
 ---
 
@@ -126,7 +126,7 @@ The working area is split into two resizable panes:
 * **HTML / Preview** (right): shows the final result and also lets you edit the content directly. Use the code icon button to switch between the rich preview and the generated HTML.
 * **Copying content**: dedicated buttons to copy the Markdown or the generated HTML (including formulas converted to LaTeX when copying HTML).
 
-You can drag the central bar to give more room to either pane, maximise one of them with the arrows in its header, or use the button to the right of the tabs to **maximise the editing area**, which hides the top bars and leaves the screen to the text.
+You can drag the central bar to give more room to either pane, choose one of the three layouts from the button on the right, or use the double arrow to **maximise the editing area**, which hides the top bars and leaves the screen to the text. The `+` button stays immediately after the last tab.
 
 ### Each document's language
 
@@ -165,8 +165,7 @@ When a document carries base64 images — after importing a DOCX, after pasting 
 * **Import**: converts documents in other formats to Markdown using Pandoc: `.docx`, `.odt`, `.epub`, `.html` and `.tex`. Headings, lists, tables and links are recovered, and so are the images: when they come from a `.docx`, `.odt` or `.epub` they are extracted from the file itself and embedded in the Markdown, so they show up in the preview and travel with you when exporting.
 * **Save (`Ctrl+S`)**: saves the current document. In the desktop application it updates the file already open; **Save as… (`Ctrl+Shift+S`)** always lets you choose another name or location.
 * **Copying content**: the left pane has a button to copy the Markdown; in the preview you can choose what gets copied (rendered HTML or LaTeX variants) from the drop-down next to the copy icon.
-* **Clear all**: resets the document after a confirmation.
-* **Changing theme, layout or width**: from the **Settings** menu (theme and width) and with `Ctrl+L` (pane layout) you can adapt the interface to each situation: interactive whiteboard, laptop, and so on.
+* **Changing theme, layout or width**: use **Settings** for the theme, `Ctrl+L` or the pane menu for the layout, and the icon-only width button, to the right of the double arrow, to widen the web workspace.
 * **Manual**: this document is always available and up to date with `Ctrl+H`.
 
 ---
@@ -224,6 +223,8 @@ Each option shows a success notice and, where appropriate, prepares the LaTeX ma
 ## Drag and drop files
 
 Drag one or more files onto the application. `.md` and `.markdown` open as they are, while `.docx`, `.odt`, `.epub`, `.html` and `.tex` are converted to Markdown with Pandoc before opening:
+
+In the desktop application, the installers register `.md` and `.markdown`, so you can also open these documents by double-clicking them in the file manager.
 
 * A highlighted frame confirms that you can drop them.
 * Each file opens in its own tab, under its original name.

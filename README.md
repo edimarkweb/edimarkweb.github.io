@@ -80,7 +80,7 @@ npm run build:css
 
 ### Aplicación de escritorio
 
-La aplicación de Linux y Windows reutiliza el mismo frontend mediante Tauri 2. El proceso de
+La aplicación de Linux, Windows y macOS reutiliza el mismo frontend mediante Tauri 2. El proceso de
 construcción crea `dist/` con todas las bibliotecas y Pandoc en local, por lo que el ejecutable no
 depende de los CDN para arrancar ni para editar o exportar documentos.
 
@@ -99,18 +99,12 @@ npm run desktop:dev
 npm run desktop:build
 ```
 
-En Linux se generan paquetes DEB y AppImage; en Windows, instaladores MSI y NSIS. El flujo
+En Linux se generan paquetes DEB y AppImage; en Windows, instaladores MSI y NSIS; y en macOS,
+una imagen DMG. El flujo
 `Native application builds` de GitHub Actions adjunta esos instaladores a GitHub Releases al
-crear una etiqueta `v*` o al indicar manualmente una etiqueta existente. También construye una
-aplicación iOS para el simulador en un runner macOS. El proyecto móvil se
-inicializa durante el trabajo y el resultado se publica como artefacto
-`edimarkweb-ios-simulator`.
+crear una etiqueta `v*` o al indicar manualmente una etiqueta existente.
 
-La aplicación del simulador permite validar iOS sin certificados. Para instalarla en dispositivos
-reales o distribuirla mediante TestFlight y App Store será necesario añadir a GitHub los
-certificados, el perfil de aprovisionamiento y las credenciales de Apple Developer.
-
-El corrector ortográfico utiliza los diccionarios del sistema. Windows e iOS toman los idiomas
+El corrector ortográfico utiliza los diccionarios del sistema. Windows y macOS toman los idiomas
 instalados en el dispositivo; en Linux puede ser necesario instalar el paquete Hunspell del idioma
 que falte (por ejemplo, `hunspell-es`), pero no herramientas de desarrollo.
 

@@ -215,6 +215,10 @@ body.desktop-mode {
     overflow: hidden;
     padding: 0 !important;
 }
+
+body.desktop-mode #toggle-width-btn {
+    display: none;
+}
 .dark body.desktop-mode {
     background-color: #0f172a;
 }
