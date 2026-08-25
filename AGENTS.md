@@ -1,45 +1,52 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
+EdiMarkWeb is a vanilla-JS Markdown editor shipped two ways from one frontend: as a static site (GitHub Pages) and as a Tauri 2 desktop app for Linux/Windows/macOS. No framework; the web app has no bundler.
 
-This repository is a static web application. Core files live at the project root: `index.html` bootstraps the UI, `script.js` handles editor behavior, `search.js` powers find/replace, `i18n.js` loads translations, and `pandoc-exporter.js` / `pandoc-prepare.js` / `pandoc-wasm.js` manage import-export features. Styles are split between source (`tailwind.css`, `style.css`) and generated output (`tailwind.build.css`). Localized strings are stored in `locales/*.json` and automated tests live in `test/`. The user manual exists in all five interface languages (`manual.md` plus `manual-en.md`, `manual-ca.md`, `manual-gl.md`, `manual-eu.md`); the app loads the one matching the active language and falls back to Spanish. A change to the manual has to be made in all five.
+## Architecture
 
-`pandoc-prepare.js` holds the pure Markdown preparation logic (metadata, titles, image handling, Pandoc argument building, and the `stripUnsafeMarkup` pass that disarms inline event handlers and executable URL schemes in imported documents) with no browser dependencies, so it can be unit tested outside a browser. `zip-reader.js` reads images out of the DOCX/ODT/EPUB archives on import, using DecompressionStream so it runs unchanged in both the browser and the tests; `zip-writer.js` is its counterpart (stored entries only, no CompressionStream) and rebuilds the ODT that goes into Pandoc. `odt-tables.js` recovers the table headers Pandoc's ODT reader drops, and `odt-formulas.js` repairs the formula references Pandoc's own ODT writer emits in a form its reader cannot resolve. Keep it that way: anything touching `window`, `document`, or `fetch` belongs in `pandoc-exporter.js`.
+- Root files are the app: `index.html` bootstraps the UI, `script.js` is editor behavior, `search.js` find/replace, `i18n.js` loads `locales/*.json`. Styles: source in `tailwind.css`/`style.css`, generated output committed as `tailwind.build.css`.
+- Import/export: `pandoc-exporter.js` drives the bundled `pandoc.wasm`; `pandoc-prepare.js` holds the pure Markdown preparation logic (metadata, titles, images, Pandoc args, the `stripUnsafeMarkup` pass that disarms inline handlers and executable URL schemes) with no browser dependencies so Node tests can run it directly. `zip-reader.js`/`zip-writer.js` read/rebuild DOCX/ODT/EPUB archives using DecompressionStream only (stored entries on write), so they run unchanged in browser and tests. `odt-tables.js` recovers table headers Pandoc's ODT reader drops; `odt-formulas.js` repairs formula references Pandoc's own ODT writer emits unresolvably.
+- Boundary rule: anything touching `window`, `document`, or `fetch` stays out of `pandoc-prepare.js` / `zip-*.js`; it belongs in `pandoc-exporter.js`.
+- Platform layer: `platform-api.js` abstracts web vs. desktop; `platform-tauri-entry.js` is bundled by esbuild into `dist/platform-tauri.js`; `desktop-updater.js` handles version checks and installer selection.
+- Document images: `asset-paths.js` holds the pure path logic (relative-vs-absolute detection, normalization, resolving against the document folder, the suffix index used to match `images/01.png` against a user-picked folder) with no DOM, so `test/asset-paths.test.mjs` runs it in Node. `script.js` applies it to the preview, and the desktop side reads the bytes through the `read_document_asset` Rust command, which serves image extensions only — a `![](notes.md)` must never become a way to read arbitrary files. The Markdown is never rewritten: the original path is parked in `data-edimark-src` and restored by `restoreOriginalImageSources()` before anything leaves the preview (Markdown sync, copy, export).
+- The web version loads libraries from CDNs (needs network); the desktop build vendors everything locally into `dist/` so it runs offline.
 
-## Build, Test, and Development Commands
+## Commands
 
-- `npm install`: installs the Tailwind toolchain and the WASI shim used by the tests.
-- `npm run build:css`: rebuilds `tailwind.build.css` from `tailwind.css`.
-- `npm test`: fast unit tests for the Markdown preparation logic (`test/prepare.test.mjs`).
-- `npm run test:export`: end-to-end conversions through the bundled `pandoc.wasm`. Slow (the module is ~50 MB) but the only check that catches a broken export.
-- `npm run test:platform`: the platform layer shared by the web and desktop builds.
-- `npm run test:updater`: version comparison and installer selection for the desktop updater.
-- `npm run test:browser`: the real UI driven through Chromium and Firefox with Playwright.
-- `npm run test:all`: every suite.
-- `python -m http.server`: serves the app locally to test browser behavior without `file://` restrictions.
+- `npm run build:css`: regenerates `tailwind.build.css` after editing `tailwind.css`.
+- `npm test`: fast unit tests for `pandoc-prepare.js`.
+- `npm run test:platform` / `test:updater`: platform layer; updater version compare + installer choice.
+- `npm run test:export`: slow end-to-end conversions through the real `pandoc.b64` (~68 MB of base64-decoded WASM).
+- `npm run test:all` = unit + platform + updater + export. It does **not** include `test:browser`; CI runs browser tests as a separate matrix job.
+- `npm run test:browser`: Playwright against real Chromium/Firefox. Select with `BROWSER=firefox` (default chromium); it starts its own static server, so no manual server needed. Requires `npx playwright install --with-deps <browser>` once.
+- `python -m http.server`: serve locally for manual checks (`file://` breaks things).
+- Desktop: `npm run desktop:dev` / `desktop:build`. Needs Rust plus Linux native packages listed in README.
+- There is no lint or typecheck setup; verification means tests plus opening the app in Chromium and Firefox.
 
-There is no application bundler or framework build step; most changes can be verified by opening `index.html` in a browser.
+## Desktop build coupling
 
-## Coding Style & Naming Conventions
+`scripts/build-desktop.mjs` builds `dist/` and fails loudly if any of these are missing — update them together:
+- New root-level app file → add to its `appFiles` array.
+- New CDN library referenced in `index.html` → add matching entries to **both** `vendorFiles` and `indexReplacements`, at exactly the pinned npm versions. A URL mismatch aborts the build.
 
-Use plain HTML, CSS, and vanilla JavaScript. Match the existing style in each file: `script.js` and related modules use semicolons, descriptive function names, and straightforward DOM-oriented logic. Prefer 2-space indentation in HTML/CSS and follow the surrounding indentation style in JavaScript. Use lowercase kebab-case for asset filenames, and keep translation keys stable across every file in `locales/`.
+## Versions & releases
 
-When editing styles, update `tailwind.css` or `style.css` first and only commit a regenerated `tailwind.build.css` when the source changed.
+The app version lives in five places that must be bumped together: `package.json` (+ `package-lock.json`), `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` (+ `Cargo.lock`), `APP_VERSION` at the top of `script.js`, and the desktop banner string in `index.html`. `tauri.conf.json` is what names the installers, so a stale `Cargo.toml` ships quietly — 2.21.0 went out that way.
+Pushing a `v*` tag triggers `.github/workflows/desktop.yml`: installers are built and attached to the GitHub Release. Linux deliberately builds on ubuntu-22.04 because the binary links the builder's glibc — a newer runner would break Debian 12/Ubuntu 22.04 users. Do not bump that runner casually.
 
-## Testing Guidelines
+## Testing notes
 
-Automated tests use the built-in `node:test` runner; there is no test framework dependency. `test/prepare.test.mjs` covers `pandoc-prepare.js` directly. `test/epub-export.test.mjs` runs the real `pandoc.wasm` through the same WASI shim and argument string as the browser, via the helper in `test/helpers/pandoc-runner.mjs`.
+- Runner is built-in `node:test`; no test framework dependency. Export e2e goes through `test/helpers/pandoc-runner.mjs` with the same WASI shim and argument string as the browser.
+- Pandoc reports internal failure by leaving its output file empty, not by throwing: an export can "succeed" while producing 0 bytes. Assert on actual output bytes, never on absence of an exception.
+- Any change to an export path: run `npm run test:all`. Adding an export format or changing how Markdown reaches Pandoc: add a sample document to the e2e suite.
+- Automated tests don't cover the whole browser layer. Manually validate touched behavior in current Chromium- and Firefox-based browsers (editor sync, preview, import/export, shortcuts, i18n). Hard-refresh or use a private window first — a cached module is easily mistaken for a bug.
+- The manual exists in five languages (`manual.md` Spanish plus `-en`, `-ca`, `-gl`, `-eu`); the app loads the active language and falls back to Spanish. A manual change must land in all five, and translation keys must stay consistent across every `locales/*.json`.
 
-Any change to an export path must run `npm run test:all`. Pandoc reports internal failures by leaving its output file empty rather than by throwing, so an export can break while still appearing to succeed: assert on actual output bytes, never on the absence of an exception. When adding an export format or changing how Markdown is fed to Pandoc, add a sample document to the end-to-end suite.
+## Style & commits
 
-Automated tests do not cover the browser layer. Still validate changes manually in current Chromium- and Firefox-based browsers: editor sync, preview rendering, import/export flows, and any touched shortcut or localization behavior. Hard-refresh (or use a private window) before testing an export — a cached module is easily mistaken for a bug. For translation changes, verify the affected text in at least one additional locale file.
+Plain HTML/CSS/vanilla JS; semicolons in JS; match each file's existing indentation (2-space in HTML/CSS). Lowercase kebab-case asset filenames.
+Commit subjects: short, imperative, one behavior change per commit (e.g. `Preserve math delimiters in preview`). PRs: summary, manual test notes, screenshot/recording for UI changes; don't mix refactors with fixes.
 
-## Commit & Pull Request Guidelines
+## Misc
 
-Recent commits use short, imperative subjects such as `Preserve math delimiters in preview` and `Warn on disabled format controls`. Keep commit titles concise, sentence-cased, and focused on one behavior change.
-
-Pull requests should include a clear summary, manual test notes, linked issues when relevant, and screenshots or a short screen recording for UI changes. Do not mix unrelated refactors with functional fixes.
-
-## Security & Configuration Tips
-
-Do not commit secrets, generated personal data, or local browser storage dumps. Use SSH Git remotes for GitHub operations in this repository.
+Never commit secrets, personal data, or storage dumps; `dist/`, `src-tauri/target`, and `src-tauri/gen` stay out of git. Use SSH remotes for GitHub operations.
