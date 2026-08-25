@@ -36,7 +36,7 @@ const appFiles = [
   'zip-writer.js',
 ];
 
-const directories = ['imagenes', 'locales', 'vendor/edicuatex'];
+const directories = ['locales', 'vendor/edicuatex'];
 
 const vendorFiles = new Map([
   ['node_modules/marked/lib/marked.umd.js', 'vendor/marked.umd.js'],

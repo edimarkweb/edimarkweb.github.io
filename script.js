@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.18.0';
+const APP_VERSION = '2.19.0';
 const DESKTOP_RELEASE_BANNER_KEY = `edimarkweb-hide-desktop-release-${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
 const UPDATE_LAST_CHECK_KEY = 'edimarkweb-update-last-check';
@@ -18,6 +18,12 @@ const AUTOSAVE_KEY_PREFIX = 'edimarkweb-autosave';
 const DOCS_LIST_KEY = 'edimarkweb-docslist';
 const CORRUPT_DOCS_LIST_BACKUP_KEY = 'edimarkweb-docslist-corrupt-backup';
 const LAYOUT_KEY = 'edimarkweb-layout';
+/*
+  Icono de cada disposición. Representa el panel que queda a la vista, no el
+  lateral estrecho: con el Markdown maximizado el área ocupada es la izquierda,
+  que es justo lo que dibuja `panel-right`.
+*/
+const LAYOUT_ICONS = { md: 'panel-right', html: 'panel-left', dual: 'columns-2' };
 const FS_KEY = 'edimarkweb-fontsize';
 const FOCUS_MODE_KEY = 'edimarkweb-focus-mode';
 const LATEX_SETTINGS_KEY = 'edimarkweb-latex-settings';
@@ -3252,6 +3258,11 @@ function applyLayout(layout) {
     const check = option.querySelector('.layout-check');
     if (check) check.classList.toggle('hidden', !selected);
   });
+  // El botón que despliega el menú muestra la disposición activa.
+  const layoutIconHost = document.querySelector('#layout-menu-btn .layout-icon');
+  if (layoutIconHost) {
+    layoutIconHost.innerHTML = `<i data-lucide="${LAYOUT_ICONS[layout] || LAYOUT_ICONS.dual}"></i>`;
+  }
   if(window.lucide) lucide.createIcons();
 
   setTimeout(() => {
@@ -3321,6 +3332,8 @@ window.onload = () => {
     const updateAutoCheck = document.getElementById('update-auto-check');
     const updateBannerClose = document.getElementById('update-banner-close');
     const checkUpdatesBtn = document.getElementById('check-updates-btn');
+    const quitAppBtn = document.getElementById('quit-app-btn');
+    const quitAppSeparator = document.getElementById('quit-app-separator');
     const copyMdBtn = document.getElementById('copy-md-btn');
     const copyHtmlBtn = document.getElementById('copy-html-btn');
     const pasteBtn = document.getElementById('paste-btn');
@@ -4094,6 +4107,19 @@ window.onload = () => {
     }
     if (updateBannerClose) updateBannerClose.addEventListener('click', hideUpdateBanner);
     if (updateInstallBtn) updateInstallBtn.addEventListener('click', () => { downloadAndInstallUpdate(); });
+    if (quitAppBtn && nativeMode) {
+        quitAppBtn.classList.remove('hidden');
+        quitAppBtn.classList.add('flex');
+        if (quitAppSeparator) quitAppSeparator.classList.remove('hidden');
+        quitAppBtn.addEventListener('click', () => {
+            closeActionsMenu();
+            // Entre dos tics del temporizador caben tres segundos de escritura.
+            autosaveCurrentDoc();
+            window.EdiMarkPlatform.quitApplication().catch((error) => {
+                console.error('No se pudo cerrar la aplicación:', error);
+            });
+        });
+    }
     if (checkUpdatesBtn && nativeMode) {
         checkUpdatesBtn.classList.remove('hidden');
         checkUpdatesBtn.addEventListener('click', () => {

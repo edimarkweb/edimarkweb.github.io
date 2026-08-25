@@ -2,6 +2,7 @@ import { open, save } from '@tauri-apps/plugin-dialog';
 import { readTextFile, writeFile, writeTextFile } from '@tauri-apps/plugin-fs';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { listen } from '@tauri-apps/api/event';
 import { readImage } from '@tauri-apps/plugin-clipboard-manager';
 
@@ -42,6 +43,9 @@ if (window.__TAURI_INTERNALS__) {
       }),
     },
     app: {
+      // Cerrar la ventana y no `exit`: así el webview cumple su ciclo de
+      // cierre y el documento en curso llega a guardarse.
+      quit: () => getCurrentWindow().close(),
       initialMarkdownPaths: () => invoke('initial_markdown_paths'),
       readMarkdownDocument: path => invoke('read_markdown_document', { path }),
       onOpenMarkdownPaths(callback) {

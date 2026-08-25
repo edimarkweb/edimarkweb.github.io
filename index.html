@@ -124,6 +124,11 @@
                         </button>
                       </div>
                     </div>
+                    <div id="quit-app-separator" class="hidden border-t border-slate-200 dark:border-slate-700 my-1"></div>
+                    <button type="button" id="quit-app-btn" class="hidden w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="quit_app_btn_title" title="Cerrar la aplicación">
+                      <i data-lucide="log-out" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                      <span data-i18n-key="quit_app_btn_text">Salir</span>
+                    </button>
                   </div>
                 </div>
 <div id="settings-menu-container" class="relative">
@@ -239,9 +244,9 @@
                       <i data-lucide="refresh-cw" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
                       <span data-i18n-key="check_updates_btn_text">Buscar actualizaciones…</span>
                     </button>
-                    <button type="button" id="latex-settings-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="doc_settings_btn_title" title="Ajustes de los documentos exportados">
+                    <button type="button" id="latex-settings-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="doc_settings_btn_title" title="Opciones de los documentos exportados">
                       <i data-lucide="file-cog" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      <span data-i18n-key="doc_settings_btn_text">Documento exportado…</span>
+                      <span data-i18n-key="doc_settings_btn_text">Opciones de exportación…</span>
                     </button>
                   </div>
                 </div>
@@ -276,7 +281,7 @@
     <section id="desktop-release-banner" class="desktop-release-banner" role="status" hidden>
         <i data-lucide="monitor-down" class="desktop-release-banner-icon" aria-hidden="true"></i>
         <div class="desktop-release-banner-content">
-            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.18.0 está disponible para Linux, Windows y macOS.</p>
+            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.19.0 está disponible para Linux, Windows y macOS.</p>
             <a id="desktop-banner-download-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="desktop_banner_download">Ver descargas</a>
             <label class="desktop-release-banner-never">
                 <input id="desktop-banner-never-show" type="checkbox">
@@ -397,16 +402,16 @@
             <div class="flex-grow"></div>
             <div id="layout-menu-container" class="relative">
                 <button id="layout-menu-btn" class="action-btn p-2" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-key="layout_menu_btn_title" title="Disposición de paneles">
-                    <i data-lucide="columns-2"></i>
+                    <span class="layout-icon flex"><i data-lucide="columns-2"></i></span>
                 </button>
                 <div id="layout-menu" class="hidden absolute right-0 top-full z-30 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800" role="menu" aria-labelledby="layout-menu-btn">
                     <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-layout="md" role="menuitemradio" aria-checked="false">
-                        <i data-lucide="panel-left" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                        <i data-lucide="panel-right" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
                         <span data-i18n-key="markdown_panel_layout_maximize">Maximizar panel Markdown</span>
                         <i data-lucide="check" class="layout-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
                     </button>
                     <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-layout="html" role="menuitemradio" aria-checked="false">
-                        <i data-lucide="panel-right" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                        <i data-lucide="panel-left" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
                         <span data-i18n-key="preview_panel_layout_maximize">Maximizar panel de previsualización</span>
                         <i data-lucide="check" class="layout-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
                     </button>
@@ -622,7 +627,7 @@
 
     <div id="latex-settings-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center overflow-y-auto p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="latex-settings-modal-title">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-slate-800">
-            <h3 id="latex-settings-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_settings_modal_title">Documento exportado</h3>
+            <h3 id="latex-settings-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_settings_modal_title">Opciones de exportación</h3>
             <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" data-i18n-key="doc_settings_modal_description">Ajustes que se recuerdan de una sesión a otra. Si tu documento empieza con sus propios metadatos YAML, mandan ellos.</p>
             <div class="space-y-4">
                 <div class="grid gap-4 sm:grid-cols-2">

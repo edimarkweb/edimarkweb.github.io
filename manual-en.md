@@ -2,7 +2,7 @@
 
 # EdiMarkWeb manual
 
-Welcome to EdiMarkWeb, a **Markdown text editor** designed for teachers and content creators who need to work quickly, export to several formats and add LaTeX maths without complications. Everything runs directly in the browser and your documents are stored safely on your own computer.
+Welcome to EdiMarkWeb, a **Markdown text editor** designed for teachers and content creators who need to work quickly, export to several formats and add LaTeX maths without complications. You can use it **in the browser**, with nothing to install, or **install it as a desktop application** on Linux, Windows and macOS. Either way the work happens on your own computer: neither the documents nor the images leave it.
 
 ## Highlights
 
@@ -15,7 +15,9 @@ Welcome to EdiMarkWeb, a **Markdown text editor** designed for teachers and cont
 - Open several files, or whole folders, by dragging them onto the editor (each file in its own tab): Markdown and also DOCX, ODT, EPUB, HTML or TEX, converted on the fly with Pandoc.
 - Regular-expression search and a full-screen editing mode for distraction-free work.
 - **A language for each document**, stored inside the file itself and shown next to the character counter. All five formats declare it, so Word and LibreOffice stop spell-checking a Spanish text against an English dictionary.
-- **Exported document settings** gathered in one place: author, EPUB cover, table of contents, section numbering and, for LaTeX, the class, its options and a preamble of your own.
+- **Export options** gathered in one place: author, EPUB cover, table of contents, section numbering and, for LaTeX, the class, its options and a preamble of your own.
+- **Desktop application** for Linux, Windows and macOS, with documents opening on a double click, saving over the original file, the system spell checker and offline operation.
+- **New-version notice** in the desktop application, which downloads and installs the update for you.
 
 ## Paste anything
 
@@ -28,32 +30,6 @@ This removes any intermediate steps: copy from your source of choice and click *
 
 The **Image** button also lets you choose a file from disk instead of entering a URL. The image is embedded in the Markdown, so it remains available when the document is saved or moved.
 
-## Videos
-
-The following videos, **without sound and looping**, show some common actions.
-
-### Copying content straight from a chat
-
-You can copy the output of any chat and paste it into EdiMarkWeb to edit, save or export it. This works with any chatbot except ChatGPT, which needs an extra step (see below).
-
-![Copying content straight from a chat](imagenes/googledocs.gif)
-
-### ChatGPT
-
-ChatGPT no longer uses standard LaTeX, so you have to ask it for the formulas inside a Markdown box. The video also shows how to export to DOCX and upload to Google Drive:
-
-![ChatGPT and Google](imagenes/chatgpt_google.gif)
-
-### Writing formulas in EdiMarkWeb
-
-![Writing formulas in EdiMarkWeb](imagenes/formulas.gif)
-
-### LaTeX produced by Gemini
-
-When working on a canvas you can ask Gemini for a PDF. That PDF uses LaTeX code you can paste straight into EdiMarkWeb.
-
-![Writing formulas in EdiMarkWeb](imagenes/gemini_pdf.gif)
-
 ---
 
 ## Managing documents (tabs)
@@ -65,7 +41,7 @@ Work on several documents at once, each in its own tab.
 * **Renaming**: double-click the title to give it a more descriptive name (e.g. “Unit 3 – Equations”).
 * **Closing tabs**: press the `X`. If there are unsaved changes, the application will warn you.
 * **Unsaved changes**: a red dot (`●`) marks pending modifications.
-* **Autosave**: each tab automatically keeps a copy in your browser; if you reload the page, the content reappears.
+* **Autosave**: each tab keeps a copy on its own in the application's own storage; if you reload the page or open the program again, the content reappears. It is a safety net, not a replacement for saving the file.
 
 ---
 
@@ -73,16 +49,17 @@ Work on several documents at once, each in its own tab.
 
 The bar next to the logo holds the application's global options and gathers every file action under a single drop-down button:
 
-* **File**: groups the document actions in two families. First the ones that bring content in — `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` — and then the ones that take it out: `Save (Ctrl+S)`, `Save as… (Ctrl+Shift+S)` and the **Export** submenu, which opens to the right with DOCX, ODT, EPUB, HTML and TEX. Each option shows its keyboard shortcut.
+* **File**: groups the document actions in two families. First the ones that bring content in — `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` — and then the ones that take it out: `Save (Ctrl+S)`, `Save as… (Ctrl+Shift+S)` and the **Export** submenu, which opens to the right with DOCX, ODT, EPUB, HTML and TEX. Each option shows its keyboard shortcut. In the desktop application the menu ends with **Quit**, which saves the current document and closes the application.
 * **Settings**: gathers every application setting, each one in a submenu showing the current value.
   * **Language**: changes the interface language.
   * **Font size**: small, normal, large or very large.
   * **Theme**: `System` follows your computer's setting and changes with it; `Light` and `Dark` fix it. Your choice is remembered next time you open the application.
-  * **Separate window**: opens EdiMarkWeb in a window of its own, like a desktop application.
+  * **Separate window**: opens EdiMarkWeb in a browser window of its own, with no tabs or address bar. It only appears in the web version; the desktop application is already a window of its own.
   * **Check for updates…**: only appears in the desktop application. It looks for a newer version and, if there is one, shows a notice with a **Download and install** button that fetches the installer for your system and opens it. The application checks on its own once a day at startup; the notice's **Check at startup** box turns that off.
-  * **Exported document…**: opens the settings for the files the application generates (language, plus class and preamble for LaTeX), explained below.
+  * **Export options…**: opens the settings for the files the application generates (language, plus class and preamble for LaTeX), explained below.
 * **Print (Ctrl+P)**: produces a view ready for paper or PDF using the current styles.
 * **Search (Ctrl+F)** and **Manual (Ctrl+H)**: open the advanced search panel or this very document.
+* **About**: shows the installed version, the author, the licence and the third-party licences, along with links to the web version and to the desktop downloads.
 
 The pane layout is changed with `Ctrl+L` or with the layout button next to the editing-area button. Its menu offers **Maximize Markdown panel**, **Maximize preview panel** and **Split panels**. On small screens the bar folds into two buttons — **Actions** and **Format** — that show each group when you need it.
 
@@ -131,7 +108,7 @@ You can drag the central bar to give more room to either pane, choose one of the
 
 ### Each document's language
 
-Next to the character counter there is a short button with the document language: `ES`, `CA`, `FR`… When it looks dimmed, that document has no language of its own and uses the **general language** from *Settings → Exported document…*, which is the usual case.
+Next to the character counter there is a short button with the document language: `ES`, `CA`, `FR`… When it looks dimmed, that document has no language of its own and uses the **general language** from *Settings → Export options…*, which is the usual case.
 
 Pick a specific language and the application stores it **inside the document itself**, so it travels with the file: save it and open it tomorrow, here or on another computer, or hand it to someone else, and it stays. To go back, choose *General language*. And with *Other language…* you can type the code of any language (`fr`, `de`, `pt-BR`). In that same menu, *This document's author…* does the same for the author.
 
@@ -155,7 +132,7 @@ When a document carries base64 images — after importing a DOCX, after pasting 
 
 * Click the right pane to edit the result directly: changes are synced back to the Markdown, keeping the formatting whenever the edit allows it.
 * The preview supports selections, copy and paste, and basic shortcuts (Ctrl+B/I, headings, etc.) just like the Markdown editor.
-* Hold `Ctrl` (or `Cmd` on macOS) and click to open links in a new browser tab.
+* Hold `Ctrl` (or `Cmd` on macOS) and click to open links; in the desktop application they open in your usual browser.
 * LaTeX formulas are rendered automatically with KaTeX; when you edit them they return to their original syntax.
 
 ---
@@ -183,15 +160,15 @@ Open the **File** button and choose `Export` to download versions ready to hand 
 
 While exporting, the top bar shows status messages (progress, success or errors).
 
-### Exported document settings
+### Export options
 
-**Settings → Exported document…** stores preferences that are reused in every export, including the next time you open the application.
+**Settings → Export options…** stores preferences that are reused in every export, including the next time you open the application.
 
 **Document language**, which applies to all five formats. It decides which dictionary Word and LibreOffice spell-check a DOCX or an ODT against, how LaTeX hyphenates, and which language HTML and EPUB declare to screen readers. It defaults to **Same as the interface**: change the language of EdiMarkWeb and your documents follow. You can pin any of the five interface languages, or choose **Other…** and type a code (`fr`, `de`, `pt-BR`).
 
 **Author**, stored in the file properties and shown as the book author in the EPUB and on the LaTeX title page. In DOCX and ODT, Pandoc also writes a line with the name at the start of the document; leave the field empty if you would rather it did not appear. A particular document can carry a different author: *This document's author…*, in the language button menu.
 
-**EPUB cover**, with three choices. By default EdiMarkWeb **generates one** from the document title and author, because a book with no image shows up as a generic icon on the reader's shelf. You can use **an image of your own** —up to 1 MB, plenty for a cover: it is stored in the browser, in the same space as your documents— or leave the book **with no cover**. It only affects the EPUB.
+**EPUB cover**, with three choices. By default EdiMarkWeb **generates one** from the document title and author, because a book with no image shows up as a generic icon on the reader's shelf. You can use **an image of your own** —up to 1 MB, plenty for a cover: it is stored alongside your documents, in the application's own space— or leave the book **with no cover**. It only affects the EPUB.
 
 **Table of contents**, which adds a list of the sections at the start of the document. In DOCX it is a real Word table of contents and in ODT a native LibreOffice one; the EPUB does not need it, since the reader already provides its navigation index.
 
@@ -225,12 +202,42 @@ Each option shows a success notice and, where appropriate, prepares the LaTeX ma
 
 Drag one or more files onto the application. `.md` and `.markdown` open as they are, while `.docx`, `.odt`, `.epub`, `.html` and `.tex` are converted to Markdown with Pandoc before opening:
 
-In the desktop application, the installers register `.md` and `.markdown`, so you can also open these documents by double-clicking them in the file manager.
-
 * A highlighted frame confirms that you can drop them.
 * Each file opens in its own tab, under its original name.
 * You can also drag whole folders from your file manager: their subfolders are walked through and every compatible file opens in its own tab, in alphabetical order. Anything else is ignored and, if nothing usable is found, the application tells you.
-* The content stays available offline thanks to autosave.
+* The content stays available without a connection thanks to autosave.
+
+---
+
+## The desktop application
+
+Besides the web version, EdiMarkWeb installs as a program on **Linux, Windows and macOS**. It is the same application — the same menus, the same shortcuts and the same formats — so whatever you learn in one carries over to the other.
+
+### Installing it
+
+The installers live on the [downloads page](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest), one for each system:
+
+* **Linux**: a `.deb` package for Debian, Ubuntu, Mint and derivatives, and an `.AppImage` that runs without installing on any distribution.
+* **Windows**: an `.exe` installer and an `.msi` one, for anyone deploying the application across a classroom or a school.
+* **macOS**: a `.dmg` image for Apple silicon Macs and another for Intel Macs.
+
+### What it adds over the browser
+
+* **Documents open on a double click**: the installation registers `.md` and `.markdown` files, so they open in EdiMarkWeb from the file manager. If the application is already running, the document arrives in that same window as a new tab.
+* **Saving writes to the real file**: `Ctrl+S` updates the document you opened, with no detour through the downloads folder. **Save as…** opens the system dialogue to choose a name and folder.
+* **System spell checker**: the editor underlines mistakes using the dictionaries installed on the computer. On Windows and macOS these are the languages you already have; on Linux you may need to install the dictionary you want (the `hunspell-en` package, for instance).
+* **It works offline**: the application carries everything it needs, including Pandoc and the EdiCuaTeX formula editor, so you can write, import and export with no internet. A connection is only needed to check for new versions.
+* **Quit**: at the end of the **File** menu, it saves the current document and closes the application.
+
+### Keeping it up to date
+
+At startup the application checks once a day whether a newer version exists. When there is one, a notice appears below the toolbar with a **Download and install** button: it fetches the installer for your system, shows the progress and hands it to the system installer so you can finish in a couple of clicks. With an AppImage there is nothing to install, so the application downloads the new one and opens its folder for you to replace the old file.
+
+The notice includes a **Check at startup** box that turns off the automatic check, and a **Release notes** link with the list of changes. You can ask for it whenever you like from **Settings → Check for updates…**; if you already have the latest version, it says so in the status bar.
+
+### What does not change
+
+Documents started in the browser and those from the desktop application are ordinary Markdown files: you can move them between the two with no conversion. Tab autosave, on the other hand, is separate in each, because every version keeps its working copy in its own space.
 
 ---
 

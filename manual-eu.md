@@ -2,7 +2,7 @@
 
 # EdiMarkWeb eskuliburua
 
-Ongi etorri EdiMarkWeb-era, **Markdown testu-editore** bat, azkar lan egin, hainbat formatutara esportatu eta LaTeX bidezko matematika konplikaziorik gabe gehitu behar duten irakasle eta eduki-sortzaileentzat diseinatua. Dena nabigatzailean bertan funtzionatzen du, eta dokumentuak modu seguruan gordetzen dira zure ekipoan.
+Ongi etorri EdiMarkWeb-era, **Markdown testu-editore** bat, azkar lan egin, hainbat formatutara esportatu eta LaTeX bidezko matematika konplikaziorik gabe gehitu behar duten irakasle eta eduki-sortzaileentzat diseinatua. **Nabigatzailean** erabil dezakezu, ezer instalatu gabe, edo **mahaigaineko aplikazio gisa instalatu** Linux, Windows eta macOS sistemetan. Bi kasuetan lana zure ekipoan gertatzen da: ez dokumentuak ez irudiak ez dira handik ateratzen.
 
 ## Nabarmentzekoak
 
@@ -15,7 +15,9 @@ Ongi etorri EdiMarkWeb-era, **Markdown testu-editore** bat, azkar lan egin, hain
 - Hainbat fitxategi, edo karpeta osoak, ireki editorera arrastatuz (fitxategi bakoitza bere fitxan): Markdown eta baita DOCX, ODT, EPUB, HTML edo TEX ere, Pandoc-ekin bat-batean bihurtzen direnak.
 - Adierazpen erregularrekin bilatzeko aukera eta pantaila osoko edizio-modua, distrakziorik gabe lan egiteko.
 - **Dokumentu bakoitzaren hizkuntza**, fitxategiaren barruan bertan gordeta eta karaktere-kontagailuaren ondoan ikusgai. Bost formatuek adierazten dute, eta, beraz, Word-ek eta LibreOffice-k ez dute ingelesez zuzentzen euskarazko testu bat.
-- **Esportatutako dokumentuaren ezarpenak** leku berean: egilea, EPUBaren azala, aurkibide automatikoa, atalen zenbakitzea eta, LaTeX-erako, klasea, bere aukerak eta atariko propio bat.
+- **Esportazio-aukerak** leku berean: egilea, EPUBaren azala, aurkibide automatikoa, atalen zenbakitzea eta, LaTeX-erako, klasea, bere aukerak eta atariko propio bat.
+- **Mahaigaineko aplikazioa** Linux, Windows eta macOS sistemetarako: dokumentuak klik bikoitzarekin lotuta, jatorrizko fitxategiaren gainean gordetzea, sistemaren zuzentzaile ortografikoa eta konexiorik gabe funtzionatzea.
+- **Bertsio berrien abisua** mahaigaineko aplikazioan, aplikaziotik bertatik deskargatu eta instalatzeko aukerarekin.
 
 ## Itsatsi edozein eduki
 
@@ -28,32 +30,6 @@ Horrek tarteko urratsak ezabatzen ditu: kopiatu zure iturri gogokoenetik eta egi
 
 **Irudia** botoiak diskoko fitxategi bat aukeratzeko aukera ere ematen du, URL bat idazteaz gain. Irudia Markdown-ean kapsulatzen da, eta dokumentua gordetzean edo mugitzean erabilgarri jarraituko du.
 
-## Bideoak
-
-Ondorengo bideoek, **audiorik gabe eta etengabe erreproduzitzen direnak**, ohiko ekintza batzuk erakusten dituzte.
-
-### Txataren edukia zuzenean kopiatzea
-
-Edozein txatetako emaitza kopiatu eta EdiMarkWeb-en itsats dezakegu aldatzeko, gordetzeko edo esportatzeko. Hori edozein chatbot-ekin egin dezakegu, ChatGPT-rekin izan ezik, urrats gehigarri bat behar baitu (ikus behean).
-
-![Txataren edukia zuzenean kopiatzea](imagenes/googledocs.gif)
-
-### ChatGPT
-
-ChatGPT-k LaTeX estandarra erabiltzeari utzi dio; beraz, formulak Markdown kutxa batean eskatu behar zaizkio. Gainera, bideoan DOCX formatuan nola esportatu eta Google Drive-ra nola igo agertzen da:
-
-![ChatGPT eta Google](imagenes/chatgpt_google.gif)
-
-### EdiMarkWeb-en formulak idaztea
-
-![EdiMarkWeb-en formulak idaztea](imagenes/formulas.gif)
-
-### Gemini-rekin sortutako LaTeX
-
-Canvas bat egiten dugunean, Gemini-ri PDF bat egiteko eska diezaiokegu. PDF horrek LaTeX kodea erabiltzen du, eta zuzenean EdiMarkWeb-en itsats dezakegu.
-
-![EdiMarkWeb-en formulak idaztea](imagenes/gemini_pdf.gif)
-
 ---
 
 ## Dokumentuen kudeaketa (fitxak)
@@ -65,7 +41,7 @@ Egin lan hainbat dokumenturekin aldi berean, bakoitza bere fitxan.
 * **Berrizendatu**: egin klik bikoitza izenburuan izen deskribatzaileago bat jartzeko (adib. «3. gaia – Ekuazioak»).
 * **Fitxak itxi**: sakatu `X`. Gorde gabeko aldaketarik badago, aplikazioak abisu bat erakutsiko du.
 * **Gorde gabeko aldaketak**: puntu gorri batek (`●`) adierazten du aldaketak zain daudela.
-* **Gordetze automatikoa**: fitxa bakoitzak kopia bat gordetzen du automatikoki nabigatzailean; orria birkargatzen baduzu, edukia berriro agertuko da.
+* **Gordetze automatikoa**: fitxa bakoitzak kopia bat gordetzen du berez ekipoan, aplikazioaren espazio propioan; orria birkargatzen baduzu edo programa berriro irekitzen baduzu, edukia berriro agertuko da. Segurtasun-sarea da, ez fitxategia gordetzearen ordezkoa.
 
 ---
 
@@ -73,16 +49,17 @@ Egin lan hainbat dokumenturekin aldi berean, bakoitza bere fitxan.
 
 Logotipoaren ondoko barrak aplikazioaren aukera orokorrak biltzen ditu eta fitxategiaren ekintza guztiak botoi zabalgarri bakar batean elkartzen ditu:
 
-* **Fitxategia**: dokumentuaren gaineko ekintzak bi multzotan biltzen ditu. Lehenik edukia ekartzen dutenak —`Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)`— eta ondoren ateratzen dutenak: `Gorde (Ctrl+S)`, `Gorde honela… (Ctrl+Shift+S)` eta **Esportatu** azpimenua, eskuinera zabaltzen dena DOCX, ODT, EPUB, HTML eta TEX aukerekin. Aukera bakoitzak bere teklatu-lasterbidea erakusten du.
+* **Fitxategia**: dokumentuaren gaineko ekintzak bi multzotan biltzen ditu. Lehenik edukia ekartzen dutenak —`Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)`— eta ondoren ateratzen dutenak: `Gorde (Ctrl+S)`, `Gorde honela… (Ctrl+Shift+S)` eta **Esportatu** azpimenua, eskuinera zabaltzen dena DOCX, ODT, EPUB, HTML eta TEX aukerekin. Aukera bakoitzak bere teklatu-lasterbidea erakusten du. Mahaigaineko aplikazioan menua **Irten** aukerarekin amaitzen da: uneko dokumentua gorde eta aplikazioa ixten du.
 * **Ezarpenak**: aplikazioaren ezarpen guztiak biltzen ditu, bakoitza uneko balioa adierazten duen azpimenu batekin.
   * **Hizkuntza**: interfazearen hizkuntza aldatzen du.
   * **Testuaren tamaina**: txikia, normala, handia edo oso handia.
   * **Gaia**: `Sistemakoa` aukerak ekipoarena jarraitzen du eta harekin batera aldatzen da; `Argia` eta `Iluna` aukerek finkatu egiten dute. Aukeraketa gogoratu egiten da aplikazioa hurrengoan irekitzean.
-  * **Leiho independentea**: EdiMarkWeb bere leiho batean irekitzen du, mahaigaineko aplikazio gisa.
+  * **Leiho independentea**: EdiMarkWeb nabigatzailearen leiho propio batean irekitzen du, fitxarik eta helbide-barrarik gabe. Web bertsioan bakarrik agertzen da; mahaigaineko aplikazioa dagoeneko leiho propioa da.
   * **Bilatu eguneraketak…**: mahaigaineko aplikazioan bakarrik agertzen da. Bertsio berriagorik dagoen begiratzen du eta, halakorik badago, ohar bat erakusten du **Deskargatu eta instalatu** botoiarekin: zure sistemaren instalatzailea deskargatu eta irekitzen du. Aplikazioak berak egunean behin egiten du egiaztapena abiaraztean; oharreko **Egiaztatu abiaraztean** laukiak desaktibatzeko aukera ematen du.
-  * **Esportatutako dokumentua…**: aplikazioak sortzen dituen fitxategien ezarpenak irekitzen ditu (hizkuntza eta, LaTeX-erako, klasea eta atarikoa), behean azalduta.
+  * **Esportazio-aukerak…**: aplikazioak sortzen dituen fitxategien ezarpenak irekitzen ditu (hizkuntza eta, LaTeX-erako, klasea eta atarikoa), behean azalduta.
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia sortzen du uneko estiloekin.
 * **Bilatu (Ctrl+F)** eta **Eskuliburua (Ctrl+H)**: bilatzaile aurreratua edo dokumentu hau bera irekitzen dituzte.
+* **Honi buruz**: instalatutako bertsioa, egilea, lizentzia eta hirugarrenen liburutegien lizentziak erakusten ditu, web bertsiorako eta mahaigaineko deskargetarako estekekin batera.
 
 Panelen antolaketa `Ctrl+L` teklarekin edo edizio-eremua maximizatzeko botoiaren ondoko antolaketa-botoiarekin aldatzen da. Menuak **Markdown panela maximizatu**, **Aurrebista panela maximizatu** eta **Panelak zatitu** aukerak eskaintzen ditu. Pantaila txikietan, barra bi botoitan tolesten da —**Ekintzak** eta **Formatua**— eta talde bakoitza behar duzunean erakusten dute.
 
@@ -131,7 +108,7 @@ Erdiko barra arrasta dezakezu edozein paneli leku gehiago emateko, eskuineko bot
 
 ### Dokumentu bakoitzaren hizkuntza
 
-Karaktere-kontagailuaren ondoan botoi labur bat dago, dokumentuaren hizkuntzarekin: `ES`, `CA`, `FR`… Itzalita ikusten bada, dokumentu horrek ez du hizkuntza propiorik eta *Ezarpenak → Esportatutako dokumentua…* atalean dagoen **hizkuntza orokorra** erabiltzen du, ohikoena dena.
+Karaktere-kontagailuaren ondoan botoi labur bat dago, dokumentuaren hizkuntzarekin: `ES`, `CA`, `FR`… Itzalita ikusten bada, dokumentu horrek ez du hizkuntza propiorik eta *Ezarpenak → Esportazio-aukerak…* atalean dagoen **hizkuntza orokorra** erabiltzen du, ohikoena dena.
 
 Hizkuntza jakin bat aukeratzean, aplikazioak **dokumentuaren barruan bertan** gordetzen du, eta, beraz, fitxategiarekin batera bidaiatzen du: gorde eta bihar irekitzen baduzu, hemen edo beste ordenagailu batean, edo norbaiti pasatzen badiozu, hura izaten jarraituko du. Atzera egiteko, aukeratu *Hizkuntza orokorra*. Eta *Beste hizkuntza bat…* aukerarekin edozein hizkuntzaren kodea idatz dezakezu (`fr`, `de`, `pt-BR`). Menu horretan bertan, *Dokumentu honen egilea…* aukerak gauza bera egiten du egilearekin.
 
@@ -155,7 +132,7 @@ Dokumentu batek base64 irudiak dituenean —DOCX bat inportatzean, beste aplikaz
 
 * Egin klik eskuineko panelean emaitzaren gainean zuzenean editatzeko: aldaketak Markdown-arekin sinkronizatzen dira, formatua mantenduz edizioa bateragarria den bitartean.
 * Aurrebistak hautaketak, kopiatu eta itsatsi, eta oinarrizko lasterbideak (Ctrl+B/I, izenburuak, etab.) onartzen ditu, Markdown editoreak bezalaxe.
-* Eutsi `Ctrl` teklari (edo `Cmd` macOS-en) eta egin klik estekak nabigatzailearen fitxa berri batean irekitzeko.
+* Eutsi `Ctrl` teklari (edo `Cmd` macOS-en) eta egin klik estekak irekitzeko; mahaigaineko aplikazioan zure ohiko nabigatzailean irekitzen dira.
 * LaTeX formulak automatikoki errendatzen dira KaTeX-ekin; editatzean beren jatorrizko sintaxira itzultzen dira.
 
 ---
@@ -183,15 +160,15 @@ Ireki **Fitxategia** botoia eta hautatu `Esportatu` entregatzeko edo argitaratze
 
 Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapena, arrakasta edo erroreak).
 
-### Esportatutako dokumentuaren ezarpenak
+### Esportazio-aukerak
 
-**Ezarpenak → Esportatutako dokumentua…** esportazio bakoitzean berrerabiltzen diren hobespenak gordetzen ditu, baita aplikazioa hurrengoan irekitzean ere.
+**Ezarpenak → Esportazio-aukerak…** esportazio bakoitzean berrerabiltzen diren hobespenak gordetzen ditu, baita aplikazioa hurrengoan irekitzean ere.
 
 **Dokumentuaren hizkuntza**, bost formatuei aplikatzen zaiena. Horrek erabakitzen du zein hizkuntzatan zuzentzen duten ortografia Word-ek eta LibreOffice-k DOCX edo ODT bat irekitzean, nola zatitzen dituen hitzak LaTeX-ek eta zein hizkuntza adierazten duten HTMLak eta EPUBak pantaila-irakurgailuentzat. Lehenespenez **Interfazearen berbera** da: EdiMarkWeb-en hizkuntza aldatzen baduzu, dokumentuek jarraitu egiten diote. Aplikazioaren bost hizkuntzetako edozein finka dezakezu, edo **Bestelakoa…** aukeratu eta bere kodea idatzi (`fr`, `de`, `pt-BR`).
 
 **Egilea**, fitxategiaren propietateetan gordetzen dena eta EPUBean liburuaren egile gisa eta LaTeX-en azalean agertzen dena. DOCX eta ODT formatuetan, gainera, Pandoc-ek izena duen lerro bat idazten du dokumentuaren hasieran; agertzerik nahi ez baduzu, utzi eremua hutsik. Dokumentu jakin batek beste egile bat eraman dezake: *Dokumentu honen egilea…*, hizkuntza-botoiaren menuan.
 
-**EPUBaren azala**, hiru aukerarekin. Hasieran, EdiMarkWeb-ek **bat sortzen du** dokumentuaren tituluarekin eta egilearekin, irudirik gabeko liburu bat ikono generikoarekin agertzen baita irakurgailuaren apalean. **Zure irudi bat** jar dezakezu —1 MB arte, azal baterako nahikoa baino gehiago: nabigatzailean gordetzen da, zure dokumentuen espazio berean— edo liburua **azalik gabe** utzi. EPUBari baino ez dio eragiten.
+**EPUBaren azala**, hiru aukerarekin. Hasieran, EdiMarkWeb-ek **bat sortzen du** dokumentuaren tituluarekin eta egilearekin, irudirik gabeko liburu bat ikono generikoarekin agertzen baita irakurgailuaren apalean. **Zure irudi bat** jar dezakezu —1 MB arte, azal baterako nahikoa baino gehiago: zure dokumentuen ondoan gordetzen da, aplikazioaren espazio propioan— edo liburua **azalik gabe** utzi. EPUBari baino ez dio eragiten.
 
 **Aurkibide automatikoa**, dokumentuaren hasieran atalen zerrenda bat gehitzen duena. DOCX formatuan Word-en benetako aurkibide bat da eta ODT formatuan LibreOffice-ren jatorrizko bat; EPUBak ez du behar, irakurgailuak bere nabigazio-aurkibidea baitakar.
 
@@ -225,12 +202,42 @@ Aukera bakoitzak arrakasta-jakinarazpen bat erakusten du eta, dagokionean, LaTeX
 
 Arrastatu fitxategi bat edo gehiago aplikazioaren gainera. `.md` eta `.markdown` onartzen dira, zuzenean irekitzen direnak, eta `.docx`, `.odt`, `.epub`, `.html` eta `.tex`, ireki aurretik Pandoc-ekin Markdown-era bihurtzen direnak:
 
-Mahaigaineko aplikazioan, instalatzaileek `.md` eta `.markdown` erregistratzen dituzte; dokumentu horiek fitxategi-kudeatzailean klik bikoitza eginez ere ireki ditzakezu.
-
 * Marko argiztatu bat ikusiko duzu, jaregin ditzakezula berresten duena.
 * Fitxategi bakoitza bere fitxan irekiko da, jatorrizko izenarekin.
 * Karpeta osoak ere arrasta ditzakezu sistemaren fitxategi-kudeatzailetik: azpikarpetak ere zeharkatzen dira eta fitxategi bateragarri bakoitza bere fitxan irekitzen da, ordena alfabetikoan. Gainerakoa alde batera uzten da eta, ezer baliagarririk ez badago, aplikazioak abisatu egiten dizu.
-* Edukia lineaz kanpo erabilgarri geratzen da gordetze automatikoari esker.
+* Edukia konexiorik gabe erabilgarri geratzen da gordetze automatikoari esker.
+
+---
+
+## Mahaigaineko aplikazioa
+
+Web bertsioaz gain, EdiMarkWeb programa gisa instalatzen da **Linux, Windows eta macOS** sistemetan. Aplikazio bera da —menu berberak, lasterbide berberak eta formatu berberak—, beraz batean ikasitakoak besterako balio dizu.
+
+### Instalatzea
+
+Instalatzaileak [deskarga-orrian](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest) daude, sistema bakoitzeko bat:
+
+* **Linux**: `.deb` paketea Debian, Ubuntu, Mint eta eratorrietarako, eta `.AppImage` bat, edozein banaketatan instalatu gabe exekutatzen dena.
+* **Windows**: `.exe` instalatzaile bat eta `.msi` beste bat, aplikazioa ikasgela edo ikastetxe batean zabaltzen duenarentzat.
+* **macOS**: `.dmg` irudi bat Apple prozesadorea duten Mac-etarako eta beste bat Intel Mac-etarako.
+
+### Zer gehitzen du nabigatzailearen aldean
+
+* **Dokumentuak klik bikoitzarekin irekitzen dira**: instalazioak `.md` eta `.markdown` fitxategiak lotzen ditu, eta fitxategi-kudeatzailetik EdiMarkWeb-en irekitzen dira. Aplikazioa jada irekita badago, dokumentua leiho horretara bertara iristen da fitxa berri batean.
+* **Gordetzeak benetako fitxategian idazten du**: `Ctrl+S` sakatuta ireki duzun dokumentua eguneratzen da, deskargen karpetatik pasatu gabe. **Gorde honela…** aukerak sistemaren elkarrizketa-koadroa irekitzen du izena eta karpeta aukeratzeko.
+* **Sistemaren zuzentzaile ortografikoa**: editoreak akatsak azpimarratzen ditu ekipoan instalatutako hiztegiekin. Windows eta macOS sistemetan dagoeneko dituzun hizkuntzak dira; Linux-en beharrezkoa izan daiteke nahi duzun hiztegia instalatzea (adibidez, `hunspell-eu` paketea).
+* **Konexiorik gabe funtzionatzen du**: aplikazioak behar duen guztia darama barruan, Pandoc eta EdiCuaTeX formula-editorea barne, beraz internetik gabe idatzi, inportatu eta esporta dezakezu. Konexioa bertsio berririk dagoen egiaztatzeko baino ez da behar.
+* **Irten**: **Fitxategia** menuaren amaieran, uneko dokumentua gorde eta aplikazioa ixten du.
+
+### Egunean mantentzea
+
+Abiaraztean, aplikazioak egunean behin egiaztatzen du bertsio berriagorik dagoen. Halakorik dagoenean, ohar bat agertzen da tresna-barraren azpian **Deskargatu eta instalatu** botoiarekin: zure sistemari dagokion instalatzailea jaisten du, aurrerapena erakusten du eta sistemaren instalatzaileari ematen dio, klik pare batean amai dezazun. AppImage batekin ez dago ezer instalatzeko, beraz aplikazioak berria deskargatzen du eta bere karpeta irekitzen du zeneukana ordezka dezazun.
+
+Oharrak **Egiaztatu abiaraztean** laukia dakar, egiaztapen automatiko hori desaktibatzeko, eta **Ikusi berritasunak** esteka, aldaketen zerrendarekin. Nahi duzunean eska dezakezu **Ezarpenak → Bilatu eguneraketak…** bidez; azken bertsioa jada baduzu, egoera-barran esango dizu.
+
+### Zer ez den aldatzen
+
+Nabigatzailean hasitako dokumentuak eta mahaigaineko aplikaziokoak Markdown fitxategi arruntak dira: batetik bestera mugi ditzakezu bihurketarik gabe. Fitxen gordetze automatikoa, aldiz, independentea da bakoitzean, bertsio bakoitzak bere lan-kopia bere espazioan gordetzen baitu.
 
 ---
 

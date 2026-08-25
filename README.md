@@ -1,9 +1,9 @@
 # EdiMarkWeb
 
-EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores técnicos que necesitan escribir, visualizar y exportar contenido sin salir del navegador. Combina edición Markdown y HTML sincronizada, soporte completo de LaTeX con KaTeX y utilidades de importación/exportación basadas en Pandoc.
+EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores técnicos que necesitan escribir, visualizar y exportar contenido sin montar una cadena de herramientas. Funciona en el navegador y también como aplicación de escritorio para Linux, Windows y macOS, con las mismas prestaciones: edición Markdown y HTML sincronizada, soporte completo de LaTeX con KaTeX y utilidades de importación/exportación basadas en Pandoc.
 
 - 🌐 Aplicación publicada en: [https://edimarkweb.github.io/](https://edimarkweb.github.io/)
-- 💻 Aplicación de escritorio: [últimos instaladores para Linux y Windows](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest)
+- 💻 Aplicación de escritorio: [últimos instaladores para Linux, Windows y macOS](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest)
 - 📘 Manual de usuario: [manual.md](manual.md) (también en [inglés](manual-en.md), [català](manual-ca.md), [galego](manual-gl.md) y [euskara](manual-eu.md))
 - 🐞 Incidencias y mejoras: [Issues de GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues)
 
@@ -20,22 +20,23 @@ EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores t
 - **Búsqueda y reemplazo inteligente**: ignora tildes y mayúsculas, resalta coincidencias, admite expresiones regulares y ofrece navegación rápida.
 - **Internacionalización y accesibilidad**: selector de idioma, control del tamaño de fuente, modo claro/oscuro y atajos visibles.
 - **Diseño adaptable**: barras plegables, modo escritorio independiente, área de edición a pantalla completa y posibilidad de ampliar el ancho de trabajo.
+- **Aplicación de escritorio**: paquetes nativos para Linux, Windows y macOS que asocian los archivos `.md`, guardan sobre el documento original, funcionan sin conexión —Pandoc y EdiCuaTeX van incluidos— y avisan de las versiones nuevas ofreciendo descargarlas e instalarlas.
 
 ## Flujo de trabajo destacado
 
 | Zona | Qué ofrece |
 | --- | --- |
-| **Barra superior** | Gestión de archivos, idioma, tamaño de fuente, tema, ancho expandido, ventana independiente, impresión y acceso directo al manual (`Ctrl+H`). |
+| **Barra superior** | Gestión de archivos, idioma, tamaño de fuente, tema, ancho expandido, ventana independiente, impresión, diálogo «Acerca de» y acceso directo al manual (`Ctrl+H`). En la aplicación de escritorio añade «Buscar actualizaciones…» y «Salir». |
 | **Barra de herramientas** | Formatos básicos, listas, citas, bloques de código, enlaces, imágenes, tablas y un menú de fórmulas con snippets listos. |
 | **Panel Markdown** | Editor de texto con contador de caracteres, indicador de idioma del documento, plegado de imágenes base64, botón de copia y soporte de arrastrar y soltar archivos o carpetas enteras (`.md` y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo). |
 | **Panel HTML / Vista previa** | Cambia entre vista renderizada y código HTML, copia contenido con distintos perfiles (HTML, LaTeX parcial o completo). |
 
-Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pueden renombrarse con doble clic. El autoguardado del navegador recupera automáticamente el contenido tras recargar la página.
+Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pueden renombrarse con doble clic. El autoguardado recupera el contenido al recargar la página o al volver a abrir la aplicación; cada versión, web y escritorio, mantiene su propia copia de trabajo.
 
 ## Importación, exportación y copia rápida
 
 - **Importar**: abre Markdown locales, pega documentos LaTeX completos o convierte ficheros mediante Pandoc (DOCX, ODT, EPUB, HTML, TEX). Al arrastrar y soltar se admiten carpetas enteras, que se recorren en busca de archivos compatibles. Las imágenes de los documentos DOCX, ODT y EPUB se extraen del archivo y se incrustan en el Markdown.
-- **Exportar**: genera descargas inmediatas en DOCX, ODT, EPUB (libro digital), HTML autónomo (con estilos y fórmulas incrustados) o LaTeX preparado para compilar. Todos los formatos declaran el idioma del documento —corrector ortográfico en DOCX y ODT, partición de palabras en LaTeX, atributo `lang` en HTML y EPUB— y el `.tex` usa el primer encabezado como título. Desde **Configuración → Documento exportado…** se fijan ese idioma, el autor, la portada del EPUB (generada, propia o ninguna), el índice automático, la numeración de apartados y, para LaTeX, la clase, sus opciones y un preámbulo propio que se reutiliza en cada exportación. El HTML autónomo toma el título de la pestaña del primer encabezado. Cada documento puede además llevar el suyo: el botón de idioma del panel Markdown lo guarda como `lang` en el front matter del `.md`, de modo que viaja con el archivo.
+- **Exportar**: genera descargas inmediatas en DOCX, ODT, EPUB (libro digital), HTML autónomo (con estilos y fórmulas incrustados) o LaTeX preparado para compilar. Todos los formatos declaran el idioma del documento —corrector ortográfico en DOCX y ODT, partición de palabras en LaTeX, atributo `lang` en HTML y EPUB— y el `.tex` usa el primer encabezado como título. Desde **Configuración → Opciones de exportación…** se fijan ese idioma, el autor, la portada del EPUB (generada, propia o ninguna), el índice automático, la numeración de apartados y, para LaTeX, la clase, sus opciones y un preámbulo propio que se reutiliza en cada exportación. El HTML autónomo toma el título de la pestaña del primer encabezado. Cada documento puede además llevar el suyo: el botón de idioma del panel Markdown lo guarda como `lang` en el front matter del `.md`, de modo que viaja con el archivo.
 - **Copiar**: botones dedicados para copiar Markdown del panel izquierdo o seleccionar, desde el panel derecho, qué formato enviar al portapapeles.
 
 ## Atajos esenciales
@@ -66,7 +67,7 @@ Consulta la tabla completa en el [manual](manual.md#atajos-de-teclado).
    git clone git@github.com:edimarkweb/edimarkweb.github.io.git
    cd edimarkweb.github.io
    ```
-2. Opción rápida: abre `index.html` directamente en tu navegador y todo funcionará offline (las dependencias externas se cargan desde CDNs).
+2. Opción rápida: abre `index.html` directamente en tu navegador. Ten en cuenta que la versión web carga varias bibliotecas desde CDN, así que necesita conexión; la que funciona sin ella es la aplicación de escritorio, que las lleva incorporadas.
 3. Si prefieres servirlo localmente, utiliza la utilidad que quieras (`python -m http.server`, `npx serve`, etc.) para evitar restricciones de origen en algunos navegadores.
 
 ### Construir los estilos (opcional)
@@ -114,7 +115,10 @@ que falte (por ejemplo, `hunspell-es`), pero no herramientas de desarrollo.
 
 ```bash
 npm install
-npm test          # rápido: preparación del Markdown (títulos, metadatos, imágenes)
+npm test              # rápido: preparación del Markdown (títulos, metadatos, imágenes)
+npm run test:platform # capa de plataforma compartida entre web y escritorio
+npm run test:updater  # comprobación de versiones y elección del instalador
+npm run test:browser  # interfaz real en Chromium y Firefox con Playwright
 npm run test:export   # lento: convierte con el pandoc.wasm real y valida el EPUB/DOCX/ODT
 npm run test:all
 ```

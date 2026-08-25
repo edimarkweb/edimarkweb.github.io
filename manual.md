@@ -2,7 +2,7 @@
 
 # Manual de EdiMarkWeb
 
-Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para docentes y creadores de contenido que necesitan trabajar rápido, exportar a varios formatos y añadir matemáticas con LaTeX sin complicaciones. Todo funciona directamente en el navegador y los documentos se guardan de forma segura en tu equipo.
+Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para docentes y creadores de contenido que necesitan trabajar rápido, exportar a varios formatos y añadir matemáticas con LaTeX sin complicaciones. Puedes usarlo **en el navegador**, sin instalar nada, o **instalarlo como aplicación de escritorio** en Linux, Windows y macOS. En ambos casos todo el trabajo ocurre en tu equipo: ni los documentos ni las imágenes salen de él.
 
 ## Novedades destacadas
 
@@ -15,7 +15,9 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 - Apertura de múltiples archivos, o de carpetas enteras, arrastrándolos al editor (cada archivo en su pestaña): Markdown y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo con Pandoc.
 - Búsqueda con expresiones regulares y modo de edición a pantalla completa para trabajar sin distracciones.
 - **Idioma de cada documento**, guardado dentro del propio archivo y visible junto al contador de caracteres. Los cinco formatos lo declaran, así que Word y LibreOffice dejan de corregir en inglés un texto en castellano.
-- **Ajustes del documento exportado** en un mismo sitio: autor, portada del EPUB, índice automático, numeración de apartados y, para LaTeX, la clase, sus opciones y un preámbulo propio.
+- **Opciones de exportación** en un mismo sitio: autor, portada del EPUB, índice automático, numeración de apartados y, para LaTeX, la clase, sus opciones y un preámbulo propio.
+- **Aplicación de escritorio** para Linux, Windows y macOS, con los documentos asociados al doble clic, guardado sobre el archivo original, corrector ortográfico del sistema y funcionamiento sin conexión.
+- **Aviso de versiones nuevas** en la aplicación de escritorio, con descarga e instalación desde la propia aplicación.
 
 ## ¡Pega cualquier contenido!
 
@@ -28,27 +30,6 @@ Esto elimina la necesidad de pasos intermedios: copia desde tu origen favorito y
 
 El botón **Imagen** también permite elegir un archivo del disco, además de escribir una URL. La imagen se incrusta en el Markdown, por lo que seguirá disponible al guardar o mover el documento.
 
-## Vídeos
-Los siguientes vídeos **sin audio y de reproducción continua** muestran algunas acciones comunes.
-
-### Copiar directamente el contenido del chat
-Podemos copiar el resultado de cualquier chat y pegarlo en EdiMarkWeb para modificar, guardar o exportar. Esto lo podemos hacer con cualquier chatbot, excepto con ChatGPT que requiere un paso adicional (ver abajo).
-
-![Copiar directamente el contenido del chat](imagenes/googledocs.gif)
-
-### ChatGPT
-ChatGPT ha dejado de utilizar LaTeX estándar, por lo que se le tiene que pedir las fórmulas en una caja Markdown. Además, en el vídeo aparece cómo exportar en DOCX y cómo subir a Google Drive:
-![ChatGPT y Google](imagenes/chatgpt_google.gif)
-
-### Escribir fórmulas en EdiMarkweb
-
-![Escribir fórmulas en EdiMarkweb](imagenes/formulas.gif)
-
-### LaTeX creado con Gemini
-Cuando hacemos un canvas le podemos pedir a Gemini que haga un PDF. Este PDF utiliza código LaTeX que podremos pegar directamente en EdiMarkWeb.
-
-![Escribir fórmulas en EdiMarkweb](imagenes/gemini_pdf.gif)
-
 ---
 
 ## Gestión de documentos (pestañas)
@@ -60,7 +41,7 @@ Trabaja con varios documentos a la vez, cada uno en su propia pestaña.
 * **Renombrar**: Haz doble clic sobre el título para poner un nombre más descriptivo (ej. “Tema 3 – Ecuaciones”).
 * **Cerrar pestañas**: Pulsa la `X`. Si hay cambios sin guardar, la aplicación mostrará un aviso.
 * **Cambios sin guardar**: Un punto rojo (`●`) indica que hay modificaciones pendientes.
-* **Autoguardado**: Cada pestaña guarda automáticamente una copia en tu navegador; si recargas la página, el contenido reaparecerá.
+* **Autoguardado**: Cada pestaña guarda sola una copia en el equipo, en el espacio propio de la aplicación; si recargas la página o vuelves a abrir el programa, el contenido reaparece. Es una red de seguridad, no un sustituto de guardar el archivo.
 
 ---
 
@@ -68,16 +49,17 @@ Trabaja con varios documentos a la vez, cada uno en su propia pestaña.
 
 La barra junto al logotipo agrupa las opciones globales de la aplicación y ahora concentra todas las acciones de archivo en un único botón desplegable:
 
-* **Archivo**: reúne las acciones sobre el documento en dos grupos. Primero las que traen contenido —`Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` y `Pegar LaTeX (Ctrl+Mayús+V)`— y después las que lo sacan: `Guardar (Ctrl+S)`, `Guardar como… (Ctrl+Mayús+S)` y el submenú **Exportar**, que se despliega a la derecha con DOCX, ODT, EPUB, HTML y TEX. Cada opción muestra su atajo de teclado.
+* **Archivo**: reúne las acciones sobre el documento en dos grupos. Primero las que traen contenido —`Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` y `Pegar LaTeX (Ctrl+Mayús+V)`— y después las que lo sacan: `Guardar (Ctrl+S)`, `Guardar como… (Ctrl+Mayús+S)` y el submenú **Exportar**, que se despliega a la derecha con DOCX, ODT, EPUB, HTML y TEX. Cada opción muestra su atajo de teclado. En la aplicación de escritorio el menú termina con **Salir**, que guarda el documento en curso y cierra la aplicación.
 * **Configuración**: agrupa todos los ajustes de la aplicación, cada uno con un submenú que indica el valor activo.
   * **Idioma**: cambia el idioma de la interfaz.
   * **Tamaño de texto**: pequeño, normal, grande o muy grande.
   * **Tema**: `Sistema` sigue el del equipo y cambia con él; `Claro` y `Oscuro` lo fijan. La elección se recuerda la próxima vez que abras la aplicación.
-  * **Ventana independiente**: abre EdiMarkWeb en una ventana propia, a modo de aplicación de escritorio.
+  * **Ventana independiente**: abre EdiMarkWeb en una ventana propia del navegador, sin pestañas ni barra de direcciones. Solo aparece en la versión web; la aplicación de escritorio ya es una ventana propia.
   * **Buscar actualizaciones…**: solo aparece en la aplicación de escritorio. Consulta si hay una versión más reciente y, si la hay, muestra un aviso con el botón **Descargar e instalar**, que baja el instalador de tu sistema y lo abre. La aplicación hace esta comprobación sola una vez al día al arrancar; la casilla **Comprobar al iniciar** del aviso permite desactivarla.
-  * **Documento exportado…**: abre los ajustes de los archivos que genera la aplicación (idioma y, para LaTeX, clase y preámbulo), explicados más abajo.
+  * **Opciones de exportación…**: abre los ajustes de los archivos que genera la aplicación (idioma y, para LaTeX, clase y preámbulo), explicados más abajo.
 * **Imprimir (Ctrl+P)**: genera una vista preparada para papel o PDF con los estilos actuales.
 * **Buscar (Ctrl+F)** y **Manual (Ctrl+H)**: abren el buscador avanzado o este mismo documento.
+* **Acerca de**: muestra la versión instalada, el autor, la licencia y las licencias de las bibliotecas de terceros, además de los enlaces a la versión web y a las descargas de escritorio.
 
 El diseño de los paneles se cambia con `Ctrl+L` o con el botón de disposición situado junto al botón que maximiza el área de edición. Su menú permite **Maximizar panel Markdown**, **Maximizar Vista previa** o **Dividir paneles**. En pantallas pequeñas, la barra se pliega en dos botones —**Acciones** y **Formato**— que muestran cada grupo cuando lo necesitas.
 
@@ -126,7 +108,7 @@ Puedes arrastrar la barra central para dar más espacio a cualquiera de los pane
 
 ### El idioma de cada documento
 
-Junto al contador de caracteres hay un botón corto con el idioma del documento: `ES`, `CA`, `FR`… Si se ve atenuado, ese documento no tiene idioma propio y usa el **idioma general** de *Configuración → Documento exportado…*, que es lo normal.
+Junto al contador de caracteres hay un botón corto con el idioma del documento: `ES`, `CA`, `FR`… Si se ve atenuado, ese documento no tiene idioma propio y usa el **idioma general** de *Configuración → Opciones de exportación…*, que es lo normal.
 
 Al elegir un idioma concreto, la aplicación lo guarda **dentro del propio documento**, de modo que viaja con el archivo: si lo guardas y lo abres mañana, aquí o en otro equipo, o se lo pasas a alguien, seguirá siendo ese. Para volver a lo anterior, elige *Idioma general*. Y con *Otro idioma…* puedes escribir el código de cualquier lengua (`fr`, `de`, `pt-BR`). En ese mismo menú, *Autor de este documento…* hace lo propio con el autor.
 
@@ -150,7 +132,7 @@ Cuando un documento lleva imágenes en base64 —al importar un DOCX, al pegar d
 
 * Haz clic en el panel derecho para editar directamente sobre el resultado: los cambios se sincronizan con el Markdown manteniendo el formato siempre que la edición sea compatible.
 * La vista previa admite selecciones, copiar y pegar, así como el uso de atajos básicos (Ctrl+B/I, encabezados, etc.) igual que el editor de Markdown.
-* Mantén pulsado `Ctrl` (o `Cmd` en macOS) y haz clic para abrir enlaces en una pestaña nueva del navegador.
+* Mantén pulsado `Ctrl` (o `Cmd` en macOS) y haz clic para abrir enlaces; en la aplicación de escritorio se abren en tu navegador habitual.
 * Las fórmulas LaTeX se renderizan automáticamente con KaTeX; al editar vuelven a su sintaxis original.
 
 ---
@@ -178,15 +160,15 @@ Abre el botón **Archivo** y selecciona `Exportar` para descargar versiones list
 
 Durante la exportación, la barra superior muestra mensajes de estado (progreso, éxito o errores).
 
-### Ajustes del documento exportado
+### Opciones de exportación
 
-**Configuración → Documento exportado…** guarda preferencias que se reutilizan en cada exportación, también la próxima vez que abras la aplicación.
+**Configuración → Opciones de exportación…** guarda preferencias que se reutilizan en cada exportación, también la próxima vez que abras la aplicación.
 
 **Idioma del documento**, que se aplica a los cinco formatos. Es el que decide en qué lengua corrigen la ortografía Word y LibreOffice al abrir un DOCX o un ODT, cómo parte las palabras LaTeX y qué idioma declaran el HTML y el EPUB para los lectores de pantalla. Por omisión es **Igual que la interfaz**: si cambias el idioma de EdiMarkWeb, los documentos lo siguen. Puedes fijar cualquiera de los cinco idiomas de la aplicación o elegir **Otro…** y escribir su código (`fr`, `de`, `pt-BR`).
 
 **Autor**, que se guarda en las propiedades del archivo y aparece como autor del libro en el EPUB y en la portada del LaTeX. En DOCX y ODT, además, Pandoc escribe una línea con el nombre al principio del documento; si no quieres que aparezca, deja el campo vacío. Un documento concreto puede llevar otro autor: *Autor de este documento…*, en el menú del botón de idioma.
 
-**Portada del EPUB**, con tres posibilidades. De partida, EdiMarkWeb **genera una** con el título y el autor del documento, porque un libro sin imagen aparece con el icono genérico en la estantería del lector. Puedes poner **una imagen tuya** —hasta 1 MB, que para una portada sobra: se guarda en el navegador, en el mismo espacio que tus documentos— o dejar el libro **sin portada**. Solo afecta al EPUB.
+**Portada del EPUB**, con tres posibilidades. De partida, EdiMarkWeb **genera una** con el título y el autor del documento, porque un libro sin imagen aparece con el icono genérico en la estantería del lector. Puedes poner **una imagen tuya** —hasta 1 MB, que para una portada sobra: se guarda junto a tus documentos, en el espacio propio de la aplicación— o dejar el libro **sin portada**. Solo afecta al EPUB.
 
 **Índice automático**, que añade al principio del documento un índice con los apartados. En DOCX es un índice de Word de verdad y en ODT uno nativo de LibreOffice; el EPUB no lo necesita, porque el lector ya trae su índice de navegación.
 
@@ -220,12 +202,42 @@ Cada opción muestra una notificación de éxito y, cuando corresponde, prepara 
 
 Arrastra uno o varios archivos sobre la aplicación. Se admiten `.md` y `.markdown`, que se abren tal cual, y `.docx`, `.odt`, `.epub`, `.html` y `.tex`, que se convierten a Markdown con Pandoc antes de abrirse:
 
-En la aplicación de escritorio, los instaladores registran `.md` y `.markdown`: también puedes abrir estos documentos con un doble clic desde el explorador de archivos.
-
 * Verás un marco iluminado que confirma que puedes soltarlos.
 * Cada archivo se abrirá en su propia pestaña con el nombre original.
 * También puedes arrastrar carpetas completas desde el explorador del sistema: se recorren sus subcarpetas y cada archivo compatible se abre en su pestaña, en orden alfabético. Lo que no sea compatible se ignora y, si no hay nada aprovechable, la aplicación te lo advierte.
-* El contenido queda disponible offline gracias al autoguardado.
+* El contenido queda disponible sin conexión gracias al autoguardado.
+
+---
+
+## La aplicación de escritorio
+
+Además de la versión web, EdiMarkWeb se instala como programa en **Linux, Windows y macOS**. Es la misma aplicación —los mismos menús, los mismos atajos y los mismos formatos—, así que lo que aprendas en una te sirve en la otra.
+
+### Instalarla
+
+Los instaladores están en la [página de descargas](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest), con uno para cada sistema:
+
+* **Linux**: un paquete `.deb` para Debian, Ubuntu, Mint y derivadas, y una `.AppImage` que se ejecuta sin instalar en cualquier distribución.
+* **Windows**: un instalador `.exe` y otro `.msi`, para quien despliegue la aplicación en un aula o un centro.
+* **macOS**: una imagen `.dmg` para Mac con procesador Apple y otra para los Mac con Intel.
+
+### Qué añade respecto al navegador
+
+* **Los documentos se abren con doble clic**: la instalación asocia los archivos `.md` y `.markdown`, de modo que se abren en EdiMarkWeb desde el explorador de archivos. Si la aplicación ya está abierta, el documento llega a esa misma ventana en una pestaña nueva.
+* **Guardar escribe en el archivo de verdad**: `Ctrl+S` actualiza el documento que abriste, sin pasar por la carpeta de descargas. **Guardar como…** abre el diálogo del sistema para elegir nombre y carpeta.
+* **Corrector ortográfico del sistema**: el editor subraya las faltas con los diccionarios instalados en el equipo. En Windows y macOS son los idiomas que ya tengas; en Linux puede hacer falta instalar el diccionario que quieras (por ejemplo, el paquete `hunspell-es`).
+* **Funciona sin conexión**: la aplicación lleva dentro todo lo que necesita, incluidos Pandoc y el editor de fórmulas EdiCuaTeX, así que puedes escribir, importar y exportar sin internet. Solo hace falta conexión para comprobar si hay versiones nuevas.
+* **Salir**: al final del menú **Archivo**, guarda el documento en curso y cierra la aplicación.
+
+### Mantenerla al día
+
+Al arrancar, la aplicación comprueba una vez al día si hay una versión más reciente. Cuando la hay, aparece un aviso bajo la barra de herramientas con el botón **Descargar e instalar**: baja el instalador que corresponde a tu sistema, muestra el progreso y se lo entrega al instalador del sistema para que termines en un par de clics. Con una AppImage no hay nada que instalar, así que la aplicación descarga la nueva y abre su carpeta para que sustituyas la que tenías.
+
+El aviso incluye la casilla **Comprobar al iniciar**, que desactiva esa comprobación automática, y el enlace **Ver novedades** con la lista de cambios. Puedes pedirla cuando quieras desde **Configuración → Buscar actualizaciones…**; si ya tienes la última versión, te lo dirá en la barra de estado.
+
+### Lo que no cambia
+
+Los documentos que empieces en el navegador y los de la aplicación de escritorio son archivos Markdown corrientes: puedes moverlos de uno a otro sin conversiones. El autoguardado de las pestañas, en cambio, es independiente en cada uno, porque cada versión guarda su copia de trabajo en su propio espacio.
 
 ---
 

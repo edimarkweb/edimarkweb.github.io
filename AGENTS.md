@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This repository is a static web application. Core files live at the project root: `index.html` bootstraps the UI, `script.js` handles editor behavior, `search.js` powers find/replace, `i18n.js` loads translations, and `pandoc-exporter.js` / `pandoc-prepare.js` / `pandoc-wasm.js` manage import-export features. Styles are split between source (`tailwind.css`, `style.css`) and generated output (`tailwind.build.css`). Localized strings are stored in `locales/*.json`, image assets belong in `imagenes/`, and automated tests live in `test/`. The user manual exists in all five interface languages (`manual.md` plus `manual-en.md`, `manual-ca.md`, `manual-gl.md`, `manual-eu.md`); the app loads the one matching the active language and falls back to Spanish. A change to the manual has to be made in all five.
+This repository is a static web application. Core files live at the project root: `index.html` bootstraps the UI, `script.js` handles editor behavior, `search.js` powers find/replace, `i18n.js` loads translations, and `pandoc-exporter.js` / `pandoc-prepare.js` / `pandoc-wasm.js` manage import-export features. Styles are split between source (`tailwind.css`, `style.css`) and generated output (`tailwind.build.css`). Localized strings are stored in `locales/*.json` and automated tests live in `test/`. The user manual exists in all five interface languages (`manual.md` plus `manual-en.md`, `manual-ca.md`, `manual-gl.md`, `manual-eu.md`); the app loads the one matching the active language and falls back to Spanish. A change to the manual has to be made in all five.
 
 `pandoc-prepare.js` holds the pure Markdown preparation logic (metadata, titles, image handling, Pandoc argument building, and the `stripUnsafeMarkup` pass that disarms inline event handlers and executable URL schemes in imported documents) with no browser dependencies, so it can be unit tested outside a browser. `zip-reader.js` reads images out of the DOCX/ODT/EPUB archives on import, using DecompressionStream so it runs unchanged in both the browser and the tests; `zip-writer.js` is its counterpart (stored entries only, no CompressionStream) and rebuilds the ODT that goes into Pandoc. `odt-tables.js` recovers the table headers Pandoc's ODT reader drops, and `odt-formulas.js` repairs the formula references Pandoc's own ODT writer emits in a form its reader cannot resolve. Keep it that way: anything touching `window`, `document`, or `fetch` belongs in `pandoc-exporter.js`.
 
@@ -12,7 +12,10 @@ This repository is a static web application. Core files live at the project root
 - `npm run build:css`: rebuilds `tailwind.build.css` from `tailwind.css`.
 - `npm test`: fast unit tests for the Markdown preparation logic (`test/prepare.test.mjs`).
 - `npm run test:export`: end-to-end conversions through the bundled `pandoc.wasm`. Slow (the module is ~50 MB) but the only check that catches a broken export.
-- `npm run test:all`: both suites.
+- `npm run test:platform`: the platform layer shared by the web and desktop builds.
+- `npm run test:updater`: version comparison and installer selection for the desktop updater.
+- `npm run test:browser`: the real UI driven through Chromium and Firefox with Playwright.
+- `npm run test:all`: every suite.
 - `python -m http.server`: serves the app locally to test browser behavior without `file://` restrictions.
 
 There is no application bundler or framework build step; most changes can be verified by opening `index.html` in a browser.

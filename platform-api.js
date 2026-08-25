@@ -113,6 +113,13 @@
         return app.onOpenMarkdownPaths(callback);
       },
 
+      /* Cierra la aplicación de escritorio; en el navegador no hace nada. */
+      async quitApplication() {
+        if (!desktop || !app || typeof app.quit !== 'function') return false;
+        await app.quit();
+        return true;
+      },
+
       /* Sistema y arquitectura («linux/x86_64») para elegir el instalador. */
       async updateTarget() {
         if (!desktop || !updater || typeof updater.target !== 'function') return '';
