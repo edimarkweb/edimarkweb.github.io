@@ -1,0 +1,130 @@
+(function initPlatformApi(root, factory) {
+  const exported = factory(root);
+  if (typeof module === 'object' && module.exports) {
+    module.exports = exported;
+  } else {
+    root.EdiMarkPlatform = exported.createPlatformApi(root);
+  }
+}(typeof window !== 'undefined' ? window : globalThis, function platformApiFactory(defaultRoot) {
+  function fileNameFromPath(path) {
+    const raw = String(path || '').replace(/[?#].*$/, '');
+    const segments = raw.split(/[\\/]/);
+    const encodedName = segments[segments.length - 1] || '';
+    try {
+      return decodeURIComponent(encodedName);
+    } catch (_) {
+      return encodedName;
+    }
+  }
+
+  function extensionFromName(name) {
+    const match = String(name || '').match(/\.([^.\\/]+)$/);
+    return match ? match[1].toLowerCase() : '';
+  }
+
+  function browserDownload(root, contents, suggestedName, mimeType) {
+    const blob = contents instanceof root.Blob
+      ? contents
+      : new root.Blob([contents], { type: mimeType || 'application/octet-stream' });
+    const url = root.URL.createObjectURL(blob);
+    const link = root.document.createElement('a');
+    link.href = url;
+    link.download = suggestedName;
+    root.document.body.appendChild(link);
+    link.click();
+    root.document.body.removeChild(link);
+    root.setTimeout(() => root.URL.revokeObjectURL(url), 1000);
+  }
+
+  async function toBytes(root, contents) {
+    if (contents instanceof Uint8Array) return contents;
+    if (contents instanceof ArrayBuffer) return new Uint8Array(contents);
+    if (ArrayBuffer.isView(contents)) {
+      return new Uint8Array(contents.buffer, contents.byteOffset, contents.byteLength);
+    }
+    if (root.Blob && contents instanceof root.Blob) {
+      return new Uint8Array(await contents.arrayBuffer());
+    }
+    return new TextEncoder().encode(String(contents ?? ''));
+  }
+
+  function createPlatformApi(root = defaultRoot) {
+    const tauri = root && root.__TAURI__;
+    const injected = root && root.__EDIMARK_TAURI__;
+    const dialog = (injected && injected.dialog) || (tauri && tauri.dialog);
+    const fs = (injected && injected.fs) || (tauri && tauri.fs);
+    const opener = (injected && injected.opener) || (tauri && tauri.opener);
+    const desktop = Boolean(dialog && fs);
+
+    return {
+      isDesktop: desktop,
+      fileNameFromPath,
+
+      async openExternalUrl(url) {
+        const parsed = new URL(String(url));
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          throw new Error('Solo se pueden abrir enlaces HTTP o HTTPS.');
+        }
+        if (desktop && opener && typeof opener.openUrl === 'function') {
+          await opener.openUrl(parsed.href);
+          return;
+        }
+        if (root && typeof root.open === 'function') {
+          root.open(parsed.href, '_blank', 'noopener');
+        }
+      },
+
+      async openTextDocument({ extensions = ['md', 'markdown'] } = {}) {
+        if (!desktop) return null;
+        const selected = await dialog.open({
+          multiple: false,
+          directory: false,
+          filters: [{ name: 'Markdown', extensions }],
+        });
+        const path = Array.isArray(selected) ? selected[0] : selected;
+        if (!path) return null;
+        return {
+          path,
+          name: fileNameFromPath(path),
+          content: await fs.readTextFile(path),
+        };
+      },
+
+      async saveFile({
+        suggestedName = 'documento',
+        contents = '',
+        mimeType = 'application/octet-stream',
+        existingPath = '',
+        extensions,
+      } = {}) {
+        if (!desktop) {
+          browserDownload(root, contents, suggestedName, mimeType);
+          return { saved: true, path: '', name: suggestedName };
+        }
+
+        let path = existingPath;
+        if (!path) {
+          const usableExtensions = Array.isArray(extensions) && extensions.length
+            ? extensions
+            : [extensionFromName(suggestedName)].filter(Boolean);
+          path = await dialog.save({
+            defaultPath: suggestedName,
+            filters: usableExtensions.length
+              ? [{ name: usableExtensions.map(ext => ext.toUpperCase()).join('/'), extensions: usableExtensions }]
+              : undefined,
+          });
+        }
+        if (!path) return { saved: false, path: '', name: suggestedName };
+
+        if (typeof contents === 'string') {
+          await fs.writeTextFile(path, contents);
+        } else {
+          await fs.writeFile(path, await toBytes(root, contents));
+        }
+        return { saved: true, path, name: fileNameFromPath(path) || suggestedName };
+      },
+    };
+  }
+
+  return { createPlatformApi, fileNameFromPath };
+}));

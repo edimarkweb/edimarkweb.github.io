@@ -1,14 +1,19 @@
 {
   "name": "edimarkweb.github.io",
-  "version": "2.15.1",
+  "version": "2.16.0",
   "description": "> **Nota**   > Este repositorio ha sido trasladado a [edimarkweb/edimarkweb.github.io](https://github.com/edimarkweb/edimarkweb.github.io). La aplicación se publica ahora en [https://edimarkweb.github.io/](https://edimarkweb.github.io/).",
   "main": "i18n.js",
   "scripts": {
     "build:css": "tailwindcss -i ./tailwind.css -o ./tailwind.build.css --minify",
+    "build:desktop": "node scripts/build-desktop.mjs",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
     "test": "node --test test/prepare.test.mjs",
+    "test:platform": "node --test test/platform-api.test.mjs",
     "test:browser": "node --test --test-concurrency=1 test/browser.test.mjs",
     "test:export": "node --test --test-concurrency=1 test/epub-export.test.mjs",
-    "test:all": "npm run test && npm run test:export"
+    "test:all": "npm run test && npm run test:platform && npm run test:export"
   },
   "repository": {
     "type": "git",
@@ -25,6 +30,19 @@
     "@bjorn3/browser_wasi_shim": "^0.4.2",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.20",
-    "tailwindcss": "^3.4.19"
+    "@tauri-apps/api": "2.11.1",
+    "@tauri-apps/cli": "2.11.4",
+    "@tauri-apps/plugin-dialog": "2.7.2",
+    "@tauri-apps/plugin-fs": "2.5.1",
+    "@tauri-apps/plugin-opener": "2.5.4",
+    "codemirror": "5.65.15",
+    "esbuild": "0.28.2",
+    "katex": "0.16.47",
+    "lucide": "0.523.0",
+    "marked": "18.0.9",
+    "mathjax": "^3.2.2",
+    "split.js": "1.6.5",
+    "tailwindcss": "^3.4.19",
+    "turndown": "7.1.1"
   }
 }

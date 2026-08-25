@@ -1,0 +1,115 @@
+name: Native application builds
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to receive the installers (for example, v2.16.0)
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-latest
+            artifact: edimarkweb-linux
+          - name: Windows
+            os: windows-latest
+            artifact: edimarkweb-windows
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libdbus-1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - run: npm ci
+      - run: npm run desktop:build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: src-tauri/target/release/bundle/**
+          if-no-files-found: error
+
+  publish-release:
+    name: Publish installers in GitHub Releases
+    if: github.event_name == 'push' || inputs.release_tag != ''
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: edimarkweb-linux
+          path: release-assets/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: edimarkweb-windows
+          path: release-assets/windows
+      - name: Attach installers to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+        shell: bash
+        run: |
+          mapfile -t installers < <(find release-assets -type f \( -name '*.deb' -o -name '*.AppImage' -o -name '*.msi' -o -name '*.exe' \) -print)
+          if [[ ${#installers[@]} -eq 0 ]]; then
+            echo "No installers were generated" >&2
+            exit 1
+          fi
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --generate-notes
+          gh release upload "$RELEASE_TAG" "${installers[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+
+  ios-simulator:
+    name: iOS simulator
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+      - name: Install CocoaPods
+        run: |
+          if ! command -v pod >/dev/null 2>&1; then
+            brew install cocoapods
+          fi
+      - run: npm ci
+      - name: Initialize the iOS project
+        run: npm run tauri ios init -- --ci
+      - name: Build for the iOS simulator
+        shell: bash
+        run: |
+          if [[ "$(uname -m)" == "arm64" ]]; then
+            ios_target="aarch64-sim"
+          else
+            ios_target="x86_64"
+          fi
+          npm run tauri ios build -- --target "$ios_target" --ci
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edimarkweb-ios-simulator
+          path: src-tauri/gen/apple/build/**/*.app
+          if-no-files-found: error

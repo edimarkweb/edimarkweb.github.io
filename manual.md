@@ -66,7 +66,7 @@ Trabaja con varios documentos a la vez, cada uno en su propia pestaña.
 
 La barra junto al logotipo agrupa las opciones globales de la aplicación y ahora concentra todas las acciones de archivo en un único botón desplegable:
 
-* **Archivo**: reúne las acciones sobre el documento en dos grupos. Primero las que traen contenido —`Abrir (Ctrl+O)`, `Importar` y `Pegar LaTeX (Ctrl+Mayús+V)`— y después las que lo sacan: `Guardar (Ctrl+S)` y el submenú **Exportar**, que se despliega a la derecha con DOCX, ODT, EPUB, HTML y TEX. Cada opción muestra su atajo de teclado.
+* **Archivo**: reúne las acciones sobre el documento en dos grupos. Primero las que traen contenido —`Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` y `Pegar LaTeX (Ctrl+Mayús+V)`— y después las que lo sacan: `Guardar (Ctrl+S)`, `Guardar como… (Ctrl+Mayús+S)` y el submenú **Exportar**, que se despliega a la derecha con DOCX, ODT, EPUB, HTML y TEX. Cada opción muestra su atajo de teclado.
 * **Configuración**: agrupa todos los ajustes de la aplicación, cada uno con un submenú que indica el valor activo.
   * **Idioma**: cambia el idioma de la interfaz.
   * **Tamaño de texto**: pequeño, normal, grande o muy grande.
@@ -92,7 +92,7 @@ La franja gris bajo la barra superior contiene accesos rápidos a formateo y ele
 * **Código, enlaces, imágenes y tablas**: Inserciones guiadas mediante modales.
 * **Pegar**: Trae al documento lo que haya en el portapapeles, como se explica más arriba.
 * **Fórmulas LaTeX**: Menú para insertar comandos en línea o en bloque con la sintaxis correcta.
-* **Editor de fórmulas (EdiCuaTeX)**: Abre el asistente externo en una ventana nueva. Al aceptar, la fórmula vuelve insertada en el editor.
+* **Editor de fórmulas (EdiCuaTeX)**: abre el asistente integrado con `Ctrl+Alt+M`. Al aceptar, la fórmula vuelve insertada en el editor.
 
 Cada botón muestra una descripción al pasar el ratón e indica el atajo de teclado equivalente.
 
@@ -158,7 +158,7 @@ Cuando un documento lleva imágenes en base64 —al importar un DOCX, al pegar d
 
 * **Abrir (`Ctrl+O`)**: Importa archivos `.md` o `.markdown`.
 * **Importar**: Convierte a Markdown documentos en otros formatos mediante Pandoc: `.docx`, `.odt`, `.epub`, `.html` y `.tex`. Se recuperan los encabezados, listas, tablas y enlaces, y también las imágenes: al proceder de un `.docx`, `.odt` o `.epub`, se extraen del propio archivo y quedan incrustadas en el Markdown, de modo que se ven en la previsualización y viajan contigo al exportar.
-* **Guardar (`Ctrl+S`)**: Descarga el documento actual en tu equipo.
+* **Guardar (`Ctrl+S`)**: guarda el documento actual. En la aplicación de escritorio actualiza el archivo ya abierto; **Guardar como… (`Ctrl+Mayús+S`)** siempre permite elegir otro nombre o ubicación.
 * **Copiar contenido**: El panel izquierdo incluye un botón para copiar el Markdown; en la vista previa puedes elegir qué se copiará (HTML renderizado o variantes LaTeX) desde el menú desplegable junto al icono de copia.
 * **Borrar todo**: Restablece el documento tras una confirmación.
 * **Cambiar tema, diseño o ancho**: Desde el menú **Configuración** (tema y ancho) y con `Ctrl+L` (diseño de los paneles) adaptas la interfaz a cada situación: pizarra digital, portátil, etc.
@@ -250,13 +250,20 @@ Arrastra uno o varios archivos sobre la aplicación. Se admiten `.md` y `.markdo
 | Cerrar pestaña | `Ctrl` + `W` | `Cmd` + `W` |
 | Pestaña siguiente / anterior | `Ctrl` + `Tab` / `Ctrl` + `Shift` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Shift` + `Tab` |
 | Guardar | `Ctrl` + `S` | `Cmd` + `S` |
+| Guardar como… | `Ctrl` + `Shift` + `S` | `Cmd` + `Shift` + `S` |
 | Abrir archivo | `Ctrl` + `O` | `Cmd` + `O` |
+| Importar documento | `Ctrl` + `Alt` + `O` | `Cmd` + `Alt` + `O` |
 | Pegar LaTeX (abrir modal) | `Ctrl` + `Shift` + `V` | `Cmd` + `Shift` + `V` |
 | **Interfaz** | | |
+| Abrir EdiCuaTeX | `Ctrl` + `Alt` + `M` | `Cmd` + `Alt` + `M` |
+| Pegar desde el portapapeles | `Ctrl` + `Alt` + `V` | `Cmd` + `Alt` + `V` |
+| Abrir Exportar | `Ctrl` + `Alt` + `E` | `Cmd` + `Alt` + `E` |
+| Abrir Configuración | `Ctrl` + `,` | `Cmd` + `,` |
+| Maximizar área de edición | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Cambiar diseño | `Ctrl` + `L` | `Cmd` + `L` |
 | Buscar | `Ctrl` + `F` | `Cmd` + `F` |
 | Aumentar / reducir el texto | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
-| Manual de uso | `Ctrl` + `H` | `Cmd` + `H` |
+| Manual de uso | `Ctrl` + `H` o `F1` | `Cmd` + `H` o `F1` |
 | Recargar el manual | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Imprimir | `Ctrl` + `P` | `Cmd` + `P` |
 

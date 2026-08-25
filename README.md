@@ -3,6 +3,7 @@
 EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores técnicos que necesitan escribir, visualizar y exportar contenido sin salir del navegador. Combina edición Markdown y HTML sincronizada, soporte completo de LaTeX con KaTeX y utilidades de importación/exportación basadas en Pandoc.
 
 - 🌐 Aplicación publicada en: [https://edimarkweb.github.io/](https://edimarkweb.github.io/)
+- 💻 Aplicación de escritorio: [últimos instaladores para Linux y Windows](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest)
 - 📘 Manual de usuario: [manual.md](manual.md) (también en [inglés](manual-en.md), [català](manual-ca.md), [galego](manual-gl.md) y [euskara](manual-eu.md))
 - 🐞 Incidencias y mejoras: [Issues de GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues)
 
@@ -12,8 +13,9 @@ EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores t
 
 - **Edición dual sincronizada**: redacta en Markdown o modifica el HTML renderizado; ambos paneles se actualizan al instante.
 - **Pestañas ilimitadas con autoguardado**: trabaja con varios documentos a la vez; cada pestaña guarda una copia local para evitar pérdidas.
-- **Menú Archivo unificado**: abrir (`Ctrl+O`), importar vía Pandoc (DOCX, ODT, EPUB, HTML, TEX), pegar LaTeX (`Ctrl+Mayús+V`), guardar (`Ctrl+S`) y exportar a DOCX, ODT, EPUB, HTML autónomo o LaTeX completo.
+- **Menú Archivo unificado**: abrir (`Ctrl+O`), importar vía Pandoc (`Ctrl+Alt+O`), pegar LaTeX (`Ctrl+Mayús+V`), guardar (`Ctrl+S`), guardar como (`Ctrl+Mayús+S`) y exportar a DOCX, ODT, EPUB, HTML autónomo o LaTeX completo.
 - **Soporte matemático avanzado**: integración con KaTeX y acceso directo a EdiCuaTeX para insertar expresiones complejas.
+- **Corrección ortográfica del sistema**: el editor activa el corrector disponible en el navegador o WebView y selecciona el diccionario según el idioma efectivo del documento.
 - **Panel de previsualización editable**: edita sobre el resultado final, copia HTML o genera variantes LaTeX desde un menú contextual.
 - **Búsqueda y reemplazo inteligente**: ignora tildes y mayúsculas, resalta coincidencias, admite expresiones regulares y ofrece navegación rápida.
 - **Internacionalización y accesibilidad**: selector de idioma, control del tamaño de fuente, modo claro/oscuro y atajos visibles.
@@ -46,7 +48,9 @@ Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pu
 | Nueva pestaña / Cerrar | `Ctrl+T` / `Ctrl+W` | `Cmd+T` / `Cmd+W` |
 | Fórmula en línea / en bloque | `Ctrl+M` / `Ctrl+Mayús+M` | `Cmd+M` / `Cmd+Mayús+M` |
 | Deshacer / Rehacer | `Ctrl+Z` / `Ctrl+Mayús+Z` | `Cmd+Z` / `Cmd+Mayús+Z` |
-| Abrir / Guardar | `Ctrl+O` / `Ctrl+S` | `Cmd+O` / `Cmd+S` |
+| Abrir / Guardar / Guardar como | `Ctrl+O` / `Ctrl+S` / `Ctrl+Mayús+S` | `Cmd+O` / `Cmd+S` / `Cmd+Mayús+S` |
+| Importar / Exportar | `Ctrl+Alt+O` / `Ctrl+Alt+E` | `Cmd+Alt+O` / `Cmd+Alt+E` |
+| Editor EdiCuaTeX | `Ctrl+Alt+M` | `Cmd+Alt+M` |
 | Pegar LaTeX | `Ctrl+Mayús+V` | `Cmd+Mayús+V` |
 | Cambiar diseño | `Ctrl+L` | `Cmd+L` |
 | Buscar | `Ctrl+F` | `Cmd+F` |
@@ -73,6 +77,42 @@ El CSS principal (`tailwind.build.css`) ya está generado. Si modificas `tailwin
 npm install
 npm run build:css
 ```
+
+### Aplicación de escritorio
+
+La aplicación de Linux y Windows reutiliza el mismo frontend mediante Tauri 2. El proceso de
+construcción crea `dist/` con todas las bibliotecas y Pandoc en local, por lo que el ejecutable no
+depende de los CDN para arrancar ni para editar o exportar documentos.
+
+En Debian, MX Linux y derivados instala una vez los requisitos nativos:
+
+```bash
+sudo apt install libwebkit2gtk-4.1-dev libdbus-1-dev libxdo-dev \
+  libssl-dev libayatana-appindicator3-dev librsvg2-dev build-essential
+```
+
+Después instala Rust y las dependencias npm. Para abrir el prototipo o generar los instaladores:
+
+```bash
+npm install
+npm run desktop:dev
+npm run desktop:build
+```
+
+En Linux se generan paquetes DEB y AppImage; en Windows, instaladores MSI y NSIS. El flujo
+`Native application builds` de GitHub Actions adjunta esos instaladores a GitHub Releases al
+crear una etiqueta `v*` o al indicar manualmente una etiqueta existente. También construye una
+aplicación iOS para el simulador en un runner macOS. El proyecto móvil se
+inicializa durante el trabajo y el resultado se publica como artefacto
+`edimarkweb-ios-simulator`.
+
+La aplicación del simulador permite validar iOS sin certificados. Para instalarla en dispositivos
+reales o distribuirla mediante TestFlight y App Store será necesario añadir a GitHub los
+certificados, el perfil de aprovisionamiento y las credenciales de Apple Developer.
+
+El corrector ortográfico utiliza los diccionarios del sistema. Windows e iOS toman los idiomas
+instalados en el dispositivo; en Linux puede ser necesario instalar el paquete Hunspell del idioma
+que falte (por ejemplo, `hunspell-es`), pero no herramientas de desarrollo.
 
 ### Pruebas
 

@@ -71,7 +71,7 @@ Treballa amb diversos documents alhora, cadascun a la seva pestanya.
 
 La barra del costat del logotip agrupa les opcions globals de l'aplicació i concentra totes les accions de fitxer en un únic botó desplegable:
 
-* **Fitxer**: reuneix les accions sobre el document en dos grups. Primer les que hi porten contingut —`Obrir (Ctrl+O)`, `Importar` i `Enganxar LaTeX (Ctrl+Maj+V)`— i després les que el treuen: `Desar (Ctrl+S)` i el submenú **Exportar**, que es desplega a la dreta amb DOCX, ODT, EPUB, HTML i TEX. Cada opció mostra la seva drecera de teclat.
+* **Fitxer**: reuneix les accions sobre el document en dos grups. Primer les que hi porten contingut —`Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)`— i després les que el treuen: `Desar (Ctrl+S)`, `Desar com a… (Ctrl+Maj+S)` i el submenú **Exportar**, que es desplega a la dreta amb DOCX, ODT, EPUB, HTML i TEX. Cada opció mostra la seva drecera de teclat.
 * **Configuració**: agrupa tots els ajustos de l'aplicació, cadascun amb un submenú que n'indica el valor actiu.
   * **Idioma**: canvia l'idioma de la interfície.
   * **Mida del text**: petita, normal, gran o molt gran.
@@ -97,7 +97,7 @@ La franja grisa sota la barra superior conté accessos ràpids a format i elemen
 * **Codi, enllaços, imatges i taules**: insercions guiades mitjançant diàlegs.
 * **Enganxar**: porta al document el que hi hagi al porta-retalls, tal com s'explica més amunt.
 * **Fórmules LaTeX**: menú per inserir ordres en línia o en bloc amb la sintaxi correcta.
-* **Editor de fórmules (EdiCuaTeX)**: obre l'assistent extern en una finestra nova. En acceptar, la fórmula torna inserida a l'editor.
+* **Editor de fórmules (EdiCuaTeX)**: obre l'assistent integrat amb `Ctrl+Alt+M`. En acceptar, la fórmula torna inserida a l'editor.
 
 Cada botó mostra una descripció en passar-hi el ratolí i indica la drecera de teclat equivalent.
 
@@ -163,7 +163,7 @@ Quan un document porta imatges en base64 —en importar un DOCX, en enganxar des
 
 * **Obrir (`Ctrl+O`)**: importa fitxers `.md` o `.markdown`.
 * **Importar**: converteix a Markdown documents en altres formats mitjançant Pandoc: `.docx`, `.odt`, `.epub`, `.html` i `.tex`. Es recuperen els encapçalaments, les llistes, les taules i els enllaços, i també les imatges: quan provenen d'un `.docx`, `.odt` o `.epub` s'extreuen del mateix fitxer i queden incrustades al Markdown, de manera que es veuen a la vista prèvia i viatgen amb tu en exportar.
-* **Desar (`Ctrl+S`)**: baixa el document actual al teu equip.
+* **Desar (`Ctrl+S`)**: desa el document actual. A l'aplicació d'escriptori actualitza el fitxer ja obert; **Desar com a… (`Ctrl+Maj+S`)** sempre permet triar un altre nom o ubicació.
 * **Copiar contingut**: el plafó esquerre inclou un botó per copiar el Markdown; a la vista prèvia pots triar què es copiarà (HTML representat o variants LaTeX) des del menú desplegable del costat de la icona de còpia.
 * **Esborrar-ho tot**: restableix el document després d'una confirmació.
 * **Canviar tema, disposició o amplada**: des del menú **Configuració** (tema i amplada) i amb `Ctrl+L` (disposició dels plafons) adaptes la interfície a cada situació: pissarra digital, portàtil, etc.
@@ -255,13 +255,20 @@ Arrossega un o diversos fitxers sobre l'aplicació. S'admeten `.md` i `.markdown
 | Tancar pestanya | `Ctrl` + `W` | `Cmd` + `W` |
 | Pestanya següent / anterior | `Ctrl` + `Tab` / `Ctrl` + `Maj` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Maj` + `Tab` |
 | Desar | `Ctrl` + `S` | `Cmd` + `S` |
+| Desar com a… | `Ctrl` + `Maj` + `S` | `Cmd` + `Maj` + `S` |
 | Obrir fitxer | `Ctrl` + `O` | `Cmd` + `O` |
+| Importar document | `Ctrl` + `Alt` + `O` | `Cmd` + `Alt` + `O` |
 | Enganxar LaTeX (obrir diàleg) | `Ctrl` + `Maj` + `V` | `Cmd` + `Maj` + `V` |
 | **Interfície** | | |
+| Obrir EdiCuaTeX | `Ctrl` + `Alt` + `M` | `Cmd` + `Alt` + `M` |
+| Enganxar des del porta-retalls | `Ctrl` + `Alt` + `V` | `Cmd` + `Alt` + `V` |
+| Obrir Exportar | `Ctrl` + `Alt` + `E` | `Cmd` + `Alt` + `E` |
+| Obrir Configuració | `Ctrl` + `,` | `Cmd` + `,` |
+| Maximitzar l'àrea d'edició | `Ctrl` + `Maj` + `F` | `Cmd` + `Maj` + `F` |
 | Canviar disposició | `Ctrl` + `L` | `Cmd` + `L` |
 | Cercar | `Ctrl` + `F` | `Cmd` + `F` |
 | Augmentar / reduir el text | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
-| Manual d'ús | `Ctrl` + `H` | `Cmd` + `H` |
+| Manual d'ús | `Ctrl` + `H` o `F1` | `Cmd` + `H` o `F1` |
 | Recarregar el manual | `Ctrl` + `Maj` + `H` | `Cmd` + `Maj` + `H` |
 | Imprimir | `Ctrl` + `P` | `Cmd` + `P` |
 

@@ -17,9 +17,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/turndown/7.1.1/turndown.min.js" integrity="sha384-vZvx48y5RA40dJWSf3enzDjUtD9tgQCG0IEppQnetXZ5GFEoAf3XA6TURUJVczpw" crossorigin="anonymous" defer></script>
     <script src="vendor/turndown-plugin-gfm.js" defer></script>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css" integrity="sha384-nH0MfJ44wi1dd7w6jinlyBgljjS8EJAh2JBoRad8a3VDw2K69vfaaqm4WnR+gXtA" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.js" integrity="sha384-CwjPRVHTvLiMBFjEoij+QZViMV5rhTOIp7CJzl24JEqpRDA1sJFHVXXLURktbYYp" crossorigin="anonymous" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/contrib/auto-render.min.js" integrity="sha384-bjyGPfbij8/NDKJhSGZNP/khQVgtHUE5exjm4Ydllo42FwIgYsdLO2lXGmRBf5Mz" crossorigin="anonymous" defer></script>
     
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.523.0/dist/umd/lucide.min.js" integrity="sha384-VLKt3v6dGRyiMg1UIXAEzoJuarTQUitJOxsAAU/rQf1TtZtreZcQ09cTSW3HaRMR" crossorigin="anonymous" defer></script>
     
@@ -73,9 +73,10 @@
                       <span data-i18n-key="open_file_btn_text">Abrir</span>
                       <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_open">Ctrl+O</span>
                     </button>
-                    <button type="button" id="import-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
+                    <button type="button" id="import-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+Alt+O" data-i18n-key="import_file_btn_title" title="Importar con Pandoc (Ctrl+Alt+O)">
                       <i data-lucide="upload" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
                       <span data-i18n-key="import_file_btn_text">Importar</span>
+                      <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_import">Ctrl+Alt+O</span>
                     </button>
                     <button type="button" id="latex-import-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+Shift+V">
                       <i data-lucide="file-text" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
@@ -88,11 +89,17 @@
                       <span data-i18n-key="save_btn_text">Guardar</span>
                       <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_save">Ctrl+S</span>
                     </button>
+                    <button type="button" id="save-as-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+Shift+S" data-i18n-key="save_as_btn_title" title="Guardar como (Ctrl+Mayús+S)">
+                      <i data-lucide="save-all" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                      <span data-i18n-key="save_as_btn_text">Guardar como…</span>
+                      <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_save_as">Ctrl+Mayús+S</span>
+                    </button>
                     <div id="export-menu-container" class="relative">
-                        <button type="button" id="export-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                        <button type="button" id="export-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-keyshortcuts="Control+Alt+E" data-i18n-key="export_menu_btn_title" title="Exportar (Ctrl+Alt+E)">
                           <i data-lucide="download" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
                           <span data-i18n-key="export_menu_btn_text">Exportar</span>
-                          <i data-lucide="chevron-right" class="ml-auto w-4 h-4 opacity-60"></i>
+                          <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_export">Ctrl+Alt+E</span>
+                          <i data-lucide="chevron-right" class="w-4 h-4 opacity-60"></i>
                         </button>
                       <div id="export-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-60 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="export-menu-btn">
                         <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="docx" role="menuitem">
@@ -120,8 +127,8 @@
                   </div>
                 </div>
 <div id="settings-menu-container" class="relative">
-                  <button type="button" id="settings-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="settings_menu_btn_title" title="Configuración" aria-haspopup="true" aria-expanded="false">
-                    <i data-lucide="sliders" class="text-slate-700 dark:text-slate-300"></i>
+                  <button type="button" id="settings-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="settings_menu_btn_title" title="Configuración (Ctrl+,)" aria-haspopup="true" aria-expanded="false" aria-keyshortcuts="Control+Comma">
+                    <i data-lucide="settings" class="text-slate-700 dark:text-slate-300"></i>
                     <span class="hidden sm:inline" data-i18n-key="settings_menu_btn_text">Configuración</span>
                     <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
                   </button>
@@ -246,7 +253,8 @@
             </div>
             <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
             <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="help-controls-group">
-                <button id="help-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="help_btn_title" title="Manual de EdiMarkWeb" aria-label="Abrir manual"><i data-lucide="help-circle"></i></button>
+                <button id="help-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="help_btn_title" title="Manual de EdiMarkWeb (F1)" aria-label="Abrir manual" aria-keyshortcuts="F1"><i data-lucide="help-circle"></i></button>
+                <button id="about-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="about_btn_title" title="Acerca de EdiMarkWeb" aria-label="Acerca de EdiMarkWeb"><i data-lucide="info"></i></button>
                 <button id="clear-all-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="clear_all_btn_title" title="Borrar todo"><i data-lucide="trash-2" class="text-red-600 dark:text-red-400"></i></button>
             </div>
             <input
@@ -266,6 +274,21 @@
         </div>
     </header>
 
+    <section id="desktop-release-banner" class="desktop-release-banner" role="status" hidden>
+        <i data-lucide="monitor-down" class="desktop-release-banner-icon" aria-hidden="true"></i>
+        <div class="desktop-release-banner-content">
+            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop ya está disponible para Linux y Windows; iOS está en fase de prueba.</p>
+            <a id="desktop-banner-download-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="desktop_banner_download">Ver descargas</a>
+            <label class="desktop-release-banner-never">
+                <input id="desktop-banner-never-show" type="checkbox">
+                <span data-i18n-key="desktop_banner_never_show">No volver a mostrar</span>
+            </label>
+        </div>
+        <button id="desktop-banner-close" type="button" class="desktop-release-banner-close" data-i18n-key="desktop_banner_close" title="Cerrar este aviso" aria-label="Cerrar este aviso">
+            <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+    </section>
+
     <div id="workspace-shell" class="p-4">
         <div id="status-toast" class="status-toast hidden" role="status" aria-live="assertive" aria-hidden="true">
             <div class="status-toast-content">
@@ -275,7 +298,7 @@
         <div id="search-wrapper" class="hidden mb-4 p-2 bg-slate-50 border border-slate-200 rounded-lg dark:bg-slate-800 dark:border-slate-700">
             <div class="flex flex-col gap-2">
                 <div class="flex items-center gap-2">
-                    <button id="toggle-replace-btn" class="toolbar-btn"><i data-lucide="chevron-right" class="w-4 h-4 transition-transform"></i></button>
+                    <button id="toggle-replace-btn" class="toolbar-btn" data-i18n-key="toggle_replace_btn_title" title="Mostrar opciones de reemplazo" aria-label="Mostrar opciones de reemplazo"><i data-lucide="chevron-right" class="w-4 h-4 transition-transform"></i></button>
                     <input type="text" id="search-input" data-i18n-key="search_input_placeholder" placeholder="Buscar..." class="flex-grow bg-white dark:bg-slate-700 p-1 rounded-md border border-slate-300 dark:border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <button id="search-regex-toggle-btn" class="toolbar-btn px-2 text-xs font-semibold" type="button" data-i18n-key="search_regex_toggle_title" title="Activar búsqueda regex" aria-pressed="false">Regex</button>
                     <span id="search-matches-info" class="text-xs text-slate-500 dark:text-slate-400 w-20 text-center">0 / 0</span>
@@ -328,7 +351,7 @@
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="link" data-i18n-key="link_btn_title" title="Enlace (Ctrl+K)"><i data-lucide="link"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="image" data-i18n-key="image_btn_title" title="Imagen (Ctrl+Shift+I)"><i data-lucide="image"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="table" data-i18n-key="table_btn_title" title="Tabla (Ctrl+Shift+T)"><i data-lucide="table"></i></button>
-                <button id="paste-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="paste_btn_title" title="Pegar desde portapapeles"><i data-lucide="clipboard-paste"></i></button>
+                <button id="paste-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="paste_btn_title" title="Pegar desde portapapeles (Ctrl+Alt+V)" aria-keyshortcuts="Control+Alt+V"><i data-lucide="clipboard-paste"></i></button>
             </div>
             <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
             <div class="flex items-center gap-1">
@@ -346,7 +369,7 @@
                         <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-block-bracket" data-i18n-key="formula_block_bracket" role="menuitem">\[...\] (bloque)</button>
                     </div>
                 </div>
-                <button id="open-edicuatex-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="edicuatex_btn_title" title="Editor visual de fórmulas matemáticas (EdiCuaTeX)">
+                <button id="open-edicuatex-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="edicuatex_btn_title" title="Editor visual de fórmulas matemáticas (EdiCuaTeX, Ctrl+Alt+M)" aria-keyshortcuts="Control+Alt+M">
                     <i data-lucide="square-radical"></i>
                     <span class="hidden sm:inline" data-i18n-key="edicuatex_btn_text">Editor</span>
                 </button>
@@ -356,7 +379,7 @@
         <div class="flex items-center border-b border-slate-200 dark:border-slate-700 gap-1">
             <div id="tab-bar" role="tablist" class="flex-grow flex gap-1 overflow-x-auto"></div>
             <button id="new-tab-btn" class="action-btn p-2" type="button" data-i18n-key="new_tab_btn_title" title="Nueva pestaña (Ctrl+T)"><i data-lucide="plus"></i></button>
-            <button id="focus-mode-toggle" class="action-btn p-2" type="button" aria-pressed="false" data-i18n-key="focus_mode_toggle_title" title="Maximizar área de edición">
+            <button id="focus-mode-toggle" class="action-btn p-2" type="button" aria-pressed="false" data-i18n-key="focus_mode_toggle_title" title="Maximizar área de edición (Ctrl+Mayús+F)" aria-keyshortcuts="Control+Shift+F">
                 <i data-lucide="chevrons-up" class="toggle-icon"></i>
             </button>
         </div>
@@ -371,7 +394,7 @@
                         </button>
                         <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
                         <div class="relative" id="doc-lang-container">
-                            <button id="doc-lang-btn" type="button" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" aria-haspopup="true" aria-expanded="false" data-i18n-key="doc_lang_btn_title" title="Idioma de este documento">
+                            <button id="doc-lang-btn" type="button" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" aria-haspopup="true" aria-expanded="false" data-i18n-key="doc_lang_btn_title" title="Cambiar idioma y autor">
                                 <i data-lucide="languages" class="w-4 h-4"></i>
                                 <span id="doc-lang-label" class="text-xs font-semibold uppercase">ES</span>
                             </button>
@@ -469,30 +492,77 @@
     </div>
 </main>
 
-<footer class="site-footer" aria-label="Información legal y del proyecto">
-    <p class="site-footer-line">
-        <strong data-i18n-key="footer_name">EdiMarkWeb</strong>
-        <span data-i18n-key="footer_tagline">Editor de textos Markdown.</span>
-        <span class="site-footer-sep">·</span>
-        <span data-i18n-key="footer_version">Versión {version}.</span>
-        <span class="site-footer-sep">·</span>
-        <span data-i18n-key="footer_author_prefix">© 2025-2026</span>
-        <a href="https://bilateria.es" target="_blank" rel="noreferrer noopener">Juan José de Haro</a>
-    </p>
-    <p class="site-footer-line">
-        <span data-i18n-key="footer_license_prefix">Código bajo</span>
-        <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer noopener" data-i18n-key="footer_license_link">licencia AGPL v3</a>
-        <span class="site-footer-sep">·</span>
-        <a href="https://github.com/edimarkweb/edimarkweb.github.io" target="_blank" rel="noreferrer noopener" data-i18n-key="footer_repo_link">Proyecto en GitHub</a>
-        <span class="site-footer-sep">·</span>
-        <a href="https://github.com/edimarkweb/edimarkweb.github.io/issues" target="_blank" rel="noreferrer noopener" data-i18n-key="footer_feedback_link">Comentarios</a>
-        <span class="site-footer-sep">·</span>
-        <span class="site-footer-flyout">
-            <a id="footerPrivacyToggle" href="#" data-i18n-key="footer_privacy_link">Privacidad</a>
-            <span id="footerPrivacyMessage" class="site-footer-flyout-box" hidden data-i18n-key="footer_privacy_notice">Los archivos se procesan localmente en este navegador. Solo se recogen estadísticas de uso agregadas propias y no se envían archivos ni datos a terceros.</span>
-        </span>
-    </p>
-</footer>
+    <div id="edicuatex-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-2 sm:p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="edicuatex-modal-title">
+        <div class="edicuatex-modal-panel bg-white rounded-lg shadow-xl dark:bg-slate-800">
+            <div class="edicuatex-modal-header">
+                <h3 id="edicuatex-modal-title" class="font-semibold text-slate-800 dark:text-slate-100" data-i18n-key="edicuatex_modal_title">Editor de fórmulas EdiCuaTeX</h3>
+                <button id="edicuatex-close-btn" type="button" class="action-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="edicuatex_close_btn_title" title="Cerrar EdiCuaTeX" aria-label="Cerrar EdiCuaTeX"><i data-lucide="x"></i></button>
+            </div>
+            <iframe id="edicuatex-frame" title="EdiCuaTeX" src="about:blank" allow="clipboard-write; fullscreen"></iframe>
+        </div>
+    </div>
+
+    <div id="about-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto dark:bg-slate-800">
+            <div class="flex items-center gap-3 mb-4">
+                <img src="logo_256.png" alt="" class="w-12 h-12">
+                <div>
+                    <h3 id="about-modal-title" class="text-lg font-bold text-slate-800 dark:text-slate-100" data-i18n-key="about_modal_title">Acerca de EdiMarkWeb</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400" data-i18n-key="footer_tagline">Editor de textos Markdown.</p>
+                </div>
+            </div>
+            <dl class="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                <div class="flex gap-2">
+                    <dt class="font-semibold" data-i18n-key="about_version_label">Versión:</dt>
+                    <dd data-app-version>—</dd>
+                </div>
+                <div class="flex gap-2">
+                    <dt class="font-semibold" data-i18n-key="about_author_label">Autor:</dt>
+                    <dd>Juan José de Haro</dd>
+                </div>
+                <div class="flex gap-2">
+                    <dt class="font-semibold" data-i18n-key="about_license_label">Licencia:</dt>
+                    <dd>GNU AGPL v3</dd>
+                </div>
+            </dl>
+            <details class="mt-4 text-sm text-slate-700 dark:text-slate-300">
+                <summary class="about-license-summary" data-i18n-key="about_third_party_summary">Licencias de terceros</summary>
+                <ul class="about-license-list">
+                    <li>Tauri / Browser WASI Shim — MIT / Apache-2.0</li>
+                    <li><a href="https://github.com/jgm/pandoc/tree/3.5" target="_blank" rel="noreferrer noopener">Pandoc 3.5 — GPL-2.0-or-later (licencia y código fuente)</a></li>
+                    <li>KaTeX / Marked / Turndown / CodeMirror / Split.js / Tailwind CSS — MIT</li>
+                    <li>EdiCuaTeX — GNU AGPL v3</li>
+                    <li>MathJax — Apache-2.0</li>
+                    <li>Lucide — ISC</li>
+                </ul>
+            </details>
+            <nav class="about-resource-links" data-i18n-key="about_links_label" aria-label="Enlaces de EdiMarkWeb">
+                <a id="about-web-link" href="https://edimarkweb.github.io/" target="_blank" rel="noreferrer noopener">
+                    <i data-lucide="globe-2" aria-hidden="true"></i>
+                    <span data-i18n-key="about_web_link">Abrir la versión web</span>
+                </a>
+                <a id="about-desktop-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener">
+                    <i data-lucide="monitor-down" aria-hidden="true"></i>
+                    <span data-i18n-key="about_desktop_link">Descargar la versión de escritorio</span>
+                </a>
+                <a href="https://github.com/edimarkweb/edimarkweb.github.io" target="_blank" rel="noreferrer noopener">
+                    <i data-lucide="github" aria-hidden="true"></i>
+                    <span data-i18n-key="footer_repo_link">Proyecto en GitHub</span>
+                </a>
+                <a href="https://github.com/edimarkweb/edimarkweb.github.io/issues" target="_blank" rel="noreferrer noopener">
+                    <i data-lucide="message-square" aria-hidden="true"></i>
+                    <span data-i18n-key="footer_feedback_link">Comentarios</span>
+                </a>
+            </nav>
+            <details class="mt-4 text-sm text-slate-700 dark:text-slate-300">
+                <summary class="about-license-summary" data-i18n-key="footer_privacy_link">Privacidad</summary>
+                <p class="mt-2" data-i18n-key="footer_privacy_notice">Los archivos se procesan localmente en este navegador. Solo se recogen estadísticas de uso agregadas propias y no se envían archivos ni datos a terceros.</p>
+            </details>
+            <div class="mt-6 flex justify-end">
+                <button id="about-close-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="close_btn">Cerrar</button>
+            </div>
+        </div>
+    </div>
 
     <div id="latex-import-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="latex-import-modal-title">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl dark:bg-slate-800">
@@ -702,6 +772,7 @@
         </div>
     </div>
 
+    <script src="platform-api.js"></script>
     <script type="module" src="pandoc-exporter.js"></script>
     <script>
     (function () {
@@ -848,35 +919,6 @@
         document.body.appendChild(frame);
       }
 
-      function initPrivacyFlyout() {
-        var toggle = document.getElementById('footerPrivacyToggle');
-        var message = document.getElementById('footerPrivacyMessage');
-        if (!(toggle instanceof HTMLAnchorElement) || !(message instanceof HTMLElement)) return;
-
-        function setOpen(open) {
-          message.hidden = !open;
-          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        }
-
-        toggle.addEventListener('click', function (event) {
-          event.preventDefault();
-          setOpen(message.hidden);
-        });
-
-        document.addEventListener('click', function (event) {
-          var target = event.target;
-          if (!(target instanceof Node)) return;
-          if (target === toggle || message.contains(target)) return;
-          setOpen(false);
-        });
-
-        document.addEventListener('keydown', function (event) {
-          if (event.key === 'Escape') setOpen(false);
-        });
-
-        setOpen(false);
-      }
-
       function scheduleAnalyticsLoad() {
         if (!shouldTrackAnalytics()) return;
         var run = function () { window.setTimeout(loadAnalyticsSummary, 0); };
@@ -899,7 +941,6 @@
       }
 
       document.addEventListener('DOMContentLoaded', function () {
-        initPrivacyFlyout();
         scheduleAnalyticsLoad();
       });
     })();

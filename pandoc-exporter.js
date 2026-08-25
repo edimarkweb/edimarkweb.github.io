@@ -566,7 +566,17 @@ function triggerNotification(onNotification, key, fallback) {
   }
 }
 
-function saveBlob(blob, filename) {
+async function saveBlob(blob, filename) {
+  const platform = window.EdiMarkPlatform;
+  if (platform && typeof platform.saveFile === 'function') {
+    return platform.saveFile({
+      suggestedName: filename,
+      contents: blob,
+      mimeType: blob.type,
+      extensions: [String(filename || '').split('.').pop()].filter(Boolean),
+    });
+  }
+
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = filename;
@@ -576,6 +586,7 @@ function saveBlob(blob, filename) {
   setTimeout(() => {
     URL.revokeObjectURL(link.href);
   }, 1000);
+  return { saved: true, path: '', name: filename };
 }
 
 async function exportDocument({
@@ -698,9 +709,11 @@ async function exportDocument({
     }
 
     const blob = new Blob([finalBytes], { type: config.mime });
-    saveBlob(blob, outputFilename || config.defaultFilename);
+    const saveResult = await saveBlob(blob, outputFilename || config.defaultFilename);
+    if (!saveResult || !saveResult.saved) return saveResult;
 
     triggerStatus(onStatus, config.doneKey, config.doneFallback);
+    return saveResult;
   } catch (error) {
     if (iosTimer) clearTimeout(iosTimer);
     triggerStatus(onStatus, config.errorKey || 'export_error', config.errorFallback || 'Error durante la exportación.');

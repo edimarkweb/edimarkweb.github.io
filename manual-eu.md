@@ -71,7 +71,7 @@ Egin lan hainbat dokumenturekin aldi berean, bakoitza bere fitxan.
 
 Logotipoaren ondoko barrak aplikazioaren aukera orokorrak biltzen ditu eta fitxategiaren ekintza guztiak botoi zabalgarri bakar batean elkartzen ditu:
 
-* **Fitxategia**: dokumentuaren gaineko ekintzak bi multzotan biltzen ditu. Lehenik edukia ekartzen dutenak —`Ireki (Ctrl+O)`, `Inportatu` eta `Itsatsi LaTeX (Ctrl+Shift+V)`— eta ondoren ateratzen dutenak: `Gorde (Ctrl+S)` eta **Esportatu** azpimenua, eskuinera zabaltzen dena DOCX, ODT, EPUB, HTML eta TEX aukerekin. Aukera bakoitzak bere teklatu-lasterbidea erakusten du.
+* **Fitxategia**: dokumentuaren gaineko ekintzak bi multzotan biltzen ditu. Lehenik edukia ekartzen dutenak —`Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)`— eta ondoren ateratzen dutenak: `Gorde (Ctrl+S)`, `Gorde honela… (Ctrl+Shift+S)` eta **Esportatu** azpimenua, eskuinera zabaltzen dena DOCX, ODT, EPUB, HTML eta TEX aukerekin. Aukera bakoitzak bere teklatu-lasterbidea erakusten du.
 * **Ezarpenak**: aplikazioaren ezarpen guztiak biltzen ditu, bakoitza uneko balioa adierazten duen azpimenu batekin.
   * **Hizkuntza**: interfazearen hizkuntza aldatzen du.
   * **Testuaren tamaina**: txikia, normala, handia edo oso handia.
@@ -97,7 +97,7 @@ Goiko barraren azpiko marra grisak formaturako eta elementuetarako sarbide azkar
 * **Kodea, estekak, irudiak eta taulak**: elkarrizketa-koadroen bidezko txertaketa gidatua.
 * **Itsatsi**: arbelean dagoena dokumentura ekartzen du, goian azaldu bezala.
 * **LaTeX formulak**: lerroko edo blokeko aginduak sintaxi zuzenarekin txertatzeko menua.
-* **Formulen editorea (EdiCuaTeX)**: kanpoko laguntzailea leiho berri batean irekitzen du. Onartzean, formula editorean txertatuta itzultzen da.
+* **Formulen editorea (EdiCuaTeX)**: integratutako laguntzailea `Ctrl+Alt+M` bidez irekitzen du. Onartzean, formula editorean txertatuta itzultzen da.
 
 Botoi bakoitzak deskribapen bat erakusten du sagua gainetik pasatzean, eta baliokidea den teklatu-lasterbidea adierazten du.
 
@@ -163,7 +163,7 @@ Dokumentu batek base64 irudiak dituenean —DOCX bat inportatzean, beste aplikaz
 
 * **Ireki (`Ctrl+O`)**: `.md` edo `.markdown` fitxategiak inportatzen ditu.
 * **Inportatu**: beste formatu batzuetako dokumentuak Markdown-era bihurtzen ditu Pandoc bidez: `.docx`, `.odt`, `.epub`, `.html` eta `.tex`. Izenburuak, zerrendak, taulak eta estekak berreskuratzen dira, eta baita irudiak ere: `.docx`, `.odt` edo `.epub` batetik datozenean, fitxategitik bertatik ateratzen dira eta Markdown-ean kapsulatuta geratzen dira; horrela, aurrebistan ikusten dira eta zurekin bidaiatzen dute esportatzean.
-* **Gorde (`Ctrl+S`)**: uneko dokumentua zure ekipora deskargatzen du.
+* **Gorde (`Ctrl+S`)**: uneko dokumentua gordetzen du. Mahaigaineko aplikazioan aurretik irekitako fitxategia eguneratzen du; **Gorde honela… (`Ctrl+Shift+S`)** aukerak beti uzten du beste izen edo kokapen bat hautatzen.
 * **Edukia kopiatu**: ezkerreko panelak Markdown-a kopiatzeko botoi bat du; aurrebistan zer kopiatuko den aukera dezakezu (errendatutako HTMLa edo LaTeX aldaerak) kopiatzeko ikonoaren ondoko menu zabalgarritik.
 * **Ezabatu dena**: dokumentua berrezartzen du berrespen baten ondoren.
 * **Gaia, antolaketa edo zabalera aldatu**: **Ezarpenak** menutik (gaia eta zabalera) eta `Ctrl+L` teklarekin (panelen antolaketa) interfazea egoera bakoitzera egokitzen duzu: arbel digitala, eramangarria, etab.
@@ -255,13 +255,20 @@ Arrastatu fitxategi bat edo gehiago aplikazioaren gainera. `.md` eta `.markdown`
 | Fitxa itxi | `Ctrl` + `W` | `Cmd` + `W` |
 | Hurrengo / aurreko fitxa | `Ctrl` + `Tab` / `Ctrl` + `Shift` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Shift` + `Tab` |
 | Gorde | `Ctrl` + `S` | `Cmd` + `S` |
+| Gorde honela… | `Ctrl` + `Shift` + `S` | `Cmd` + `Shift` + `S` |
 | Fitxategia ireki | `Ctrl` + `O` | `Cmd` + `O` |
+| Dokumentua inportatu | `Ctrl` + `Alt` + `O` | `Cmd` + `Alt` + `O` |
 | Itsatsi LaTeX (elkarrizketa ireki) | `Ctrl` + `Shift` + `V` | `Cmd` + `Shift` + `V` |
 | **Interfazea** | | |
+| Ireki EdiCuaTeX | `Ctrl` + `Alt` + `M` | `Cmd` + `Alt` + `M` |
+| Arbeletik itsatsi | `Ctrl` + `Alt` + `V` | `Cmd` + `Alt` + `V` |
+| Ireki Esportatu | `Ctrl` + `Alt` + `E` | `Cmd` + `Alt` + `E` |
+| Ireki Ezarpenak | `Ctrl` + `,` | `Cmd` + `,` |
+| Editatzeko eremua maximizatu | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Antolaketa aldatu | `Ctrl` + `L` | `Cmd` + `L` |
 | Bilatu | `Ctrl` + `F` | `Cmd` + `F` |
 | Testua handitu / txikitu | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
-| Erabiltzailearen eskuliburua | `Ctrl` + `H` | `Cmd` + `H` |
+| Erabiltzailearen eskuliburua | `Ctrl` + `H` edo `F1` | `Cmd` + `H` edo `F1` |
 | Eskuliburua birkargatu | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Inprimatu | `Ctrl` + `P` | `Cmd` + `P` |
 

@@ -1,9 +1,6 @@
-/*
-  Única copia del número de versión dentro de la aplicación: los textos del pie
-  llevan un marcador {version} en los cinco idiomas. La otra copia vive en
-  package.json y una prueba comprueba que ambas coinciden.
-*/
-const APP_VERSION = '2.15.1';
+/* Única copia de la versión en la aplicación; package.json es la otra fuente. */
+const APP_VERSION = '2.16.0';
+const DESKTOP_RELEASE_BANNER_KEY = `edimarkweb-hide-desktop-release-${APP_VERSION}`;
 
 // Declaración de variables globales
 let turndownService;
@@ -19,7 +16,8 @@ const LAYOUT_KEY = 'edimarkweb-layout';
 const FS_KEY = 'edimarkweb-fontsize';
 const FOCUS_MODE_KEY = 'edimarkweb-focus-mode';
 const LATEX_SETTINGS_KEY = 'edimarkweb-latex-settings';
-const EDICUATEX_BASE_URL = 'https://jjdeharo.github.io/edicuatex/index.html';
+const EDICUATEX_BASE_URL = 'https://edicuatex.github.io/index.html';
+const EDICUATEX_DESKTOP_PATH = 'vendor/edicuatex/index.html';
 const DESKTOP_PARAM_KEY = 'desktop';
 const DESKTOP_SPAWNED_KEY = 'desktop_spawned';
 const TABLE_SANITIZE_ATTRS = ['style', 'width', 'height', 'border', 'cellspacing', 'cellpadding', 'align', 'valign', 'bgcolor', 'role', 'class', 'id'];
@@ -1974,6 +1972,9 @@ function updateVersionLabel() {
     document.querySelectorAll('[data-i18n-key="footer_version"]').forEach((element) => {
         element.textContent = formatTranslation('footer_version', 'Versión {version}.', { version: APP_VERSION });
     });
+    document.querySelectorAll('[data-app-version]').forEach((element) => {
+        element.textContent = APP_VERSION;
+    });
 }
 
 window.__updateVersionLabel = updateVersionLabel;
@@ -2082,6 +2083,9 @@ function loadSavedDocsList() {
 }
 
 function saveDocsList() {
+    // Las rutas autorizadas por el diálogo nativo solo son válidas durante la
+    // sesión de la aplicación. El borrador sí persiste, pero al reiniciar se
+    // vuelve a pedir una ubicación para no reutilizar permisos caducados.
     const docList = docs.map(d => (d.isManual ? { id: d.id, name: d.name, isManual: true } : { id: d.id, name: d.name }));
     return safeLocalStorageSet(DOCS_LIST_KEY, JSON.stringify(docList));
 }
@@ -2258,11 +2262,11 @@ function startRename(tab) {
     input.addEventListener('keydown', handleKey);
 }
 
-function newDoc(name = '', md = '', { isManual = false } = {}) {
+function newDoc(name = '', md = '', { isManual = false, filePath = '' } = {}) {
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
     const normalizedMd = normalizeNewlines(md || '');
     const documentName = name || getTranslation('untitled_document', 'Documento sin título');
-    const newDoc = { id, name: documentName, md: normalizedMd, lastSaved: normalizedMd, isManual };
+    const newDoc = { id, name: documentName, md: normalizedMd, lastSaved: normalizedMd, isManual, filePath };
     docs.push(newDoc);
     addTabElement(newDoc);
     switchTo(id);
@@ -2816,7 +2820,18 @@ function setLatexImportBusy(isBusy) {
     }
 }
 
-function saveFile(filename, content, type) {
+async function saveFile(filename, content, type, { existingPath = '', extensions } = {}) {
+    const platform = window.EdiMarkPlatform;
+    if (platform && typeof platform.saveFile === 'function') {
+        return platform.saveFile({
+            suggestedName: filename,
+            contents: content,
+            mimeType: type,
+            existingPath,
+            extensions,
+        });
+    }
+
     const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2827,23 +2842,38 @@ function saveFile(filename, content, type) {
     document.body.removeChild(a);
     // Revocar en el mismo tic cancela la descarga en algunos navegadores.
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return { saved: true, path: '', name: filename };
 }
 
-function saveCurrentDocument() {
+async function saveCurrentDocument({ saveAs = false } = {}) {
     const content = markdownEditor.getValue();
     const doc = docs.find(d => d.id === currentId);
     const rawName = doc && typeof doc.name === 'string' ? doc.name.trim() : '';
     const cleanName = rawName.replace(/\.md$/i, '') || 'documento';
     const filename = `${cleanName}.md`;
-    saveFile(filename, content, 'text/markdown;charset=utf-8');
-    if (doc) {
-        doc.name = cleanName;
-        doc.md = content;
-        doc.lastSaved = content;
-        const tabNameEl = document.querySelector(`.tab[data-id="${currentId}"] .tab-name`);
-        if (tabNameEl) tabNameEl.textContent = cleanName;
-        updateDirtyIndicator(currentId, false);
-        saveDocsList();
+    try {
+        const result = await saveFile(filename, content, 'text/markdown;charset=utf-8', {
+            existingPath: saveAs ? '' : (doc?.filePath || ''),
+            extensions: ['md', 'markdown'],
+        });
+        if (!result || !result.saved) return false;
+        if (doc) {
+            const savedName = String(result.name || filename).replace(/\.md$/i, '') || cleanName;
+            doc.name = savedName;
+            doc.filePath = result.path || doc.filePath || '';
+            doc.md = content;
+            doc.lastSaved = content;
+            const tabNameEl = document.querySelector(`.tab[data-id="${currentId}"] .tab-name`);
+            if (tabNameEl) tabNameEl.textContent = savedName;
+            updateDirtyIndicator(currentId, false);
+            saveDocsList();
+        }
+        reportStatus(getTranslation('save_file_done', 'Documento guardado.'));
+        return true;
+    } catch (error) {
+        console.error('No se pudo guardar el documento:', error);
+        reportStatus(getTranslation('save_file_error', 'No se pudo guardar el documento.'));
+        return false;
     }
 }
 
@@ -3110,23 +3140,24 @@ function applyLayout(layout) {
   const gutters = document.querySelectorAll('.gutter');
   const markdownLayoutBtn = document.getElementById('markdown-layout-btn');
   const htmlLayoutBtn = document.getElementById('html-layout-btn');
+  const visiblePanelDisplay = document.body.classList.contains('desktop-mode') ? 'flex' : 'block';
 
   switch (layout) {
     case 'md':
-      mdPanel.style.display = 'block';
+      mdPanel.style.display = visiblePanelDisplay;
       htmlPanel.style.display = 'none';
       gutters.forEach(g => g.style.display = 'none');
       mdPanel.style.width = '100%';
       break;
     case 'html':
       mdPanel.style.display = 'none';
-      htmlPanel.style.display = 'block';
+      htmlPanel.style.display = visiblePanelDisplay;
       gutters.forEach(g => g.style.display = 'none');
       htmlPanel.style.width = '100%';
       break;
     default:
-      mdPanel.style.display = 'block';
-      htmlPanel.style.display = 'block';
+      mdPanel.style.display = visiblePanelDisplay;
+      htmlPanel.style.display = visiblePanelDisplay;
       gutters.forEach(g => g.style.display = '');
       mdPanel.style.width = '50%';
       htmlPanel.style.width = '50%';
@@ -3197,12 +3228,19 @@ window.onload = () => {
     const openFileBtn = document.getElementById('open-file-btn');
     const fileInput = document.getElementById('file-input');
     const saveBtn = document.getElementById('save-btn');
+    const saveAsBtn = document.getElementById('save-as-btn');
     const exportMenuContainer = document.getElementById('export-menu-container');
     const exportMenuBtn = document.getElementById('export-menu-btn');
     const exportMenu = document.getElementById('export-menu');
     const exportOptionButtons = exportMenu ? Array.from(exportMenu.querySelectorAll('[data-export-format]')) : [];
     const printBtn = document.getElementById('print-btn');
     const helpBtn = document.getElementById('help-btn');
+    const aboutBtn = document.getElementById('about-btn');
+    const aboutModalOverlay = document.getElementById('about-modal-overlay');
+    const aboutCloseBtn = document.getElementById('about-close-btn');
+    const desktopReleaseBanner = document.getElementById('desktop-release-banner');
+    const desktopBannerClose = document.getElementById('desktop-banner-close');
+    const desktopBannerNeverShow = document.getElementById('desktop-banner-never-show');
     const clearAllBtn = document.getElementById('clear-all-btn');
     const copyMdBtn = document.getElementById('copy-md-btn');
     const copyHtmlBtn = document.getElementById('copy-html-btn');
@@ -3341,6 +3379,9 @@ window.onload = () => {
     const fontSizeWrapper = document.getElementById('font-size-select-wrapper');
     const fontSizeLabel = document.getElementById('font-size-select-label');
     const openEdicuatexBtn = document.getElementById('open-edicuatex-btn');
+    const edicuatexModalOverlay = document.getElementById('edicuatex-modal-overlay');
+    const edicuatexFrame = document.getElementById('edicuatex-frame');
+    const edicuatexCloseBtn = document.getElementById('edicuatex-close-btn');
     const importFileBtn = document.getElementById('import-file-btn');
     const importFileInput = document.getElementById('import-file-input');
     const actionsMenuContainer = document.getElementById('actions-menu-container');
@@ -3358,8 +3399,6 @@ window.onload = () => {
         if (!toolbar) return [];
         const buttons = new Set(Array.from(toolbar.querySelectorAll('button[data-format]')));
         if (headingBtn) buttons.add(headingBtn);
-        if (formulaBtn) buttons.add(formulaBtn);
-        if (openEdicuatexBtn) buttons.add(openEdicuatexBtn);
         return Array.from(buttons);
     })();
     if (undoButtonEl) {
@@ -3653,14 +3692,24 @@ window.onload = () => {
         if (!docLangBtn || !markdownEditor) return;
         const own = splitDocumentFrontMatter(markdownEditor.getValue()).lang;
         const effective = own || generalDocumentLanguage();
+        if (markdownTextareaEl) {
+            markdownTextareaEl.setAttribute('lang', effective);
+            markdownTextareaEl.setAttribute('spellcheck', 'true');
+        }
         if (docLangLabel) docLangLabel.textContent = effective.toUpperCase();
         // Sin idioma propio, el botón se ve más apagado: lo hereda.
         docLangBtn.classList.toggle('doc-lang-inherited', !own);
-        docLangBtn.setAttribute('aria-label', formatTranslation(
+        const languageDescription = formatTranslation(
             own ? 'doc_lang_btn_own' : 'doc_lang_btn_inherited',
             own ? 'Idioma de este documento: {lang}' : 'Idioma general: {lang}',
             { lang: effective },
-        ));
+        );
+        const actionDescription = formatTranslation(
+            'doc_lang_btn_title',
+            'Cambiar idioma y autor',
+        );
+        docLangBtn.setAttribute('aria-label', `${actionDescription}. ${languageDescription}`);
+        docLangBtn.setAttribute('title', actionDescription);
         docLangOptions.forEach((option) => {
             const selected = (option.dataset.docLang || '') === own;
             option.setAttribute('aria-checked', selected ? 'true' : 'false');
@@ -3795,12 +3844,51 @@ window.onload = () => {
 
     if (window.lucide) lucide.createIcons();
     const params = new URLSearchParams(window.location.search);
-    const desktopMode = params.get(DESKTOP_PARAM_KEY) === '1';
+    const browserDesktopMode = params.get(DESKTOP_PARAM_KEY) === '1';
+    const nativeMode = Boolean(window.EdiMarkPlatform?.isDesktop);
+    if (nativeMode && typeof window.EdiMarkPlatform.openExternalUrl === 'function') {
+        document.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            const link = target?.closest('a[target="_blank"][href]');
+            if (!link || !/^https?:$/i.test(new URL(link.href).protocol)) return;
+            event.preventDefault();
+            window.EdiMarkPlatform.openExternalUrl(link.href).catch((error) => {
+                console.error('No se pudo abrir el enlace externo:', error);
+            });
+        });
+    }
+    const nativeIos = nativeMode && (
+        /iPhone|iPad|iPod/i.test(navigator.userAgent || '')
+        || (/Mac/i.test(navigator.platform || '') && navigator.maxTouchPoints > 1)
+    );
+    const desktopMode = browserDesktopMode || (nativeMode && !nativeIos);
     const desktopSpawned = params.get(DESKTOP_SPAWNED_KEY) === '1';
+    const releaseBannerDismissed = safeLocalStorageGet(DESKTOP_RELEASE_BANNER_KEY) === '1';
+    if (desktopReleaseBanner && !nativeMode && !browserDesktopMode && !releaseBannerDismissed) {
+        desktopReleaseBanner.hidden = false;
+        mainContainer.classList.add('release-banner-visible');
+    }
+    if (desktopBannerNeverShow) {
+        desktopBannerNeverShow.checked = releaseBannerDismissed;
+        desktopBannerNeverShow.addEventListener('change', () => {
+            if (desktopBannerNeverShow.checked) {
+                safeLocalStorageSet(DESKTOP_RELEASE_BANNER_KEY, '1', { notify: false });
+            } else {
+                safeLocalStorageRemove(DESKTOP_RELEASE_BANNER_KEY);
+            }
+        });
+    }
+    if (desktopBannerClose && desktopReleaseBanner) {
+        desktopBannerClose.addEventListener('click', () => {
+            desktopReleaseBanner.hidden = true;
+            mainContainer.classList.remove('release-banner-visible');
+        });
+    }
     if (desktopMode) {
         document.body.classList.add('desktop-mode');
+        if (toggleWidthBtn) toggleWidthBtn.classList.add('hidden');
         if (desktopWindowBtn) desktopWindowBtn.classList.add('hidden');
-        if (!desktopSpawned && (!window.opener || window.opener.closed)) {
+        if (browserDesktopMode && !nativeMode && !desktopSpawned && (!window.opener || window.opener.closed)) {
             const spawned = openDesktopWindow(true);
             if (spawned) {
                 try { window.close(); } catch (_) {}
@@ -3819,13 +3907,26 @@ window.onload = () => {
     }
 
     function buildEdicuatexUrl(initialLatex = '') {
-        const url = new URL(EDICUATEX_BASE_URL);
+        const url = new URL(nativeMode ? EDICUATEX_DESKTOP_PATH : EDICUATEX_BASE_URL, window.location.href);
         url.searchParams.set('pm', '1');
         url.searchParams.set('origin', resolveHostOrigin());
+        url.searchParams.set('lang', window.__edimarkLang || document.documentElement.lang || 'es');
+        if (nativeMode) {
+            url.searchParams.set('mode', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        }
         if (initialLatex) {
             url.searchParams.set('sel', initialLatex);
         }
         return url.toString();
+    }
+
+    function closeEmbeddedEdicuatex({ restoreFocus = true } = {}) {
+        if (!edicuatexModalOverlay || !edicuatexFrame) return;
+        edicuatexModalOverlay.style.display = 'none';
+        edicuatexModalOverlay.classList.add('hidden');
+        edicuatexFrame.src = 'about:blank';
+        edicuatexOrigin = null;
+        if (restoreFocus) openEdicuatexBtn?.focus();
     }
 
     function openEdicuatex() {
@@ -3841,6 +3942,13 @@ window.onload = () => {
             edicuatexOrigin = new URL(url).origin;
         } catch (err) {
             edicuatexOrigin = null;
+        }
+        if (nativeMode && edicuatexModalOverlay && edicuatexFrame) {
+            edicuatexFrame.src = url;
+            edicuatexModalOverlay.classList.remove('hidden');
+            edicuatexModalOverlay.style.display = 'flex';
+            edicuatexCloseBtn?.focus();
+            return;
         }
         const features = 'width=1100,height=820,resizable=yes,scrollbars=yes';
         const child = window.open(url, 'edicuatex', features);
@@ -3861,6 +3969,16 @@ window.onload = () => {
             openEdicuatex(event);
         });
     }
+
+    edicuatexCloseBtn?.addEventListener('click', () => closeEmbeddedEdicuatex());
+    edicuatexModalOverlay?.addEventListener('click', (event) => {
+        if (event.target === edicuatexModalOverlay) closeEmbeddedEdicuatex();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && edicuatexModalOverlay?.style.display === 'flex') {
+            closeEmbeddedEdicuatex();
+        }
+    });
 
     if (exportMenuBtn) {
         exportMenuBtn.setAttribute('aria-expanded', 'false');
@@ -4389,8 +4507,12 @@ window.onload = () => {
                 }
 
                 const htmlFilename = `${safeName}.html`;
-                saveFile(htmlFilename, htmlResult, 'text/html;charset=utf-8');
-                updateExportStatus(getTranslation('html_export_done', 'Exportación HTML completada.'));
+                const saveResult = await saveFile(htmlFilename, htmlResult, 'text/html;charset=utf-8', {
+                    extensions: ['html'],
+                });
+                if (saveResult?.saved) {
+                    updateExportStatus(getTranslation('html_export_done', 'Exportación HTML completada.'));
+                }
             } else if (lowerFormat === 'latex-full-download') {
                 if (typeof exporter.generateLatex !== 'function') {
                     console.warn('Función generateLatex no disponible');
@@ -4412,8 +4534,12 @@ window.onload = () => {
                 }
 
                 const latexFilename = `${safeName}.tex`;
-                saveFile(latexFilename, latexResult, 'application/x-tex;charset=utf-8');
-                updateExportStatus(getTranslation('latex_export_done', 'Exportación a LaTeX completada.'));
+                const saveResult = await saveFile(latexFilename, latexResult, 'application/x-tex;charset=utf-8', {
+                    extensions: ['tex'],
+                });
+                if (saveResult?.saved) {
+                    updateExportStatus(getTranslation('latex_export_done', 'Exportación a LaTeX completada.'));
+                }
             } else {
                 console.warn('Formato de exportación no soportado:', format);
                 updateExportStatus(getTranslation('export_error', 'Error durante la exportación.'));
@@ -4569,6 +4695,9 @@ window.onload = () => {
         if (!event || !event.data || event.data.type !== 'edicuatex:result') return;
         if (edicuatexOrigin && event.origin !== edicuatexOrigin) return;
         if (edicuatexWindow && event.source && event.source !== edicuatexWindow) return;
+        if (edicuatexModalOverlay?.style.display === 'flex'
+            && edicuatexFrame?.contentWindow
+            && event.source !== edicuatexFrame.contentWindow) return;
         const insertion = event.data.wrapped || event.data.latex || '';
         if (!insertion) return;
         requestAnimationFrame(() => {
@@ -4578,7 +4707,11 @@ window.onload = () => {
                 try { edicuatexWindow.close(); } catch (_) {}
             }
             edicuatexWindow = null;
-            edicuatexOrigin = null;
+            if (edicuatexModalOverlay?.style.display === 'flex') {
+                closeEmbeddedEdicuatex({ restoreFocus: false });
+            } else {
+                edicuatexOrigin = null;
+            }
         });
     });
 
@@ -4826,6 +4959,27 @@ window.onload = () => {
     // --- Eventos de los botones principales y pestañas ---
     newTabBtn.addEventListener('click', () => newDoc());
     helpBtn.addEventListener('click', (e) => openManualDoc(e.ctrlKey || e.metaKey));
+    if (aboutBtn && aboutModalOverlay) {
+        const toggleAboutModal = (show) => {
+            aboutModalOverlay.style.display = show ? 'flex' : 'none';
+            if (show) {
+                updateVersionLabel();
+                aboutCloseBtn?.focus();
+            } else {
+                aboutBtn.focus();
+            }
+        };
+        aboutBtn.addEventListener('click', () => toggleAboutModal(true));
+        aboutCloseBtn?.addEventListener('click', () => toggleAboutModal(false));
+        aboutModalOverlay.addEventListener('click', (event) => {
+            if (event.target === aboutModalOverlay) toggleAboutModal(false);
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && aboutModalOverlay.style.display === 'flex') {
+                toggleAboutModal(false);
+            }
+        });
+    }
     tabBar.addEventListener('click', (e) => {
         if (suppressNextTabClick) {
             suppressNextTabClick = false;
@@ -4865,9 +5019,23 @@ window.onload = () => {
         if (window.lucide) lucide.createIcons();
     });
     
-    openFileBtn.addEventListener('click', () => {
+    openFileBtn.addEventListener('click', async () => {
         closeActionsMenu();
         closeSettingsMenu();
+        const platform = window.EdiMarkPlatform;
+        if (platform?.isDesktop && typeof platform.openTextDocument === 'function') {
+            try {
+                const opened = await platform.openTextDocument();
+                if (!opened) return;
+                const doc = newDoc(opened.name, opened.content, { filePath: opened.path });
+                doc.lastSaved = normalizeNewlines(opened.content);
+                updateDirtyIndicator(doc.id, false);
+            } catch (error) {
+                console.error('No se pudo abrir el documento:', error);
+                reportStatus(getTranslation('open_file_error', 'No se pudo abrir el documento.'));
+            }
+            return;
+        }
         fileInput.click();
     });
     fileInput.addEventListener('change', (event) => {
@@ -5206,10 +5374,17 @@ window.onload = () => {
     tableModalOverlay.addEventListener('click', (e) => { if (e.target === tableModalOverlay) toggleTableModal(false); });
     
     if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
+        saveBtn.addEventListener('click', async () => {
             closeActionsMenu();
             closeSettingsMenu();
-            saveCurrentDocument();
+            await saveCurrentDocument();
+        });
+    }
+    if (saveAsBtn) {
+        saveAsBtn.addEventListener('click', async () => {
+            closeActionsMenu();
+            closeSettingsMenu();
+            await saveCurrentDocument({ saveAs: true });
         });
     }
 
@@ -5282,6 +5457,12 @@ window.onload = () => {
         const accel = isMac ? e.metaKey : e.ctrlKey;
         if (accel) ctrlPressed = true;
 
+        if (e.key === 'F1') {
+            e.preventDefault();
+            openManualDoc(e.shiftKey);
+            return;
+        }
+
         if (document.getElementById('search-wrapper').classList.contains('hidden')) {
             if (accel && e.key.toLowerCase() === 't') { e.preventDefault(); newTabBtn.click(); }
             if (accel && e.key.toLowerCase() === 'w') { e.preventDefault(); if (currentId) closeDoc(currentId); }
@@ -5294,6 +5475,29 @@ window.onload = () => {
             }
 
             if (!accel) return;
+            if (e.altKey) {
+                switch (e.key.toLowerCase()) {
+                    case 'o': e.preventDefault(); importFileBtn?.click(); return;
+                    case 'e': e.preventDefault(); openActionsMenu(); openExportMenu(); return;
+                    case 'm': e.preventDefault(); openEdicuatexBtn?.click(); return;
+                    case 'v': e.preventDefault(); pasteBtn?.click(); return;
+                }
+            }
+            if (e.shiftKey && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                saveAsBtn?.click();
+                return;
+            }
+            if (e.shiftKey && e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                focusModeToggleBtn?.click();
+                return;
+            }
+            if (!e.shiftKey && e.key === ',') {
+                e.preventDefault();
+                toggleSettingsMenu();
+                return;
+            }
             /*
               Los atajos sin Shift se comprueban aparte: con Shift pulsado esas
               mismas letras pertenecen a shortcutMap (Ctrl+Shift+L es la lista con

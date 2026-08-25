@@ -71,7 +71,7 @@ Work on several documents at once, each in its own tab.
 
 The bar next to the logo holds the application's global options and gathers every file action under a single drop-down button:
 
-* **File**: groups the document actions in two families. First the ones that bring content in — `Open (Ctrl+O)`, `Import` and `Paste LaTeX (Ctrl+Shift+V)` — and then the ones that take it out: `Save (Ctrl+S)` and the **Export** submenu, which opens to the right with DOCX, ODT, EPUB, HTML and TEX. Each option shows its keyboard shortcut.
+* **File**: groups the document actions in two families. First the ones that bring content in — `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` — and then the ones that take it out: `Save (Ctrl+S)`, `Save as… (Ctrl+Shift+S)` and the **Export** submenu, which opens to the right with DOCX, ODT, EPUB, HTML and TEX. Each option shows its keyboard shortcut.
 * **Settings**: gathers every application setting, each one in a submenu showing the current value.
   * **Language**: changes the interface language.
   * **Font size**: small, normal, large or very large.
@@ -97,7 +97,7 @@ The grey strip below the top bar holds quick access to formatting and elements:
 * **Code, links, images and tables**: guided insertion through dialogs.
 * **Paste**: brings whatever is on the clipboard into the document, as explained above.
 * **LaTeX formulas**: a menu for inserting inline or block commands with the correct syntax.
-* **Formula editor (EdiCuaTeX)**: opens the external assistant in a new window. On accepting, the formula comes back inserted in the editor.
+* **Formula editor (EdiCuaTeX)**: opens the integrated assistant with `Ctrl+Alt+M`. On accepting, the formula comes back inserted in the editor.
 
 Each button shows a description on hover and states the equivalent keyboard shortcut.
 
@@ -163,7 +163,7 @@ When a document carries base64 images — after importing a DOCX, after pasting 
 
 * **Open (`Ctrl+O`)**: imports `.md` or `.markdown` files.
 * **Import**: converts documents in other formats to Markdown using Pandoc: `.docx`, `.odt`, `.epub`, `.html` and `.tex`. Headings, lists, tables and links are recovered, and so are the images: when they come from a `.docx`, `.odt` or `.epub` they are extracted from the file itself and embedded in the Markdown, so they show up in the preview and travel with you when exporting.
-* **Save (`Ctrl+S`)**: downloads the current document to your computer.
+* **Save (`Ctrl+S`)**: saves the current document. In the desktop application it updates the file already open; **Save as… (`Ctrl+Shift+S`)** always lets you choose another name or location.
 * **Copying content**: the left pane has a button to copy the Markdown; in the preview you can choose what gets copied (rendered HTML or LaTeX variants) from the drop-down next to the copy icon.
 * **Clear all**: resets the document after a confirmation.
 * **Changing theme, layout or width**: from the **Settings** menu (theme and width) and with `Ctrl+L` (pane layout) you can adapt the interface to each situation: interactive whiteboard, laptop, and so on.
@@ -255,13 +255,20 @@ Drag one or more files onto the application. `.md` and `.markdown` open as they 
 | Close tab | `Ctrl` + `W` | `Cmd` + `W` |
 | Next / previous tab | `Ctrl` + `Tab` / `Ctrl` + `Shift` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Shift` + `Tab` |
 | Save | `Ctrl` + `S` | `Cmd` + `S` |
+| Save as… | `Ctrl` + `Shift` + `S` | `Cmd` + `Shift` + `S` |
 | Open file | `Ctrl` + `O` | `Cmd` + `O` |
+| Import document | `Ctrl` + `Alt` + `O` | `Cmd` + `Alt` + `O` |
 | Paste LaTeX (open dialog) | `Ctrl` + `Shift` + `V` | `Cmd` + `Shift` + `V` |
 | **Interface** | | |
+| Open EdiCuaTeX | `Ctrl` + `Alt` + `M` | `Cmd` + `Alt` + `M` |
+| Paste from clipboard | `Ctrl` + `Alt` + `V` | `Cmd` + `Alt` + `V` |
+| Open Export | `Ctrl` + `Alt` + `E` | `Cmd` + `Alt` + `E` |
+| Open Settings | `Ctrl` + `,` | `Cmd` + `,` |
+| Maximize editing area | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Change layout | `Ctrl` + `L` | `Cmd` + `L` |
 | Search | `Ctrl` + `F` | `Cmd` + `F` |
 | Larger / smaller text | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
-| Manual | `Ctrl` + `H` | `Cmd` + `H` |
+| Manual | `Ctrl` + `H` or `F1` | `Cmd` + `H` or `F1` |
 | Reload the manual | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Print | `Ctrl` + `P` | `Cmd` + `P` |
 

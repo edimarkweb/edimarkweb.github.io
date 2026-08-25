@@ -7,7 +7,10 @@ import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, firefox } from '@playwright/test';
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const defaultRepoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const repoRoot = process.env.EDIMARK_STATIC_ROOT
+  ? resolve(defaultRepoRoot, process.env.EDIMARK_STATIC_ROOT)
+  : defaultRepoRoot;
 const mimeTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
   ['.gif', 'image/gif'],
@@ -96,6 +99,110 @@ test('un idioma no disponible recurre al español', async (t) => {
   await page.waitForFunction(() => document.documentElement.lang === 'es');
   assert.equal(await page.locator('#html-output h1').textContent(), 'Manual de EdiMarkWeb');
   assert.equal(requests.some(url => url.endsWith('/locales/fr.json')), false);
+  assert.equal(await page.locator('.site-footer').count(), 0);
+  assert.equal(await page.locator('#desktop-release-banner').isVisible(), true);
+  assert.equal(
+    await page.locator('#desktop-banner-download-link').getAttribute('href'),
+    'https://github.com/edimarkweb/edimarkweb.github.io/releases/latest',
+  );
+
+  await page.locator('#about-btn').click();
+  await page.locator('#about-modal-overlay').waitFor({ state: 'visible' });
+  assert.equal(
+    await page.locator('#about-web-link').getAttribute('href'),
+    'https://edimarkweb.github.io/',
+  );
+  assert.equal(
+    await page.locator('#about-desktop-link').getAttribute('href'),
+    'https://github.com/edimarkweb/edimarkweb.github.io/releases/latest',
+  );
+  await page.locator('#about-close-btn').click();
+  await page.locator('#desktop-banner-never-show').check();
+  await page.locator('#desktop-banner-close').click();
+  await page.reload();
+  await page.waitForFunction(() => document.documentElement.lang === 'es');
+  assert.equal(await page.locator('#desktop-release-banner').isVisible(), false);
+});
+
+test('la aplicación nativa aprovecha toda la ventana y comparte el cuadro Acerca de', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      try { localStorage.setItem('edimarkweb-theme', 'dark'); } catch (_error) {}
+      window.__EDIMARK_TAURI__ = {
+        dialog: {},
+        fs: {},
+        opener: {
+          openUrl: async url => {
+            window.__openedExternalUrl = url;
+          },
+        },
+      };
+    },
+  });
+  t.after(() => context.close());
+
+  assert.equal(await page.locator('body').evaluate(body => body.classList.contains('desktop-mode')), true);
+  const dimensions = await page.locator('#main-container').evaluate((main) => {
+    const rect = main.getBoundingClientRect();
+    return { left: rect.left, width: rect.width, viewport: window.innerWidth };
+  });
+  assert.equal(dimensions.left, 0);
+  assert.equal(dimensions.width, dimensions.viewport);
+  assert.equal(await page.locator('.site-footer').count(), 0);
+  assert.equal(await page.locator('#desktop-download-link').count(), 0);
+  assert.equal(await page.locator('#desktop-release-banner').isVisible(), false);
+  assert.equal(await page.locator('#toggle-width-btn').isVisible(), false);
+  const bottomGap = await page.locator('#markdown-input').evaluate((editor) => (
+    window.innerHeight - editor.getBoundingClientRect().bottom
+  ));
+  assert.ok(bottomGap >= 15 && bottomGap <= 17, `margen inferior inesperado: ${bottomGap}px`);
+
+  const packageVersion = JSON.parse(await readFile(resolve(repoRoot, 'package.json'), 'utf8')).version;
+  await page.locator('#about-btn').click();
+  await page.locator('#about-modal-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('[data-app-version]').textContent(), packageVersion);
+  assert.match(await page.locator('#about-modal-overlay').innerText(), /Juan José de Haro/);
+  assert.match(await page.locator('#about-modal-overlay').innerText(), /GNU AGPL v3/);
+  assert.equal(await page.locator('#about-web-link').getAttribute('href'), 'https://edimarkweb.github.io/');
+  assert.equal(
+    await page.locator('#about-desktop-link').getAttribute('href'),
+    'https://github.com/edimarkweb/edimarkweb.github.io/releases/latest',
+  );
+  await page.locator('#about-web-link').click();
+  await page.waitForFunction(() => window.__openedExternalUrl === 'https://edimarkweb.github.io/');
+  await page.locator('#about-close-btn').click();
+  await page.locator('#about-modal-overlay').waitFor({ state: 'hidden' });
+
+  await page.locator('#html-output').focus();
+  assert.equal(await page.locator('#formula-btn').getAttribute('data-controls-disabled'), null);
+  assert.equal(await page.locator('#open-edicuatex-btn').getAttribute('data-controls-disabled'), null);
+  await page.locator('#open-edicuatex-btn').click();
+  await page.locator('#edicuatex-modal-overlay').waitFor({ state: 'visible' });
+  const edicuatexUrl = new URL(await page.locator('#edicuatex-frame').getAttribute('src'));
+  assert.equal(edicuatexUrl.origin, new URL(appUrl).origin);
+  assert.equal(edicuatexUrl.pathname, '/vendor/edicuatex/index.html');
+  assert.equal(edicuatexUrl.searchParams.get('lang'), 'es');
+  assert.equal(edicuatexUrl.searchParams.get('mode'), 'dark');
+  const embeddedEdicuatex = page.frameLocator('#edicuatex-frame');
+  await embeddedEdicuatex.getByRole('button', { name: 'Básico', exact: true }).waitFor();
+  assert.equal(await embeddedEdicuatex.locator('.tab-btn').count(), 15);
+  assert.equal(await embeddedEdicuatex.locator('#toolbar .toolbar-btn').count(), 14);
+  assert.equal(await embeddedEdicuatex.locator('html').getAttribute('data-edimark-theme'), 'dark');
+  await embeddedEdicuatex.locator('#settings-btn').click();
+  assert.equal(await embeddedEdicuatex.locator('#settings-modal').evaluate(modal => modal.classList.contains('active')), true);
+  const edicuatexFrame = page.frames().find(frame => frame.url().includes('/vendor/edicuatex/index.html'));
+  assert.ok(edicuatexFrame, 'no se cargó el editor EdiCuaTeX incrustado');
+  await edicuatexFrame.evaluate(() => {
+    const targetOrigin = new URLSearchParams(location.search).get('origin');
+    parent.postMessage({
+      type: 'edicuatex:result',
+      latex: 'x^2',
+      delimiter: 'parentheses',
+      wrapped: '\\(x^2\\)',
+    }, targetOrigin);
+  });
+  await page.locator('#edicuatex-modal-overlay').waitFor({ state: 'hidden' });
+  assert.match(await page.locator('#markdown-input').inputValue(), /\\\(x\^2\\\)/);
 });
 
 test('una lista local dañada no impide arrancar y conserva una copia', async (t) => {
@@ -212,7 +319,9 @@ test('escribir sin pausas mantiene los dos paneles al día', async (t) => {
   La analítica está desactivada en localhost, así que la prueba sirve la
   aplicación desde un host inventado; todo se resuelve contra el servidor local.
 */
-test('el JSONP de analítica no alcanza la página que lo carga', async (t) => {
+test('el JSONP de analítica no alcanza la página que lo carga', {
+  skip: Boolean(process.env.EDIMARK_STATIC_ROOT),
+}, async (t) => {
   const context = await browser.newContext();
   t.after(() => context.close());
 
@@ -259,7 +368,7 @@ test('los controles base64 y de pegado se traducen', async (t) => {
   t.after(() => context.close());
 
   await page.waitForFunction(() => document.documentElement.lang === 'en');
-  assert.equal(await page.locator('#paste-btn').getAttribute('title'), 'Paste from clipboard');
+  assert.equal(await page.locator('#paste-btn').getAttribute('title'), 'Paste from clipboard (Ctrl+Alt+V)');
   await page.locator('#new-tab-btn').click();
   await page.evaluate(() => markdownEditor.setValue('![Demo](data:image/png;base64,iVBORw0KGgo=)'));
   await page.locator('.base64-hidden-title').getByText('Hidden base64 images', { exact: true }).waitFor();
@@ -485,18 +594,17 @@ for (const [locale, lang] of [['es-ES', 'es'], ['en-US', 'en'], ['ca-ES', 'ca'],
   });
 }
 
-test('el pie muestra la versión de package.json en cada idioma', async (t) => {
+test('Acerca de muestra la versión de package.json en cada idioma', async (t) => {
   const packageVersion = JSON.parse(await readFile(resolve(repoRoot, 'package.json'), 'utf8')).version;
   const { context, page } = await openApp({ locale: 'en-US' });
   t.after(() => context.close());
 
   await page.waitForFunction(() => document.documentElement.lang === 'en');
-  assert.equal(
-    await page.locator('[data-i18n-key="footer_version"]').textContent(),
-    `Version ${packageVersion}.`,
-  );
-  // El marcador no puede llegar nunca a la vista.
-  assert.doesNotMatch(await page.locator('.site-footer').textContent(), /\{version\}/);
+  await page.locator('#about-btn').click();
+  await page.locator('#about-modal-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('[data-app-version]').textContent(), packageVersion);
+  assert.equal(await page.locator('#about-web-link').innerText(), 'Open the web version');
+  assert.equal(await page.locator('#about-desktop-link').innerText(), 'Download the desktop version');
 });
 
 test('una coincidencia vacía no se come un carácter al reemplazar', async (t) => {
@@ -765,6 +873,68 @@ test('Ctrl+O abre el selector de archivos sin pisar Ctrl+Mayús+O', async (t) =>
   assert.equal(seleccionesExtra, 0, 'Ctrl+Mayús+O no debe abrir además el selector de archivos');
 });
 
+test('los nuevos atajos abren sus acciones y los iconos explican su función', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  assert.equal(await page.locator('#doc-lang-btn').getAttribute('title'), 'Cambiar idioma y autor');
+  assert.match(await page.locator('#doc-lang-btn').getAttribute('aria-label'), /^Cambiar idioma y autor\. Idioma general: /);
+  assert.equal(await page.locator('#toggle-replace-btn').getAttribute('title'), 'Mostrar opciones de reemplazo');
+
+  await page.keyboard.press('Control+Alt+e');
+  assert.equal(await page.locator('#actions-menu').isVisible(), true);
+  assert.equal(await page.locator('#export-menu').isVisible(), true);
+  await page.keyboard.press('Escape');
+
+  await page.keyboard.press('Control+,');
+  assert.equal(await page.locator('#settings-menu').isVisible(), true);
+  await page.keyboard.press('Escape');
+
+  assert.equal(await page.locator('#focus-mode-toggle').getAttribute('aria-pressed'), 'false');
+  await page.keyboard.press('Control+Shift+f');
+  assert.equal(await page.locator('#focus-mode-toggle').getAttribute('aria-pressed'), 'true');
+});
+
+test('Guardar como siempre pide una ruta nueva y la convierte en la ruta activa', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__platformTestCalls = [];
+      window.__EDIMARK_TAURI__ = {
+        dialog: {
+          open: async () => '/tmp/original.md',
+          save: async (options) => {
+            window.__platformTestCalls.push(['dialog.save', options.defaultPath]);
+            return '/tmp/copia.md';
+          },
+        },
+        fs: {
+          readTextFile: async () => '# Original',
+          writeTextFile: async (path, content) => {
+            window.__platformTestCalls.push(['write', path, content]);
+          },
+          writeFile: async () => {},
+        },
+      };
+    },
+  });
+  t.after(() => context.close());
+
+  await page.keyboard.press('Control+o');
+  await page.locator('.tab-name').getByText('original.md', { exact: true }).waitFor();
+  await page.locator('#markdown-input').fill('# Primera versión');
+  await page.keyboard.press('Control+s');
+  await page.waitForFunction(() => window.__platformTestCalls.some(call => call[0] === 'write'));
+
+  await page.locator('#markdown-input').fill('# Copia nueva');
+  await page.keyboard.press('Control+Shift+s');
+  await page.waitForFunction(() => window.__platformTestCalls.some(call => call[0] === 'dialog.save'));
+  const calls = await page.evaluate(() => window.__platformTestCalls);
+  assert.deepEqual(calls[0], ['write', '/tmp/original.md', '# Primera versión']);
+  assert.deepEqual(calls[1], ['dialog.save', 'original.md']);
+  assert.deepEqual(calls[2], ['write', '/tmp/copia.md', '# Copia nueva']);
+  assert.equal(await page.locator('.tab-name').getByText('copia', { exact: true }).count(), 1);
+});
+
 /*
   Al soltar una carpeta, dataTransfer.files solo trae una entrada por directorio
   que no supera el filtro de extensiones: sin recorrer las entradas, la carpeta
@@ -925,11 +1095,14 @@ test('el idioma del documento se elige desde el panel y se guarda en el archivo'
   const boton = page.locator('#doc-lang-btn');
   assert.equal(await page.locator('#doc-lang-label').textContent(), 'ES');
   assert.equal(await boton.evaluate(b => b.classList.contains('doc-lang-inherited')), true);
+  assert.equal(await page.locator('#markdown-input').evaluate(editor => editor.spellcheck), true);
+  assert.equal(await page.locator('#markdown-input').getAttribute('lang'), 'es');
 
   await boton.click();
   await page.locator('[data-doc-lang="ca"]').click();
   assert.equal(await page.locator('#doc-lang-label').textContent(), 'CA');
   assert.equal(await boton.evaluate(b => b.classList.contains('doc-lang-inherited')), false);
+  assert.equal(await page.locator('#markdown-input').getAttribute('lang'), 'ca');
 
   // Queda escrito en el documento, y sin ensuciar la vista previa.
   assert.equal(await page.locator('#markdown-input').inputValue(), '---\nlang: "ca"\n---\n\n# Notas\n\nTexto.\n');
