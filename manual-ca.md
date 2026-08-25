@@ -79,6 +79,7 @@ La barra del costat del logotip agrupa les opcions globals de l'aplicació i con
   * **Mida del text**: petita, normal, gran o molt gran.
   * **Tema**: `Sistema` segueix el de l'equip i canvia amb ell; `Clar` i `Fosc` el fixen. L'elecció es recorda el pròxim cop que obris l'aplicació.
   * **Finestra independent**: obre EdiMarkWeb en una finestra pròpia, a manera d'aplicació d'escriptori.
+  * **Cerca actualitzacions…**: només apareix a l'aplicació d'escriptori. Comprova si hi ha una versió més recent i, si n'hi ha, mostra un avís amb el botó **Baixa i instal·la**, que descarrega l'instal·lador del teu sistema i l'obre. L'aplicació fa aquesta comprovació tota sola un cop al dia en arrencar; la casella **Comprova en iniciar** de l'avís permet desactivar-la.
   * **Document exportat…**: obre els ajustos dels fitxers que genera l'aplicació (idioma i, per al LaTeX, classe i preàmbul), explicats més avall.
 * **Imprimir (Ctrl+P)**: genera una vista preparada per a paper o PDF amb els estils actuals.
 * **Cercar (Ctrl+F)** i **Manual (Ctrl+H)**: obren el cercador avançat o aquest mateix document.

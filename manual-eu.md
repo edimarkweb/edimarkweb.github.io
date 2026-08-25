@@ -79,6 +79,7 @@ Logotipoaren ondoko barrak aplikazioaren aukera orokorrak biltzen ditu eta fitxa
   * **Testuaren tamaina**: txikia, normala, handia edo oso handia.
   * **Gaia**: `Sistemakoa` aukerak ekipoarena jarraitzen du eta harekin batera aldatzen da; `Argia` eta `Iluna` aukerek finkatu egiten dute. Aukeraketa gogoratu egiten da aplikazioa hurrengoan irekitzean.
   * **Leiho independentea**: EdiMarkWeb bere leiho batean irekitzen du, mahaigaineko aplikazio gisa.
+  * **Bilatu eguneraketak…**: mahaigaineko aplikazioan bakarrik agertzen da. Bertsio berriagorik dagoen begiratzen du eta, halakorik badago, ohar bat erakusten du **Deskargatu eta instalatu** botoiarekin: zure sistemaren instalatzailea deskargatu eta irekitzen du. Aplikazioak berak egunean behin egiten du egiaztapena abiaraztean; oharreko **Egiaztatu abiaraztean** laukiak desaktibatzeko aukera ematen du.
   * **Esportatutako dokumentua…**: aplikazioak sortzen dituen fitxategien ezarpenak irekitzen ditu (hizkuntza eta, LaTeX-erako, klasea eta atarikoa), behean azalduta.
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia sortzen du uneko estiloekin.
 * **Bilatu (Ctrl+F)** eta **Eskuliburua (Ctrl+H)**: bilatzaile aurreratua edo dokumentu hau bera irekitzen dituzte.

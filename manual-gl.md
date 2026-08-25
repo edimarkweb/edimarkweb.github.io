@@ -79,6 +79,7 @@ A barra xunto ao logotipo agrupa as opcións globais da aplicación e concentra 
   * **Tamaño do texto**: pequeno, normal, grande ou moi grande.
   * **Tema**: `Sistema` segue o do equipo e cambia con el; `Claro` e `Escuro` fíxano. A elección lémbrase a próxima vez que abras a aplicación.
   * **Xanela independente**: abre EdiMarkWeb nunha xanela propia, a xeito de aplicación de escritorio.
+  * **Buscar actualizacións…**: só aparece na aplicación de escritorio. Consulta se hai unha versión máis recente e, se a hai, amosa un aviso co botón **Descargar e instalar**, que baixa o instalador do teu sistema e o abre. A aplicación fai esta comprobación soa unha vez ao día ao arrincar; a caixa **Comprobar ao iniciar** do aviso permite desactivala.
   * **Documento exportado…**: abre os axustes dos ficheiros que xera a aplicación (idioma e, para LaTeX, clase e preámbulo), explicados máis abaixo.
 * **Imprimir (Ctrl+P)**: xera unha vista preparada para papel ou PDF cos estilos actuais.
 * **Buscar (Ctrl+F)** e **Manual (Ctrl+H)**: abren o buscador avanzado ou este mesmo documento.

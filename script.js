@@ -1,6 +1,11 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
 const APP_VERSION = '2.17.0';
 const DESKTOP_RELEASE_BANNER_KEY = `edimarkweb-hide-desktop-release-${APP_VERSION}`;
+const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
+const UPDATE_LAST_CHECK_KEY = 'edimarkweb-update-last-check';
+// Una comprobación diaria basta: publicar una versión y que el aviso tarde unas
+// horas en aparecer es preferible a consultar GitHub en cada arranque.
+const UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 // Declaración de variables globales
 let turndownService;
@@ -3309,6 +3314,13 @@ window.onload = () => {
     const desktopReleaseBanner = document.getElementById('desktop-release-banner');
     const desktopBannerClose = document.getElementById('desktop-banner-close');
     const desktopBannerNeverShow = document.getElementById('desktop-banner-never-show');
+    const updateBanner = document.getElementById('update-banner');
+    const updateBannerMessage = document.getElementById('update-banner-message');
+    const updateInstallBtn = document.getElementById('update-install-btn');
+    const updateNotesLink = document.getElementById('update-notes-link');
+    const updateAutoCheck = document.getElementById('update-auto-check');
+    const updateBannerClose = document.getElementById('update-banner-close');
+    const checkUpdatesBtn = document.getElementById('check-updates-btn');
     const copyMdBtn = document.getElementById('copy-md-btn');
     const copyHtmlBtn = document.getElementById('copy-html-btn');
     const pasteBtn = document.getElementById('paste-btn');
@@ -3947,6 +3959,155 @@ window.onload = () => {
             desktopReleaseBanner.hidden = true;
             mainContainer.classList.remove('release-banner-visible');
         });
+    }
+
+    /*
+      Actualizaciones de la aplicación de escritorio. La versión publicada se
+      consulta en las publicaciones de GitHub; si hay una posterior a la que
+      está en marcha, el aviso ofrece descargar el instalador que corresponde a
+      este sistema y entregárselo al instalador nativo.
+    */
+    let lastUpdateCheck = null;
+    let updateCheckInProgress = false;
+    let updateInstallInProgress = false;
+
+    const autoUpdateCheckEnabled = () => safeLocalStorageGet(UPDATE_AUTO_CHECK_KEY, '1') !== '0';
+
+    function hideUpdateBanner() {
+        if (!updateBanner) return;
+        updateBanner.hidden = true;
+        if (!desktopReleaseBanner || desktopReleaseBanner.hidden) {
+            mainContainer.classList.remove('release-banner-visible');
+        }
+    }
+
+    function renderUpdateBanner() {
+        if (!updateBanner || !lastUpdateCheck?.available) return;
+        const { version, currentVersion, notesUrl, asset, releasesPageUrl } = lastUpdateCheck;
+        if (updateBannerMessage) {
+            updateBannerMessage.textContent = asset
+                ? formatTranslation(
+                    'update_available_message',
+                    'EdiMarkWeb {version} ya está disponible; tienes la {current}.',
+                    { version, current: currentVersion },
+                )
+                : formatTranslation(
+                    'update_manual_download_message',
+                    'EdiMarkWeb {version} ya está disponible, pero no hay ningún instalador para este sistema. Descárgala desde la página de novedades.',
+                    { version },
+                );
+        }
+        if (updateNotesLink) updateNotesLink.href = notesUrl || releasesPageUrl;
+        if (updateInstallBtn) {
+            updateInstallBtn.hidden = !asset;
+            updateInstallBtn.disabled = updateInstallInProgress;
+        }
+        if (updateAutoCheck) updateAutoCheck.checked = autoUpdateCheckEnabled();
+        updateBanner.hidden = false;
+        mainContainer.classList.add('release-banner-visible');
+        if (window.lucide) lucide.createIcons();
+    }
+    // El texto del aviso se compone con la versión, así que hay que rehacerlo
+    // cuando el usuario cambia de idioma con el aviso en pantalla.
+    window.__refreshUpdateBanner = () => {
+        if (updateBanner && !updateBanner.hidden) renderUpdateBanner();
+    };
+
+    async function checkForApplicationUpdate({ manual = false } = {}) {
+        const platform = window.EdiMarkPlatform;
+        const updater = window.EdiMarkUpdater;
+        if (!nativeMode || !updater || !platform || typeof platform.updateTarget !== 'function') return;
+        if (updateCheckInProgress) return;
+        updateCheckInProgress = true;
+        if (manual) reportStatus(getTranslation('update_checking', 'Buscando actualizaciones…'));
+        try {
+            const target = await platform.updateTarget();
+            const result = await updater.checkForUpdate({ currentVersion: APP_VERSION, target });
+            safeLocalStorageSet(UPDATE_LAST_CHECK_KEY, String(Date.now()), { notify: false });
+            lastUpdateCheck = result;
+            if (result.available) {
+                renderUpdateBanner();
+            } else if (manual) {
+                reportStatus(formatTranslation(
+                    'update_up_to_date',
+                    'Ya tienes la última versión ({version}).',
+                    { version: result.version },
+                ));
+            }
+        } catch (error) {
+            console.error('No se pudo comprobar si hay actualizaciones:', error);
+            if (manual) reportStatus(getTranslation('update_check_failed', 'No se pudo comprobar si hay actualizaciones.'));
+        } finally {
+            updateCheckInProgress = false;
+        }
+    }
+
+    async function downloadAndInstallUpdate() {
+        const platform = window.EdiMarkPlatform;
+        const updater = window.EdiMarkUpdater;
+        const asset = lastUpdateCheck?.asset;
+        if (!asset || updateInstallInProgress || !updater || !platform) return;
+        updateInstallInProgress = true;
+        if (updateInstallBtn) updateInstallBtn.disabled = true;
+        try {
+            const bytes = await updater.downloadAsset(asset, {
+                onProgress: (ratio) => {
+                    if (!updateBannerMessage) return;
+                    updateBannerMessage.textContent = ratio === null
+                        ? getTranslation('update_downloading_unknown', 'Descargando la actualización…')
+                        : formatTranslation(
+                            'update_downloading',
+                            'Descargando la actualización… {percent}%',
+                            { percent: Math.round(ratio * 100) },
+                        );
+                },
+            });
+            const path = await platform.installDownloadedUpdate(asset.name, bytes);
+            const message = /\.appimage$/i.test(asset.name)
+                ? formatTranslation(
+                    'update_ready_appimage',
+                    'Descargado en {path}. Sustituye tu AppImage por este archivo.',
+                    { path },
+                )
+                : getTranslation(
+                    'update_ready_installer',
+                    'Instalador descargado. Termina la instalación y vuelve a abrir EdiMarkWeb.',
+                );
+            if (updateBannerMessage) updateBannerMessage.textContent = message;
+            reportStatus(message);
+            if (updateInstallBtn) updateInstallBtn.hidden = true;
+        } catch (error) {
+            console.error('No se pudo instalar la actualización:', error);
+            reportStatus(getTranslation('update_download_failed', 'No se pudo descargar la actualización.'));
+            renderUpdateBanner();
+        } finally {
+            updateInstallInProgress = false;
+            if (updateInstallBtn) updateInstallBtn.disabled = false;
+        }
+    }
+
+    if (updateAutoCheck) {
+        updateAutoCheck.checked = autoUpdateCheckEnabled();
+        updateAutoCheck.addEventListener('change', () => {
+            safeLocalStorageSet(UPDATE_AUTO_CHECK_KEY, updateAutoCheck.checked ? '1' : '0', { notify: false });
+        });
+    }
+    if (updateBannerClose) updateBannerClose.addEventListener('click', hideUpdateBanner);
+    if (updateInstallBtn) updateInstallBtn.addEventListener('click', () => { downloadAndInstallUpdate(); });
+    if (checkUpdatesBtn && nativeMode) {
+        checkUpdatesBtn.classList.remove('hidden');
+        checkUpdatesBtn.addEventListener('click', () => {
+            closeSettingsMenu();
+            checkForApplicationUpdate({ manual: true });
+        });
+    }
+    if (nativeMode && autoUpdateCheckEnabled()) {
+        const previousCheck = Number(safeLocalStorageGet(UPDATE_LAST_CHECK_KEY, '0')) || 0;
+        if (Date.now() - previousCheck >= UPDATE_CHECK_INTERVAL_MS) {
+            // Fuera del arranque: la comprobación no debe retrasar la apertura
+            // del documento con el que se ha abierto la aplicación.
+            setTimeout(() => { checkForApplicationUpdate(); }, 4000);
+        }
     }
     if (desktopMode) {
         document.body.classList.add('desktop-mode');

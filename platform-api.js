@@ -55,6 +55,7 @@
     const fs = (injected && injected.fs) || (tauri && tauri.fs);
     const opener = (injected && injected.opener) || (tauri && tauri.opener);
     const app = injected && injected.app;
+    const updater = injected && injected.update;
     const clipboard = injected && injected.clipboard;
     const desktop = Boolean(dialog && fs);
 
@@ -110,6 +111,23 @@
       onTextDocumentPaths(callback) {
         if (!desktop || !app || typeof app.onOpenMarkdownPaths !== 'function') return () => {};
         return app.onOpenMarkdownPaths(callback);
+      },
+
+      /* Sistema y arquitectura («linux/x86_64») para elegir el instalador. */
+      async updateTarget() {
+        if (!desktop || !updater || typeof updater.target !== 'function') return '';
+        return updater.target();
+      },
+
+      /* Entrega al sistema el instalador ya descargado y devuelve su ruta. */
+      async installDownloadedUpdate(fileName, bytes) {
+        if (!desktop || !updater || typeof updater.installDownloaded !== 'function') {
+          throw new Error('Esta versión no puede instalar actualizaciones.');
+        }
+        // El nombre viaja como cabecera del IPC, que solo admite ASCII.
+        const safeName = String(fileName || '').replace(/[^A-Za-z0-9._+~-]/g, '-');
+        if (!safeName) throw new Error('El instalador no tiene un nombre válido.');
+        return updater.installDownloaded(safeName, bytes);
       },
 
       async readClipboardImage() {

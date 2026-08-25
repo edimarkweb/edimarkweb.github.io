@@ -79,6 +79,7 @@ The bar next to the logo holds the application's global options and gathers ever
   * **Font size**: small, normal, large or very large.
   * **Theme**: `System` follows your computer's setting and changes with it; `Light` and `Dark` fix it. Your choice is remembered next time you open the application.
   * **Separate window**: opens EdiMarkWeb in a window of its own, like a desktop application.
+  * **Check for updates…**: only appears in the desktop application. It looks for a newer version and, if there is one, shows a notice with a **Download and install** button that fetches the installer for your system and opens it. The application checks on its own once a day at startup; the notice's **Check at startup** box turns that off.
   * **Exported document…**: opens the settings for the files the application generates (language, plus class and preamble for LaTeX), explained below.
 * **Print (Ctrl+P)**: produces a view ready for paper or PDF using the current styles.
 * **Search (Ctrl+F)** and **Manual (Ctrl+H)**: open the advanced search panel or this very document.

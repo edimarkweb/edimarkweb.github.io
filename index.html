@@ -235,6 +235,10 @@
                       <span data-i18n-key="desktop_window_btn_text">Ventana independiente</span>
                     </button>
                     <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+                    <button type="button" id="check-updates-btn" class="hidden flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="check_updates_btn_title" title="Buscar actualizaciones de la aplicación">
+                      <i data-lucide="refresh-cw" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                      <span data-i18n-key="check_updates_btn_text">Buscar actualizaciones…</span>
+                    </button>
                     <button type="button" id="latex-settings-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="doc_settings_btn_title" title="Ajustes de los documentos exportados">
                       <i data-lucide="file-cog" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
                       <span data-i18n-key="doc_settings_btn_text">Documento exportado…</span>
@@ -280,6 +284,22 @@
             </label>
         </div>
         <button id="desktop-banner-close" type="button" class="desktop-release-banner-close" data-i18n-key="desktop_banner_close" title="Cerrar este aviso" aria-label="Cerrar este aviso">
+            <i data-lucide="x" aria-hidden="true"></i>
+        </button>
+    </section>
+
+    <section id="update-banner" class="desktop-release-banner update-banner" role="status" hidden>
+        <i data-lucide="download" class="desktop-release-banner-icon" aria-hidden="true"></i>
+        <div class="desktop-release-banner-content">
+            <p id="update-banner-message">Hay una versión nueva de EdiMarkWeb.</p>
+            <button id="update-install-btn" type="button" class="update-banner-action" data-i18n-key="update_install_btn">Descargar e instalar</button>
+            <a id="update-notes-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="update_notes_link">Ver novedades</a>
+            <label class="desktop-release-banner-never">
+                <input id="update-auto-check" type="checkbox">
+                <span data-i18n-key="update_auto_check_label">Comprobar al iniciar</span>
+            </label>
+        </div>
+        <button id="update-banner-close" type="button" class="desktop-release-banner-close" data-i18n-key="update_banner_close" title="Cerrar este aviso" aria-label="Cerrar este aviso">
             <i data-lucide="x" aria-hidden="true"></i>
         </button>
     </section>
@@ -782,6 +802,7 @@
     </div>
 
     <script src="platform-api.js"></script>
+    <script src="desktop-updater.js"></script>
     <script type="module" src="pandoc-exporter.js"></script>
     <script>
     (function () {

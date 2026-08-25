@@ -35,6 +35,12 @@ if (window.__TAURI_INTERNALS__) {
         };
       },
     },
+    update: {
+      target: () => invoke('update_target'),
+      installDownloaded: (fileName, bytes) => invoke('install_downloaded_update', bytes, {
+        headers: { 'x-installer-name': fileName },
+      }),
+    },
     app: {
       initialMarkdownPaths: () => invoke('initial_markdown_paths'),
       readMarkdownDocument: path => invoke('read_markdown_document', { path }),

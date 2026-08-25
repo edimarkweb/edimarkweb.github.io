@@ -112,6 +112,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.__updateVersionLabel === 'function') {
       window.__updateVersionLabel();
     }
+    if (typeof window.__refreshUpdateBanner === 'function') {
+      window.__refreshUpdateBanner();
+    }
   };
 
   /*

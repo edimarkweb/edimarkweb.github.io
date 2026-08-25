@@ -54,6 +54,43 @@
     text-underline-offset: 2px;
 }
 
+.update-banner-action[hidden] {
+    display: none;
+}
+
+.update-banner-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid #b45309;
+    border-radius: 0.4rem;
+    background: #b45309;
+    color: #fffbeb;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.update-banner-action:hover:not(:disabled) {
+    background: #92400e;
+}
+
+.update-banner-action:disabled {
+    opacity: 0.65;
+    cursor: progress;
+}
+
+.update-banner-action:focus-visible {
+    outline: 2px solid #b45309;
+    outline-offset: 2px;
+}
+
+.dark .update-banner-action {
+    border-color: #fbbf24;
+    background: #b45309;
+    color: #fffbeb;
+}
+
 .desktop-release-banner-never {
     display: inline-flex;
     align-items: center;
