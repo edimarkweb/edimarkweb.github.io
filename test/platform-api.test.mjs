@@ -166,3 +166,28 @@ test('expone la imagen del portapapeles nativo solo en escritorio', async () => 
   const webPlatform = createPlatformApi({ Blob, URL, document: {}, setTimeout });
   assert.equal(await webPlatform.readClipboardImage(), null);
 });
+
+test('entrega el fetch nativo para las actualizaciones y nada en el navegador', async () => {
+  const peticiones = [];
+  const platform = createPlatformApi({
+    Blob,
+    __EDIMARK_TAURI__: {
+      dialog: { open: async () => null, save: async () => null },
+      fs: { readTextFile: async () => '', writeTextFile: async () => {} },
+      update: {
+        fetch: async (url, init) => {
+          peticiones.push([url, init]);
+          return { ok: true };
+        },
+      },
+    },
+  });
+
+  const fetchImpl = platform.updateFetch();
+  assert.equal(typeof fetchImpl, 'function');
+  assert.deepEqual(await fetchImpl('https://github.com/edimarkweb/x.deb', { method: 'GET' }), { ok: true });
+  assert.deepEqual(peticiones, [['https://github.com/edimarkweb/x.deb', { method: 'GET' }]]);
+
+  const navegador = createPlatformApi({ Blob });
+  assert.equal(navegador.updateFetch(), null);
+});

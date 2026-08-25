@@ -186,6 +186,9 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        // La descarga del instalador la hace Rust: GitHub redirige los
+        // adjuntos a un servidor sin cabeceras CORS y el webview los rechaza.
+        .plugin(tauri_plugin_http::init())
         .manage(PendingOpenPaths::default())
         .invoke_handler(tauri::generate_handler![
             initial_markdown_paths,

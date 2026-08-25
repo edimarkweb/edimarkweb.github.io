@@ -4056,7 +4056,12 @@ window.onload = () => {
         if (manual) reportStatus(getTranslation('update_checking', 'Buscando actualizaciones…'));
         try {
             const target = await platform.updateTarget();
-            const result = await updater.checkForUpdate({ currentVersion: APP_VERSION, target });
+            const fetchImpl = typeof platform.updateFetch === 'function' ? platform.updateFetch() : null;
+            const result = await updater.checkForUpdate({
+                currentVersion: APP_VERSION,
+                target,
+                ...(fetchImpl ? { fetchImpl } : {}),
+            });
             safeLocalStorageSet(UPDATE_LAST_CHECK_KEY, String(Date.now()), { notify: false });
             lastUpdateCheck = result;
             if (result.available) {
@@ -4084,7 +4089,9 @@ window.onload = () => {
         updateInstallInProgress = true;
         if (updateInstallBtn) updateInstallBtn.disabled = true;
         try {
+            const fetchImpl = typeof platform.updateFetch === 'function' ? platform.updateFetch() : null;
             const bytes = await updater.downloadAsset(asset, {
+                ...(fetchImpl ? { fetchImpl } : {}),
                 onProgress: (ratio) => {
                     if (!updateBannerMessage) return;
                     updateBannerMessage.textContent = ratio === null

@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-capability",
-  "description": "Permite abrir y guardar los documentos elegidos por el usuario.",
+  "description": "Permite abrir y guardar los documentos del usuario y descargar las actualizaciones publicadas en GitHub.",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -11,6 +11,13 @@
     "clipboard-manager:allow-read-image",
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
-    "fs:allow-write-file"
+    "fs:allow-write-file",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://api.github.com/repos/edimarkweb/*" },
+        { "url": "https://github.com/edimarkweb/*" }
+      ]
+    }
   ]
 }

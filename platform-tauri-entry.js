@@ -5,6 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { listen } from '@tauri-apps/api/event';
 import { readImage } from '@tauri-apps/plugin-clipboard-manager';
+import { fetch as nativeFetch } from '@tauri-apps/plugin-http';
 
 // El resto de la aplicación sigue siendo JavaScript clásico y compartido con
 // GitHub Pages. Este pequeño punto de entrada es el único que empaqueta las API
@@ -38,6 +39,9 @@ if (window.__TAURI_INTERNALS__) {
     },
     update: {
       target: () => invoke('update_target'),
+      // Las peticiones salen por Rust: GitHub redirige los instaladores a un
+      // servidor sin cabeceras CORS y el webview cancelaría la descarga.
+      fetch: (input, init) => nativeFetch(input, init),
       installDownloaded: (fileName, bytes) => invoke('install_downloaded_update', bytes, {
         headers: { 'x-installer-name': fileName },
       }),

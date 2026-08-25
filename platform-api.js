@@ -126,6 +126,16 @@
         return updater.target();
       },
 
+      /*
+        `fetch` nativo para las actualizaciones: GitHub redirige los adjuntos a
+        un servidor que no responde con cabeceras CORS, así que el webview los
+        rechazaría. En el navegador no hay actualizaciones y devuelve null.
+      */
+      updateFetch() {
+        if (!desktop || !updater || typeof updater.fetch !== 'function') return null;
+        return (input, init) => updater.fetch(input, init);
+      },
+
       /* Entrega al sistema el instalador ya descargado y devuelve su ruta. */
       async installDownloadedUpdate(fileName, bytes) {
         if (!desktop || !updater || typeof updater.installDownloaded !== 'function') {
