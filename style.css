@@ -1187,6 +1187,28 @@ code {
         color: inherit !important;
         padding: 0 !important;
     }
+    /*
+      La ventana independiente y la aplicación de escritorio reparten el alto
+      con flex y `height: 100%`, para que el editor ocupe la ventana y no
+      aparezca la barra de desplazamiento del navegador. Al imprimir eso deja
+      el documento encerrado en el alto de la pantalla y solo sale la primera
+      página: hay que devolverle el alto natural a toda la cadena de
+      contenedores, no solo al panel de la vista previa.
+    */
+    body.desktop-mode,
+    body.desktop-mode #workspace-shell,
+    body.desktop-mode #editor-container,
+    body.desktop-mode #editor-container .panel,
+    body.desktop-mode .editor-pane,
+    #editor-container .panel,
+    .panel {
+        display: block !important;
+        flex: none !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
     .markdown-textarea,
     .markdown-textarea-wrapper,
     .CodeMirror {

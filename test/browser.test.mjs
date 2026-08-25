@@ -979,6 +979,36 @@ test('el selector de imagen incrusta el archivo cuando se elige dentro del docum
   assert.match(await page.locator('#markdown-input').inputValue(), /!\[Microscopio\]\(data:image\/png;base64,/);
 });
 
+test('al imprimir en modo escritorio el documento no se recorta a una página', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  const parrafos = Array.from({ length: 40 }, (_, i) => `## Apartado ${i + 1}\n\n${'Texto de relleno para ocupar varias páginas. '.repeat(6)}`);
+  await page.locator('#markdown-input').fill(`# Documento largo\n\n${parrafos.join('\n\n')}`);
+  // La ventana independiente y la aplicación de escritorio reparten el alto con
+  // flex; si eso sobrevive a la impresión, solo sale la primera página.
+  await page.evaluate(() => document.body.classList.add('desktop-mode'));
+  await page.emulateMedia({ media: 'print' });
+  await page.waitForTimeout(300);
+
+  const medidas = await page.evaluate(() => {
+    const panel = document.getElementById('html-panel');
+    const salida = document.getElementById('html-output');
+    return {
+      altoPanel: panel.getBoundingClientRect().height,
+      altoContenido: salida.scrollHeight,
+      recorta: getComputedStyle(panel).overflow !== 'visible',
+    };
+  });
+
+  assert.equal(medidas.recorta, false, 'el panel no debe recortar al imprimir');
+  assert.ok(
+    medidas.altoPanel >= medidas.altoContenido - 1,
+    `el panel (${medidas.altoPanel}px) debe crecer hasta el contenido (${medidas.altoContenido}px)`,
+  );
+});
+
 test('una imagen relativa que el propio sitio sirve se deja en paz', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
