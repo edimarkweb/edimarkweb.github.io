@@ -62,7 +62,6 @@ async function openApp({ locale = 'es-ES', initStorage } = {}) {
   await context.route(/pandoc\.b64(?:\.gz)?(?:\?.*)?$/, route => (
     route.fulfill({ status: 200, contentType: 'text/plain', body: '' })
   ));
-  await context.route(/\/imagenes\//, route => route.abort());
   const requests = [];
   const page = await context.newPage();
   page.on('request', request => requests.push(request.url()));
@@ -1314,4 +1313,43 @@ test('la portada del EPUB ofrece los tres modos y limita el peso de la imagen', 
     await page.evaluate(() => [window.__edimarkLatexSettings.epubCover, window.__edimarkLatexSettings.epubCoverImage]),
     ['none', ''],
   );
+});
+
+test('el aviso de escritorio reaparece con cada versión y no acumula claves', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      // Preferencias de versiones ya descartadas, que deben desaparecer.
+      localStorage.setItem('edimarkweb-hide-desktop-release-2.16.0', '1');
+      localStorage.setItem('edimarkweb-hide-desktop-release-2.17.0', '1');
+    },
+  });
+  t.after(() => context.close());
+
+  // La versión en marcha no está descartada, así que el aviso sale...
+  await page.locator('#desktop-release-banner').waitFor({ state: 'visible' });
+  // ...y las claves de las versiones anteriores ya no están.
+  const restantes = await page.evaluate(() => Object.keys(localStorage)
+    .filter(key => key.startsWith('edimarkweb-hide-desktop-release-')));
+  assert.deepEqual(restantes, []);
+
+  await page.locator('#desktop-banner-never-show').check();
+  await page.reload();
+  await page.locator('.tab-name').first().waitFor();
+  await assert.doesNotReject(
+    page.locator('#desktop-release-banner').waitFor({ state: 'hidden' }),
+    'el aviso debía seguir oculto para la misma versión',
+  );
+
+  // Con una versión nueva publicada, la clave guardada pasa a ser antigua.
+  await page.evaluate(() => {
+    const stored = Object.keys(localStorage)
+      .filter(key => key.startsWith('edimarkweb-hide-desktop-release-'));
+    stored.forEach(key => localStorage.removeItem(key));
+    localStorage.setItem('edimarkweb-hide-desktop-release-0.0.1', '1');
+  });
+  await page.reload();
+  await page.locator('#desktop-release-banner').waitFor({ state: 'visible' });
+  const trasLaPurga = await page.evaluate(() => Object.keys(localStorage)
+    .filter(key => key.startsWith('edimarkweb-hide-desktop-release-')));
+  assert.deepEqual(trasLaPurga, []);
 });

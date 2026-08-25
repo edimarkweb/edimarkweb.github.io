@@ -1,6 +1,7 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.19.0';
-const DESKTOP_RELEASE_BANNER_KEY = `edimarkweb-hide-desktop-release-${APP_VERSION}`;
+const APP_VERSION = '2.20.0';
+const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
+const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
 const UPDATE_LAST_CHECK_KEY = 'edimarkweb-update-last-check';
 // Una comprobación diaria basta: publicar una versión y que el aviso tarde unas
@@ -108,6 +109,25 @@ function reportStorageFailure(error) {
         || pendingStorageNotice?.key === notice.key;
     if (!alreadyReported) console.warn(notice.fallback, error);
     queueStorageNotice(notice);
+}
+
+/*
+  La preferencia de ocultar el aviso de escritorio lleva la versión en su
+  clave, para que una versión nueva vuelva a anunciarse aunque se marcara «No
+  volver a mostrar». Esas claves se quedarían acumuladas una por versión, así
+  que al arrancar se descartan todas menos la de la versión en marcha.
+*/
+function purgeOldReleaseBannerKeys() {
+    let storedKeys;
+    try {
+        storedKeys = Object.keys(window.localStorage);
+    } catch (error) {
+        console.warn('No se pudo revisar el almacenamiento local:', error);
+        return;
+    }
+    storedKeys
+        .filter(key => key.startsWith(DESKTOP_RELEASE_BANNER_PREFIX) && key !== DESKTOP_RELEASE_BANNER_KEY)
+        .forEach(key => safeLocalStorageRemove(key));
 }
 
 function safeLocalStorageGet(key, fallback = null) {
@@ -3952,6 +3972,7 @@ window.onload = () => {
     );
     const desktopMode = browserDesktopMode || (nativeMode && !nativeIos);
     const desktopSpawned = params.get(DESKTOP_SPAWNED_KEY) === '1';
+    purgeOldReleaseBannerKeys();
     const releaseBannerDismissed = safeLocalStorageGet(DESKTOP_RELEASE_BANNER_KEY) === '1';
     if (desktopReleaseBanner && !nativeMode && !browserDesktopMode && !releaseBannerDismissed) {
         desktopReleaseBanner.hidden = false;
