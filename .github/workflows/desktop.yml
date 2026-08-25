@@ -24,7 +24,10 @@ jobs:
       matrix:
         include:
           - name: Linux
-            os: ubuntu-latest
+            # Not ubuntu-latest: the binary links against the glibc of the
+            # machine that builds it, so 24.04 (glibc 2.39) would produce
+            # packages that refuse to start on Debian 12 or Ubuntu 22.04.
+            os: ubuntu-22.04
             artifact: edimarkweb-linux
           - name: Windows
             os: windows-latest
