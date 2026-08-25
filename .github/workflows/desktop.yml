@@ -29,12 +29,26 @@ jobs:
             # packages that refuse to start on Debian 12 or Ubuntu 22.04.
             os: ubuntu-22.04
             artifact: edimarkweb-linux
+            target: ''
+            bundle_path: src-tauri/target/release/bundle/**
           - name: Windows
             os: windows-latest
             artifact: edimarkweb-windows
-          - name: macOS
+            target: ''
+            bundle_path: src-tauri/target/release/bundle/**
+          - name: macOS (Apple silicon)
             os: macos-latest
             artifact: edimarkweb-macos
+            target: ''
+            bundle_path: src-tauri/target/release/bundle/**
+          # The macOS runners are Apple silicon, so the Intel disk image is
+          # cross-compiled from the same machine instead of asking for a
+          # retired Intel runner.
+          - name: macOS (Intel)
+            os: macos-latest
+            artifact: edimarkweb-macos-intel
+            target: x86_64-apple-darwin
+            bundle_path: src-tauri/target/x86_64-apple-darwin/release/bundle/**
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -47,12 +61,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libdbus-1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - name: Add the cross-compilation target
+        if: matrix.target != ''
+        run: rustup target add ${{ matrix.target }}
       - run: npm ci
-      - run: npm run desktop:build
+      - run: npm run desktop:build ${{ matrix.target != '' && format('-- --target {0}', matrix.target) || '' }}
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: src-tauri/target/release/bundle/**
+          path: ${{ matrix.bundle_path }}
           if-no-files-found: error
 
   publish-release:
@@ -73,6 +90,10 @@ jobs:
         with:
           name: edimarkweb-macos
           path: release-assets/macos
+      - uses: actions/download-artifact@v4
+        with:
+          name: edimarkweb-macos-intel
+          path: release-assets/macos-intel
       - name: Attach installers to the release
         env:
           GH_TOKEN: ${{ github.token }}

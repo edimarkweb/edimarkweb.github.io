@@ -100,9 +100,11 @@ npm run desktop:build
 ```
 
 En Linux se generan paquetes DEB y AppImage; en Windows, instaladores MSI y NSIS; y en macOS,
-una imagen DMG. El flujo
+una imagen DMG por arquitectura, la de Apple silicon y la de Intel. El flujo
 `Native application builds` de GitHub Actions adjunta esos instaladores a GitHub Releases al
-crear una etiqueta `v*` o al indicar manualmente una etiqueta existente.
+crear una etiqueta `v*` o al indicar manualmente una etiqueta existente. Los paquetes de Linux se
+construyen en Ubuntu 22.04 a propósito: el binario queda atado a la glibc de la máquina que lo
+compila, y una más reciente dejaría fuera a Debian 12 y a Ubuntu 22.04.
 
 El corrector ortográfico utiliza los diccionarios del sistema. Windows y macOS toman los idiomas
 instalados en el dispositivo; en Linux puede ser necesario instalar el paquete Hunspell del idioma
