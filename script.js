@@ -29,6 +29,7 @@ const FS_KEY = 'edimarkweb-fontsize';
 const FOCUS_MODE_KEY = 'edimarkweb-focus-mode';
 const LATEX_SETTINGS_KEY = 'edimarkweb-latex-settings';
 const SPELLCHECK_KEY = 'edimarkweb-spellcheck';
+const THEME_KEY = 'edimarkweb-theme';
 /*
   La lista de imágenes incrustadas vive plegada salvo que se pida: crecía con
   cada imagen pegada y le comía al editor la mitad de la pantalla justo cuando
@@ -155,6 +156,7 @@ function safeLocalStorageGet(key, fallback = null) {
 function safeLocalStorageSet(key, value, { notify = true } = {}) {
     try {
         window.localStorage.setItem(key, value);
+        if (PREFERENCE_KEYS.includes(key)) persistPreferencesToDisk();
         return true;
     } catch (error) {
         if (notify) reportStorageFailure(error);
@@ -166,12 +168,109 @@ function safeLocalStorageSet(key, value, { notify = true } = {}) {
 function safeLocalStorageRemove(key) {
     try {
         window.localStorage.removeItem(key);
+        if (PREFERENCE_KEYS.includes(key)) persistPreferencesToDisk();
         return true;
     } catch (error) {
         reportStorageFailure(error);
         return false;
     }
 }
+
+/*
+  Preferencias que deben sobrevivir a una reinstalación.
+
+  En el escritorio, `localStorage` es el almacén del webview: el sistema lo
+  trata como caché y una versión nueva puede encontrárselo vacío, con lo que el
+  tema, el idioma, el tamaño de letra o la disposición volverían a sus valores
+  de fábrica sin que nadie haya tocado nada. Por eso se guardan además en un
+  archivo del perfil del usuario, que es el que manda al arrancar.
+
+  Las opciones del documento (idioma, autor, formato LaTeX) no están aquí
+  porque ya tienen su propio archivo, `settings.json`, con este mismo trato.
+*/
+const PREFERENCES_FILE = 'preferences.json';
+const PREFERENCE_KEYS = [
+    'language',
+    THEME_KEY,
+    LAYOUT_KEY,
+    FS_KEY,
+    FOCUS_MODE_KEY,
+    BASE64_PANEL_KEY,
+    COPY_ACTION_KEY,
+    SPELLCHECK_KEY,
+    UPDATE_AUTO_CHECK_KEY,
+    DESKTOP_SIZE_KEY,
+];
+
+// Mientras se vuelca el archivo en `localStorage` no hay que devolvérselo.
+let hydratingPreferences = false;
+let preferencesWriteTimer = null;
+
+function collectPreferences() {
+    const stored = {};
+    PREFERENCE_KEYS.forEach(key => {
+        const value = safeLocalStorageGet(key);
+        if (typeof value === 'string') stored[key] = value;
+    });
+    return stored;
+}
+
+/*
+  Se escribe con un pequeño retraso: mover el deslizador del tamaño de letra
+  dispara un cambio por paso, y no hace falta un viaje al disco por cada uno.
+*/
+function persistPreferencesToDisk() {
+    const platform = window.EdiMarkPlatform;
+    if (hydratingPreferences || !platform?.isDesktop || typeof platform.writeSettingsFile !== 'function') return;
+    if (preferencesWriteTimer) clearTimeout(preferencesWriteTimer);
+    preferencesWriteTimer = setTimeout(() => {
+        preferencesWriteTimer = null;
+        platform.writeSettingsFile(JSON.stringify(collectPreferences(), null, 2), PREFERENCES_FILE)
+            .catch(error => console.warn('No se han podido guardar las preferencias en el disco:', error));
+    }, 300);
+}
+window.__edimarkPersistPreferences = persistPreferencesToDisk;
+
+/*
+  Lo guardado en el archivo sustituye a lo del webview antes de que la interfaz
+  lea nada. `window.onload` e i18n.js esperan a esta promesa, así que el tema y
+  el idioma se pintan ya con lo que había, sin parpadeo ni valores de fábrica.
+*/
+async function hydratePreferencesFromDisk() {
+    const platform = window.EdiMarkPlatform;
+    if (!platform?.isDesktop || typeof platform.readSettingsFile !== 'function') return;
+    let contents = null;
+    try {
+        contents = await platform.readSettingsFile(PREFERENCES_FILE);
+    } catch (error) {
+        console.warn('No se han podido leer las preferencias del disco:', error);
+        return;
+    }
+    if (!contents) {
+        // Primera vez con esta versión: lo que hubiera en el webview pasa al
+        // archivo y desde aquí ya manda él.
+        persistPreferencesToDisk();
+        return;
+    }
+    try {
+        const parsed = JSON.parse(contents);
+        if (!parsed || typeof parsed !== 'object') return;
+        hydratingPreferences = true;
+        PREFERENCE_KEYS.forEach(key => {
+            const value = parsed[key];
+            if (typeof value === 'string') safeLocalStorageSet(key, value, { notify: false });
+        });
+    } catch (error) {
+        console.warn('Las preferencias guardadas están dañadas:', error);
+    } finally {
+        hydratingPreferences = false;
+    }
+}
+
+const preferencesReady = hydratePreferencesFromDisk();
+// i18n.js arranca en DOMContentLoaded, antes que el resto: sin esperar aquí
+// leería el idioma del webview en vez del guardado.
+window.__edimarkPreferencesReady = preferencesReady;
 
 function cloneSelection(selection) {
     if (!selection || typeof selection.start !== 'number' || typeof selection.end !== 'number') return null;
@@ -3955,7 +4054,10 @@ function applyFontSize(px) {
 }
 
 
-window.onload = () => {
+window.onload = async () => {
+    // Antes de pintar nada: en el escritorio las preferencias buenas están en
+    // el archivo del perfil, no en el almacén del webview.
+    await preferencesReady;
     // --- Obtención de elementos del DOM ---
     const mainContainer = document.getElementById('main-container');
     const toggleWidthBtn = document.getElementById('toggle-width-btn');
@@ -5743,7 +5845,6 @@ window.onload = () => {
     // --- FIN DE LA CORRECCIÓN ---
 
     // --- Gestión del tema (sistema / claro / oscuro) ---
-    const THEME_KEY = 'edimarkweb-theme';
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
     const themeSelect = document.getElementById('theme-select');
     const themeMenuBtn = document.getElementById('theme-menu-btn');

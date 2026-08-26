@@ -235,6 +235,51 @@ test('la aplicación nativa aprovecha toda la ventana y comparte el cuadro Acerc
   assert.match(await page.locator('#markdown-input').inputValue(), /\\\(x\^2\\\)/);
 });
 
+test('las preferencias del perfil sobreviven a una instalación con el almacén vacío', async (t) => {
+  const { context, page } = await openApp({
+    locale: 'es-ES',
+    initStorage: () => {
+      /*
+        Una versión recién instalada: el archivo del perfil conserva lo que el
+        usuario tenía elegido, pero el almacén del webview llega en blanco.
+      */
+      const archivos = new Map([['preferences.json', JSON.stringify({
+        language: 'en',
+        'edimarkweb-theme': 'dark',
+        'edimarkweb-fontsize': '20',
+      })]]);
+      window.__edimarkPreferenceFiles = archivos;
+      window.__EDIMARK_TAURI__ = {
+        dialog: {},
+        fs: {},
+        settings: {
+          read: async name => archivos.get(name) ?? null,
+          write: async (name, contents) => { archivos.set(name, contents); },
+        },
+      };
+    },
+  });
+  t.after(() => context.close());
+
+  await page.waitForFunction(() => document.documentElement.lang === 'en');
+  assert.equal(await page.locator('html').evaluate(html => html.classList.contains('dark')), true);
+  assert.equal(
+    await page.locator('html').evaluate(html => html.style.getPropertyValue('--fs-base')),
+    '20px',
+  );
+
+  // Y lo que se cambia ahora vuelve al archivo, no solo al almacén.
+  await page.evaluate(() => {
+    const select = document.getElementById('language-select');
+    select.value = 'ca';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await page.waitForFunction(() => {
+    const guardado = window.__edimarkPreferenceFiles.get('preferences.json');
+    return guardado ? JSON.parse(guardado).language === 'ca' : false;
+  });
+});
+
 test('una lista local dañada no impide arrancar y conserva una copia', async (t) => {
   const { context, page } = await openApp({
     locale: 'en-US',

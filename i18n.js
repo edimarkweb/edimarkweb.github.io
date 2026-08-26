@@ -82,6 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (persist) {
       try {
         localStorage.setItem('language', usableLang);
+        // Y en el escritorio, también en el archivo del perfil.
+        if (typeof window.__edimarkPersistPreferences === 'function') {
+          window.__edimarkPersistPreferences();
+        }
       } catch (error) {
         console.warn('No se pudo guardar el idioma:', error);
       }
@@ -132,7 +136,15 @@ document.addEventListener('DOMContentLoaded', () => {
     languageSelect.addEventListener('change', updateLanguageLabel);
   }
 
-  setLanguage(getPreferredLanguage(), { persist: false })
+  /*
+    En el escritorio el idioma elegido vive en un archivo del perfil, porque el
+    almacén del webview no sobrevive a una reinstalación. Leerlo es asíncrono,
+    así que se espera a que esté volcado antes de decidir: si no, la primera
+    pantalla saldría en el idioma del sistema y cambiaría sola después.
+  */
+  Promise.resolve(window.__edimarkPreferencesReady)
+    .catch(() => {})
+    .then(() => setLanguage(getPreferredLanguage(), { persist: false }))
     .catch(error => console.error('No se pudo inicializar el idioma:', error))
     .finally(() => {
       resolveLanguageReady();
