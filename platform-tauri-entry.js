@@ -1,5 +1,5 @@
 import { open, save } from '@tauri-apps/plugin-dialog';
-import { readTextFile, writeFile, writeTextFile } from '@tauri-apps/plugin-fs';
+import { BaseDirectory, mkdir, readTextFile, writeFile, writeTextFile } from '@tauri-apps/plugin-fs';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -27,6 +27,26 @@ if (window.__TAURI_INTERNALS__) {
   window.__EDIMARK_TAURI__ = {
     dialog: { open, save },
     fs: { readTextFile, writeFile, writeTextFile },
+    /*
+      Las opciones de la aplicación, en un archivo del perfil del usuario y no
+      en el almacén del webview: ese almacén es caché para el sistema y se
+      puede vaciar solo, y entonces el idioma, el autor y el formato de partida
+      desaparecerían sin que nadie haya tocado nada.
+    */
+    settings: {
+      async read(name) {
+        try {
+          return await readTextFile(name, { baseDir: BaseDirectory.AppConfig });
+        } catch (error) {
+          // Todavía no existe: es lo normal la primera vez.
+          return null;
+        }
+      },
+      async write(name, contents) {
+        await mkdir('', { baseDir: BaseDirectory.AppConfig, recursive: true });
+        await writeTextFile(name, contents, { baseDir: BaseDirectory.AppConfig });
+      },
+    },
     opener: { openUrl },
     clipboard: {
       async readImage() {

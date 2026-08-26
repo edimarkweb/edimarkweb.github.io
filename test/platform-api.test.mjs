@@ -356,3 +356,86 @@ test('entrega el fetch nativo para las actualizaciones y nada en el navegador', 
   const navegador = createPlatformApi({ Blob });
   assert.equal(navegador.updateFetch(), null);
 });
+
+/*
+  Las opciones de la aplicación en el disco: en el escritorio es el archivo el
+  que manda, y en el navegador no hay ninguno al que acudir.
+*/
+test('lee y escribe las opciones en el archivo del perfil', async () => {
+  const disco = new Map([['settings.json', '{"documentAuthor":"Juanjo"}']]);
+  const platform = createPlatformApi({
+    Blob,
+    __EDIMARK_TAURI__: {
+      dialog: { open: async () => null, save: async () => null },
+      fs: { readTextFile: async () => '', writeTextFile: async () => {} },
+      settings: {
+        read: async name => (disco.has(name) ? disco.get(name) : Promise.reject(new Error('no existe'))),
+        write: async (name, contents) => { disco.set(name, contents); },
+      },
+    },
+  });
+
+  assert.equal(await platform.readSettingsFile(), '{"documentAuthor":"Juanjo"}');
+  assert.equal(await platform.writeSettingsFile('{"documentAuthor":"Ana"}'), true);
+  assert.equal(disco.get('settings.json'), '{"documentAuthor":"Ana"}');
+});
+
+test('un archivo ilegible no rompe el arranque: se sigue sin él', async () => {
+  const platform = createPlatformApi({
+    Blob,
+    __EDIMARK_TAURI__: {
+      dialog: { open: async () => null, save: async () => null },
+      fs: { readTextFile: async () => '', writeTextFile: async () => {} },
+      settings: {
+        read: async () => { throw new Error('permiso denegado'); },
+        write: async () => { throw new Error('disco lleno'); },
+      },
+    },
+  });
+
+  assert.equal(await platform.readSettingsFile(), null);
+  assert.equal(await platform.writeSettingsFile('{}'), false);
+});
+
+test('en el navegador no hay archivo de opciones', async () => {
+  const platform = createPlatformApi({ Blob });
+  assert.equal(platform.isDesktop, false);
+  assert.equal(await platform.readSettingsFile(), null);
+  assert.equal(await platform.writeSettingsFile('{}'), false);
+});
+
+/*
+  La carpeta de trabajo casi nunca cambia dentro de una sesión: los diálogos
+  nativos deben volver a la última usada en vez de a donde el sistema decida.
+*/
+test('los diálogos recuerdan la última carpeta de la sesión', async () => {
+  const dialogos = [];
+  const platform = createPlatformApi({
+    Blob,
+    __EDIMARK_TAURI__: {
+      dialog: {
+        open: async (options) => {
+          dialogos.push(['open', options.defaultPath]);
+          return '/home/juanjo/apuntes/tema-1.md';
+        },
+        save: async (options) => {
+          dialogos.push(['save', options.defaultPath]);
+          return '/home/juanjo/apuntes/tema-1.docx';
+        },
+      },
+      fs: { readTextFile: async () => '# Tema', writeTextFile: async () => {}, writeFile: async () => {} },
+    },
+  });
+
+  // La primera vez no hay nada que recordar.
+  await platform.openTextDocument();
+  assert.deepEqual(dialogos[0], ['open', undefined]);
+
+  // La imagen se busca ya en la carpeta del documento abierto…
+  await platform.pickImageFile();
+  assert.deepEqual(dialogos[1], ['open', '/home/juanjo/apuntes']);
+
+  // …y al guardar, el nombre propuesto cuelga de esa misma carpeta.
+  await platform.saveFile({ suggestedName: 'tema-1.docx', contents: 'x', extensions: ['docx'] });
+  assert.deepEqual(dialogos[2], ['save', '/home/juanjo/apuntes/tema-1.docx']);
+});

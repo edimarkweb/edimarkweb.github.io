@@ -166,6 +166,28 @@
     const fs = (injected && injected.fs) || (tauri && tauri.fs);
     const opener = (injected && injected.opener) || (tauri && tauri.opener);
     const app = injected && injected.app;
+    const settingsStore = injected && injected.settings;
+    /*
+      La última carpeta usada, mientras dure la sesión. Los diálogos nativos
+      abren donde el sistema quiera si no se les dice nada, y quien trabaja en
+      una carpeta de apuntes acaba navegando hasta ella una y otra vez. No se
+      guarda en el disco a propósito: es un atajo de esta sesión, no una
+      preferencia que haya que arrastrar de un día para otro.
+    */
+    let lastDirectory = '';
+
+    function rememberDirectory(path) {
+        const directory = directoryFromPath(path);
+        if (directory) lastDirectory = directory;
+        return path;
+    }
+
+    /* Un nombre suelto se abre en la última carpeta; una ruta entera manda. */
+    function defaultPathFor(suggestedName = '') {
+        if (!lastDirectory) return suggestedName || undefined;
+        if (!suggestedName) return lastDirectory;
+        return resolveChildPath(lastDirectory, suggestedName);
+    }
     const updater = injected && injected.update;
     const clipboard = injected && injected.clipboard;
     const desktop = Boolean(dialog && fs);
@@ -188,15 +210,45 @@
         }
       },
 
+      /*
+        Opciones de la aplicación en el disco. En el navegador no hay dónde
+        guardarlas, así que devuelve null y manda `localStorage`; en el
+        escritorio, el archivo es la copia buena y `localStorage` solo el
+        espejo que lee el resto del código sin esperar a nada.
+      */
+      async readSettingsFile(name = 'settings.json') {
+        if (!desktop || !settingsStore || typeof settingsStore.read !== 'function') return null;
+        try {
+          const contents = await settingsStore.read(name);
+          return typeof contents === 'string' ? contents : null;
+        } catch (error) {
+          console.warn('No se han podido leer las opciones guardadas:', error);
+          return null;
+        }
+      },
+
+      async writeSettingsFile(contents, name = 'settings.json') {
+        if (!desktop || !settingsStore || typeof settingsStore.write !== 'function') return false;
+        try {
+          await settingsStore.write(name, String(contents));
+          return true;
+        } catch (error) {
+          console.warn('No se han podido guardar las opciones en el disco:', error);
+          return false;
+        }
+      },
+
       async openTextDocument({ extensions = ['md', 'markdown'] } = {}) {
         if (!desktop) return null;
         const selected = await dialog.open({
           multiple: false,
           directory: false,
+          defaultPath: defaultPathFor(),
           filters: [{ name: 'Markdown', extensions }],
         });
         const path = Array.isArray(selected) ? selected[0] : selected;
         if (!path) return null;
+        rememberDirectory(path);
         return {
           path,
           name: fileNameFromPath(path),
@@ -206,6 +258,9 @@
 
       async openTextDocumentAtPath(path) {
         if (!desktop || !app || typeof app.readMarkdownDocument !== 'function') return null;
+        // Vale para el arrastre y para los archivos con los que arranca la
+        // aplicación: la carpeta de trabajo suele ser esa.
+        rememberDirectory(path);
         return {
           path,
           name: fileNameFromPath(path),
@@ -253,6 +308,7 @@
         const selected = await dialog.open({
           multiple: false,
           directory: false,
+          defaultPath: defaultPathFor(),
           filters: [{
             name: 'Imágenes',
             extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif', 'ico'],
@@ -260,6 +316,7 @@
         });
         const path = Array.isArray(selected) ? selected[0] : selected;
         if (!path) return null;
+        rememberDirectory(path);
         return { path, name: fileNameFromPath(path) };
       },
 
@@ -342,13 +399,14 @@
             ? extensions
             : [extensionFromName(suggestedName)].filter(Boolean);
           path = await dialog.save({
-            defaultPath: suggestedName,
+            defaultPath: defaultPathFor(suggestedName),
             filters: usableExtensions.length
               ? [{ name: usableExtensions.map(ext => ext.toUpperCase()).join('/'), extensions: usableExtensions }]
               : undefined,
           });
         }
         if (!path) return { saved: false, path: '', name: suggestedName };
+        rememberDirectory(path);
 
         if (typeof contents === 'string') {
           await fs.writeTextFile(path, contents);
