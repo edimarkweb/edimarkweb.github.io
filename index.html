@@ -446,51 +446,10 @@
                     <h2 class="text-lg font-medium text-slate-700 dark:text-slate-200" data-i18n-key="markdown_panel_title">Markdown</h2>
                     <div class="flex items-center gap-2">
                         <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
-                        <div class="relative" id="doc-lang-container">
-                            <button id="doc-lang-btn" type="button" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" aria-haspopup="true" aria-expanded="false" data-i18n-key="doc_lang_btn_title" title="Cambiar el idioma, el autor y el formato de este documento.">
-                                <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
-                                <span id="doc-lang-label" class="text-xs font-semibold uppercase">ES</span>
-                            </button>
-                            <div id="doc-lang-menu" class="hidden absolute right-0 top-full z-20 mt-2 w-56 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800" role="menu" aria-labelledby="doc-lang-btn">
-                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-doc-lang="" role="menuitemradio" aria-checked="false">
-                                    <span data-i18n-key="doc_lang_default">Idioma general</span>
-                                    <i data-lucide="check" class="doc-lang-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                                </button>
-                                <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
-                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-doc-lang="es" role="menuitemradio" aria-checked="false">
-                                    <span>Español</span>
-                                    <i data-lucide="check" class="doc-lang-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                                </button>
-                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-doc-lang="en" role="menuitemradio" aria-checked="false">
-                                    <span>English</span>
-                                    <i data-lucide="check" class="doc-lang-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                                </button>
-                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-doc-lang="ca" role="menuitemradio" aria-checked="false">
-                                    <span>Català</span>
-                                    <i data-lucide="check" class="doc-lang-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                                </button>
-                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-doc-lang="gl" role="menuitemradio" aria-checked="false">
-                                    <span>Galego</span>
-                                    <i data-lucide="check" class="doc-lang-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                                </button>
-                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-doc-lang="eu" role="menuitemradio" aria-checked="false">
-                                    <span>Euskara</span>
-                                    <i data-lucide="check" class="doc-lang-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                                </button>
-                                <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
-                                <button type="button" id="doc-lang-other-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
-                                    <span data-i18n-key="doc_lang_other">Otro idioma…</span>
-                                </button>
-                                <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
-                                <button type="button" id="doc-author-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
-                                    <span data-i18n-key="doc_author_btn">Autor de este documento…</span>
-                                </button>
-                                <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
-                                <button type="button" id="doc-format-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
-                                    <span data-i18n-key="doc_format_btn">Formato de este documento…</span>
-                                </button>
-                            </div>
-                        </div>
+                        <button id="doc-lang-btn" type="button" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="doc_lang_btn_title" title="Idioma, autor y formato de este documento.">
+                            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                            <span id="doc-lang-label" class="text-xs font-semibold uppercase">ES</span>
+                        </button>
                         <button id="copy-md-btn" class="copy-btn flex items-center gap-2 px-3 py-2 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="copy_md_btn_title" title="Copiar Markdown"><i data-lucide="copy"></i><span class="hidden sm:inline" data-i18n-key="copy_md_btn_text">Copiar</span></button>
                     </div>
                 </div>
@@ -756,8 +715,33 @@
 
     <div id="doc-format-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center overflow-y-auto p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="doc-format-modal-title">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl my-8 dark:bg-slate-800">
-            <h3 id="doc-format-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_format_modal_title">Formato de este documento</h3>
+            <h3 id="doc-format-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_format_modal_title">Este documento</h3>
             <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" data-i18n-key="doc_format_modal_hint">Se guarda en el propio documento y viaja con él. Lo que dejes en «Igual que las opciones generales» sigue a las opciones de exportación.</p>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="doc-own-language" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_own_language_label">Idioma</label>
+                    <select id="doc-own-language" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                        <option value="" data-i18n-key="doc_format_inherit">Igual que las opciones generales</option>
+                        <option value="es">Español</option>
+                        <option value="en">English</option>
+                        <option value="ca">Català</option>
+                        <option value="gl">Galego</option>
+                        <option value="eu">Euskara</option>
+                        <option value="other" data-i18n-key="doc_own_language_other">Otro…</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="doc-own-author" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_own_author_label">Autor</label>
+                    <input type="text" id="doc-own-author" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" data-i18n-key="doc_own_author_placeholder" placeholder="Igual que las opciones generales">
+                </div>
+            </div>
+            <div id="doc-own-language-code-row" class="hidden">
+                <label for="doc-own-language-code" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_own_language_code_label">Código del idioma</label>
+                <input type="text" id="doc-own-language-code" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="fr, de, pt-BR">
+            </div>
+            <div class="border-t border-slate-200 pt-4 dark:border-slate-700">
+                <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200" data-i18n-key="doc_settings_format_section">Formato del texto</h4>
+            </div>
             <div id="doc-format-fields" class="space-y-4"></div>
             <div class="mt-6 flex flex-wrap justify-end gap-3">
                 <button id="doc-format-reset-btn" type="button" class="mr-auto px-4 py-2 text-slate-600 rounded-md hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-700" data-i18n-key="doc_format_reset_btn">Quitar del documento</button>

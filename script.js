@@ -3851,8 +3851,11 @@ window.onload = () => {
     // --- Elementos de modales ---
     const exportFormatFields = document.getElementById('export-format-fields');
     const docFormatFields = document.getElementById('doc-format-fields');
+    const docOwnLanguage = document.getElementById('doc-own-language');
+    const docOwnLanguageCode = document.getElementById('doc-own-language-code');
+    const docOwnLanguageRow = document.getElementById('doc-own-language-code-row');
+    const docOwnAuthor = document.getElementById('doc-own-author');
     const docFormatOverlay = document.getElementById('doc-format-modal-overlay');
-    const docFormatBtn = document.getElementById('doc-format-btn');
     const docFormatToolbarBtn = document.getElementById('doc-format-toolbar-btn');
     const docFormatSaveBtn = document.getElementById('doc-format-save-btn');
     const docFormatCancelBtn = document.getElementById('doc-format-cancel-btn');
@@ -4075,17 +4078,8 @@ window.onload = () => {
       siendo el suyo. Sin declarar, el documento usa el idioma general de
       Configuración, que es lo que ocurre con casi todos.
     */
-    const docLangContainer = document.getElementById('doc-lang-container');
     const docLangBtn = document.getElementById('doc-lang-btn');
     const docLangLabel = document.getElementById('doc-lang-label');
-    const docLangMenu = document.getElementById('doc-lang-menu');
-    const docLangOtherBtn = document.getElementById('doc-lang-other-btn');
-    const docLangOptions = docLangMenu ? Array.from(docLangMenu.querySelectorAll('[data-doc-lang]')) : [];
-
-    const closeDocLangMenu = () => {
-        if (docLangMenu) docLangMenu.classList.add('hidden');
-        if (docLangBtn) docLangBtn.setAttribute('aria-expanded', 'false');
-    };
 
     function generalDocumentLanguage() {
         const settings = window.__edimarkLatexSettings || {};
@@ -4118,12 +4112,6 @@ window.onload = () => {
         );
         docLangBtn.setAttribute('aria-label', `${actionDescription} ${languageDescription}`);
         docLangBtn.setAttribute('title', actionDescription);
-        docLangOptions.forEach((option) => {
-            const selected = (option.dataset.docLang || '') === own;
-            option.setAttribute('aria-checked', selected ? 'true' : 'false');
-            const check = option.querySelector('.doc-lang-check');
-            if (check) check.classList.toggle('hidden', !selected);
-        });
     }
     window.__refreshDocLanguageIndicator = refreshDocLanguageIndicator;
 
@@ -4164,31 +4152,10 @@ window.onload = () => {
     }
 
     if (docLangBtn) {
+        // Idioma, autor y formato son lo mismo: ajustes de este documento.
         docLangBtn.addEventListener('click', (event) => {
             event.preventDefault();
-            event.stopPropagation();
-            if (!docLangMenu) return;
-            const hidden = docLangMenu.classList.contains('hidden');
-            docLangMenu.classList.toggle('hidden', !hidden);
-            docLangBtn.setAttribute('aria-expanded', hidden ? 'true' : 'false');
-        });
-    }
-    docLangOptions.forEach((option) => {
-        option.addEventListener('click', () => {
-            setDocumentLanguage(option.dataset.docLang || '');
-            closeDocLangMenu();
-        });
-    });
-    if (docLangOtherBtn) {
-        docLangOtherBtn.addEventListener('click', () => {
-            closeDocLangMenu();
-            const current = splitDocumentFrontMatter(markdownEditor.getValue()).lang;
-            const answer = prompt(
-                getTranslation('doc_lang_other_prompt', 'Código del idioma (por ejemplo fr, de o pt-BR):'),
-                current,
-            );
-            if (answer === null) return;
-            setDocumentLanguage(answer.trim());
+            if (typeof window.__openDocumentSettings === 'function') window.__openDocumentSettings();
         });
     }
 
@@ -4231,24 +4198,13 @@ window.onload = () => {
         updateHtml();
     }
 
-    const docAuthorBtn = document.getElementById('doc-author-btn');
-    if (docAuthorBtn) {
-        docAuthorBtn.addEventListener('click', () => {
-            closeDocLangMenu();
-            const answer = prompt(
-                getTranslation('doc_author_prompt', 'Autor de este documento (deja vacío para usar el general):'),
-                currentDocumentAuthor(),
-            );
-            if (answer === null) return;
-            setDocumentAuthor(answer);
-        });
-    }
-    document.addEventListener('click', (event) => {
-        if (docLangContainer && !docLangContainer.contains(event.target)) closeDocLangMenu();
-    });
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') closeDocLangMenu();
-    });
+    // El cuadro del documento necesita leer y escribir estos dos.
+    window.__documentOwnSettings = {
+        language: () => splitDocumentFrontMatter(markdownEditor.getValue()).lang,
+        author: currentDocumentAuthor,
+        setLanguage: setDocumentLanguage,
+        setAuthor: setDocumentAuthor,
+    };
 
     if (window.lucide) lucide.createIcons();
     const params = new URLSearchParams(window.location.search);
@@ -6240,6 +6196,34 @@ window.onload = () => {
         applyDocumentFormatToPreview();
     }
 
+    /*
+      Idioma y autor viven en el mismo bloque de metadatos que el formato, así
+      que se editan en el mismo cuadro: todo lo que es de este documento junto.
+    */
+    const LISTED_OWN_LANGUAGES = ['es', 'en', 'ca', 'gl', 'eu'];
+
+    function syncOwnLanguageCodeField() {
+        if (!docOwnLanguageRow || !docOwnLanguage) return;
+        docOwnLanguageRow.classList.toggle('hidden', docOwnLanguage.value !== 'other');
+    }
+
+    function fillDocumentOwnFields() {
+        const own = window.__documentOwnSettings;
+        if (!own) return;
+        const language = String(own.language() || '').trim();
+        const listed = LISTED_OWN_LANGUAGES.includes(language);
+        if (docOwnLanguage) docOwnLanguage.value = language ? (listed ? language : 'other') : '';
+        if (docOwnLanguageCode) docOwnLanguageCode.value = listed ? '' : language;
+        if (docOwnAuthor) docOwnAuthor.value = own.author() || '';
+        syncOwnLanguageCodeField();
+    }
+
+    function readOwnLanguageFromFields() {
+        if (!docOwnLanguage) return '';
+        if (docOwnLanguage.value !== 'other') return docOwnLanguage.value;
+        return docOwnLanguageCode ? docOwnLanguageCode.value.trim() : '';
+    }
+
     function toggleDocFormatModal(show) {
         if (!docFormatOverlay) return;
         docFormatOverlay.style.display = show ? 'flex' : 'none';
@@ -6247,12 +6231,14 @@ window.onload = () => {
         renderDocumentFormatFields(docFormatFields, { inherit: true });
         // Siempre desde el documento: cancelar tiene que descartar de verdad.
         fillDocumentFormatFields('doc-format-fields', currentDocumentFormat());
+        fillDocumentOwnFields();
     }
+    window.__openDocumentSettings = () => toggleDocFormatModal(true);
 
-    if (docFormatBtn) {
-        docFormatBtn.addEventListener('click', () => {
-            closeDocLangMenu();
-            toggleDocFormatModal(true);
+    if (docOwnLanguage) {
+        docOwnLanguage.addEventListener('change', () => {
+            syncOwnLanguageCodeField();
+            if (docOwnLanguage.value === 'other' && docOwnLanguageCode) docOwnLanguageCode.focus();
         });
     }
     if (docFormatToolbarBtn) {
@@ -6262,13 +6248,24 @@ window.onload = () => {
         docFormatCancelBtn.addEventListener('click', () => toggleDocFormatModal(false));
     }
     if (docFormatResetBtn) {
-        // Deja el documento sin ajustes propios: vuelve a seguir a los generales.
+        // Deja el documento sin nada propio: vuelve a seguir a los generales.
         docFormatResetBtn.addEventListener('click', () => {
             fillDocumentFormatFields('doc-format-fields', {});
+            if (docOwnLanguage) docOwnLanguage.value = '';
+            if (docOwnLanguageCode) docOwnLanguageCode.value = '';
+            if (docOwnAuthor) docOwnAuthor.value = '';
+            syncOwnLanguageCodeField();
         });
     }
     if (docFormatSaveBtn) {
         docFormatSaveBtn.addEventListener('click', () => {
+            const own = window.__documentOwnSettings;
+            // El idioma y el autor van primero: los tres reescriben el mismo
+            // bloque, y el formato es el que deja el cursor donde estaba.
+            if (own) {
+                own.setLanguage(readOwnLanguageFromFields());
+                own.setAuthor(docOwnAuthor ? docOwnAuthor.value : '');
+            }
             setDocumentFormat(readDocumentFormatFields('doc-format-fields'));
             toggleDocFormatModal(false);
         });

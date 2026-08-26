@@ -112,7 +112,7 @@ La zona de treball es divideix en dos plafons redimensionables:
 
 Pots arrossegar la barra central per donar més espai a qualsevol dels plafons, triar una de les tres disposicions al botó de la dreta o fer servir la doble fletxa per **maximitzar l'àrea d'edició**, que amaga les barres superiors i deixa la pantalla per al text. El botó `+` es manté just després de l'última pestanya.
 
-### L'idioma de cada document
+### Els ajustos de cada document
 
 Al costat del comptador de caràcters hi ha un botó curt amb l'idioma del document: `ES`, `CA`, `FR`… Si es veu atenuat, aquest document no té idioma propi i fa servir l'**idioma general** de *Configuració → Opcions d'exportació…*, que és el més habitual.
 
@@ -128,11 +128,11 @@ lang: "ca"
 
 És la manera estàndard de desar dades sobre un document i molts programes l'entenen. EdiMarkWeb no la mostra a la vista prèvia, perquè no és contingut, però sí al plafó Markdown, que és el codi font. Pots esborrar-la o canviar-la a mà si vols.
 
-### El format de cada document
+#### El format del text
 
-Aquest mateix botó porta a *Format d'aquest document…*, i el botó `Aa` del final de la barra de format obre el mateix amb un clic. Allà es fixen l'**alineació** (esquerra, justificada o dreta), el **tipus de lletra** (amb serifa, sense serifa, monoespaiada o la que escriguis), la **mida** en punts, l'**interlineat**, els **marges** dels quatre costats en centímetres, la **sagnia de primera línia** i la **partició de mots amb guionet**.
+En el mateix quadre —i també al botó **Format** del final de la barra— es fixen l'**alineació** (esquerra, justificada o dreta), el **tipus de lletra** (amb serifa, sense serifa, monoespaiada o la que escriguis), la **mida** en punts, l'**interlineat**, els **marges** dels quatre costats en centímetres, la **sagnia de primera línia** i la **partició de mots amb guionet**.
 
-El que deixis a *Igual que les opcions generals* segueix **Configuració → Opcions d'exportació…**, on hi ha els mateixos ajustos com a valors de partida per a tots els documents. El que fixis aquí es desa dins del document mateix, al costat de l'idioma, així que viatja amb el fitxer:
+El que deixis a *Igual que les opcions generals* segueix **Configuració → Opcions d'exportació…**, on hi ha els mateixos ajustos com a valors de partida per a tots els documents. El que fixis aquí es desa dins del document mateix, al costat de l'idioma i de l'autor, així que viatja amb el fitxer. *Treure-ho tot del document* el deixa sense res propi:
 
 ```
 ---

@@ -112,7 +112,7 @@ Lan-eremua tamainaz alda daitezkeen bi paneletan banatzen da:
 
 Erdiko barra arrasta dezakezu edozein paneli leku gehiago emateko, eskuineko botoian hiru antolaketetako bat aukeratu edo gezi bikoitza erabili **edizio-eremua maximizatzeko**: goiko barrak ezkutatzen ditu eta pantaila testuarentzat uzten du. `+` botoia azken fitxaren ondoren geratzen da.
 
-### Dokumentu bakoitzaren hizkuntza
+### Dokumentu bakoitzaren ezarpenak
 
 Karaktere-kontagailuaren ondoan botoi labur bat dago, dokumentuaren hizkuntzarekin: `ES`, `CA`, `FR`… Itzalita ikusten bada, dokumentu horrek ez du hizkuntza propiorik eta *Ezarpenak → Esportazio-aukerak…* atalean dagoen **hizkuntza orokorra** erabiltzen du, ohikoena dena.
 
@@ -128,11 +128,11 @@ lang: "ca"
 
 Dokumentu bati buruzko datuak gordetzeko modu estandarra da eta programa askok ulertzen dute. EdiMarkWeb-ek ez du aurrebistan erakusten, edukia ez delako, baina bai Markdown panelean, iturburu-kodea baita. Nahi baduzu, eskuz ezaba edo alda dezakezu.
 
-### Dokumentu bakoitzaren formatua
+#### Testuaren formatua
 
-Botoi horrek berak *Dokumentu honen formatua…* atalera darama, eta formatu-barraren amaierako `Aa` botoiak gauza bera irekitzen du klik bakarrean. Han finkatzen dira **lerrokatzea** (ezkerrera, justifikatua edo eskuinera), **letra-tipoa** (serifduna, serifgabea, tarte bakarrekoa edo idazten duzuna), **tamaina** puntutan, **lerroartea**, lau aldeetako **marjinak** zentimetrotan, **lehen lerroaren koska** eta **hitzak marratxoz zatitzea**.
+Koadro berean —eta barraren amaierako **Formatua** botoian ere— finkatzen dira **lerrokatzea** (ezkerrera, justifikatua edo eskuinera), **letra-tipoa** (serifduna, serifgabea, tarte bakarrekoa edo idazten duzuna), **tamaina** puntutan, **lerroartea**, lau aldeetako **marjinak** zentimetrotan, **lehen lerroaren koska** eta **hitzak marratxoz zatitzea**.
 
-*Aukera orokorren berdina* uzten duzunak **Konfigurazioa → Esportazio-aukerak…** jarraitzen du, non ajuste berak dokumentu guztien abiapuntuko balio gisa dauden. Hemen finkatzen duzuna dokumentuaren barruan gordetzen da, hizkuntzaren ondoan, eta fitxategiarekin bidaiatzen du:
+*Aukera orokorren berdina* uzten duzunak **Konfigurazioa → Esportazio-aukerak…** jarraitzen du, non ajuste berak dokumentu guztien abiapuntuko balio gisa dauden. Hemen finkatzen duzuna dokumentuaren barruan gordetzen da, hizkuntzaren eta egilearen ondoan, eta fitxategiarekin bidaiatzen du. *Kendu dena dokumentutik* aukerak berezko ezer gabe uzten du:
 
 ```
 ---

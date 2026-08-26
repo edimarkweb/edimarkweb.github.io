@@ -112,11 +112,11 @@ La zona de trabajo se divide en dos paneles redimensionables:
 
 Puedes arrastrar la barra central para dar más espacio a cualquiera de los paneles, elegir una de las tres disposiciones en el botón situado a la derecha o usar la doble flecha para **maximizar el área de edición**, que oculta las barras superiores y deja la pantalla para el texto. El botón `+` permanece justo después de la última pestaña.
 
-### El idioma de cada documento
+### Los ajustes de cada documento
 
-Junto al contador de caracteres hay un botón corto con el idioma del documento: `ES`, `CA`, `FR`… Si se ve atenuado, ese documento no tiene idioma propio y usa el **idioma general** de *Configuración → Opciones de exportación…*, que es lo normal.
+Junto al contador de caracteres hay un botón corto con el idioma del documento: `ES`, `CA`, `FR`… Si se ve atenuado, ese documento no tiene idioma propio y usa el **idioma general** de *Configuración → Opciones de exportación…*, que es lo normal. Al pulsarlo se abre el cuadro **Este documento**, con su idioma, su autor y su formato.
 
-Al elegir un idioma concreto, la aplicación lo guarda **dentro del propio documento**, de modo que viaja con el archivo: si lo guardas y lo abres mañana, aquí o en otro equipo, o se lo pasas a alguien, seguirá siendo ese. Para volver a lo anterior, elige *Idioma general*. Y con *Otro idioma…* puedes escribir el código de cualquier lengua (`fr`, `de`, `pt-BR`). En ese mismo menú, *Autor de este documento…* hace lo propio con el autor.
+Al elegir un idioma concreto, la aplicación lo guarda **dentro del propio documento**, de modo que viaja con el archivo: si lo guardas y lo abres mañana, aquí o en otro equipo, o se lo pasas a alguien, seguirá siendo ese. Para volver a lo anterior, elige *Igual que las opciones generales*. Y con *Otro…* puedes escribir el código de cualquier lengua (`fr`, `de`, `pt-BR`). El **autor** funciona igual, en el campo de al lado.
 
 Si alguna vez abres tu `.md` con un editor de texto plano, verás esa preferencia arriba del todo, en unas líneas entre rayas:
 
@@ -128,11 +128,11 @@ lang: "ca"
 
 Es la forma estándar de guardar datos sobre un documento y la entienden muchos programas. EdiMarkWeb no la muestra en la previsualización, porque no es contenido, pero sí en el panel Markdown, que es el código fuente. Puedes borrarla o cambiarla a mano si quieres.
 
-### El formato de cada documento
+#### El formato del texto
 
-Ese mismo botón lleva a *Formato de este documento…*, y el botón `Aa` del final de la barra de formato abre lo mismo de un clic. Ahí se fijan la **alineación** (izquierda, justificada o derecha), el **tipo de letra** (con remates, sin remates, monoespaciada o la que escribas), el **tamaño** en puntos, el **interlineado**, los **márgenes** de los cuatro lados en centímetros, la **sangría de primera línea** y la **partición de palabras con guion**.
+En el mismo cuadro —y también en el botón **Formato** del final de la barra— se fijan la **alineación** (izquierda, justificada o derecha), el **tipo de letra** (con remates, sin remates, monoespaciada o la que escribas), el **tamaño** en puntos, el **interlineado**, los **márgenes** de los cuatro lados en centímetros, la **sangría de primera línea** y la **partición de palabras con guion**.
 
-Lo que dejes en *Igual que las opciones generales* sigue a **Configuración → Opciones de exportación…**, donde están los mismos ajustes como valores de partida para todos los documentos. Lo que fijes aquí se guarda dentro del propio documento, junto al idioma, así que viaja con el archivo:
+Lo que dejes en *Igual que las opciones generales* sigue a **Configuración → Opciones de exportación…**, donde están los mismos ajustes como valores de partida para todos los documentos. Lo que fijes aquí se guarda dentro del propio documento, junto al idioma y al autor, así que viaja con el archivo. *Quitar todo del documento* lo deja sin nada propio:
 
 ```
 ---

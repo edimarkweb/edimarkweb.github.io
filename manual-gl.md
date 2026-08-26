@@ -112,7 +112,7 @@ A zona de traballo divídese en dous paneis redimensionables:
 
 Podes arrastrar a barra central para dar máis espazo a calquera dos paneis, escoller unha das tres disposicións no botón da dereita ou usar a frecha dobre para **maximizar a área de edición**, que agocha as barras superiores e deixa a pantalla para o texto. O botón `+` mantense xusto despois da última lapela.
 
-### O idioma de cada documento
+### Os axustes de cada documento
 
 Xunto ao contador de caracteres hai un botón curto co idioma do documento: `ES`, `CA`, `FR`… Se se ve atenuado, ese documento non ten idioma propio e usa o **idioma xeral** de *Configuración → Opcións de exportación…*, que é o normal.
 
@@ -128,11 +128,11 @@ lang: "ca"
 
 É a forma estándar de gardar datos sobre un documento e enténdena moitos programas. EdiMarkWeb non a mostra na previsualización, porque non é contido, pero si no panel Markdown, que é o código fonte. Podes borrala ou cambiala a man se queres.
 
-### O formato de cada documento
+#### O formato do texto
 
-Ese mesmo botón leva a *Formato deste documento…*, e o botón `Aa` do final da barra de formato abre o mesmo cun clic. Alí fíxanse a **aliñación** (esquerda, xustificada ou dereita), o **tipo de letra** (con serifa, sen serifa, monoespazada ou a que escribas), o **tamaño** en puntos, o **entreliñado**, as **marxes** dos catro lados en centímetros, a **sangría de primeira liña** e a **partición de palabras con guión**.
+No mesmo cadro —e tamén no botón **Formato** do final da barra— fíxanse a **aliñación** (esquerda, xustificada ou dereita), o **tipo de letra** (con serifa, sen serifa, monoespazada ou a que escribas), o **tamaño** en puntos, o **entreliñado**, as **marxes** dos catro lados en centímetros, a **sangría de primeira liña** e a **partición de palabras con guión**.
 
-O que deixes en *Igual ca as opcións xerais* segue **Configuración → Opcións de exportación…**, onde están os mesmos axustes como valores de partida para todos os documentos. O que fixes aquí gárdase dentro do propio documento, xunto ao idioma, así que viaxa co ficheiro:
+O que deixes en *Igual ca as opcións xerais* segue **Configuración → Opcións de exportación…**, onde están os mesmos axustes como valores de partida para todos os documentos. O que fixes aquí gárdase dentro do propio documento, xunto ao idioma e ao autor, así que viaxa co ficheiro. *Quitar todo do documento* déixao sen nada propio:
 
 ```
 ---

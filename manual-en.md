@@ -112,7 +112,7 @@ The working area is split into two resizable panes:
 
 You can drag the central bar to give more room to either pane, choose one of the three layouts from the button on the right, or use the double arrow to **maximise the editing area**, which hides the top bars and leaves the screen to the text. The `+` button stays immediately after the last tab.
 
-### Each document's language
+### Each document’s settings
 
 Next to the character counter there is a short button with the document language: `ES`, `CA`, `FR`… When it looks dimmed, that document has no language of its own and uses the **general language** from *Settings → Export options…*, which is the usual case.
 
@@ -128,11 +128,11 @@ lang: "ca"
 
 That is the standard way of storing data about a document and many programs understand it. EdiMarkWeb does not show it in the preview, because it is not content, but it does show it in the Markdown pane, which is the source. You can delete or change it by hand if you want.
 
-### The formatting of each document
+#### The text formatting
 
-That same button leads to *Formatting of this document…*, and the `Aa` button at the end of the formatting bar opens it in one click. There you set the **alignment** (left, justified or right), the **typeface** (serif, sans serif, monospaced or whatever you type), the **size** in points, the **line spacing**, the **margins** on all four sides in centimetres, the **first-line indent** and the **hyphenation**.
+In that same dialog —and from the **Formatting** button at the end of the bar— you set the **alignment** (left, justified or right), the **typeface** (serif, sans serif, monospaced or whatever you type), the **size** in points, the **line spacing**, the **margins** on all four sides in centimetres, the **first-line indent** and the **hyphenation**.
 
-Anything left on *Same as the general options* follows **Settings → Export options…**, where the same settings act as the starting values for every document. What you set here is saved inside the document itself, next to the language, so it travels with the file:
+Anything left on *Same as the general options* follows **Settings → Export options…**, where the same settings act as the starting values for every document. What you set here is saved inside the document itself, next to the language and the author, so it travels with the file. *Remove everything from the document* leaves it with nothing of its own:
 
 ```
 ---

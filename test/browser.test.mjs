@@ -907,8 +907,8 @@ test('los nuevos atajos abren sus acciones y los iconos explican su función', a
   const { context, page } = await openApp();
   t.after(() => context.close());
 
-  assert.equal(await page.locator('#doc-lang-btn').getAttribute('title'), 'Cambiar el idioma, el autor y el formato de este documento.');
-  assert.match(await page.locator('#doc-lang-btn').getAttribute('aria-label'), /^Cambiar el idioma, el autor y el formato de este documento\. Idioma general: /);
+  assert.equal(await page.locator('#doc-lang-btn').getAttribute('title'), 'Idioma, autor y formato de este documento.');
+  assert.match(await page.locator('#doc-lang-btn').getAttribute('aria-label'), /^Idioma, autor y formato de este documento\. Idioma general: /);
   assert.equal(await page.locator('#toggle-replace-btn').getAttribute('title'), 'Mostrar opciones de reemplazo');
 
   await page.keyboard.press('Control+Alt+e');
@@ -1317,7 +1317,9 @@ test('el idioma del documento se elige desde el panel y se guarda en el archivo'
   assert.equal(await page.locator('#markdown-input').getAttribute('lang'), 'es');
 
   await boton.click();
-  await page.locator('[data-doc-lang="ca"]').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  await page.locator('#doc-own-language').selectOption('ca');
+  await page.locator('#doc-format-save-btn').click();
   assert.equal(await page.locator('#doc-lang-label').textContent(), 'CA');
   assert.equal(await boton.evaluate(b => b.classList.contains('doc-lang-inherited')), false);
   assert.equal(await page.locator('#markdown-input').getAttribute('lang'), 'ca');
@@ -1328,7 +1330,8 @@ test('el idioma del documento se elige desde el panel y se guarda en el archivo'
 
   // Volver al idioma general retira la línea y el bloque, que se queda vacío.
   await boton.click();
-  await page.locator('[data-doc-lang=""]').click();
+  await page.locator('#doc-own-language').selectOption('');
+  await page.locator('#doc-format-save-btn').click();
   assert.equal(await page.locator('#markdown-input').inputValue(), '# Notas\n\nTexto.\n');
   assert.equal(await page.locator('#doc-lang-label').textContent(), 'ES');
 });
@@ -1367,18 +1370,23 @@ test('el autor se guarda como ajuste general y por documento', async (t) => {
   await page.locator('#html-output h1').getByText('Notas', { exact: true }).waitFor();
   assert.equal(await page.locator('#markdown-input').inputValue(), '# Notas\n\nTexto.\n');
 
-  page.once('dialog', dialog => dialog.accept('Ana Ruiz'));
+  // El autor propio se escribe desde el cuadro del documento.
   await page.locator('#doc-lang-btn').click();
-  await page.locator('#doc-author-btn').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  await page.locator('#doc-own-author').fill('Ana Ruiz');
+  await page.locator('#doc-format-save-btn').click();
   await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('author:'));
   assert.equal(await page.locator('#markdown-input').inputValue(), '---\nauthor: "Ana Ruiz"\n---\n\n# Notas\n\nTexto.\n');
   // Y sigue sin verse en la vista previa.
   assert.equal((await page.locator('#html-output').innerText()).includes('Ana Ruiz'), false);
 
-  // Vaciarlo retira la línea y el bloque vacío.
-  page.once('dialog', dialog => dialog.accept('   '));
+  // Al reabrirlo el cuadro trae lo que el documento declara.
   await page.locator('#doc-lang-btn').click();
-  await page.locator('#doc-author-btn').click();
+  assert.equal(await page.locator('#doc-own-author').inputValue(), 'Ana Ruiz');
+
+  // Vaciarlo retira la línea y el bloque vacío.
+  await page.locator('#doc-own-author').fill('   ');
+  await page.locator('#doc-format-save-btn').click();
   await page.waitForFunction(() => !document.getElementById('markdown-input').value.includes('author:'));
   assert.equal(await page.locator('#markdown-input').inputValue(), '# Notas\n\nTexto.\n');
 });
