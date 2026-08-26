@@ -65,6 +65,40 @@ test('guarda texto en la ruta existente sin volver a preguntar', async () => {
   assert.deepEqual(result, { saved: true, path: '/tmp/tema.md', name: 'tema.md' });
 });
 
+test('escribe el Markdown desde Rust, que no depende del permiso de la sesión', async () => {
+  const escrituras = [];
+  const platform = createPlatformApi({
+    Blob,
+    __EDIMARK_TAURI__: {
+      dialog: { save: async () => assert.fail('no debe abrir el diálogo') },
+      fs: {
+        writeTextFile: async (path, content) => { escrituras.push(['fs', path, content]); },
+      },
+      app: {
+        writeMarkdownDocument: async (path, contents) => { escrituras.push(['app', path, contents]); },
+      },
+    },
+  });
+
+  await platform.saveFile({
+    suggestedName: 'tema.md',
+    contents: '# Tema de ayer',
+    existingPath: '/tmp/tema.md',
+  });
+  // Los demás formatos salen siempre del diálogo de esta sesión, así que
+  // siguen pasando por el plugin de archivos.
+  await platform.saveFile({
+    suggestedName: 'tema.html',
+    contents: '<h1>Tema</h1>',
+    existingPath: '/tmp/tema.html',
+  });
+
+  assert.deepEqual(escrituras, [
+    ['app', '/tmp/tema.md', '# Tema de ayer'],
+    ['fs', '/tmp/tema.html', '<h1>Tema</h1>'],
+  ]);
+});
+
 test('guarda datos binarios en la ruta escogida', async () => {
   let written;
   const platform = createPlatformApi({

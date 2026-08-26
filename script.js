@@ -2360,11 +2360,23 @@ function loadSavedDocsList() {
     }
 }
 
+/*
+  En la aplicación de escritorio la ruta del documento se guarda con la lista:
+  al volver, guardar escribe donde estaba en vez de comportarse como si fuera
+  un documento nuevo, y las imágenes con ruta relativa se siguen resolviendo
+  desde su carpeta. Escribir en esa ruta no depende del permiso que concede el
+  diálogo nativo, que caduca con la sesión, sino del comando propio de Rust.
+
+  En el navegador no se guarda: allí una ruta no abre nada, y los permisos de
+  la API de archivos sí mueren con la pestaña.
+*/
 function saveDocsList() {
-    // Las rutas autorizadas por el diálogo nativo solo son válidas durante la
-    // sesión de la aplicación. El borrador sí persiste, pero al reiniciar se
-    // vuelve a pedir una ubicación para no reutilizar permisos caducados.
-    const docList = docs.map(d => (d.isManual ? { id: d.id, name: d.name, isManual: true } : { id: d.id, name: d.name }));
+    const keepPaths = Boolean(window.EdiMarkPlatform?.isDesktop);
+    const docList = docs.map(d => {
+        const entry = d.isManual ? { id: d.id, name: d.name, isManual: true } : { id: d.id, name: d.name };
+        if (keepPaths && d.filePath) entry.filePath = d.filePath;
+        return entry;
+    });
     return safeLocalStorageSet(DOCS_LIST_KEY, JSON.stringify(docList));
 }
 
@@ -3564,12 +3576,27 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
     const assetEntry = doc ? documentAssetEntry(doc.id) : null;
     try {
         const companionFiles = await collectLinkedDocumentAssets(doc, content);
-        const result = await saveFile(filename, content, 'text/markdown;charset=utf-8', {
-            existingPath: saveAs ? '' : (doc?.filePath || ''),
+        const existingPath = saveAs ? '' : (doc?.filePath || '');
+        const options = {
+            existingPath,
             extensions: ['md', 'markdown'],
             companionFiles,
             directoryHandle: saveAs ? null : (assetEntry?.saveDirectoryHandle || null),
-        });
+        };
+        let result;
+        try {
+            result = await saveFile(filename, content, 'text/markdown;charset=utf-8', options);
+        } catch (error) {
+            if (!existingPath) throw error;
+            /*
+              La ruta recordada puede haber dejado de servir: el documento se
+              movió, la carpeta ya no está o el disco no está conectado. Se
+              pide una ubicación nueva antes que dejar el trabajo sin guardar.
+            */
+            console.warn('No se pudo guardar en la ruta recordada:', existingPath, error);
+            if (doc) doc.filePath = '';
+            result = await saveFile(filename, content, 'text/markdown;charset=utf-8', { ...options, existingPath: '' });
+        }
         if (!result || !result.saved) return false;
         if (doc) {
             const savedName = String(result.name || filename).replace(/\.md$/i, '') || cleanName;
@@ -5870,7 +5897,8 @@ window.onload = () => {
         savedDocsList.forEach(docInfo => {
             const md = safeLocalStorageGet(`${AUTOSAVE_KEY_PREFIX}-${docInfo.id}`, '');
             const normalized = normalizeNewlines(md);
-            docs.push({ ...docInfo, md: normalized, lastSaved: normalized });
+            const filePath = platform?.isDesktop && typeof docInfo.filePath === 'string' ? docInfo.filePath : '';
+            docs.push({ ...docInfo, filePath, md: normalized, lastSaved: normalized });
             // Lo recién leído ya está guardado: no hay que reescribirlo.
             lastAutosavedById.set(docInfo.id, normalized);
             addTabElement(docInfo);

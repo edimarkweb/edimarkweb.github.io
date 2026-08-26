@@ -55,6 +55,47 @@ fn read_markdown_document(path: String) -> Result<String, String> {
     std::fs::read_to_string(safe_path).map_err(|error| error.to_string())
 }
 
+/// Ruta donde puede escribirse un documento. A diferencia de `markdown_path`,
+/// no exige que el archivo exista todavía: sirve para volver a guardar uno que
+/// se ha movido o borrado por fuera, y solo comprueba que la carpeta siga ahí.
+fn markdown_target_path(raw: &str) -> Result<PathBuf, String> {
+    let candidate = Path::new(raw);
+    if !candidate.is_absolute() {
+        return Err("La ruta del documento debe ser absoluta.".to_string());
+    }
+    let extension = candidate
+        .extension()
+        .map(|ext| ext.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
+    if !matches!(extension.as_str(), "md" | "markdown") {
+        return Err("La ruta no corresponde a un documento Markdown válido.".to_string());
+    }
+    if candidate.is_dir() {
+        return Err("La ruta del documento es una carpeta.".to_string());
+    }
+    let parent = candidate
+        .parent()
+        .ok_or_else(|| "El documento no tiene una carpeta válida.".to_string())?;
+    if !parent.is_dir() {
+        return Err("La carpeta del documento ya no existe.".to_string());
+    }
+    Ok(candidate.to_path_buf())
+}
+
+/// Guarda el documento en la ruta de la que salió.
+///
+/// El diálogo nativo autoriza al plugin de archivos a tocar lo que el usuario
+/// elige, pero ese permiso dura lo que dura la sesión. Como la aplicación
+/// recuerda los documentos abiertos de un arranque a otro, al volver ya no
+/// podría escribir en ellos y guardar acabaría pidiendo otra vez la ubicación,
+/// como si fuesen documentos nuevos. Por eso se escribe desde aquí, igual que
+/// `read_markdown_document` lee los que llegan por argumentos o arrastrados.
+#[tauri::command]
+fn write_markdown_document(path: String, contents: String) -> Result<(), String> {
+    let target = markdown_target_path(&path)?;
+    std::fs::write(target, contents).map_err(|error| error.to_string())
+}
+
 const IMAGE_EXTENSIONS: [&str; 9] = [
     "png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "avif", "ico",
 ];
@@ -462,6 +503,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             initial_markdown_paths,
             read_markdown_document,
+            write_markdown_document,
             read_document_asset,
             write_document_asset,
             update_target,
@@ -494,7 +536,9 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{decode_ipc_header, document_asset_bytes, write_document_asset_bytes};
+    use super::{
+        decode_ipc_header, document_asset_bytes, markdown_target_path, write_document_asset_bytes,
+    };
 
     /// Carpeta de trabajo con un documento y su imagen al lado, como la de
     /// cualquier artículo.
@@ -581,6 +625,30 @@ mod tests {
         assert!(!fuera.join("fuera.png").exists());
         let _ = std::fs::remove_dir_all(raiz);
         let _ = std::fs::remove_dir_all(fuera);
+    }
+
+    #[test]
+    fn admite_la_ruta_del_documento_abierto_aunque_ya_no_exista_el_archivo() {
+        let raiz = carpeta_con_imagen("guardar-documento");
+        let existente = raiz.join("apuntes.md");
+        assert!(markdown_target_path(&existente.to_string_lossy()).is_ok());
+        // Un documento borrado o movido por fuera se vuelve a escribir donde
+        // estaba: lo que tiene que seguir ahí es la carpeta, no el archivo.
+        let borrado = raiz.join("otro.markdown");
+        assert!(markdown_target_path(&borrado.to_string_lossy()).is_ok());
+        let _ = std::fs::remove_dir_all(raiz);
+    }
+
+    #[test]
+    fn no_guarda_documentos_en_rutas_que_no_son_markdown() {
+        let raiz = carpeta_con_imagen("guardar-documento-seguro");
+        assert!(markdown_target_path("apuntes.md").is_err());
+        assert!(markdown_target_path(&raiz.join("notas.txt").to_string_lossy()).is_err());
+        let carpeta = raiz.join("carpeta.md");
+        std::fs::create_dir_all(&carpeta).expect("no se pudo crear la carpeta");
+        assert!(markdown_target_path(&carpeta.to_string_lossy()).is_err());
+        assert!(markdown_target_path("/no/existe/apuntes.md").is_err());
+        let _ = std::fs::remove_dir_all(raiz);
     }
 
     #[test]

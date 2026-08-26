@@ -408,7 +408,20 @@
         if (!path) return { saved: false, path: '', name: suggestedName };
         rememberDirectory(path);
 
-        if (typeof contents === 'string') {
+        /*
+          El `.md` se escribe desde Rust cuando se puede. El diálogo autoriza al
+          plugin de archivos a tocar la ruta elegida, pero ese permiso caduca
+          con la sesión, y la aplicación recuerda los documentos abiertos de un
+          arranque a otro: sin esto, volver a guardar uno de ayer moría en un
+          error o pedía otra vez la ubicación.
+        */
+        const markdownTarget = typeof contents === 'string'
+          && app
+          && typeof app.writeMarkdownDocument === 'function'
+          && ['md', 'markdown'].includes(extensionFromName(path));
+        if (markdownTarget) {
+          await app.writeMarkdownDocument(path, contents);
+        } else if (typeof contents === 'string') {
           await fs.writeTextFile(path, contents);
         } else {
           await fs.writeFile(path, await toBytes(root, contents));
