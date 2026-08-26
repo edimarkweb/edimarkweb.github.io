@@ -154,7 +154,7 @@ Se aplica a la previsualización y a los cinco formatos de exportación, con tre
 Un `.md` corriente no lleva las imágenes dentro: las guarda en una carpeta al lado y las nombra con una ruta relativa, `imagenes/01.png`. EdiMarkWeb resuelve esas rutas y muestra las imágenes en la previsualización.
 
 * En la **aplicación de escritorio** no hay que hacer nada: al abrir el documento, las imágenes se buscan en su carpeta y aparecen.
-* En el **navegador** ninguna página puede leer una carpeta del disco sin permiso. Si el documento nombra imágenes que no se encuentran, sobre la previsualización aparece un aviso con el botón **Buscar su carpeta…**: al elegir la carpeta del documento, todas sus imágenes se ven. Basta hacerlo una vez por sesión.
+* En el **navegador** ninguna página puede leer una carpeta del disco sin permiso. Si el documento nombra imágenes que no se encuentran, sobre la previsualización aparece un aviso con el botón **Buscar su carpeta…**: al elegir la carpeta del documento, todas sus imágenes se ven. Basta hacerlo una vez: EdiMarkWeb guarda en el navegador las imágenes que usa ese documento y las recupera al recargar la página.
 * Arrastrar una carpeta entera al editor abre sus documentos **y** registra sus imágenes de una vez.
 * Al **guardar**, las imágenes recuperadas se copian junto al `.md`, conservando rutas como `imagenes/01.png`. En el navegador se elige la carpeta de destino; si el navegador no permite escribir carpetas, se descarga un ZIP listo para descomprimir. **Guardar como…** hace la misma copia en la aplicación de escritorio.
 

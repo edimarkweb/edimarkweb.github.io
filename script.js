@@ -2509,7 +2509,6 @@ function switchTo(id) {
 }
 
 function closeDoc(id) {
-    releaseDocumentAssets(id);
     const docIndex = docs.findIndex(d => d.id === id);
     if (docIndex === -1) return;
 
@@ -2524,6 +2523,10 @@ function closeDoc(id) {
         return;
     }
 
+    releaseDocumentAssets(id);
+    deletePersistedDocumentAssets(id).catch(error => {
+        console.warn('No se pudieron borrar las imágenes guardadas del documento:', error);
+    });
     docs.splice(docIndex, 1);
     document.querySelector(`.tab[data-id="${id}"]`).remove();
     safeLocalStorageRemove(`${AUTOSAVE_KEY_PREFIX}-${id}`);
@@ -2667,6 +2670,90 @@ const assetPathUtils = (typeof window !== 'undefined' && window.EdiMarkAssetPath
 const documentAssetCache = new Map();
 const droppedAssetIndexes = [];
 let previewAssetToken = 0;
+const ASSET_DB_NAME = 'edimarkweb-assets';
+const ASSET_DB_STORE = 'document-assets';
+let assetDatabasePromise = null;
+
+function openAssetDatabase() {
+    const platform = window.EdiMarkPlatform;
+    if (platform?.isDesktop || typeof window.indexedDB === 'undefined') return Promise.resolve(null);
+    if (assetDatabasePromise) return assetDatabasePromise;
+    assetDatabasePromise = new Promise((resolve, reject) => {
+        const request = window.indexedDB.open(ASSET_DB_NAME, 1);
+        request.onupgradeneeded = () => {
+            const database = request.result;
+            if (database.objectStoreNames.contains(ASSET_DB_STORE)) return;
+            const store = database.createObjectStore(ASSET_DB_STORE, { keyPath: 'key' });
+            store.createIndex('docId', 'docId', { unique: false });
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error('asset_database_open_failed'));
+        request.onblocked = () => reject(new Error('asset_database_blocked'));
+    }).catch(error => {
+        assetDatabasePromise = null;
+        reportStorageFailure(error);
+        return null;
+    });
+    return assetDatabasePromise;
+}
+
+function assetTransactionFinished(transaction) {
+    return new Promise((resolve, reject) => {
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error || new Error('asset_database_write_failed'));
+        transaction.onabort = () => reject(transaction.error || new Error('asset_database_write_aborted'));
+    });
+}
+
+async function replacePersistedDocumentAssets(docId, assets) {
+    const database = await openAssetDatabase();
+    if (!database || !docId) return false;
+    const transaction = database.transaction(ASSET_DB_STORE, 'readwrite');
+    const store = transaction.objectStore(ASSET_DB_STORE);
+    const keysRequest = store.index('docId').getAllKeys(docId);
+    keysRequest.onsuccess = () => {
+        keysRequest.result.forEach(key => store.delete(key));
+        assets.forEach(asset => {
+            store.put({
+                key: `${docId}\u0000${asset.relativePath}`,
+                docId,
+                relativePath: asset.relativePath,
+                file: asset.contents,
+            });
+        });
+    };
+    try {
+        await assetTransactionFinished(transaction);
+        return true;
+    } catch (error) {
+        reportStorageFailure(error);
+        return false;
+    }
+}
+
+async function readPersistedDocumentAssets(docId) {
+    const database = await openAssetDatabase();
+    if (!database || !docId) return [];
+    return new Promise((resolve, reject) => {
+        const transaction = database.transaction(ASSET_DB_STORE, 'readonly');
+        const request = transaction.objectStore(ASSET_DB_STORE).index('docId').getAll(docId);
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error || new Error('asset_database_read_failed'));
+    }).catch(error => {
+        reportStorageFailure(error);
+        return [];
+    });
+}
+
+async function deletePersistedDocumentAssets(docId) {
+    const database = await openAssetDatabase();
+    if (!database || !docId) return;
+    const transaction = database.transaction(ASSET_DB_STORE, 'readwrite');
+    const store = transaction.objectStore(ASSET_DB_STORE);
+    const keysRequest = store.index('docId').getAllKeys(docId);
+    keysRequest.onsuccess = () => keysRequest.result.forEach(key => store.delete(key));
+    await assetTransactionFinished(transaction);
+}
 
 function documentAssetEntry(docId) {
     if (!documentAssetCache.has(docId)) {
@@ -2707,6 +2794,27 @@ function registerAssetFolder(files, { docId = null, folderName = '' } = {}) {
         droppedAssetIndexes.push(assetIndex);
     }
     docs.forEach(doc => forgetMissingAssets(doc.id));
+    return entries.length;
+}
+
+async function persistLinkedDocumentAssets(doc, content) {
+    const platform = window.EdiMarkPlatform;
+    if (platform?.isDesktop || !doc) return false;
+    const assets = await collectLinkedDocumentAssets(doc, content);
+    return replacePersistedDocumentAssets(doc.id, assets);
+}
+
+async function restorePersistedDocumentAssets(doc) {
+    const records = await readPersistedDocumentAssets(doc?.id);
+    const entries = records
+        .filter(record => record && record.relativePath && record.file)
+        .map(record => ({ path: record.relativePath, file: record.file }));
+    if (!entries.length || !assetPathUtils) return 0;
+    const entry = documentAssetEntry(doc.id);
+    entry.assetIndex = assetPathUtils.buildAssetIndex(entries);
+    entry.folderName = '';
+    forgetMissingAssets(doc.id);
+    if (currentId === doc.id) updateHtml();
     return entries.length;
 }
 
@@ -5550,6 +5658,13 @@ window.onload = () => {
             addTabElement(docInfo);
         });
         switchTo(docs[0].id);
+        if (!platform?.isDesktop) {
+            docs.forEach(doc => {
+                restorePersistedDocumentAssets(doc).catch(error => {
+                    console.warn('No se pudieron recuperar las imágenes guardadas:', error);
+                });
+            });
+        }
     }
     (async () => {
         let openedAtLaunch = 0;
@@ -6452,7 +6567,7 @@ window.onload = () => {
     */
     const assetsFolderInput = document.getElementById('assets-folder-input');
     if (assetsFolderInput) {
-        assetsFolderInput.addEventListener('change', () => {
+        assetsFolderInput.addEventListener('change', async () => {
             const files = Array.from(assetsFolderInput.files || []);
             assetsFolderInput.value = '';
             const doc = docs.find(d => d.id === currentId);
@@ -6467,6 +6582,7 @@ window.onload = () => {
                 .replace('{name}', folderName)
                 .replace('{count}', String(count)));
             updateHtml();
+            await persistLinkedDocumentAssets(doc, markdownEditor.getValue());
         });
     }
 
@@ -7093,6 +7209,9 @@ window.onload = () => {
           if (doc && typeof updateDirtyIndicator === 'function') {
             doc.lastSaved = content;
             updateDirtyIndicator(doc.id, false);
+            persistLinkedDocumentAssets(doc, content).catch(err => {
+              console.warn('No se pudieron guardar las imágenes arrastradas:', err);
+            });
           }
         } catch (err) {
           console.error('No se pudo abrir el archivo arrastrado:', err);

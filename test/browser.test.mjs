@@ -1058,6 +1058,59 @@ test('las imágenes con ruta relativa se ven al vincular su carpeta', async (t) 
   assert.equal(await page.locator('#markdown-input').inputValue(), '![Gráfico](imagenes/01-grafico.png)');
 });
 
+test('las imágenes vinculadas reaparecen después de recargar la página', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  const docId = await page.evaluate(() => currentId);
+  await page.locator('#markdown-input').fill('![Gráfico](imagenes/01-grafico.png)');
+  const carpeta = await crearCarpetaConImagen();
+  t.after(() => rm(carpeta, { recursive: true, force: true }));
+  await page.locator('#assets-folder-input').setInputFiles(carpeta);
+  await page.waitForFunction(() => {
+    const img = document.querySelector('#html-output img');
+    return Boolean(img && img.getAttribute('src').startsWith('blob:'));
+  });
+
+  await page.waitForFunction(async (id) => new Promise((resolve) => {
+    const request = indexedDB.open('edimarkweb-assets', 1);
+    request.onerror = () => resolve(false);
+    request.onsuccess = () => {
+      const database = request.result;
+      const transaction = database.transaction('document-assets', 'readonly');
+      const count = transaction.objectStore('document-assets').index('docId').count(id);
+      count.onsuccess = () => {
+        database.close();
+        resolve(count.result === 1);
+      };
+      count.onerror = () => {
+        database.close();
+        resolve(false);
+      };
+    };
+  }), docId);
+  await page.evaluate(() => autosaveCurrentDoc());
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  const restoredTab = page.locator(`.tab[data-id="${docId}"]`);
+  await restoredTab.waitFor();
+  await restoredTab.click();
+  await page.waitForFunction(() => {
+    const img = document.querySelector('#html-output img');
+    return Boolean(img
+      && img.getAttribute('src').startsWith('blob:')
+      && img.complete
+      && img.naturalWidth > 0);
+  });
+
+  assert.equal(await page.locator('#markdown-input').inputValue(), '![Gráfico](imagenes/01-grafico.png)');
+  assert.equal(
+    await page.locator('#missing-assets-notice').evaluate(el => el.classList.contains('hidden')),
+    true,
+  );
+});
+
 test('lo que sale de la vista previa conserva la ruta relativa, no el blob', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());

@@ -154,7 +154,7 @@ It applies to the preview and to all five export formats, with three caveats wor
 An ordinary `.md` does not carry its images inside: it keeps them in a folder next to it and names them with a relative path, `images/01.png`. EdiMarkWeb resolves those paths and shows the images in the preview.
 
 * In the **desktop application** there is nothing to do: when the document opens, its images are looked up in its folder and appear.
-* In the **browser** no page can read a folder from disk without permission. If the document names images that cannot be found, a notice appears above the preview with a **Find its folder…** button: choose the document folder and every image shows up. Once per session is enough.
+* In the **browser** no page can read a folder from disk without permission. If the document names images that cannot be found, a notice appears above the preview with a **Find its folder…** button: choose the document folder and every image shows up. You only need to do this once: EdiMarkWeb stores the images used by that document in the browser and restores them after reloading the page.
 * Dragging a whole folder onto the editor opens its documents **and** registers its images in one go.
 * When you **save**, recovered images are copied next to the `.md`, preserving paths such as `images/01.png`. In the browser you choose the destination folder; if the browser cannot write folders, a ready-to-extract ZIP is downloaded. **Save as…** makes the same copy in the desktop application.
 

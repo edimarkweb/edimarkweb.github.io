@@ -154,7 +154,7 @@ S'aplica a la vista prèvia i als cinc formats d'exportació, amb tres excepcion
 Un `.md` corrent no porta les imatges a dins: les desa en una carpeta al costat i les anomena amb una ruta relativa, `imatges/01.png`. EdiMarkWeb resol aquestes rutes i mostra les imatges a la previsualització.
 
 * A l'**aplicació d'escriptori** no cal fer res: en obrir el document, les imatges es busquen a la seva carpeta i apareixen.
-* Al **navegador** cap pàgina no pot llegir una carpeta del disc sense permís. Si el document anomena imatges que no es troben, sobre la previsualització apareix un avís amb el botó **Cerca la seva carpeta…**: en triar la carpeta del document, totes les imatges es veuen. N'hi ha prou de fer-ho un cop per sessió.
+* Al **navegador** cap pàgina no pot llegir una carpeta del disc sense permís. Si el document anomena imatges que no es troben, sobre la previsualització apareix un avís amb el botó **Cerca la seva carpeta…**: en triar la carpeta del document, totes les imatges es veuen. Només cal fer-ho una vegada: EdiMarkWeb desa al navegador les imatges que utilitza el document i les recupera en tornar a carregar la pàgina.
 * Arrossegar una carpeta sencera a l'editor obre els seus documents **i** registra les seves imatges alhora.
 * En **desar**, les imatges recuperades es copien al costat del `.md`, conservant rutes com `imatges/01.png`. Al navegador es tria la carpeta de destinació; si el navegador no permet escriure carpetes, es baixa un ZIP llest per descomprimir. **Desar com a…** fa la mateixa còpia a l'aplicació d'escriptori.
 

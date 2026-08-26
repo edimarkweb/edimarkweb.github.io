@@ -154,7 +154,7 @@ Aurrebistan eta esportazio-formatu bostetan aplikatzen da, jakitea komeni den hi
 `.md` arrunt batek ez ditu irudiak barruan eramaten: ondoko karpeta batean gordetzen ditu eta bide erlatibo batekin izendatzen, `irudiak/01.png`. EdiMarkWebek bide horiek ebazten ditu eta irudiak aurrebistan erakusten.
 
 * **Mahaigaineko aplikazioan** ez dago ezer egin beharrik: dokumentua irekitzean, irudiak bere karpetan bilatzen dira eta agertu egiten dira.
-* **Nabigatzailean** orri batek ezin du diskoko karpetarik irakurri baimenik gabe. Dokumentuak aurkitzen ez diren irudiak izendatzen baditu, aurrebistaren gainean ohar bat agertzen da **Bilatu bere karpeta…** botoiarekin: dokumentuaren karpeta aukeratuta, irudi guztiak ikusten dira. Saio bakoitzeko behin egitea nahikoa da.
+* **Nabigatzailean** orri batek ezin du diskoko karpetarik irakurri baimenik gabe. Dokumentuak aurkitzen ez diren irudiak izendatzen baditu, aurrebistaren gainean ohar bat agertzen da **Bilatu bere karpeta…** botoiarekin: dokumentuaren karpeta aukeratuta, irudi guztiak ikusten dira. Behin egitea nahikoa da: EdiMarkWebek dokumentuak erabiltzen dituen irudiak nabigatzailean gordetzen ditu eta orria berriro kargatzean berreskuratzen ditu.
 * Karpeta oso bat editorera arrastatzeak bertako dokumentuak irekitzen ditu **eta** bertako irudiak erregistratzen ditu aldi berean.
 * **Gordetzean**, berreskuratutako irudiak `.md` fitxategiaren ondoan kopiatzen dira, `irudiak/01.png` bezalako bideak mantenduz. Nabigatzailean helmugako karpeta aukeratzen da; nabigatzaileak ezin badu karpetetan idatzi, deskonprimitzeko prest dagoen ZIP bat deskargatzen da. **Gorde honela…** aukerak kopia bera egiten du mahaigaineko aplikazioan.
 

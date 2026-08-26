@@ -154,7 +154,7 @@ Aplícase á previsualización e aos cinco formatos de exportación, con tres sa
 Un `.md` corrente non leva as imaxes dentro: gárdaas nun cartafol ao lado e noméaas cunha ruta relativa, `imaxes/01.png`. EdiMarkWeb resolve esas rutas e mostra as imaxes na previsualización.
 
 * Na **aplicación de escritorio** non hai que facer nada: ao abrir o documento, as imaxes búscanse no seu cartafol e aparecen.
-* No **navegador** ningunha páxina pode ler un cartafol do disco sen permiso. Se o documento nomea imaxes que non se atopan, sobre a previsualización aparece un aviso co botón **Buscar o seu cartafol…**: ao escoller o cartafol do documento, todas as imaxes vense. Abonda con facelo unha vez por sesión.
+* No **navegador** ningunha páxina pode ler un cartafol do disco sen permiso. Se o documento nomea imaxes que non se atopan, sobre a previsualización aparece un aviso co botón **Buscar o seu cartafol…**: ao escoller o cartafol do documento, todas as imaxes vense. Abonda con facelo unha vez: EdiMarkWeb garda no navegador as imaxes que usa o documento e recupéraas ao recargar a páxina.
 * Arrastrar un cartafol enteiro ao editor abre os seus documentos **e** rexistra as súas imaxes dunha vez.
 * Ao **gardar**, as imaxes recuperadas cópianse xunto ao `.md`, conservando rutas como `imaxes/01.png`. No navegador escóllese o cartafol de destino; se o navegador non permite escribir cartafoles, descárgase un ZIP listo para descomprimir. **Gardar como…** fai a mesma copia na aplicación de escritorio.
 
