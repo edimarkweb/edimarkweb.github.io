@@ -276,6 +276,7 @@
   "footer_analytics_today": "Hoxe",
   "footer_privacy_link": "Privacidade",
   "footer_privacy_notice": "Os ficheiros procésanse localmente neste navegador. Só se recollen estatísticas de uso agregadas propias e non se envían ficheiros nin datos a terceiros.",
+  "footer_privacy_notice_desktop": "Os ficheiros procésanse localmente no teu equipo. A aplicación non recolle estatísticas de uso nin envía ficheiros ou datos a terceiros.",
   "storage_unavailable": "Non se pode usar o almacenamento local. Os cambios non se conservarán ao pechar a aplicación.",
   "storage_quota_exceeded": "O almacenamento local está cheo. Garda o documento nun ficheiro para non perder os cambios.",
   "storage_corrupt_recovered": "A lista de documentos gardada estaba danada. Iniciouse unha sesión nova para que poidas seguir traballando.",

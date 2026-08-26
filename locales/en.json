@@ -276,6 +276,7 @@
   "footer_analytics_today": "Today",
   "footer_privacy_link": "Privacy",
   "footer_privacy_notice": "Files are processed locally in this browser. Only in-house aggregated usage statistics are collected, and no files or data are sent to third parties.",
+  "footer_privacy_notice_desktop": "Files are processed locally on your computer. The app collects no usage statistics and sends no files or data to third parties.",
   "storage_unavailable": "Local storage is unavailable. Changes will not be retained after you close the application.",
   "storage_quota_exceeded": "Local storage is full. Save the document to a file to avoid losing your changes.",
   "storage_corrupt_recovered": "The saved document list was damaged. A new session has been started so you can keep working.",

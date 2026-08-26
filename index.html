@@ -574,7 +574,7 @@
             </nav>
             <details class="mt-4 text-sm text-slate-700 dark:text-slate-300">
                 <summary class="about-license-summary" data-i18n-key="footer_privacy_link">Privacidad</summary>
-                <p class="mt-2" data-i18n-key="footer_privacy_notice">Los archivos se procesan localmente en este navegador. Solo se recogen estadísticas de uso agregadas propias y no se envían archivos ni datos a terceros.</p>
+                <p id="about-privacy-notice" class="mt-2" data-i18n-key="footer_privacy_notice">Los archivos se procesan localmente en este navegador. Solo se recogen estadísticas de uso agregadas propias y no se envían archivos ni datos a terceros.</p>
             </details>
             <div class="mt-6 flex justify-end">
                 <button id="about-close-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="close_btn">Cerrar</button>
@@ -939,6 +939,14 @@
       }
 
       function shouldTrackAnalytics() {
+        /*
+          La aplicación de escritorio no cuenta visitas. Su ventana sirve la
+          misma página desde un origen local, que según el sistema puede
+          parecer un `http://` cualquiera, así que no basta con mirar el
+          protocolo: se descarta explícitamente el modo nativo para que el
+          aviso de privacidad que ve quien la usa siga siendo cierto.
+        */
+        if (window.EdiMarkPlatform && window.EdiMarkPlatform.isDesktop) return false;
         var protocol = String(window.location.protocol || '');
         var host = String(window.location.hostname || '').toLowerCase();
         if (protocol !== 'http:' && protocol !== 'https:') return false;

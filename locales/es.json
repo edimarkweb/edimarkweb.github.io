@@ -276,6 +276,7 @@
   "footer_analytics_today": "Hoy",
   "footer_privacy_link": "Privacidad",
   "footer_privacy_notice": "Los archivos se procesan localmente en este navegador. Solo se recogen estadísticas de uso agregadas propias y no se envían archivos ni datos a terceros.",
+  "footer_privacy_notice_desktop": "Los archivos se procesan localmente en tu equipo. La aplicación no recoge estadísticas de uso ni envía archivos o datos a terceros.",
   "storage_unavailable": "No se puede usar el almacenamiento local. Los cambios no se conservarán al cerrar la aplicación.",
   "storage_quota_exceeded": "El almacenamiento local está lleno. Guarda el documento en un archivo para no perder los cambios.",
   "storage_corrupt_recovered": "La lista de documentos guardada estaba dañada. Se ha iniciado una sesión nueva para que puedas seguir trabajando.",

@@ -4557,6 +4557,22 @@ window.onload = () => {
             });
         });
     }
+    if (nativeMode) {
+        /*
+          En el navegador la página cuenta visitas agregadas; la aplicación de
+          escritorio no envía nada. El aviso de privacidad tiene que decir lo
+          que de verdad ocurre donde se está leyendo, así que aquí cambia de
+          texto (y de clave, para que siga traduciéndose al cambiar de idioma).
+        */
+        const privacyNotice = document.getElementById('about-privacy-notice');
+        if (privacyNotice) {
+            privacyNotice.setAttribute('data-i18n-key', 'footer_privacy_notice_desktop');
+            privacyNotice.textContent = getTranslation(
+                'footer_privacy_notice_desktop',
+                'Los archivos se procesan localmente en tu equipo. La aplicación no recoge estadísticas de uso ni envía archivos o datos a terceros.',
+            );
+        }
+    }
     const nativeIos = nativeMode && (
         /iPhone|iPad|iPod/i.test(navigator.userAgent || '')
         || (/Mac/i.test(navigator.platform || '') && navigator.maxTouchPoints > 1)

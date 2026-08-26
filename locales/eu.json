@@ -276,6 +276,7 @@
   "footer_analytics_today": "Gaur",
   "footer_privacy_link": "Pribatutasuna",
   "footer_privacy_notice": "Fitxategiak lokalean prozesatzen dira nabigatzaile honetan. Erabilera-estatistika agregatu propioak baino ez dira jasotzen, eta ez zaizkie fitxategirik edo daturik hirugarrenei bidaltzen.",
+  "footer_privacy_notice_desktop": "Fitxategiak zure ekipoan bertan prozesatzen dira. Aplikazioak ez du erabilera-estatistikarik jasotzen, eta ez die fitxategirik edo daturik hirugarrenei bidaltzen.",
   "storage_unavailable": "Ezin da biltegiratze lokala erabili. Aldaketak ez dira gordeko aplikazioa ixtean.",
   "storage_quota_exceeded": "Biltegiratze lokala beteta dago. Gorde dokumentua fitxategi batean aldaketak ez galtzeko.",
   "storage_corrupt_recovered": "Gordetako dokumentuen zerrenda hondatuta zegoen. Saio berri bat hasi da lanean jarrai dezazun.",
