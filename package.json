@@ -12,11 +12,12 @@
     "test": "node --test test/prepare.test.mjs",
     "test:assets": "node --test test/asset-paths.test.mjs",
     "test:format": "node --test test/document-format.test.mjs",
+    "test:office": "node --test test/office-format.test.mjs",
     "test:platform": "node --test test/platform-api.test.mjs",
     "test:updater": "node --test test/desktop-updater.test.mjs",
     "test:browser": "node --test --test-concurrency=1 test/browser.test.mjs",
     "test:export": "node --test --test-concurrency=1 test/epub-export.test.mjs",
-    "test:all": "npm run test && npm run test:assets && npm run test:format && npm run test:platform && npm run test:updater && npm run test:export"
+    "test:all": "npm run test && npm run test:assets && npm run test:format && npm run test:office && npm run test:platform && npm run test:updater && npm run test:export"
   },
   "repository": {
     "type": "git",

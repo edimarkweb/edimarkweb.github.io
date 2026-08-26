@@ -128,6 +128,27 @@ lang: "ca"
 
 Es la forma estándar de guardar datos sobre un documento y la entienden muchos programas. EdiMarkWeb no la muestra en la previsualización, porque no es contenido, pero sí en el panel Markdown, que es el código fuente. Puedes borrarla o cambiarla a mano si quieres.
 
+### El formato de cada documento
+
+Ese mismo botón lleva a *Formato de este documento…*, y el botón `Aa` del final de la barra de formato abre lo mismo de un clic. Ahí se fijan la **alineación** (izquierda, justificada o derecha), el **tipo de letra** (con remates, sin remates, monoespaciada o la que escribas), el **tamaño** en puntos, el **interlineado**, los **márgenes** de los cuatro lados en centímetros, la **sangría de primera línea** y la **partición de palabras con guion**.
+
+Lo que dejes en *Igual que las opciones generales* sigue a **Configuración → Opciones de exportación…**, donde están los mismos ajustes como valores de partida para todos los documentos. Lo que fijes aquí se guarda dentro del propio documento, junto al idioma, así que viaja con el archivo:
+
+```
+---
+lang: "es"
+align: "justify"
+fontsize: "12pt"
+margin-left: "3cm"
+---
+```
+
+Se aplica a la previsualización y a los cinco formatos de exportación, con tres salvedades que conviene conocer:
+
+* En el **EPUB** los márgenes son una sugerencia: quien manda sobre la caja de la página es el lector de libros.
+* En **TEX**, si tu preámbulo ya carga `geometry`, mandan tus márgenes: la aplicación avisa de que ha dejado fuera los del menú en lugar de romper la compilación con dos `\usepackage` iguales.
+* La **partición de palabras** usa los diccionarios de guiones del sistema. Word en Windows y macOS trae los suyos; en Linux, LibreOffice necesita el paquete del idioma (por ejemplo, `hyphen-es`).
+
 ### Imágenes con ruta relativa
 
 Un `.md` corriente no lleva las imágenes dentro: las guarda en una carpeta al lado y las nombra con una ruta relativa, `imagenes/01.png`. EdiMarkWeb resuelve esas rutas y muestra las imágenes en la previsualización.
@@ -185,6 +206,8 @@ Durante la exportación, la barra superior muestra mensajes de estado (progreso,
 **Autor**, que se guarda en las propiedades del archivo y aparece como autor del libro en el EPUB y en la portada del LaTeX. En DOCX y ODT, además, Pandoc escribe una línea con el nombre al principio del documento; si no quieres que aparezca, deja el campo vacío. Un documento concreto puede llevar otro autor: *Autor de este documento…*, en el menú del botón de idioma.
 
 **Portada del EPUB**, con tres posibilidades. De partida, EdiMarkWeb **genera una** con el título y el autor del documento, porque un libro sin imagen aparece con el icono genérico en la estantería del lector. Puedes poner **una imagen tuya** —hasta 1 MB, que para una portada sobra: se guarda junto a tus documentos, en el espacio propio de la aplicación— o dejar el libro **sin portada**. Solo afecta al EPUB.
+
+**Formato del texto**: alineación, tipo y tamaño de letra, interlineado, márgenes, sangría y partición de palabras, con los valores de partida para todos los documentos. Cada documento puede fijar los suyos desde el panel Markdown, y lo que no fije lo hereda de aquí.
 
 **Índice automático**, que añade al principio del documento un índice con los apartados. En DOCX es un índice de Word de verdad y en ODT uno nativo de LibreOffice; el EPUB no lo necesita, porque el lector ya trae su índice de navegación.
 

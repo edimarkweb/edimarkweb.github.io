@@ -128,6 +128,27 @@ lang: "ca"
 
 Dokumentu bati buruzko datuak gordetzeko modu estandarra da eta programa askok ulertzen dute. EdiMarkWeb-ek ez du aurrebistan erakusten, edukia ez delako, baina bai Markdown panelean, iturburu-kodea baita. Nahi baduzu, eskuz ezaba edo alda dezakezu.
 
+### Dokumentu bakoitzaren formatua
+
+Botoi horrek berak *Dokumentu honen formatua…* atalera darama, eta formatu-barraren amaierako `Aa` botoiak gauza bera irekitzen du klik bakarrean. Han finkatzen dira **lerrokatzea** (ezkerrera, justifikatua edo eskuinera), **letra-tipoa** (serifduna, serifgabea, tarte bakarrekoa edo idazten duzuna), **tamaina** puntutan, **lerroartea**, lau aldeetako **marjinak** zentimetrotan, **lehen lerroaren koska** eta **hitzak marratxoz zatitzea**.
+
+*Aukera orokorren berdina* uzten duzunak **Konfigurazioa → Esportazio-aukerak…** jarraitzen du, non ajuste berak dokumentu guztien abiapuntuko balio gisa dauden. Hemen finkatzen duzuna dokumentuaren barruan gordetzen da, hizkuntzaren ondoan, eta fitxategiarekin bidaiatzen du:
+
+```
+---
+lang: "eu"
+align: "justify"
+fontsize: "12pt"
+margin-left: "3cm"
+---
+```
+
+Aurrebistan eta esportazio-formatu bostetan aplikatzen da, jakitea komeni den hiru salbuespenekin:
+
+* **EPUBen** marjinak iradokizun bat dira: orrialdearen kaxaren gainean liburu-irakurgailuak agintzen du.
+* **TEXen**, zure aitzinsolasak `geometry` kargatzen badu dagoeneko, zure marjinek agintzen dute: aplikazioak menukoak kanpoan utzi dituela abisatzen du, bi `\usepackage` berdinekin konpilazioa hautsi beharrean.
+* **Hitzen zatiketak** sistemaren marratxo-hiztegiak erabiltzen ditu. Windows eta macOSeko Wordek bereak dakartza; Linuxen, LibreOfficek hizkuntzaren paketea behar du (adibidez, `hyphen-eu`).
+
 ### Bide erlatiboa duten irudiak
 
 `.md` arrunt batek ez ditu irudiak barruan eramaten: ondoko karpeta batean gordetzen ditu eta bide erlatibo batekin izendatzen, `irudiak/01.png`. EdiMarkWebek bide horiek ebazten ditu eta irudiak aurrebistan erakusten.
@@ -185,6 +206,8 @@ Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapen
 **Egilea**, fitxategiaren propietateetan gordetzen dena eta EPUBean liburuaren egile gisa eta LaTeX-en azalean agertzen dena. DOCX eta ODT formatuetan, gainera, Pandoc-ek izena duen lerro bat idazten du dokumentuaren hasieran; agertzerik nahi ez baduzu, utzi eremua hutsik. Dokumentu jakin batek beste egile bat eraman dezake: *Dokumentu honen egilea…*, hizkuntza-botoiaren menuan.
 
 **EPUBaren azala**, hiru aukerarekin. Hasieran, EdiMarkWeb-ek **bat sortzen du** dokumentuaren tituluarekin eta egilearekin, irudirik gabeko liburu bat ikono generikoarekin agertzen baita irakurgailuaren apalean. **Zure irudi bat** jar dezakezu —1 MB arte, azal baterako nahikoa baino gehiago: zure dokumentuen ondoan gordetzen da, aplikazioaren espazio propioan— edo liburua **azalik gabe** utzi. EPUBari baino ez dio eragiten.
+
+**Testuaren formatua**: lerrokatzea, letra-tipoa eta tamaina, lerroartea, marjinak, koska eta hitzen zatiketa, dokumentu guztien abiapuntuko balio gisa. Dokumentu bakoitzak bereak finka ditzake Markdown paneletik, eta finkatzen ez duena hemendik heredatzen du.
 
 **Aurkibide automatikoa**, dokumentuaren hasieran atalen zerrenda bat gehitzen duena. DOCX formatuan Word-en benetako aurkibide bat da eta ODT formatuan LibreOffice-ren jatorrizko bat; EPUBak ez du behar, irakurgailuak bere nabigazio-aurkibidea baitakar.
 

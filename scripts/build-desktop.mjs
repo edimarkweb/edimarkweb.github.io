@@ -22,6 +22,7 @@ const appFiles = [
   'manual-gl.md',
   'manual.md',
   'odt-formulas.js',
+  'office-format.js',
   'odt-tables.js',
   'pandoc-exporter.js',
   'pandoc-prepare.js',

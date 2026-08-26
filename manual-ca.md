@@ -128,6 +128,27 @@ lang: "ca"
 
 És la manera estàndard de desar dades sobre un document i molts programes l'entenen. EdiMarkWeb no la mostra a la vista prèvia, perquè no és contingut, però sí al plafó Markdown, que és el codi font. Pots esborrar-la o canviar-la a mà si vols.
 
+### El format de cada document
+
+Aquest mateix botó porta a *Format d'aquest document…*, i el botó `Aa` del final de la barra de format obre el mateix amb un clic. Allà es fixen l'**alineació** (esquerra, justificada o dreta), el **tipus de lletra** (amb serifa, sense serifa, monoespaiada o la que escriguis), la **mida** en punts, l'**interlineat**, els **marges** dels quatre costats en centímetres, la **sagnia de primera línia** i la **partició de mots amb guionet**.
+
+El que deixis a *Igual que les opcions generals* segueix **Configuració → Opcions d'exportació…**, on hi ha els mateixos ajustos com a valors de partida per a tots els documents. El que fixis aquí es desa dins del document mateix, al costat de l'idioma, així que viatja amb el fitxer:
+
+```
+---
+lang: "ca"
+align: "justify"
+fontsize: "12pt"
+margin-left: "3cm"
+---
+```
+
+S'aplica a la vista prèvia i als cinc formats d'exportació, amb tres excepcions que convé conèixer:
+
+* A l'**EPUB** els marges són un suggeriment: qui mana sobre la caixa de la pàgina és el lector de llibres.
+* Al **TEX**, si el teu preàmbul ja carrega `geometry`, manen els teus marges: l'aplicació avisa que ha deixat fora els del menú en lloc de trencar la compilació amb dos `\usepackage` iguals.
+* La **partició de mots** fa servir els diccionaris de guionets del sistema. El Word al Windows i al macOS porta els seus; al Linux, el LibreOffice necessita el paquet de l'idioma (per exemple, `hyphen-ca`).
+
 ### Imatges amb ruta relativa
 
 Un `.md` corrent no porta les imatges a dins: les desa en una carpeta al costat i les anomena amb una ruta relativa, `imatges/01.png`. EdiMarkWeb resol aquestes rutes i mostra les imatges a la previsualització.
@@ -185,6 +206,8 @@ Durant l'exportació, la barra superior mostra missatges d'estat (progrés, èxi
 **Autor**, que es desa a les propietats del fitxer i apareix com a autor del llibre a l'EPUB i a la portada del LaTeX. En DOCX i ODT, a més, el Pandoc escriu una línia amb el nom al principi del document; si no vols que hi aparegui, deixa el camp buit. Un document concret pot portar un altre autor: *Autor d'aquest document…*, al menú del botó d'idioma.
 
 **Portada de l'EPUB**, amb tres possibilitats. D'entrada, EdiMarkWeb **en genera una** amb el títol i l'autor del document, perquè un llibre sense imatge apareix amb la icona genèrica al prestatge del lector. Pots posar-hi **una imatge teva** —fins a 1 MB, que per a una portada ja va sobrat: es desa al costat dels teus documents, a l'espai propi de l'aplicació— o deixar el llibre **sense portada**. Només afecta l'EPUB.
+
+**Format del text**: alineació, tipus i mida de lletra, interlineat, marges, sagnia i partició de mots, amb els valors de partida per a tots els documents. Cada document pot fixar els seus des del plafó Markdown, i el que no fixi ho hereta d'aquí.
 
 **Índex automàtic**, que afegeix al principi del document un índex amb els apartats. En DOCX és un índex del Word de debò i en ODT un de natiu del LibreOffice; l'EPUB no el necessita, perquè el lector ja porta el seu índex de navegació.
 

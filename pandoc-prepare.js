@@ -2,6 +2,14 @@ import { readZipEntries, mimeForPath, bytesToDataUri } from './zip-reader.js';
 import { createZip } from './zip-writer.js';
 import { extractOdtTableHeaders, restoreTableHeaders } from './odt-tables.js';
 import { normalizeFormulaHrefs } from './odt-formulas.js';
+import {
+  applyDocxHyphenation,
+  applyDocxMargins,
+  applyDocxStyles,
+  applyDocxTheme,
+  applyOdtMargins,
+  applyOdtStyles,
+} from './office-format.js';
 
 /*
   Pure Markdown preparation helpers used by pandoc-exporter.js.
@@ -942,6 +950,89 @@ export async function fillOdtTableOfContents(archiveBytes) {
     return createZip(rebuilt);
   } catch (error) {
     console.warn('No se pudo completar el índice del ODT:', error);
+    return archiveBytes;
+  }
+}
+
+/*
+  Suma el formato del documento a la hoja de estilos del EPUB.
+
+  Se añade al final de la que escribe Pandoc en vez de pasar `--css`, que la
+  sustituiría: esa hoja trae el reset y los estilos del código, las citas y las
+  notas, y el libro se quedaría sin ellos.
+*/
+export async function appendEpubStylesheet(archiveBytes, css) {
+  if (!archiveBytes || archiveBytes.length === 0 || !String(css || '').trim()) return archiveBytes;
+  try {
+    const entries = await readZipEntries(archiveBytes);
+    const name = [...entries.keys()].find(entry => /\.css$/i.test(entry));
+    if (!name) return archiveBytes;
+
+    const sheet = new TextDecoder().decode(entries.get(name));
+    const updated = `${sheet.trimEnd()}\n\n/* Formato del documento (EdiMarkWeb) */\n${css}\n`;
+
+    const rebuilt = new Map();
+    if (entries.has('mimetype')) rebuilt.set('mimetype', entries.get('mimetype'));
+    for (const [entry, bytes] of entries) {
+      if (entry === 'mimetype') continue;
+      rebuilt.set(entry, entry === name ? new TextEncoder().encode(updated) : bytes);
+    }
+    return createZip(rebuilt);
+  } catch (error) {
+    console.warn('No se pudo aplicar el formato al EPUB:', error);
+    return archiveBytes;
+  }
+}
+
+/*
+  Aplica el formato del documento —alineación, letra, interlineado, márgenes,
+  sangría y partición— al DOCX o al ODT recién generado.
+
+  Ninguno de los dos escritores de Pandoc admite esos ajustes como metadatos:
+  salen de su plantilla interna, así que hay que abrir el archivo y reescribir
+  los estilos. Si algo no encaja se devuelve el original: más vale exportar sin
+  el formato que entregar un archivo que Word no quiera abrir.
+*/
+export async function applyOfficeFormat(archiveBytes, styles, kind) {
+  if (!archiveBytes || archiveBytes.length === 0 || !styles) return archiveBytes;
+  const wanted = ['align', 'fontName', 'fontSizePt', 'lineHeight', 'indent', 'hyphenate']
+    .some(key => styles[key]) || Object.keys(styles.marginsCm || {}).length > 0;
+  if (!wanted) return archiveBytes;
+
+  try {
+    const entries = await readZipEntries(archiveBytes);
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    const updated = new Map();
+
+    const rewrite = (name, transform) => {
+      const bytes = entries.get(name);
+      if (!bytes) return;
+      const xml = decoder.decode(bytes);
+      const result = transform(xml);
+      if (result && result !== xml) updated.set(name, encoder.encode(result));
+    };
+
+    if (kind === 'docx') {
+      rewrite('word/styles.xml', xml => applyDocxStyles(xml, styles));
+      rewrite('word/document.xml', xml => applyDocxMargins(xml, styles.marginsCm));
+      rewrite('word/settings.xml', xml => applyDocxHyphenation(xml, styles.hyphenate));
+      rewrite('word/theme/theme1.xml', xml => applyDocxTheme(xml, styles.fontName));
+    } else {
+      rewrite('styles.xml', xml => applyOdtMargins(applyOdtStyles(xml, styles), styles.marginsCm));
+    }
+    if (!updated.size) return archiveBytes;
+
+    const rebuilt = new Map();
+    // En un ODT el mimetype tiene que seguir siendo la primera entrada.
+    if (entries.has('mimetype')) rebuilt.set('mimetype', entries.get('mimetype'));
+    for (const [name, bytes] of entries) {
+      if (name === 'mimetype') continue;
+      rebuilt.set(name, updated.get(name) || bytes);
+    }
+    return createZip(rebuilt);
+  } catch (error) {
+    console.warn('No se pudo aplicar el formato del documento:', error);
     return archiveBytes;
   }
 }

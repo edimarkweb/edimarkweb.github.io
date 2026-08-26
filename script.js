@@ -5994,13 +5994,20 @@ window.onload = () => {
         return select;
     }
 
+    /*
+      Texto y no `number`: un campo numérico rechaza la coma decimal, que es
+      justo lo que teclea quien escribe en español. El valor se normaliza
+      luego, donde 2,5 y 2.5 valen lo mismo y lo que se sale del rango se
+      descarta.
+    */
     function buildFormatNumber(id, { min, max, step, placeholderKey, placeholderText }) {
         const input = document.createElement('input');
-        input.type = 'number';
+        input.type = 'text';
+        input.inputMode = 'decimal';
         input.id = id;
-        input.min = String(min);
-        input.max = String(max);
-        input.step = String(step);
+        input.dataset.min = String(min);
+        input.dataset.max = String(max);
+        input.dataset.step = String(step);
         input.className = DOC_FORMAT_SELECTS;
         input.setAttribute('data-i18n-key', placeholderKey);
         input.placeholder = getTranslation(placeholderKey, placeholderText);

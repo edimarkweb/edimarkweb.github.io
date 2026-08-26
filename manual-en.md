@@ -128,6 +128,27 @@ lang: "ca"
 
 That is the standard way of storing data about a document and many programs understand it. EdiMarkWeb does not show it in the preview, because it is not content, but it does show it in the Markdown pane, which is the source. You can delete or change it by hand if you want.
 
+### The formatting of each document
+
+That same button leads to *Formatting of this document…*, and the `Aa` button at the end of the formatting bar opens it in one click. There you set the **alignment** (left, justified or right), the **typeface** (serif, sans serif, monospaced or whatever you type), the **size** in points, the **line spacing**, the **margins** on all four sides in centimetres, the **first-line indent** and the **hyphenation**.
+
+Anything left on *Same as the general options* follows **Settings → Export options…**, where the same settings act as the starting values for every document. What you set here is saved inside the document itself, next to the language, so it travels with the file:
+
+```
+---
+lang: "en"
+align: "justify"
+fontsize: "12pt"
+margin-left: "3cm"
+---
+```
+
+It applies to the preview and to all five export formats, with three caveats worth knowing:
+
+* In the **EPUB** the margins are a suggestion: the reading app has the last word on the page box.
+* In **TEX**, if your preamble already loads `geometry`, your margins win: the application says it has left the ones from the menu out rather than breaking the build with two identical `\usepackage` lines.
+* **Hyphenation** uses the system dictionaries. Word on Windows and macOS brings its own; on Linux, LibreOffice needs the language package (`hyphen-en`, for instance).
+
 ### Images with a relative path
 
 An ordinary `.md` does not carry its images inside: it keeps them in a folder next to it and names them with a relative path, `images/01.png`. EdiMarkWeb resolves those paths and shows the images in the preview.
@@ -185,6 +206,8 @@ While exporting, the top bar shows status messages (progress, success or errors)
 **Author**, stored in the file properties and shown as the book author in the EPUB and on the LaTeX title page. In DOCX and ODT, Pandoc also writes a line with the name at the start of the document; leave the field empty if you would rather it did not appear. A particular document can carry a different author: *This document's author…*, in the language button menu.
 
 **EPUB cover**, with three choices. By default EdiMarkWeb **generates one** from the document title and author, because a book with no image shows up as a generic icon on the reader's shelf. You can use **an image of your own** —up to 1 MB, plenty for a cover: it is stored alongside your documents, in the application's own space— or leave the book **with no cover**. It only affects the EPUB.
+
+**Text formatting**: alignment, typeface and size, line spacing, margins, indent and hyphenation, as the starting values for every document. Each document can set its own from the Markdown pane, and whatever it does not set is inherited from here.
 
 **Table of contents**, which adds a list of the sections at the start of the document. In DOCX it is a real Word table of contents and in ODT a native LibreOffice one; the EPUB does not need it, since the reader already provides its navigation index.
 

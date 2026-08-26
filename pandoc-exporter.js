@@ -18,6 +18,8 @@ import {
   requestDocxFieldUpdate,
   fillOdtTableOfContents,
   splitFrontMatter,
+  appendEpubStylesheet,
+  applyOfficeFormat,
   mergeFrontMatter,
   prepareLatexStandalone,
   extractMarkdownTitle,
@@ -741,13 +743,6 @@ async function exportDocument({
       el sistema de ficheros del WASM para que Pandoc la encuentre.
     */
     const extraFiles = {};
-    if (normalizedFormat === 'epub' && exportFormat) {
-      const css = documentFormatCss(normalized);
-      if (css) {
-        extraFiles['edimark-format.css'] = new TextEncoder().encode(css);
-        pandocArgs += ' --css=/edimark-format.css';
-      }
-    }
     if (normalizedFormat === 'epub') {
       const cover = epubCoverFile({
         title: extractMarkdownTitle(normalized) || String(documentTitle || '').trim(),
@@ -775,6 +770,19 @@ async function exportDocument({
     if (documentOutlineOptions().toc) {
       if (normalizedFormat === 'docx') finalBytes = await requestDocxFieldUpdate(resultadoBytes);
       else if (normalizedFormat === 'odt') finalBytes = await fillOdtTableOfContents(resultadoBytes);
+    }
+    /*
+      El formato del texto va después del índice: los dos reescriben el mismo
+      archivo, y hacerlo al final evita rehacer el ZIP dos veces por nada.
+    */
+    if (exportFormat && (normalizedFormat === 'docx' || normalizedFormat === 'odt')) {
+      const api = documentFormatApi();
+      if (api) {
+        finalBytes = await applyOfficeFormat(finalBytes, api.toOfficeStyles(exportFormat), normalizedFormat);
+      }
+    }
+    if (exportFormat && normalizedFormat === 'epub') {
+      finalBytes = await appendEpubStylesheet(finalBytes, documentFormatCss(normalized));
     }
 
     const blob = new Blob([finalBytes], { type: config.mime });

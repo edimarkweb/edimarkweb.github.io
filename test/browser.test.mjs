@@ -1504,3 +1504,55 @@ test('el aviso de escritorio reaparece con cada versión y no acumula claves', a
     .filter(key => key.startsWith('edimarkweb-hide-desktop-release-')));
   assert.deepEqual(trasLaPurga, []);
 });
+
+/*
+  El formato de un documento se guarda en su propio bloque de metadatos, no en
+  este navegador: al abrir el archivo en otro sitio tiene que seguir ahí.
+*/
+test('el formato del documento se escribe en el archivo y se ve en la vista previa', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').fill('# Prueba\n\nUn párrafo cualquiera.');
+
+  // El botón Aa de la barra abre el mismo cuadro que el menú del documento.
+  await page.locator('#doc-format-toolbar-btn').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  await page.locator('#doc-format-fields-align').selectOption('justify');
+  await page.locator('#doc-format-fields-font').selectOption('serif');
+  await page.locator('#doc-format-fields-fontsize').fill('13');
+  await page.locator('#doc-format-fields-margin-left').fill('2,5');
+  await page.locator('#doc-format-fields-hyphenate').selectOption('yes');
+  await page.locator('#doc-format-save-btn').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'hidden' });
+
+  const markdown = await page.locator('#markdown-input').inputValue();
+  assert.match(markdown, /^---\n/);
+  assert.match(markdown, /align: "justify"/);
+  assert.match(markdown, /fontsize: "13pt"/);
+  // La coma decimal es la que se teclea en español.
+  assert.match(markdown, /margin-left: "2.5cm"/);
+  assert.match(markdown, /hyphenate: true/);
+  assert.match(markdown, /# Prueba/);
+
+  const styles = await page.locator('#html-output').evaluate(preview => ({
+    align: preview.style.textAlign,
+    size: preview.style.fontSize,
+    padding: preview.style.paddingLeft,
+    hyphens: preview.style.hyphens,
+  }));
+  assert.deepEqual(styles, { align: 'justify', size: '13pt', padding: '2.5cm', hyphens: 'auto' });
+
+  // Al reabrirlo, el cuadro muestra lo que el documento declara.
+  await page.locator('#doc-format-toolbar-btn').click();
+  assert.equal(await page.locator('#doc-format-fields-align').inputValue(), 'justify');
+  assert.equal(await page.locator('#doc-format-fields-fontsize').inputValue(), '13');
+
+  // Y quitarlo del documento devuelve el Markdown a lo que era.
+  await page.locator('#doc-format-reset-btn').click();
+  await page.locator('#doc-format-save-btn').click();
+  const limpio = await page.locator('#markdown-input').inputValue();
+  assert.equal(/align:|fontsize:|margin-left:|hyphenate:/.test(limpio), false);
+  assert.match(limpio, /# Prueba/);
+  assert.equal(await page.locator('#html-output').evaluate(preview => preview.style.textAlign), '');
+});
