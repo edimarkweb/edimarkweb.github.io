@@ -193,7 +193,17 @@ test('la aplicación nativa aprovecha toda la ventana y comparte el cuadro Acerc
   await page.locator('#about-close-btn').click();
   await page.locator('#about-modal-overlay').waitFor({ state: 'hidden' });
 
+  // Con el foco en la previsualización no se escribe en el Markdown: los
+  // botones de fórmulas quedan apagados como el resto del formato.
   await page.locator('#html-output').focus();
+  assert.equal(await page.locator('#formula-btn').getAttribute('data-controls-disabled'), 'true');
+  assert.equal(await page.locator('#open-edicuatex-btn').getAttribute('data-controls-disabled'), 'true');
+  // El botón sigue recibiendo el clic —así avisa de por qué no hace nada—,
+  // pero Playwright lo ve deshabilitado por aria-disabled: hay que forzarlo.
+  await page.locator('#open-edicuatex-btn').click({ force: true });
+  assert.equal(await page.locator('#edicuatex-modal-overlay').isVisible(), false);
+
+  await page.locator('#markdown-input').focus();
   assert.equal(await page.locator('#formula-btn').getAttribute('data-controls-disabled'), null);
   assert.equal(await page.locator('#open-edicuatex-btn').getAttribute('data-controls-disabled'), null);
   await page.locator('#open-edicuatex-btn').click();

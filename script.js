@@ -3790,6 +3790,10 @@ window.onload = () => {
         if (!toolbar) return [];
         const buttons = new Set(Array.from(toolbar.querySelectorAll('button[data-format]')));
         if (headingBtn) buttons.add(headingBtn);
+        // Fórmulas y EdiCuaTeX también escriben en el Markdown: sus manejadores
+        // ya consultan data-controls-disabled, pero nadie se lo ponía.
+        if (formulaBtn) buttons.add(formulaBtn);
+        if (openEdicuatexBtn) buttons.add(openEdicuatexBtn);
         return Array.from(buttons);
     })();
     if (undoButtonEl) {
