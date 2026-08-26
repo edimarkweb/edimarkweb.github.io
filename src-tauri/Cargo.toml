@@ -23,3 +23,8 @@ tauri-plugin-http = "2"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = "2"
+
+# El corrector ortográfico de WebKitGTK se enciende desde el propio webview:
+# hay que hablar con él en la misma versión que usa wry.
+[target.'cfg(target_os = "linux")'.dependencies]
+webkit2gtk = { version = "=2.0.2", features = ["v2_38"] }

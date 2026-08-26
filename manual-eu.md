@@ -60,6 +60,7 @@ Logotipoaren ondoko barrak aplikazioaren aukera orokorrak biltzen ditu eta fitxa
   * **Testuaren tamaina**: txikia, normala, handia edo oso handia.
   * **Gaia**: `Sistemakoa` aukerak ekipoarena jarraitzen du eta harekin batera aldatzen da; `Argia` eta `Iluna` aukerek finkatu egiten dute. Aukeraketa gogoratu egiten da aplikazioa hurrengoan irekitzean.
   * **Leiho independentea**: EdiMarkWeb nabigatzailearen leiho propio batean irekitzen du, fitxarik eta helbide-barrarik gabe. Web bertsioan bakarrik agertzen da; mahaigaineko aplikazioa dagoeneko leiho propioa da.
+  * **Zuzentzaile ortografikoa**: Markdown paneleko akatsak azpimarratzen ditu ordenagailuan instalatutako hiztegiekin, dokumentuaren hizkuntzari jarraituz. Aktibatuta dator; desmarkatuz gero itzali egiten da eta aukera gogoratu egiten da.
   * **Bilatu eguneraketak…**: mahaigaineko aplikazioan bakarrik agertzen da. Bertsio berriagorik dagoen begiratzen du eta, halakorik badago, ohar bat erakusten du **Deskargatu eta instalatu** botoiarekin: zure sistemaren instalatzailea deskargatu eta irekitzen du. Aplikazioak berak egunean behin egiten du egiaztapena abiaraztean; oharreko **Egiaztatu abiaraztean** laukiak desaktibatzeko aukera ematen du.
   * **Esportazio-aukerak…**: aplikazioak sortzen dituen fitxategien ezarpenak irekitzen ditu (hizkuntza eta, LaTeX-erako, klasea eta atarikoa), behean azalduta.
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia sortzen du uneko estiloekin.
@@ -240,7 +241,7 @@ Instalatzaileak [deskarga-orrian](https://github.com/edimarkweb/edimarkweb.githu
 
 * **Dokumentuak klik bikoitzarekin irekitzen dira**: instalazioak `.md` eta `.markdown` fitxategiak lotzen ditu, eta fitxategi-kudeatzailetik EdiMarkWeb-en irekitzen dira. Aplikazioa jada irekita badago, dokumentua leiho horretara bertara iristen da fitxa berri batean.
 * **Gordetzeak benetako fitxategian idazten du**: `Ctrl+S` sakatuta ireki duzun dokumentua eguneratzen da, deskargen karpetatik pasatu gabe. **Gorde honela…** aukerak sistemaren elkarrizketa-koadroa irekitzen du izena eta karpeta aukeratzeko.
-* **Sistemaren zuzentzaile ortografikoa**: editoreak akatsak azpimarratzen ditu ekipoan instalatutako hiztegiekin. Windows eta macOS sistemetan dagoeneko dituzun hizkuntzak dira; Linux-en beharrezkoa izan daiteke nahi duzun hiztegia instalatzea (adibidez, `hunspell-eu` paketea).
+* **Sistemaren zuzentzaile ortografikoa**: editoreak akatsak azpimarratzen ditu ekipoan instalatutako hiztegiekin. Windows eta macOS sistemetan dagoeneko dituzun hizkuntzak dira; Linux-en beharrezkoa izan daiteke nahi duzun hiztegia instalatzea (adibidez, `hunspell-eu` paketea). **Konfigurazioa → Zuzentzaile ortografikoa** atalean itzal dezakezu.
 * **Konexiorik gabe funtzionatzen du**: aplikazioak behar duen guztia darama barruan, Pandoc eta EdiCuaTeX formula-editorea barne, beraz internetik gabe idatzi, inportatu eta esporta dezakezu. Konexioa bertsio berririk dagoen egiaztatzeko baino ez da behar.
 * **Irten**: **Fitxategia** menuaren amaieran, uneko dokumentua gorde eta aplikazioa ixten du.
 

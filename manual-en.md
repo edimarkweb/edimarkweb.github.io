@@ -60,6 +60,7 @@ The bar next to the logo holds the application's global options and gathers ever
   * **Font size**: small, normal, large or very large.
   * **Theme**: `System` follows your computer's setting and changes with it; `Light` and `Dark` fix it. Your choice is remembered next time you open the application.
   * **Separate window**: opens EdiMarkWeb in a browser window of its own, with no tabs or address bar. It only appears in the web version; the desktop application is already a window of its own.
+  * **Spell checker**: underlines mistakes in the Markdown pane using the dictionaries installed on the computer, following the document language. It is on by default; unchecking it turns it off and the choice is remembered.
   * **Check for updates…**: only appears in the desktop application. It looks for a newer version and, if there is one, shows a notice with a **Download and install** button that fetches the installer for your system and opens it. The application checks on its own once a day at startup; the notice's **Check at startup** box turns that off.
   * **Export options…**: opens the settings for the files the application generates (language, plus class and preamble for LaTeX), explained below.
 * **Print (Ctrl+P)**: produces a view ready for paper or PDF using the current styles.
@@ -240,7 +241,7 @@ The installers live on the [downloads page](https://github.com/edimarkweb/edimar
 
 * **Documents open on a double click**: the installation registers `.md` and `.markdown` files, so they open in EdiMarkWeb from the file manager. If the application is already running, the document arrives in that same window as a new tab.
 * **Saving writes to the real file**: `Ctrl+S` updates the document you opened, with no detour through the downloads folder. **Save as…** opens the system dialogue to choose a name and folder.
-* **System spell checker**: the editor underlines mistakes using the dictionaries installed on the computer. On Windows and macOS these are the languages you already have; on Linux you may need to install the dictionary you want (the `hunspell-en` package, for instance).
+* **System spell checker**: the editor underlines mistakes using the dictionaries installed on the computer. On Windows and macOS these are the languages you already have; on Linux you may need to install the dictionary you want (the `hunspell-en` package, for instance). You can turn it off in **Settings → Spell checker**.
 * **It works offline**: the application carries everything it needs, including Pandoc and the EdiCuaTeX formula editor, so you can write, import and export with no internet. A connection is only needed to check for new versions.
 * **Quit**: at the end of the **File** menu, it saves the current document and closes the application.
 

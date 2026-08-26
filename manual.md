@@ -60,6 +60,7 @@ La barra junto al logotipo agrupa las opciones globales de la aplicación y ahor
   * **Tamaño de texto**: pequeño, normal, grande o muy grande.
   * **Tema**: `Sistema` sigue el del equipo y cambia con él; `Claro` y `Oscuro` lo fijan. La elección se recuerda la próxima vez que abras la aplicación.
   * **Ventana independiente**: abre EdiMarkWeb en una ventana propia del navegador, sin pestañas ni barra de direcciones. Solo aparece en la versión web; la aplicación de escritorio ya es una ventana propia.
+  * **Corrector ortográfico**: subraya las faltas del panel Markdown con los diccionarios instalados en el equipo y sigue el idioma del documento. Viene activado; al desmarcarlo se apaga y la elección se recuerda.
   * **Buscar actualizaciones…**: solo aparece en la aplicación de escritorio. Consulta si hay una versión más reciente y, si la hay, muestra un aviso con el botón **Descargar e instalar**, que baja el instalador de tu sistema y lo abre. La aplicación hace esta comprobación sola una vez al día al arrancar; la casilla **Comprobar al iniciar** del aviso permite desactivarla.
   * **Opciones de exportación…**: abre los ajustes de los archivos que genera la aplicación (idioma y, para LaTeX, clase y preámbulo), explicados más abajo.
 * **Imprimir (Ctrl+P)**: genera una vista preparada para papel o PDF con los estilos actuales.
@@ -240,7 +241,7 @@ Los instaladores están en la [página de descargas](https://github.com/edimarkw
 
 * **Los documentos se abren con doble clic**: la instalación asocia los archivos `.md` y `.markdown`, de modo que se abren en EdiMarkWeb desde el explorador de archivos. Si la aplicación ya está abierta, el documento llega a esa misma ventana en una pestaña nueva.
 * **Guardar escribe en el archivo de verdad**: `Ctrl+S` actualiza el documento que abriste, sin pasar por la carpeta de descargas. **Guardar como…** abre el diálogo del sistema para elegir nombre y carpeta.
-* **Corrector ortográfico del sistema**: el editor subraya las faltas con los diccionarios instalados en el equipo. En Windows y macOS son los idiomas que ya tengas; en Linux puede hacer falta instalar el diccionario que quieras (por ejemplo, el paquete `hunspell-es`).
+* **Corrector ortográfico del sistema**: el editor subraya las faltas con los diccionarios instalados en el equipo. En Windows y macOS son los idiomas que ya tengas; en Linux puede hacer falta instalar el diccionario que quieras (por ejemplo, el paquete `hunspell-es`). Puedes apagarlo en **Configuración → Corrector ortográfico**.
 * **Funciona sin conexión**: la aplicación lleva dentro todo lo que necesita, incluidos Pandoc y el editor de fórmulas EdiCuaTeX, así que puedes escribir, importar y exportar sin internet. Solo hace falta conexión para comprobar si hay versiones nuevas.
 * **Salir**: al final del menú **Archivo**, guarda el documento en curso y cierra la aplicación.
 

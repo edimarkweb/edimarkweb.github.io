@@ -121,6 +121,20 @@
         return null;
       },
 
+      /*
+        Corrector ortográfico del sistema. En Linux el webview lo trae apagado y
+        hay que encenderlo desde Rust indicando el idioma; en el navegador y en
+        los demás sistemas basta con el atributo `spellcheck` del editor.
+      */
+      async setSpellChecking(enabled, lang) {
+        if (!desktop || !app || typeof app.setSpellChecking !== 'function') return;
+        try {
+          await app.setSpellChecking(Boolean(enabled), String(lang || ''));
+        } catch (error) {
+          console.warn('No se pudo ajustar el corrector ortográfico:', error);
+        }
+      },
+
       /* Diálogo nativo para elegir una imagen: devuelve su ruta en el disco,
          que es lo que permite escribirla en el Markdown como ruta relativa. */
       async pickImageFile() {

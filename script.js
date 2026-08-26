@@ -28,6 +28,7 @@ const LAYOUT_ICONS = { md: 'panel-right', html: 'panel-left', dual: 'columns-2' 
 const FS_KEY = 'edimarkweb-fontsize';
 const FOCUS_MODE_KEY = 'edimarkweb-focus-mode';
 const LATEX_SETTINGS_KEY = 'edimarkweb-latex-settings';
+const SPELLCHECK_KEY = 'edimarkweb-spellcheck';
 const EDICUATEX_BASE_URL = 'https://edicuatex.github.io/index.html';
 const EDICUATEX_DESKTOP_PATH = 'vendor/edicuatex/index.html';
 const DESKTOP_PARAM_KEY = 'desktop';
@@ -1232,10 +1233,39 @@ function formatTranslation(key, fallback, values = {}) {
     );
 }
 
+/*
+  El corrector ortográfico es el del sistema: el navegador (o el webview de la
+  aplicación de escritorio) subraya las faltas con los diccionarios instalados.
+  Viene encendido y se apaga desde Configuración.
+*/
+function spellCheckEnabled() {
+    return safeLocalStorageGet(SPELLCHECK_KEY, '1') !== '0';
+}
+
+/*
+  Aplica la preferencia al editor Markdown. En Linux no basta con el atributo:
+  WebKitGTK trae su corrector apagado y hay que encenderlo desde Rust indicando
+  el idioma; en el navegador y en los demás sistemas esa llamada no hace nada.
+*/
+function applySpellChecking(lang) {
+    const enabled = spellCheckEnabled();
+    const language = String(lang || '').trim()
+        || window.__edimarkLang
+        || document.documentElement.lang
+        || 'es';
+    if (markdownTextareaEl) {
+        markdownTextareaEl.setAttribute('spellcheck', enabled ? 'true' : 'false');
+    }
+    const platform = window.EdiMarkPlatform;
+    if (platform && typeof platform.setSpellChecking === 'function') {
+        platform.setSpellChecking(enabled, language);
+    }
+}
+
 function createTextareaEditor(textarea) {
     textarea.value = normalizeNewlines(textarea.value || '');
     textarea.classList.add('markdown-textarea');
-    textarea.setAttribute('spellcheck', 'true');
+    textarea.setAttribute('spellcheck', spellCheckEnabled() ? 'true' : 'false');
     textarea.setAttribute('wrap', 'soft');
 
     const parent = textarea.parentNode;
@@ -3600,6 +3630,7 @@ window.onload = () => {
     const updateAutoCheck = document.getElementById('update-auto-check');
     const updateBannerClose = document.getElementById('update-banner-close');
     const checkUpdatesBtn = document.getElementById('check-updates-btn');
+    const spellcheckToggleBtn = document.getElementById('spellcheck-toggle-btn');
     const quitAppBtn = document.getElementById('quit-app-btn');
     const quitAppSeparator = document.getElementById('quit-app-separator');
     const copyMdBtn = document.getElementById('copy-md-btn');
@@ -4049,10 +4080,8 @@ window.onload = () => {
         if (!docLangBtn || !markdownEditor) return;
         const own = splitDocumentFrontMatter(markdownEditor.getValue()).lang;
         const effective = own || generalDocumentLanguage();
-        if (markdownTextareaEl) {
-            markdownTextareaEl.setAttribute('lang', effective);
-            markdownTextareaEl.setAttribute('spellcheck', 'true');
-        }
+        if (markdownTextareaEl) markdownTextareaEl.setAttribute('lang', effective);
+        applySpellChecking(effective);
         if (docLangLabel) docLangLabel.textContent = effective.toUpperCase();
         // Sin idioma propio, el botón se ve más apagado: lo hereda.
         docLangBtn.classList.toggle('doc-lang-inherited', !own);
@@ -4394,6 +4423,21 @@ window.onload = () => {
             window.EdiMarkPlatform.quitApplication().catch((error) => {
                 console.error('No se pudo cerrar la aplicación:', error);
             });
+        });
+    }
+    if (spellcheckToggleBtn) {
+        const spellcheckCheck = spellcheckToggleBtn.querySelector('.submenu-check');
+        const syncSpellcheckToggle = () => {
+            const enabled = spellCheckEnabled();
+            spellcheckToggleBtn.setAttribute('aria-checked', enabled ? 'true' : 'false');
+            if (spellcheckCheck) spellcheckCheck.classList.toggle('hidden', !enabled);
+        };
+        syncSpellcheckToggle();
+        spellcheckToggleBtn.addEventListener('click', () => {
+            safeLocalStorageSet(SPELLCHECK_KEY, spellCheckEnabled() ? '0' : '1', { notify: false });
+            syncSpellcheckToggle();
+            applySpellChecking(markdownTextareaEl ? markdownTextareaEl.getAttribute('lang') : '');
+            closeSettingsMenu();
         });
     }
     if (checkUpdatesBtn && nativeMode) {

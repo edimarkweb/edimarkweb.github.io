@@ -192,6 +192,105 @@ fn install_downloaded_update(
     Ok(destination.to_string_lossy().into_owned())
 }
 
+/*
+  WebKitGTK trae el corrector ortográfico apagado, así que en Linux hay que
+  encenderlo a mano y decirle en qué idioma se escribe; usa los diccionarios
+  hunspell del sistema (en Debian, paquetes como `hunspell-es`). En Windows y
+  macOS el webview del sistema ya corrige por su cuenta.
+*/
+#[cfg(target_os = "linux")]
+fn apply_spell_checking(window: &tauri::WebviewWindow, enabled: bool, candidates: Vec<String>) {
+    let _ = window.with_webview(move |webview| {
+        use webkit2gtk::{WebContextExt, WebViewExt};
+        let Some(context) = webview.inner().context() else {
+            return;
+        };
+        context.set_spell_checking_enabled(enabled);
+        if !enabled {
+            return;
+        }
+        // El contexto descarta los códigos sin diccionario instalado, de modo
+        // que la lista efectiva dice cuál ha valido. Si no vale ninguno se
+        // queda vacía y WebKitGTK recurre al idioma del sistema.
+        for code in candidates {
+            context.set_spell_checking_languages(&[code.as_str()]);
+            if !context.spell_checking_languages().is_empty() {
+                break;
+            }
+        }
+    });
+}
+
+/*
+  enchant pide el código con región: `es` no encuentra nada y `es_ES` sí. Como
+  el documento solo declara el idioma (`es`, `pt-BR`), aquí se proponen las
+  variantes habituales y el corrector se queda con la primera instalada.
+*/
+#[cfg(target_os = "linux")]
+fn spell_checking_candidates(lang: &str) -> Vec<String> {
+    const REGIONS: &[(&str, &[&str])] = &[
+        ("ca", &["ES"]),
+        ("cs", &["CZ"]),
+        ("da", &["DK"]),
+        ("el", &["GR"]),
+        ("en", &["US", "GB"]),
+        ("es", &["ES", "MX", "AR"]),
+        ("eu", &["ES"]),
+        ("gl", &["ES"]),
+        ("nb", &["NO"]),
+        ("nn", &["NO"]),
+        ("pt", &["PT", "BR"]),
+        ("sv", &["SE"]),
+        ("uk", &["UA"]),
+        ("zh", &["CN", "TW"]),
+    ];
+
+    let mut parts = lang.trim().split(['-', '_']).filter(|part| !part.is_empty());
+    let Some(language) = parts.next().map(str::to_ascii_lowercase) else {
+        return Vec::new();
+    };
+    if language.len() < 2 || !language.chars().all(|c| c.is_ascii_alphabetic()) {
+        return Vec::new();
+    }
+
+    // Un idioma con región (`pt-BR`) ya es la primera opción tal cual.
+    let mut candidates = Vec::new();
+    if let Some(region) = parts.next() {
+        if region.len() == 2 && region.chars().all(|c| c.is_ascii_alphabetic()) {
+            candidates.push(format!("{language}_{}", region.to_ascii_uppercase()));
+        }
+    }
+    let regions = REGIONS
+        .iter()
+        .find(|(code, _)| *code == language)
+        .map(|(_, regions)| *regions)
+        .unwrap_or(&[]);
+    for region in regions {
+        candidates.push(format!("{language}_{region}"));
+    }
+    // Para el resto de idiomas, `fi_FI` o `pl_PL` es la forma más común.
+    candidates.push(format!("{language}_{}", language.to_ascii_uppercase()));
+    candidates.push(language);
+    candidates.dedup();
+    candidates
+}
+
+/*
+  La interfaz avisa del idioma efectivo del documento cada vez que cambia y de
+  si el usuario quiere el corrector encendido.
+*/
+#[tauri::command]
+fn set_spell_checking(
+    #[allow(unused_variables)] app: tauri::AppHandle,
+    #[allow(unused_variables)] enabled: bool,
+    #[allow(unused_variables)] lang: String,
+) {
+    #[cfg(target_os = "linux")]
+    if let Some(window) = app.get_webview_window("main") {
+        apply_spell_checking(&window, enabled, spell_checking_candidates(&lang));
+    }
+}
+
 #[cfg(desktop)]
 fn deliver_markdown_paths(app: &tauri::AppHandle, paths: Vec<String>) {
     if paths.is_empty() {
@@ -239,7 +338,8 @@ pub fn run() {
             read_markdown_document,
             read_document_asset,
             update_target,
-            install_downloaded_update
+            install_downloaded_update,
+            set_spell_checking
         ])
         .build(tauri::generate_context!())
         .expect("error al preparar EdiMarkWeb")

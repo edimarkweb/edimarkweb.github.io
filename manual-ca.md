@@ -60,6 +60,7 @@ La barra del costat del logotip agrupa les opcions globals de l'aplicació i con
   * **Mida del text**: petita, normal, gran o molt gran.
   * **Tema**: `Sistema` segueix el de l'equip i canvia amb ell; `Clar` i `Fosc` el fixen. L'elecció es recorda el pròxim cop que obris l'aplicació.
   * **Finestra independent**: obre EdiMarkWeb en una finestra pròpia del navegador, sense pestanyes ni barra d'adreces. Només apareix a la versió web; l'aplicació d'escriptori ja és una finestra pròpia.
+  * **Corrector ortogràfic**: subratlla les faltes del plafó Markdown amb els diccionaris instal·lats a l'equip i segueix l'idioma del document. Ve activat; en desmarcar-lo s'apaga i la tria es recorda.
   * **Cerca actualitzacions…**: només apareix a l'aplicació d'escriptori. Comprova si hi ha una versió més recent i, si n'hi ha, mostra un avís amb el botó **Baixa i instal·la**, que descarrega l'instal·lador del teu sistema i l'obre. L'aplicació fa aquesta comprovació tota sola un cop al dia en arrencar; la casella **Comprova en iniciar** de l'avís permet desactivar-la.
   * **Opcions d'exportació…**: obre els ajustos dels fitxers que genera l'aplicació (idioma i, per al LaTeX, classe i preàmbul), explicats més avall.
 * **Imprimir (Ctrl+P)**: genera una vista preparada per a paper o PDF amb els estils actuals.
@@ -240,7 +241,7 @@ Els instal·ladors són a la [pàgina de baixades](https://github.com/edimarkweb
 
 * **Els documents s'obren amb doble clic**: la instal·lació associa els fitxers `.md` i `.markdown`, de manera que s'obren a EdiMarkWeb des del gestor de fitxers. Si l'aplicació ja és oberta, el document arriba a aquella mateixa finestra en una pestanya nova.
 * **Desar escriu al fitxer de debò**: `Ctrl+S` actualitza el document que has obert, sense passar per la carpeta de baixades. **Desar com a…** obre el diàleg del sistema per triar nom i carpeta.
-* **Corrector ortogràfic del sistema**: l'editor subratlla les faltes amb els diccionaris instal·lats a l'equip. Al Windows i al macOS són els idiomes que ja tinguis; al Linux pot caldre instal·lar el diccionari que vulguis (per exemple, el paquet `hunspell-ca`).
+* **Corrector ortogràfic del sistema**: l'editor subratlla les faltes amb els diccionaris instal·lats a l'equip. Al Windows i al macOS són els idiomes que ja tinguis; al Linux pot caldre instal·lar el diccionari que vulguis (per exemple, el paquet `hunspell-ca`). El pots apagar a **Configuració → Corrector ortogràfic**.
 * **Funciona sense connexió**: l'aplicació duu a dins tot el que necessita, inclosos el Pandoc i l'editor de fórmules EdiCuaTeX, així que pots escriure, importar i exportar sense internet. Només cal connexió per comprovar si hi ha versions noves.
 * **Surt**: al final del menú **Fitxer**, desa el document en curs i tanca l'aplicació.
 
