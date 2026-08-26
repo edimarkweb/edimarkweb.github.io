@@ -7,7 +7,7 @@ Welcome to EdiMarkWeb, a **Markdown text editor** designed for teachers and cont
 ## Highlights
 
 - Dual editing: work either in Markdown or straight in the HTML preview, always in sync.
-- Export and import menus supporting DOCX, ODT, EPUB, HTML and LaTeX, including options to copy directly to the clipboard.
+- Export and import menus supporting DOCX, ODT, EPUB, HTML, LaTeX and PDF, including options to copy directly to the clipboard.
 - Search and replace that highlights matches and ignores accents and letter case.
 - A **Settings** menu gathering the language, font size, theme and separate window in one place; the working width is changed beside the pane controls.
 - Interface theme with three options — System, Light and Dark — remembered between sessions.
@@ -54,7 +54,7 @@ Work on several documents at once, each in its own tab.
 
 The bar next to the logo holds the application's global options and gathers every file action under a single drop-down button:
 
-* **File**: groups the document actions in two families. First the ones that bring content in — `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` — and then the ones that take it out: `Save (Ctrl+S)`, `Save as… (Ctrl+Shift+S)` and the **Export** submenu, which opens to the right with DOCX, ODT, EPUB, HTML and TEX. Each option shows its keyboard shortcut. In the desktop application the menu ends with **Quit**, which saves the current document and closes the application.
+* **File**: groups the document actions in two families. First the ones that bring content in — `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` — and then the ones that take it out: `Save (Ctrl+S)`, `Save as… (Ctrl+Shift+S)` and the **Export** submenu, which opens to the right with DOCX, ODT, EPUB, HTML, TEX and PDF. Each option shows its keyboard shortcut. In the desktop application the menu ends with **Quit**, which saves the current document and closes the application.
 * **Settings**: gathers every application setting, each one in a submenu showing the current value.
   * **Language**: changes the interface language.
   * **Font size**: small, normal, large or very large.
@@ -198,6 +198,7 @@ Open the **File** button and choose `Export` to download versions ready to hand 
 * **EPUB (e-book)**: creates an e-book compatible with EPUB 3 readers (Calibre, Apple Books, Thorium, e-ink devices…). The title comes from the first level-1 heading (or from the document name), and the author, the cover and the language come from the settings explained below.
 * **HTML (web page)**: produces a self-contained file with embedded styles and formulas, ready to host on the web. The browser tab title comes from the first heading, or from the document name if there is none.
 * **TEX (LaTeX)**: creates a complete `.tex` document with a preamble ready to compile. It carries the document language, so hyphenation and the automatic labels come out in your language, and if the document opens with a single level-1 heading that heading becomes the title (`\title` and `\maketitle`) instead of just another section.
+* **PDF (through printing)**: opens the system print dialog, where you pick “Save as PDF” as the destination. What comes out is exactly what the preview shows, with typeset formulas and the document margins, and the text stays selectable and searchable. It is the same path as the **Print (Ctrl+P)** button.
 
 While exporting, the top bar shows status messages (progress, success or errors).
 

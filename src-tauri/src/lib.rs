@@ -96,6 +96,16 @@ fn write_markdown_document(path: String, contents: String) -> Result<(), String>
     std::fs::write(target, contents).map_err(|error| error.to_string())
 }
 
+/// Manda la vista previa a la impresora, que es de donde sale el PDF.
+///
+/// En el escritorio no basta con `window.print()` de la página: en macOS el
+/// webview no lo implementa y la orden se pierde. Desde aquí se llama al motor
+/// del propio webview, que abre el diálogo del sistema en los tres sistemas.
+#[tauri::command]
+fn print_document(window: tauri::WebviewWindow) -> Result<(), String> {
+    window.print().map_err(|error| error.to_string())
+}
+
 const IMAGE_EXTENSIONS: [&str; 9] = [
     "png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "avif", "ico",
 ];
@@ -504,6 +514,7 @@ pub fn run() {
             initial_markdown_paths,
             read_markdown_document,
             write_markdown_document,
+            print_document,
             read_document_asset,
             write_document_asset,
             update_target,

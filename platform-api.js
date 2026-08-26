@@ -262,6 +262,19 @@
         root.alert(String(text));
       },
 
+      /*
+        Impresión, que es también la vía al PDF. En el escritorio la pide Rust
+        al motor del webview: `window.print()` no hace nada en macOS y así los
+        tres sistemas se comportan igual.
+      */
+      async print() {
+        if (desktop && app && typeof app.printDocument === 'function') {
+          await app.printDocument();
+          return;
+        }
+        if (typeof root.print === 'function') root.print();
+      },
+
       async openTextDocument({ extensions = ['md', 'markdown'] } = {}) {
         if (!desktop) return null;
         const selected = await dialog.open({

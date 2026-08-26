@@ -99,6 +99,7 @@
   "export_menu_option_epub": "EPUB (libro dixital)",
   "export_menu_option_html_download": "HTML (páxina web)",
   "export_menu_option_latex_full_download": "TEX (LaTeX)",
+  "export_menu_option_pdf": "PDF (mediante impresión)",
   "print_btn_title": "Imprimir (Ctrl+P)",
   "help_btn_title": "Manual de EdiMarkWeb (F1)",
   "about_btn_title": "Acerca de EdiMarkWeb",

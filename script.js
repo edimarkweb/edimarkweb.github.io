@@ -5107,6 +5107,11 @@ window.onload = async () => {
                 event.preventDefault();
                 const format = btn.getAttribute('data-export-format');
                 closeExportMenu();
+                // El PDF sale del diálogo de impresión, no de Pandoc.
+                if (format === 'pdf') {
+                    printPreview();
+                    return;
+                }
                 if (format) performExport(format);
             });
         });
@@ -6271,18 +6276,33 @@ window.onload = async () => {
         }
     });
     
-    printBtn.addEventListener('click', () => {
+    /*
+      Imprimir es también la manera de sacar un PDF: el diálogo del sistema lo
+      ofrece como destino, y lo que se imprime es la vista previa tal cual, con
+      sus fórmulas compuestas y su hoja de estilos de papel. Por eso el menú de
+      exportación lleva aquí su entrada de PDF en vez de a Pandoc, que sin un
+      motor LaTeX no sabe hacer PDF.
+    */
+    function printPreview() {
         closeActionsMenu();
         closeSettingsMenu();
+        closeExportMenu();
         const preview = document.getElementById('html-output');
         if (preview) {
             preview.scrollTop = 0;
             preview.scrollLeft = 0;
         }
-        if (typeof window.print === 'function') {
-            window.setTimeout(() => window.print(), 50);
-        }
-    });
+        // La espera deja que se cierren los menús antes de congelar la página.
+        window.setTimeout(() => {
+            const platform = window.EdiMarkPlatform;
+            if (platform && typeof platform.print === 'function') {
+                platform.print().catch(error => console.warn('No se pudo imprimir:', error));
+                return;
+            }
+            if (typeof window.print === 'function') window.print();
+        }, 50);
+    }
+    printBtn.addEventListener('click', printPreview);
     if (htmlOutput) {
         htmlOutput.addEventListener('focusin', () => setMarkdownControlsDisabled(true));
         htmlOutput.addEventListener('keydown', (event) => {

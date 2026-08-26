@@ -7,7 +7,7 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 ## Novedades destacadas
 
 - Edición dual: puedes trabajar tanto en Markdown como directamente en la vista previa HTML, siempre sincronizadas.
-- Menú de exportación y de importación con soporte para DOCX, ODT, EPUB, HTML y LaTeX, incluyendo opciones de copia directa al portapapeles.
+- Menú de exportación y de importación con soporte para DOCX, ODT, EPUB, HTML, LaTeX y PDF, incluyendo opciones de copia directa al portapapeles.
 - Buscador con reemplazo que resalta las coincidencias y acepta términos sin tildes ni distinción entre mayúsculas y minúsculas.
 - Menú **Configuración** con el idioma, el tamaño de letra, el tema y la ventana independiente reunidos en un mismo sitio; el ancho de trabajo se cambia junto a los controles de paneles.
 - Tema de la interfaz con tres opciones —Sistema, Claro y Oscuro— que se recuerda entre sesiones.
@@ -54,7 +54,7 @@ Trabaja con varios documentos a la vez, cada uno en su propia pestaña.
 
 La barra junto al logotipo agrupa las opciones globales de la aplicación y ahora concentra todas las acciones de archivo en un único botón desplegable:
 
-* **Archivo**: reúne las acciones sobre el documento en dos grupos. Primero las que traen contenido —`Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` y `Pegar LaTeX (Ctrl+Mayús+V)`— y después las que lo sacan: `Guardar (Ctrl+S)`, `Guardar como… (Ctrl+Mayús+S)` y el submenú **Exportar**, que se despliega a la derecha con DOCX, ODT, EPUB, HTML y TEX. Cada opción muestra su atajo de teclado. En la aplicación de escritorio el menú termina con **Salir**, que guarda el documento en curso y cierra la aplicación.
+* **Archivo**: reúne las acciones sobre el documento en dos grupos. Primero las que traen contenido —`Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` y `Pegar LaTeX (Ctrl+Mayús+V)`— y después las que lo sacan: `Guardar (Ctrl+S)`, `Guardar como… (Ctrl+Mayús+S)` y el submenú **Exportar**, que se despliega a la derecha con DOCX, ODT, EPUB, HTML, TEX y PDF. Cada opción muestra su atajo de teclado. En la aplicación de escritorio el menú termina con **Salir**, que guarda el documento en curso y cierra la aplicación.
 * **Configuración**: agrupa todos los ajustes de la aplicación, cada uno con un submenú que indica el valor activo.
   * **Idioma**: cambia el idioma de la interfaz.
   * **Tamaño de texto**: pequeño, normal, grande o muy grande.
@@ -198,6 +198,7 @@ Abre el botón **Archivo** y selecciona `Exportar` para descargar versiones list
 * **EPUB (libro digital)**: Crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). El título se toma del primer encabezado de nivel 1 (o del nombre del documento), y el autor, la portada y el idioma salen de los ajustes que se explican más abajo.
 * **HTML (página web)**: Genera un archivo autónomo con estilos y fórmulas incrustadas, listo para alojar en la web. El título de la pestaña del navegador se toma del primer encabezado, o del nombre del documento si no lo hay.
 * **TEX (LaTeX)**: Crea un documento `.tex` completo con cabecera preparada para compilar. Lleva el idioma del documento, de modo que la partición de palabras y los rótulos automáticos salen en tu lengua, y si el documento empieza con un único encabezado de nivel 1 este pasa a ser el título (`\title` y `\maketitle`) en lugar de una sección más.
+* **PDF (mediante impresión)**: Abre el diálogo de impresión del sistema, donde eliges «Guardar como PDF» como destino. Sale exactamente lo que ves en la vista previa, con las fórmulas compuestas y los márgenes del documento, y el texto queda seleccionable y buscable. Es el mismo camino que el botón **Imprimir (Ctrl+P)**.
 
 Durante la exportación, la barra superior muestra mensajes de estado (progreso, éxito o errores).
 

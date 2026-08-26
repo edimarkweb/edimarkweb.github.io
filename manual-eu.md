@@ -7,7 +7,7 @@ Ongi etorri EdiMarkWeb-era, **Markdown testu-editore** bat, azkar lan egin, hain
 ## Nabarmentzekoak
 
 - Edizio bikoitza: Markdown-en zein HTML aurrebistan zuzenean lan egin dezakezu, beti sinkronizatuta.
-- Esportatzeko eta inportatzeko menuak, DOCX, ODT, EPUB, HTML eta LaTeX onartzen dituztenak, arbelera zuzenean kopiatzeko aukerekin.
+- Esportatzeko eta inportatzeko menuak, DOCX, ODT, EPUB, HTML, LaTeX eta PDF onartzen dituztenak, arbelera zuzenean kopiatzeko aukerekin.
 - Bilatzailea ordezkapenarekin: bat-etortzeak nabarmentzen ditu eta azenturik gabeko terminoak onartzen ditu, maiuskulak eta minuskulak bereizi gabe.
 - **Ezarpenak** menua, hizkuntza, testuaren tamaina, gaia eta leiho independentea leku berean bilduta; lan-zabalera panelen kontrolen ondoan aldatzen da.
 - Interfazearen gaia hiru aukerarekin —Sistemakoa, Argia eta Iluna— eta saioen artean gogoratzen da.
@@ -54,7 +54,7 @@ Egin lan hainbat dokumenturekin aldi berean, bakoitza bere fitxan.
 
 Logotipoaren ondoko barrak aplikazioaren aukera orokorrak biltzen ditu eta fitxategiaren ekintza guztiak botoi zabalgarri bakar batean elkartzen ditu:
 
-* **Fitxategia**: dokumentuaren gaineko ekintzak bi multzotan biltzen ditu. Lehenik edukia ekartzen dutenak —`Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)`— eta ondoren ateratzen dutenak: `Gorde (Ctrl+S)`, `Gorde honela… (Ctrl+Shift+S)` eta **Esportatu** azpimenua, eskuinera zabaltzen dena DOCX, ODT, EPUB, HTML eta TEX aukerekin. Aukera bakoitzak bere teklatu-lasterbidea erakusten du. Mahaigaineko aplikazioan menua **Irten** aukerarekin amaitzen da: uneko dokumentua gorde eta aplikazioa ixten du.
+* **Fitxategia**: dokumentuaren gaineko ekintzak bi multzotan biltzen ditu. Lehenik edukia ekartzen dutenak —`Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)`— eta ondoren ateratzen dutenak: `Gorde (Ctrl+S)`, `Gorde honela… (Ctrl+Shift+S)` eta **Esportatu** azpimenua, eskuinera zabaltzen dena DOCX, ODT, EPUB, HTML, TEX eta PDF aukerekin. Aukera bakoitzak bere teklatu-lasterbidea erakusten du. Mahaigaineko aplikazioan menua **Irten** aukerarekin amaitzen da: uneko dokumentua gorde eta aplikazioa ixten du.
 * **Ezarpenak**: aplikazioaren ezarpen guztiak biltzen ditu, bakoitza uneko balioa adierazten duen azpimenu batekin.
   * **Hizkuntza**: interfazearen hizkuntza aldatzen du.
   * **Testuaren tamaina**: txikia, normala, handia edo oso handia.
@@ -198,6 +198,7 @@ Ireki **Fitxategia** botoia eta hautatu `Esportatu` entregatzeko edo argitaratze
 * **EPUB (liburu digitala)**: EPUB 3 irakurgailuekin bateragarria den liburu elektroniko bat sortzen du (Calibre, Apple Liburuak, Thorium, tinta elektronikoa…). Izenburua 1. mailako lehen goiburutik hartzen da (edo dokumentuaren izenetik), eta egilea, azala eta hizkuntza behean azaltzen diren ezarpenetatik ateratzen dira.
 * **HTML (web-orria)**: fitxategi autonomo bat sortzen du, estiloak eta formulak kapsulatuta dituena, webean ostatatzeko prest. Nabigatzailearen fitxaren titulua lehen izenburutik hartzen da, edo dokumentuaren izenetik halakorik ez badago.
 * **TEX (LaTeX)**: `.tex` dokumentu oso bat sortzen du, konpilatzeko prest dagoen goiburuarekin. Dokumentuaren hizkuntza darama, beraz hitz-zatiketa eta etiketa automatikoak zure hizkuntzan ateratzen dira, eta dokumentua 1. mailako izenburu bakar batekin hasten bada, izenburu hori dokumentuaren titulu bihurtzen da (`\title` eta `\maketitle`), beste atal bat izan beharrean.
+* **PDF (inprimatzearen bidez)**: sistemaren inprimatze-elkarrizketa irekitzen du, eta han «Gorde PDF gisa» aukeratzen duzu helburu gisa. Aurrebistan ikusten duzuna bera ateratzen da, formulak konposatuta eta dokumentuaren marjinekin, eta testua hautagarri eta bilagarri geratzen da. **Inprimatu (Ctrl+P)** botoiaren bide bera da.
 
 Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapena, arrakasta edo erroreak).
 

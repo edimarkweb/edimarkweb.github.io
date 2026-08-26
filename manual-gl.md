@@ -7,7 +7,7 @@ Benvido/a a EdiMarkWeb, un **editor de textos en Markdown** deseñado para docen
 ## Novidades destacadas
 
 - Edición dual: podes traballar tanto en Markdown como directamente na vista previa HTML, sempre sincronizadas.
-- Menú de exportación e de importación compatible con DOCX, ODT, EPUB, HTML e LaTeX, incluíndo opcións de copia directa ao portapapeis.
+- Menú de exportación e de importación compatible con DOCX, ODT, EPUB, HTML, LaTeX e PDF, incluíndo opcións de copia directa ao portapapeis.
 - Buscador con substitución que resalta as coincidencias e acepta termos sen acentos nin distinción entre maiúsculas e minúsculas.
 - Menú **Configuración** co idioma, o tamaño da letra, o tema e a xanela independente reunidos nun mesmo sitio; o ancho de traballo cámbiase xunto aos controis dos paneis.
 - Tema da interface con tres opcións —Sistema, Claro e Escuro— que se lembra entre sesións.
@@ -54,7 +54,7 @@ Traballa con varios documentos á vez, cada un na súa propia lapela.
 
 A barra xunto ao logotipo agrupa as opcións globais da aplicación e concentra todas as accións de ficheiro nun único botón despregable:
 
-* **Arquivo**: reúne as accións sobre o documento en dous grupos. Primeiro as que traen contido —`Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` e `Pegar LaTeX (Ctrl+Maiús+V)`— e despois as que o sacan: `Gardar (Ctrl+S)`, `Gardar como… (Ctrl+Maiús+S)` e o submenú **Exportar**, que se desprega á dereita con DOCX, ODT, EPUB, HTML e TEX. Cada opción mostra o seu atallo de teclado. Na aplicación de escritorio o menú remata con **Saír**, que garda o documento en curso e pecha a aplicación.
+* **Arquivo**: reúne as accións sobre o documento en dous grupos. Primeiro as que traen contido —`Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` e `Pegar LaTeX (Ctrl+Maiús+V)`— e despois as que o sacan: `Gardar (Ctrl+S)`, `Gardar como… (Ctrl+Maiús+S)` e o submenú **Exportar**, que se desprega á dereita con DOCX, ODT, EPUB, HTML, TEX e PDF. Cada opción mostra o seu atallo de teclado. Na aplicación de escritorio o menú remata con **Saír**, que garda o documento en curso e pecha a aplicación.
 * **Configuración**: agrupa todos os axustes da aplicación, cada un cun submenú que indica o valor activo.
   * **Idioma**: cambia o idioma da interface.
   * **Tamaño do texto**: pequeno, normal, grande ou moi grande.
@@ -198,6 +198,7 @@ Abre o botón **Arquivo** e selecciona `Exportar` para descargar versións lista
 * **EPUB (libro dixital)**: crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). O título tómase da primeira cabeceira de nivel 1 (ou do nome do documento), e o autor, a portada e o idioma saen dos axustes que se explican máis abaixo.
 * **HTML (páxina web)**: xera un ficheiro autónomo con estilos e fórmulas incrustados, listo para aloxar na web. O título da lapela do navegador tómase do primeiro encabezamento, ou do nome do documento se non o hai.
 * **TEX (LaTeX)**: crea un documento `.tex` completo con cabeceira preparada para compilar. Leva o idioma do documento, de xeito que a partición de palabras e os rótulos automáticos saen na túa lingua, e se o documento comeza cun único encabezamento de nivel 1 este pasa a ser o título (`\title` e `\maketitle`) no canto dunha sección máis.
+* **PDF (mediante impresión)**: abre o diálogo de impresión do sistema, onde escolles «Gardar como PDF» como destino. Sae exactamente o que ves na vista previa, coas fórmulas compostas e as marxes do documento, e o texto queda seleccionable e buscable. É o mesmo camiño que o botón **Imprimir (Ctrl+P)**.
 
 Durante a exportación, a barra superior mostra mensaxes de estado (progreso, éxito ou erros).
 

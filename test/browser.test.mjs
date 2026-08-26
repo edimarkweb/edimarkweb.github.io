@@ -319,6 +319,24 @@ test('en el escritorio la pestaña con cambios pregunta antes de cerrarse', asyn
   assert.equal((await page.evaluate(() => window.__edimarkPreguntas.length)), 2);
 });
 
+test('el PDF del menú de exportación sale por la impresión, no por Pandoc', async (t) => {
+  const { context, page } = await openApp({});
+  t.after(() => context.close());
+
+  /*
+    Pandoc no sabe hacer PDF sin un motor LaTeX, así que esa entrada lleva al
+    diálogo de impresión, donde el sistema ofrece «Guardar como PDF». Aquí se
+    sustituye la impresión para que la prueba no abra un diálogo de verdad.
+  */
+  await page.evaluate(() => { window.__impresiones = 0; window.print = () => { window.__impresiones += 1; }; });
+  await page.locator('#actions-menu-btn').click();
+  await page.locator('#export-menu-btn').click();
+  await page.locator('#export-menu').waitFor({ state: 'visible' });
+  await page.locator('[data-export-format="pdf"]').click();
+  await page.waitForFunction(() => window.__impresiones === 1);
+  assert.equal(await page.locator('#export-menu').isVisible(), false);
+});
+
 test('una lista local dañada no impide arrancar y conserva una copia', async (t) => {
   const { context, page } = await openApp({
     locale: 'en-US',

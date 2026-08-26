@@ -7,7 +7,7 @@ Benvingut/uda a EdiMarkWeb, un **editor de textos en Markdown** dissenyat per a 
 ## Novetats destacades
 
 - Edició dual: pots treballar tant en Markdown com directament a la vista prèvia HTML, sempre sincronitzades.
-- Menú d'exportació i d'importació compatible amb DOCX, ODT, EPUB, HTML i LaTeX, amb opcions de còpia directa al porta-retalls.
+- Menú d'exportació i d'importació compatible amb DOCX, ODT, EPUB, HTML, LaTeX i PDF, amb opcions de còpia directa al porta-retalls.
 - Cercador amb reemplaçament que ressalta les coincidències i accepta termes sense accents ni distinció entre majúscules i minúscules.
 - Menú **Configuració** amb l'idioma, la mida de la lletra, el tema i la finestra independent reunits en un mateix lloc; l'amplada de treball es canvia al costat dels controls dels plafons.
 - Tema de la interfície amb tres opcions —Sistema, Clar i Fosc— que es recorda entre sessions.
@@ -54,7 +54,7 @@ Treballa amb diversos documents alhora, cadascun a la seva pestanya.
 
 La barra del costat del logotip agrupa les opcions globals de l'aplicació i concentra totes les accions de fitxer en un únic botó desplegable:
 
-* **Fitxer**: reuneix les accions sobre el document en dos grups. Primer les que hi porten contingut —`Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)`— i després les que el treuen: `Desar (Ctrl+S)`, `Desar com a… (Ctrl+Maj+S)` i el submenú **Exportar**, que es desplega a la dreta amb DOCX, ODT, EPUB, HTML i TEX. Cada opció mostra la seva drecera de teclat. A l'aplicació d'escriptori el menú acaba amb **Surt**, que desa el document en curs i tanca l'aplicació.
+* **Fitxer**: reuneix les accions sobre el document en dos grups. Primer les que hi porten contingut —`Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)`— i després les que el treuen: `Desar (Ctrl+S)`, `Desar com a… (Ctrl+Maj+S)` i el submenú **Exportar**, que es desplega a la dreta amb DOCX, ODT, EPUB, HTML, TEX i PDF. Cada opció mostra la seva drecera de teclat. A l'aplicació d'escriptori el menú acaba amb **Surt**, que desa el document en curs i tanca l'aplicació.
 * **Configuració**: agrupa tots els ajustos de l'aplicació, cadascun amb un submenú que n'indica el valor actiu.
   * **Idioma**: canvia l'idioma de la interfície.
   * **Mida del text**: petita, normal, gran o molt gran.
@@ -198,6 +198,7 @@ Obre el botó **Fitxer** i selecciona `Exportar` per baixar versions llestes per
 * **EPUB (llibre digital)**: crea un llibre electrònic compatible amb lectors d'EPUB 3 (Calibre, Apple Llibres, Thorium, tinta electrònica…). El títol es pren del primer encapçalament de nivell 1 (o del nom del document), i l'autor, la portada i l'idioma surten dels ajustos que s'expliquen més avall.
 * **HTML (pàgina web)**: genera un fitxer autònom amb estils i fórmules incrustats, a punt per allotjar-lo al web. El títol de la pestanya del navegador es pren del primer encapçalament, o del nom del document si no n'hi ha.
 * **TEX (LaTeX)**: crea un document `.tex` complet amb la capçalera preparada per compilar. Porta l'idioma del document, de manera que la partició de mots i els rètols automàtics surten en la teva llengua, i si el document comença amb un únic encapçalament de nivell 1 aquest passa a ser el títol (`\title` i `\maketitle`) en lloc d'una secció més.
+* **PDF (mitjançant impressió)**: obre el diàleg d'impressió del sistema, on tries «Desa com a PDF» com a destinació. En surt exactament el que veus a la vista prèvia, amb les fórmules compostes i els marges del document, i el text queda seleccionable i cercable. És el mateix camí que el botó **Imprimir (Ctrl+P)**.
 
 Durant l'exportació, la barra superior mostra missatges d'estat (progrés, èxit o errors).
 
