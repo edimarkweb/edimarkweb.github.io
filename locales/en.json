@@ -327,6 +327,7 @@
   "image_insert_mode_outside_warning": "The image is outside the document folder: the path climbs with “../” and will only work if both are moved together.",
   "doc_format_btn": "Formatting of this document…",
   "doc_format_toolbar_btn_title": "Alignment, type and margins of this document",
+  "doc_format_toolbar_btn_text": "Formatting",
   "doc_format_modal_title": "Formatting of this document",
   "doc_format_modal_hint": "Saved inside the document itself, so it travels with the file. Anything left on “Same as the general options” follows the export options.",
   "doc_format_reset_btn": "Remove from document",

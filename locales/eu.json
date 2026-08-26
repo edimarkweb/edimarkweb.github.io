@@ -327,6 +327,7 @@
   "image_insert_mode_outside_warning": "Irudia dokumentuaren karpetatik kanpo dago: bideak «../» erabiliz igotzen du eta biak batera mugitzen badira baino ez du funtzionatuko.",
   "doc_format_btn": "Dokumentu honen formatua…",
   "doc_format_toolbar_btn_title": "Dokumentu honen lerrokatzea, letra eta marjinak",
+  "doc_format_toolbar_btn_text": "Formatua",
   "doc_format_modal_title": "Dokumentu honen formatua",
   "doc_format_modal_hint": "Dokumentuan bertan gordetzen da eta harekin bidaiatzen du. «Aukera orokorren berdina» uzten duzuna esportazio-aukerei jarraitzen die.",
   "doc_format_reset_btn": "Kendu dokumentutik",

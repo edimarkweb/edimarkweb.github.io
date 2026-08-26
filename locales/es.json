@@ -327,6 +327,7 @@
   "image_insert_mode_outside_warning": "La imagen está fuera de la carpeta del documento: la ruta sube con «../» y solo funcionará si se mueven las dos juntas.",
   "doc_format_btn": "Formato de este documento…",
   "doc_format_toolbar_btn_title": "Alineación, letra y márgenes de este documento",
+  "doc_format_toolbar_btn_text": "Formato",
   "doc_format_modal_title": "Formato de este documento",
   "doc_format_modal_hint": "Se guarda en el propio documento y viaja con él. Lo que dejes en «Igual que las opciones generales» sigue a las opciones de exportación.",
   "doc_format_reset_btn": "Quitar del documento",

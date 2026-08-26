@@ -327,6 +327,7 @@
   "image_insert_mode_outside_warning": "La imatge és fora de la carpeta del document: la ruta puja amb «../» i només funcionarà si es mouen totes dues juntes.",
   "doc_format_btn": "Format d'aquest document…",
   "doc_format_toolbar_btn_title": "Alineació, lletra i marges d'aquest document",
+  "doc_format_toolbar_btn_text": "Format",
   "doc_format_modal_title": "Format d'aquest document",
   "doc_format_modal_hint": "Es desa dins del document i hi viatja. El que deixis a «Igual que les opcions generals» segueix les opcions d’exportació.",
   "doc_format_reset_btn": "Treure del document",

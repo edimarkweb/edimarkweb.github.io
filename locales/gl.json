@@ -327,6 +327,7 @@
   "image_insert_mode_outside_warning": "A imaxe está fóra do cartafol do documento: a ruta sobe con «../» e só funcionará se se moven as dúas xuntas.",
   "doc_format_btn": "Formato deste documento…",
   "doc_format_toolbar_btn_title": "Aliñación, letra e marxes deste documento",
+  "doc_format_toolbar_btn_text": "Formato",
   "doc_format_modal_title": "Formato deste documento",
   "doc_format_modal_hint": "Gárdase no propio documento e viaxa con el. O que deixes en «Igual ca as opcións xerais» segue as opcións de exportación.",
   "doc_format_reset_btn": "Quitar do documento",
