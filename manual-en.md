@@ -164,7 +164,7 @@ The Markdown never changes: what you save, copy or export still carries the path
 
 ### Embedded images
 
-When a document carries base64 images — after importing a DOCX, after pasting from another application — their code runs to thousands of characters and makes the Markdown unreadable. EdiMarkWeb folds them away automatically: a short marker such as `__EDIMARK_B64_1__` appears in the editor and, below the pane, a list shows every hidden image with its format, its size and a **View code** button to inspect or copy it. The real content is kept intact when you save, copy or export.
+When a document carries base64 images — after importing a DOCX, after pasting from another application — their code runs to thousands of characters and makes the Markdown unreadable. EdiMarkWeb folds them away automatically: a short marker such as `__EDIMARK_B64_1__` appears in the editor and, below the pane, a list shows every hidden image with its format, its size and a **View code** button to inspect or copy it. The real content is kept intact when you save, copy or export. The list stays collapsed in a single line with the image count: unfold it and each image shows its thumbnail —click it to see the picture full size— while the list keeps its own height and scrollbar, so no matter how many images the document carries it never eats into the editor. Whether you left it open or closed is remembered. Each row also carries a **Delete** button, which removes the image from the document —the whole code, not just the marker— after asking for confirmation, and **View code**, useful when you want to copy the `data:` string to paste that same image into another document or another tool.
 
 ---
 

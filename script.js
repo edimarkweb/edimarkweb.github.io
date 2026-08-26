@@ -29,6 +29,12 @@ const FS_KEY = 'edimarkweb-fontsize';
 const FOCUS_MODE_KEY = 'edimarkweb-focus-mode';
 const LATEX_SETTINGS_KEY = 'edimarkweb-latex-settings';
 const SPELLCHECK_KEY = 'edimarkweb-spellcheck';
+/*
+  La lista de imágenes incrustadas vive plegada salvo que se pida: crecía con
+  cada imagen pegada y le comía al editor la mitad de la pantalla justo cuando
+  más texto hay que escribir.
+*/
+const BASE64_PANEL_KEY = 'edimarkweb-base64-panel';
 const EDICUATEX_BASE_URL = 'https://edicuatex.github.io/index.html';
 const EDICUATEX_DESKTOP_PATH = 'vendor/edicuatex/index.html';
 const DESKTOP_PARAM_KEY = 'desktop';
@@ -51,6 +57,11 @@ const COPY_ACTION_KEY = 'edimarkweb-copy-action';
 let base64UiContainer = null;
 let base64UiList = null;
 let base64UiCountLabel = null;
+let base64UiToggle = null;
+let base64PreviewOverlay = null;
+let base64PreviewImage = null;
+let base64PreviewTitle = null;
+let base64PreviewMeta = null;
 let base64ModalOverlayEl = null;
 let base64ModalTextarea = null;
 let base64ModalCopyBtn = null;
@@ -488,6 +499,23 @@ function findPlaceholderContext(placeholder) {
     return { snippet, alt };
 }
 
+function base64PanelExpanded() {
+    return safeLocalStorageGet(BASE64_PANEL_KEY, '0') === '1';
+}
+
+function base64DataUri(info) {
+    return `${info.prefix}${info.data}`;
+}
+
+function base64EntryLabels(placeholder, info, index) {
+    const context = findPlaceholderContext(placeholder);
+    const defaultAlt = formatTranslation('base64_image_default_alt', 'Imagen {number}', { number: index + 1 });
+    return {
+        title: (context && context.alt) || info.fallbackAlt || defaultAlt,
+        meta: `${info.mime ? info.mime.toUpperCase() : 'IMG'} · ${formatBytes(info.approxBytes)}`,
+    };
+}
+
 function updateBase64Ui(state) {
     currentBase64State = state || { placeholders: new Map(), total: 0 };
     if (!base64UiContainer || !base64UiList || !base64UiCountLabel) return;
@@ -501,33 +529,130 @@ function updateBase64Ui(state) {
             { count: entries.length }
         )
         : getTranslation('base64_count_empty', '0 encontradas');
+
+    const expanded = base64PanelExpanded();
+    if (base64UiToggle) {
+        base64UiToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        const chevron = base64UiToggle.querySelector('.base64-hidden-chevron');
+        if (chevron) chevron.classList.toggle('base64-hidden-chevron-open', expanded);
+    }
+    base64UiList.classList.toggle('hidden', !expanded || !hasEntries);
     base64UiList.innerHTML = '';
+    // Plegada no se dibuja nada: cada miniatura obliga al navegador a
+    // descodificar su imagen, y son justo las que pesan.
+    if (!expanded || !hasEntries) return;
+
     entries.forEach(([placeholder, info], index) => {
-        const context = findPlaceholderContext(placeholder);
-        const defaultAlt = formatTranslation('base64_image_default_alt', 'Imagen {number}', { number: index + 1 });
-        const altText = (context && context.alt) || info.fallbackAlt || defaultAlt;
-        const typeLabel = info.mime ? info.mime.toUpperCase() : 'IMG';
-        const sizeLabel = formatBytes(info.approxBytes);
+        const { title, meta } = base64EntryLabels(placeholder, info, index);
         const item = document.createElement('div');
         item.className = 'base64-hidden-item';
         item.setAttribute('role', 'listitem');
+
+        // La miniatura es el botón: saber qué imagen es cada línea era lo que
+        // faltaba, y el nombre del portapapeles no lo dice.
+        const thumbBtn = document.createElement('button');
+        thumbBtn.type = 'button';
+        thumbBtn.className = 'base64-hidden-thumb';
+        thumbBtn.title = getTranslation('base64_preview_btn', 'Ver la imagen');
+        thumbBtn.setAttribute('aria-label', getTranslation('base64_preview_btn', 'Ver la imagen'));
+        const thumb = document.createElement('img');
+        thumb.src = base64DataUri(info);
+        thumb.alt = '';
+        thumb.loading = 'lazy';
+        thumbBtn.appendChild(thumb);
+        thumbBtn.addEventListener('click', () => openBase64Preview(placeholder));
+
         const details = document.createElement('div');
+        details.className = 'base64-hidden-details';
         const titleEl = document.createElement('h4');
-        titleEl.textContent = altText || defaultAlt;
+        titleEl.textContent = title;
+        titleEl.title = title;
         const metaEl = document.createElement('p');
-        metaEl.textContent = `${typeLabel} · ${sizeLabel}`;
+        metaEl.textContent = meta;
         details.append(titleEl, metaEl);
+
         const actions = document.createElement('div');
         actions.className = 'base64-hidden-actions';
         const viewBtn = document.createElement('button');
         viewBtn.type = 'button';
         viewBtn.className = 'base64-hidden-btn';
         viewBtn.textContent = getTranslation('base64_view_code_btn', 'Ver código');
+        viewBtn.title = getTranslation(
+            'base64_view_code_hint',
+            'Copiar el código de la imagen para pegarla en otro documento.',
+        );
         viewBtn.addEventListener('click', () => openBase64Modal(placeholder));
-        actions.appendChild(viewBtn);
-        item.append(details, actions);
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'base64-hidden-btn base64-hidden-btn-danger';
+        deleteBtn.textContent = getTranslation('base64_delete_btn', 'Eliminar');
+        deleteBtn.addEventListener('click', () => removeBase64Entry(placeholder, title));
+        actions.append(viewBtn, deleteBtn);
+
+        item.append(thumbBtn, details, actions);
         base64UiList.appendChild(item);
     });
+    if (window.lucide) lucide.createIcons();
+}
+
+/*
+  Quita del documento la imagen entera, no solo su código: lo que se ve en el
+  editor es un marcador, y borrarlo a mano deja un `![alt]()` vacío. Si la
+  imagen ocupaba su propia línea, se lleva también la línea.
+*/
+function removeBase64Entry(placeholder, title) {
+    const info = currentBase64State?.placeholders?.get(placeholder);
+    const context = findPlaceholderContext(placeholder);
+    if (!info || !context || !markdownEditor) return;
+    const message = formatTranslation(
+        'base64_delete_confirm',
+        '¿Quitar «{name}» del documento? No se puede deshacer.',
+        { name: title },
+    );
+    if (!window.confirm(message)) return;
+
+    const value = markdownEditor.getValue();
+    const snippet = context.snippet.replace(placeholder, info.data);
+    const index = value.indexOf(snippet);
+    if (index < 0) return;
+    let start = index;
+    let end = index + snippet.length;
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    const lineBreak = value.indexOf('\n', end);
+    const lineEnd = lineBreak < 0 ? value.length : lineBreak;
+    const soloEnSuLinea = !value.slice(lineStart, start).trim() && !value.slice(end, lineEnd).trim();
+    if (soloEnSuLinea) {
+        start = lineStart;
+        end = lineBreak < 0 ? value.length : lineBreak + 1;
+        // Entre dos líneas en blanco, la línea que se va deja tres saltos
+        // seguidos y un hueco en el texto: se queda uno de los dos.
+        if (value[start - 1] === '\n' && value[end] === '\n') end += 1;
+    } else if (value[start - 1] === ' ' && value[end] === ' ') {
+        // Y en mitad de un párrafo, sus dos espacios se quedan en uno.
+        end += 1;
+    }
+    markdownEditor.setValue(value.slice(0, start) + value.slice(end));
+}
+
+function openBase64Preview(placeholder) {
+    const info = currentBase64State?.placeholders?.get(placeholder);
+    if (!info || !base64PreviewOverlay || !base64PreviewImage) return;
+    const index = Array.from(currentBase64State.placeholders.keys()).indexOf(placeholder);
+    const { title, meta } = base64EntryLabels(placeholder, info, index < 0 ? 0 : index);
+    base64PreviewImage.src = base64DataUri(info);
+    base64PreviewImage.alt = title;
+    if (base64PreviewTitle) base64PreviewTitle.textContent = title;
+    if (base64PreviewMeta) base64PreviewMeta.textContent = meta;
+    base64PreviewOverlay.classList.remove('hidden');
+    base64PreviewOverlay.classList.add('flex');
+}
+
+function closeBase64Preview() {
+    if (!base64PreviewOverlay) return;
+    base64PreviewOverlay.classList.add('hidden');
+    base64PreviewOverlay.classList.remove('flex');
+    // Sin la fuente, el navegador suelta la imagen descodificada.
+    if (base64PreviewImage) base64PreviewImage.removeAttribute('src');
 }
 
 window.__updateBase64UiLabels = () => updateBase64Ui(currentBase64State);
@@ -3740,7 +3865,13 @@ function applyLayout(layout) {
   const mdPanel = document.getElementById('markdown-panel');
   const htmlPanel = document.getElementById('html-panel');
   const gutters = document.querySelectorAll('.gutter');
-  const visiblePanelDisplay = document.body.classList.contains('desktop-mode') ? 'flex' : 'block';
+  /*
+    Los dos paneles son columnas flexibles también en la web: el de Markdown
+    tiene que repartir su alto entre el editor y la lista de imágenes
+    incrustadas, y en bloque esa lista se salía por debajo del panel, donde
+    `overflow: hidden` la dejaba invisible.
+  */
+  const visiblePanelDisplay = 'flex';
 
   switch (layout) {
     case 'md':
@@ -3853,6 +3984,28 @@ window.onload = () => {
     base64UiContainer = document.getElementById('base64-hidden-container');
     base64UiList = document.getElementById('base64-hidden-list');
     base64UiCountLabel = document.getElementById('base64-hidden-count');
+    base64UiToggle = document.getElementById('base64-hidden-toggle');
+    base64PreviewOverlay = document.getElementById('base64-preview-overlay');
+    base64PreviewImage = document.getElementById('base64-preview-image');
+    base64PreviewTitle = document.getElementById('base64-preview-title');
+    base64PreviewMeta = document.getElementById('base64-preview-meta');
+    if (base64UiToggle) {
+        base64UiToggle.addEventListener('click', () => {
+            safeLocalStorageSet(BASE64_PANEL_KEY, base64PanelExpanded() ? '0' : '1', { notify: false });
+            updateBase64Ui(currentBase64State);
+        });
+    }
+    const base64PreviewCloseBtn = document.getElementById('base64-preview-close-btn');
+    if (base64PreviewCloseBtn) base64PreviewCloseBtn.addEventListener('click', closeBase64Preview);
+    if (base64PreviewOverlay) {
+        base64PreviewOverlay.addEventListener('click', (event) => {
+            if (event.target === base64PreviewOverlay) closeBase64Preview();
+        });
+    }
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !base64PreviewOverlay) return;
+        if (!base64PreviewOverlay.classList.contains('hidden')) closeBase64Preview();
+    });
     base64ModalOverlayEl = document.getElementById('base64-modal-overlay');
     base64ModalTextarea = document.getElementById('base64-modal-text');
     base64ModalCopyBtn = document.getElementById('copy-base64-code-btn');

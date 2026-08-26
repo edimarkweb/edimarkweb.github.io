@@ -402,6 +402,8 @@ test('los controles base64 y de pegado se traducen', async (t) => {
   await page.locator('#new-tab-btn').click();
   await page.evaluate(() => markdownEditor.setValue('![Demo](data:image/png;base64,iVBORw0KGgo=)'));
   await page.locator('.base64-hidden-title').getByText('Hidden base64 images', { exact: true }).waitFor();
+  // La lista viene plegada para no comerle sitio al editor.
+  await page.locator('#base64-hidden-toggle').click();
   await page.locator('.base64-hidden-btn').getByText('View code', { exact: true }).click();
   assert.equal(await page.locator('#base64-modal-title').textContent(), 'Image code');
   assert.equal(await page.locator('#copy-base64-code-btn').textContent(), 'Copy code');
@@ -771,7 +773,8 @@ test('buscar y reemplazar acierta con una imagen base64 plegada delante', async 
   await page.locator('#new-tab-btn').click();
   const imagen = `![img](data:image/png;base64,${'A'.repeat(400)})`;
   await page.evaluate(md => markdownEditor.setValue(md), `${imagen}\n\nhola mundo\n`);
-  await page.locator('.base64-hidden-item').first().waitFor();
+  // El panel avisa de la imagen plegada; la lista en sí viene recogida.
+  await page.locator('#base64-hidden-container').waitFor({ state: 'visible' });
 
   await page.locator('#open-search-btn').click();
   await page.locator('#search-regex-toggle-btn').click();
@@ -1771,4 +1774,80 @@ test('la marca del corrector ortográfico sigue al estado real', async (t) => {
   await boton.evaluate(btn => btn.click());
   assert.equal(await marcaVisible(), true, 'y vuelve al encenderlo');
   assert.equal(await page.locator('#markdown-input').getAttribute('spellcheck'), 'true');
+});
+
+/*
+  La lista de imágenes incrustadas crecía con cada imagen pegada hasta empujar
+  al editor fuera de la pantalla, y las líneas no decían qué imagen era cada
+  una: un nombre del portapapeles y su tamaño.
+*/
+test('la lista de imágenes incrustadas se pliega y muestra miniaturas', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate((png) => markdownEditor.setValue(
+    `![uno](data:image/png;base64,${png})\n\n![dos](data:image/png;base64,${png})`,
+  ), PNG);
+
+  const lista = page.locator('#base64-hidden-list');
+  await page.locator('#base64-hidden-count').getByText('2 imágenes', { exact: true }).waitFor();
+  assert.equal(await lista.isVisible(), false, 'de partida la lista viene plegada');
+  const altoPlegado = await page.locator('#base64-hidden-container').evaluate(el => el.getBoundingClientRect().height);
+
+  await page.locator('#base64-hidden-toggle').click();
+  await lista.waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#base64-hidden-toggle').getAttribute('aria-expanded'), 'true');
+  assert.equal(await lista.locator('.base64-hidden-thumb img').count(), 2, 'cada línea lleva su miniatura');
+  // Y por muchas que haya, la lista se queda con su alto y su barra propia.
+  assert.equal(await lista.evaluate(el => getComputedStyle(el).overflowY), 'auto');
+  assert.ok(await lista.evaluate(el => el.getBoundingClientRect().height) <= 13 * 16 + 1);
+
+  await lista.locator('.base64-hidden-thumb').first().click();
+  await page.locator('#base64-preview-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#base64-preview-title').textContent(), 'uno');
+  assert.match(await page.locator('#base64-preview-image').getAttribute('src'), /^data:image\/png;base64,/);
+  await page.keyboard.press('Escape');
+  await page.locator('#base64-preview-overlay').waitFor({ state: 'hidden' });
+
+  // Plegar deja el panel como estaba: una sola línea.
+  await page.locator('#base64-hidden-toggle').click();
+  await lista.waitFor({ state: 'hidden' });
+  assert.equal(
+    await page.locator('#base64-hidden-container').evaluate(el => el.getBoundingClientRect().height),
+    altoPlegado,
+  );
+});
+
+/*
+  Quitar una imagen incrustada tiene que llevarse su código entero: en el
+  editor solo se ve un marcador, y borrarlo a mano deja un `![alt]()` vacío.
+*/
+test('una imagen incrustada se puede quitar del documento desde la lista', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate((png) => markdownEditor.setValue(
+    `# Título\n\n![sola](data:image/png;base64,${png})\n\nTexto con ![dentro](data:image/png;base64,${png}) en medio.`,
+  ), PNG);
+  await page.locator('#base64-hidden-toggle').click();
+  await page.locator('.base64-hidden-item').first().waitFor();
+
+  // La que ocupaba su propia línea se lleva la línea, sin dejar hueco.
+  await page.locator('.base64-hidden-item').first().locator('.base64-hidden-btn-danger').click();
+  await page.waitForFunction(() => !markdownEditor.getValue().includes('![sola]'));
+  assert.equal(await page.evaluate(() => markdownEditor.getValue()).then(md => md.includes('\n\n\n')), false);
+  assert.equal(await page.locator('.base64-hidden-item').count(), 1);
+
+  // La de dentro de un párrafo deja el texto que la rodeaba con un solo espacio.
+  await page.locator('.base64-hidden-item').first().locator('.base64-hidden-btn-danger').click();
+  await page.waitForFunction(() => !markdownEditor.getValue().includes('data:image'));
+  const markdown = await page.evaluate(() => markdownEditor.getValue());
+  assert.match(markdown, /Texto con en medio\./);
+  assert.match(markdown, /# Título/);
+  assert.equal(await page.locator('#base64-hidden-container').isVisible(), false);
 });

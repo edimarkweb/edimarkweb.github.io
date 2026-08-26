@@ -452,14 +452,13 @@
                 </div>
                 <textarea id="markdown-input"></textarea>
                 <div id="base64-hidden-container" class="base64-hidden-container hidden" aria-live="polite">
-                    <div class="base64-hidden-summary">
-                        <div>
-                            <p class="base64-hidden-title" data-i18n-key="base64_hidden_title">Imágenes base64 ocultas</p>
-                            <p id="base64-hidden-count" class="base64-hidden-count-text">0 encontradas</p>
-                        </div>
-                        <p class="base64-hidden-hint" data-i18n-key="base64_hidden_hint">Se oculta el código para facilitar la edición.</p>
-                    </div>
-                    <div id="base64-hidden-list" class="base64-hidden-list" role="list"></div>
+                    <button type="button" id="base64-hidden-toggle" class="base64-hidden-summary" aria-expanded="false" aria-controls="base64-hidden-list">
+                        <i data-lucide="chevron-right" class="base64-hidden-chevron" aria-hidden="true"></i>
+                        <span class="base64-hidden-title" data-i18n-key="base64_hidden_title">Imágenes base64 ocultas</span>
+                        <span id="base64-hidden-count" class="base64-hidden-count-text">0 encontradas</span>
+                        <span class="base64-hidden-hint" data-i18n-key="base64_hidden_hint">Se oculta el código para facilitar la edición.</span>
+                    </button>
+                    <div id="base64-hidden-list" class="base64-hidden-list hidden" role="list"></div>
                 </div>
             </div>
             <div id="html-panel" class="panel w-full md:w-1/2">
@@ -875,6 +874,19 @@
                 <button id="copy-base64-code-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="base64_copy_code_btn">Copiar código</button>
                 <button id="close-base64-modal-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="close_btn">Cerrar</button>
             </div>
+        </div>
+    </div>
+
+    <div id="base64-preview-overlay" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="base64-preview-title">
+        <div class="bg-white p-4 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto dark:bg-slate-800">
+            <div class="mb-3 flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <h3 id="base64-preview-title" class="truncate text-lg font-bold text-slate-800 dark:text-slate-100">Imagen</h3>
+                    <p id="base64-preview-meta" class="text-sm text-slate-500 dark:text-slate-400"></p>
+                </div>
+                <button id="base64-preview-close-btn" type="button" class="shrink-0 px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="close_btn">Cerrar</button>
+            </div>
+            <img id="base64-preview-image" class="mx-auto max-h-[70vh] w-auto max-w-full rounded border border-slate-200 dark:border-slate-700" alt="">
         </div>
     </div>
 

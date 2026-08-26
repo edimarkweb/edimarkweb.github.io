@@ -164,7 +164,7 @@ El Markdown no canvia en cap moment: el que es desa, es copia o s'exporta contin
 
 ### Imatges incrustades
 
-Quan un document porta imatges en base64 —en importar un DOCX, en enganxar des d'una altra aplicació—, el seu codi ocupa milers de caràcters i fa il·legible el Markdown. EdiMarkWeb les plega automàticament: a l'editor apareix una marca curta del tipus `__EDIMARK_B64_1__` i, sota el plafó, una llista amb cada imatge amagada, el seu format, la seva mida i un botó **Veure codi** per consultar-la o copiar-la. El contingut real es conserva intacte en desar, copiar o exportar.
+Quan un document porta imatges en base64 —en importar un DOCX, en enganxar des d'una altra aplicació—, el seu codi ocupa milers de caràcters i fa il·legible el Markdown. EdiMarkWeb les plega automàticament: a l'editor apareix una marca curta del tipus `__EDIMARK_B64_1__` i, sota el plafó, una llista amb cada imatge amagada, el seu format, la seva mida i un botó **Veure codi** per consultar-la o copiar-la. El contingut real es conserva intacte en desar, copiar o exportar. La llista es manté recollida en una sola línia, amb el nombre d'imatges: en desplegar-la, cada una mostra la seva miniatura —clic a sobre per veure-la a mida gran— i la llista es queda amb la seva pròpia alçada i barra de desplaçament, de manera que per moltes imatges que tingui el document mai no li menja lloc a l'editor. Es recorda si l'has deixada oberta o tancada. Cada línia porta a més un botó **Elimina**, que treu la imatge del document —el codi sencer, no només el marcador— després de demanar confirmació, i **Veure codi**, útil si vols copiar el `data:` per enganxar aquesta mateixa imatge en un altre document o en una altra eina.
 
 ---
 
