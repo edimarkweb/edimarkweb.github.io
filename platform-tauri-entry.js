@@ -1,4 +1,4 @@
-import { open, save } from '@tauri-apps/plugin-dialog';
+import { ask, message as showMessage, open, save } from '@tauri-apps/plugin-dialog';
 import { BaseDirectory, mkdir, readTextFile, writeFile, writeTextFile } from '@tauri-apps/plugin-fs';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
@@ -25,7 +25,13 @@ if (window.__TAURI_INTERNALS__) {
   }).catch(error => console.error('No se pudo escuchar la apertura de documentos:', error));
 
   window.__EDIMARK_TAURI__ = {
-    dialog: { open, save },
+    /*
+      `ask` y `message` acompañan a los diálogos de archivo porque en el
+      escritorio no sirven `confirm` ni `alert` del navegador: WebKitGTK trae
+      apagados los diálogos modales de JavaScript, así que no se ve nada y la
+      respuesta que le llega a la página es siempre «no».
+    */
+    dialog: { open, save, ask, message: showMessage },
     fs: { readTextFile, writeFile, writeTextFile },
     /*
       Las opciones de la aplicación, en un archivo del perfil del usuario y no

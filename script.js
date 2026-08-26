@@ -272,6 +272,27 @@ const preferencesReady = hydratePreferencesFromDisk();
 // leería el idioma del webview en vez del guardado.
 window.__edimarkPreferencesReady = preferencesReady;
 
+/*
+  Preguntas y avisos de la aplicación. En el navegador son `confirm` y `alert`
+  de siempre; en el escritorio, el diálogo del sistema, porque los modales de
+  JavaScript llegan apagados y una pregunta que no se ve se responde sola que
+  no. Ambos devuelven una promesa: quien pregunte tiene que esperar.
+*/
+function confirmAction(message) {
+    const platform = window.EdiMarkPlatform;
+    if (platform && typeof platform.confirm === 'function') return platform.confirm(message);
+    return Promise.resolve(Boolean(window.confirm(message)));
+}
+
+function notifyUser(message) {
+    const platform = window.EdiMarkPlatform;
+    if (platform && typeof platform.notify === 'function') {
+        return platform.notify(message).catch(error => console.warn('No se pudo mostrar el aviso:', error));
+    }
+    window.alert(message);
+    return Promise.resolve();
+}
+
 function cloneSelection(selection) {
     if (!selection || typeof selection.start !== 'number' || typeof selection.end !== 'number') return null;
     return { start: selection.start, end: selection.end };
@@ -699,7 +720,7 @@ function updateBase64Ui(state) {
   editor es un marcador, y borrarlo a mano deja un `![alt]()` vacío. Si la
   imagen ocupaba su propia línea, se lleva también la línea.
 */
-function removeBase64Entry(placeholder, title) {
+async function removeBase64Entry(placeholder, title) {
     const info = currentBase64State?.placeholders?.get(placeholder);
     const context = findPlaceholderContext(placeholder);
     if (!info || !context || !markdownEditor) return;
@@ -708,7 +729,7 @@ function removeBase64Entry(placeholder, title) {
         '¿Quitar «{name}» del documento? No se puede deshacer.',
         { name: title },
     );
-    if (!window.confirm(message)) return;
+    if (!await confirmAction(message)) return;
 
     const value = markdownEditor.getValue();
     const snippet = context.snippet.replace(placeholder, info.data);
@@ -1326,7 +1347,7 @@ async function handlePasteButtonClick(button) {
         && typeof window.EdiMarkPlatform.readClipboardImage === 'function'
     );
     if (!navigator.clipboard && !hasNativeClipboard) {
-        alert(getTranslation('clipboard_button_unsupported', 'Tu navegador no permite leer el portapapeles desde un botón. Usa Ctrl+V.'));
+        notifyUser(getTranslation('clipboard_button_unsupported', 'Tu navegador no permite leer el portapapeles desde un botón. Usa Ctrl+V.'));
         return;
     }
     const previousDisabled = button.disabled;
@@ -1335,12 +1356,12 @@ async function handlePasteButtonClick(button) {
     try {
         const clipboardContent = await readClipboardForButton();
         if (!clipboardContent) {
-            alert(getTranslation('clipboard_read_error', 'No pude leer el portapapeles. Usa Ctrl+V como alternativa.'));
+            notifyUser(getTranslation('clipboard_read_error', 'No pude leer el portapapeles. Usa Ctrl+V como alternativa.'));
             return;
         }
         const payload = classifyManualClipboardPayload(clipboardContent);
         if (!payload) {
-            alert(getTranslation('clipboard_empty_or_unsupported', 'El portapapeles está vacío o en un formato no soportado.'));
+            notifyUser(getTranslation('clipboard_empty_or_unsupported', 'El portapapeles está vacío o en un formato no soportado.'));
             return;
         }
         const markdownHadFocus = document.activeElement === markdownTextareaEl;
@@ -1366,7 +1387,7 @@ async function handlePasteButtonClick(button) {
         }
     } catch (err) {
         console.error('Error al pegar desde el botón:', err);
-        alert('No se pudo acceder al portapapeles. Usa Ctrl+V como alternativa.');
+        notifyUser('No se pudo acceder al portapapeles. Usa Ctrl+V como alternativa.');
     } finally {
         button.classList.remove('opacity-70');
         button.disabled = previousDisabled;
@@ -2744,14 +2765,29 @@ function switchTo(id) {
     updateDirtyIndicator(id, doc.md !== doc.lastSaved);
 }
 
-function closeDoc(id) {
+/*
+  Si el documento tiene cambios sin guardar.
+
+  `doc.md` solo se pone al día cuando salta el autoguardado o al cambiar de
+  pestaña, así que lo escrito en los últimos segundos todavía no está ahí: hay
+  que mirar el editor cuando el documento es el que está abierto. Preguntarle a
+  `doc.md` a secas dejaba cerrar sin avisar justo lo recién escrito, que es
+  cuando más duele.
+*/
+function documentIsDirty(doc) {
+    if (!doc) return false;
+    const contents = (doc.id === currentId && markdownEditor) ? markdownEditor.getValue() : doc.md;
+    return contents !== doc.lastSaved;
+}
+
+async function closeDoc(id) {
     const docIndex = docs.findIndex(d => d.id === id);
     if (docIndex === -1) return;
 
     const doc = docs[docIndex];
-    const isDirty = doc.md !== doc.lastSaved;
+    const isDirty = documentIsDirty(doc);
 
-    if (isDirty && !confirm(formatTranslation(
+    if (isDirty && !await confirmAction(formatTranslation(
         'close_unsaved_confirm',
         '¿Cerrar "{name}" sin guardar los cambios?',
         { name: doc.name }
@@ -2759,19 +2795,26 @@ function closeDoc(id) {
         return;
     }
 
+    /*
+      La pregunta es asíncrona, así que entre medias la pestaña ha podido
+      cerrarse por otro camino o cambiar de sitio: se busca de nuevo.
+    */
+    const indiceActual = docs.findIndex(d => d.id === id);
+    if (indiceActual === -1) return;
+
     releaseDocumentAssets(id);
     deletePersistedDocumentAssets(id).catch(error => {
         console.warn('No se pudieron borrar las imágenes guardadas del documento:', error);
     });
-    docs.splice(docIndex, 1);
-    document.querySelector(`.tab[data-id="${id}"]`).remove();
+    docs.splice(indiceActual, 1);
+    document.querySelector(`.tab[data-id="${id}"]`)?.remove();
     safeLocalStorageRemove(`${AUTOSAVE_KEY_PREFIX}-${id}`);
     lastAutosavedById.delete(id);
     saveDocsList();
 
     if (currentId === id) {
         if (docs.length > 0) {
-            const newIndex = Math.max(0, docIndex - 1);
+            const newIndex = Math.max(0, indiceActual - 1);
             switchTo(docs[newIndex].id);
         } else {
             currentId = null;
@@ -5009,7 +5052,7 @@ window.onload = async () => {
         const features = 'width=1100,height=820,resizable=yes,scrollbars=yes';
         const child = window.open(url, 'edicuatex', features);
         if (!child) {
-            alert(getTranslation('edicuatex_popup_blocked', 'Activa las ventanas emergentes en tu navegador para usar EdiCuaTeX.'));
+            notifyUser(getTranslation('edicuatex_popup_blocked', 'Activa las ventanas emergentes en tu navegador para usar EdiCuaTeX.'));
             return;
         }
         edicuatexWindow = child;
@@ -5441,7 +5484,7 @@ window.onload = async () => {
     async function copyLatexFromPreview(includePreamble) {
         const exporter = window.PandocExporter;
         if (!exporter || typeof exporter.generateLatex !== 'function') {
-            alert(getTranslation('export_error', 'Error durante la exportación.'));
+            notifyUser(getTranslation('export_error', 'Error durante la exportación.'));
             return;
         }
         const rawMarkdown = markdownEditor && typeof markdownEditor.getValue === 'function'
@@ -5451,7 +5494,7 @@ window.onload = async () => {
             ? exporter.trimInlineMath(rawMarkdown)
             : rawMarkdown;
         if (!prepared.trim()) {
-            alert(getTranslation('no_content', 'No hay contenido para exportar.'));
+            notifyUser(getTranslation('no_content', 'No hay contenido para exportar.'));
             updateExportStatus('');
             return;
         }
@@ -5461,7 +5504,7 @@ window.onload = async () => {
                 standalone: Boolean(includePreamble),
                 onStatus: updateExportStatus,
                 onNotification: (message) => {
-                    if (message) alert(message);
+                    if (message) notifyUser(message);
                 },
             });
             await writeTextToClipboard(latexResult);
@@ -5509,7 +5552,7 @@ window.onload = async () => {
             : '';
         const prepared = exporter.trimInlineMath ? exporter.trimInlineMath(rawMarkdown) : rawMarkdown;
         if (!prepared.trim()) {
-            alert(getTranslation('no_content', 'No hay contenido para exportar.'));
+            notifyUser(getTranslation('no_content', 'No hay contenido para exportar.'));
             updateExportStatus('');
             return;
         }
@@ -5539,7 +5582,7 @@ window.onload = async () => {
                     documentTitle: safeName,
                     onStatus: updateExportStatus,
                     onNotification: (message) => {
-                        if (message) alert(message);
+                        if (message) notifyUser(message);
                     },
                 });
             } else if (lowerFormat === 'html-download') {
@@ -5586,7 +5629,7 @@ window.onload = async () => {
                         standalone: true,
                         onStatus: updateExportStatus,
                         onNotification: (message) => {
-                            if (message) alert(message);
+                            if (message) notifyUser(message);
                         },
                     });
                 } catch (err) {
@@ -5685,7 +5728,7 @@ window.onload = async () => {
         desktopWindow = window.open(url, 'edimarkweb-desktop', features);
         if (!desktopWindow) {
             if (!autoLaunch) {
-                alert(getTranslation('desktop_window_popup_blocked', 'Activa las ventanas emergentes en tu navegador para abrir la ventana independiente.'));
+                notifyUser(getTranslation('desktop_window_popup_blocked', 'Activa las ventanas emergentes en tu navegador para abrir la ventana independiente.'));
             }
             return false;
         }
@@ -6411,7 +6454,7 @@ window.onload = async () => {
             coverInput.value = '';
             if (!file) return;
             if (file.size > MAX_COVER_BYTES) {
-                alert(formatTranslation(
+                notifyUser(formatTranslation(
                     'doc_settings_cover_too_big',
                     'La imagen ocupa {size} y el máximo es 1 MB. Prueba con una más pequeña.',
                     { size: `${Math.round(file.size / 1024)} KB` },
@@ -6423,7 +6466,7 @@ window.onload = async () => {
                 pendingCover = { image: String(reader.result || ''), name: file.name };
                 syncCoverPicker();
             };
-            reader.onerror = () => alert(getTranslation('doc_settings_cover_error', 'No se pudo leer la imagen.'));
+            reader.onerror = () => notifyUser(getTranslation('doc_settings_cover_error', 'No se pudo leer la imagen.'));
             reader.readAsDataURL(file);
         });
     }
@@ -7392,7 +7435,7 @@ window.onload = async () => {
               : await readDesktopImageAsDataUrl(pickedImage.path);
           } catch (error) {
             console.error('No se pudo leer la imagen seleccionada:', error);
-            alert(getTranslation('image_file_error', 'No se pudo leer la imagen seleccionada.'));
+            notifyUser(getTranslation('image_file_error', 'No se pudo leer la imagen seleccionada.'));
             return;
           }
         } else {
@@ -7414,7 +7457,7 @@ window.onload = async () => {
 
     // --- Atajos de teclado y otros ---
     window.addEventListener('beforeunload', (e) => {
-        const hasUnsaved = docs.some(d => d.md !== d.lastSaved);
+        const hasUnsaved = docs.some(documentIsDirty);
         if (hasUnsaved) { e.preventDefault(); e.returnValue = 'Hay documentos con cambios sin guardar. ¿Seguro que quieres salir?'; }
     });
 
@@ -7879,7 +7922,7 @@ window.onload = async () => {
     const importable = files.filter(f => !isMarkdown(f) && detectImportFormat(f));
 
     if (!mdFiles.length && !importable.length) {
-      alert(getTranslation(
+      notifyUser(getTranslation(
         'drop_unsupported',
         'Solo se pueden soltar archivos Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX.',
       ));

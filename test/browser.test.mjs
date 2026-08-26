@@ -280,6 +280,45 @@ test('las preferencias del perfil sobreviven a una instalación con el almacén 
   });
 });
 
+test('en el escritorio la pestaña con cambios pregunta antes de cerrarse', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      /*
+        WebKitGTK trae apagados los diálogos modales de JavaScript, así que la
+        aplicación de escritorio pregunta con el diálogo del sistema. Aquí se
+        finge ese diálogo para poder responder que no y que sí.
+      */
+      window.__edimarkPreguntas = [];
+      window.__edimarkRespuesta = false;
+      window.__EDIMARK_TAURI__ = {
+        dialog: {
+          ask: async (texto) => {
+            window.__edimarkPreguntas.push(texto);
+            return window.__edimarkRespuesta;
+          },
+        },
+        fs: {},
+      };
+    },
+  });
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').focus();
+  await page.keyboard.type('Un cambio sin guardar');
+  await page.locator('.tab').first().locator('.tab-dirty').waitFor({ state: 'visible' });
+
+  // Con la respuesta en «no», la pestaña se queda donde estaba.
+  await page.locator('.tab').first().locator('.tab-close').click();
+  await page.waitForFunction(() => window.__edimarkPreguntas.length === 1);
+  assert.equal(await page.locator('.tab').count(), 1);
+
+  // Y con la respuesta en «sí», se cierra.
+  await page.evaluate(() => { window.__edimarkRespuesta = true; });
+  await page.locator('.tab').first().locator('.tab-close').click();
+  await page.waitForFunction(() => document.querySelectorAll('.tab').length === 0);
+  assert.equal((await page.evaluate(() => window.__edimarkPreguntas.length)), 2);
+});
+
 test('una lista local dañada no impide arrancar y conserva una copia', async (t) => {
   const { context, page } = await openApp({
     locale: 'en-US',

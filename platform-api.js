@@ -238,6 +238,30 @@
         }
       },
 
+      /*
+        Preguntas y avisos.
+
+        En el escritorio no valen los del navegador: WebKitGTK trae apagados
+        los diálogos modales de JavaScript, de modo que `confirm` no enseña
+        nada y responde que no, y `alert` se pierde sin que nadie lo lea. Con
+        el diálogo del sistema la pregunta se ve y la respuesta es la del
+        usuario. En el navegador siguen valiendo los de siempre.
+      */
+      async confirm(text, { title = 'EdiMarkWeb' } = {}) {
+        if (desktop && dialog && typeof dialog.ask === 'function') {
+          return Boolean(await dialog.ask(String(text), { title, kind: 'warning' }));
+        }
+        return Boolean(root.confirm(String(text)));
+      },
+
+      async notify(text, { title = 'EdiMarkWeb', kind = 'info' } = {}) {
+        if (desktop && dialog && typeof dialog.message === 'function') {
+          await dialog.message(String(text), { title, kind });
+          return;
+        }
+        root.alert(String(text));
+      },
+
       async openTextDocument({ extensions = ['md', 'markdown'] } = {}) {
         if (!desktop) return null;
         const selected = await dialog.open({
