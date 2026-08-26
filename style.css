@@ -719,12 +719,6 @@ body.desktop-mode .markdown-textarea {
     border-color: rgba(148, 163, 184, 0.25);
     background: rgba(30, 41, 59, 0.7);
 }
-/*
-  Idioma heredado del ajuste general: se distingue del que el documento declara
-  por su cuenta, que va a plena intensidad.
-*/
-#doc-lang-btn.doc-lang-inherited { opacity: 0.65; }
-#doc-lang-btn.doc-lang-inherited:hover { opacity: 1; }
 .dark select.action-btn { background-color: #0f172a; }
 
 .select-trigger {
@@ -828,6 +822,41 @@ body.desktop-mode .markdown-textarea {
 .dark .gutter.gutter-horizontal {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='30' viewBox='0 0 8 30'%3E%3Cpath d='M3 6h2M3 14h2M3 22h2' stroke='%2360a5fa' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
 }
+/* Pestañas de los cuadros de opciones: subrayado, no carpetas. Las de los
+   documentos viven sobre el fondo de la aplicación y estas dentro de una
+   tarjeta blanca, donde una pestaña con relieve pesaría demasiado. */
+.settings-tab {
+    margin-bottom: -1px;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+}
+.settings-tab:hover {
+    color: #334155;
+}
+.dark .settings-tab {
+    color: #94a3b8;
+}
+.dark .settings-tab:hover {
+    color: #e2e8f0;
+}
+.settings-tab[aria-selected="true"] {
+    border-bottom-color: #2563eb;
+    color: #1d4ed8;
+}
+.dark .settings-tab[aria-selected="true"] {
+    border-bottom-color: #60a5fa;
+    color: #93c5fd;
+}
+.settings-tab:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+
 /* Estilos para pestañas */
 .tab {
     border: 1px solid transparent;
@@ -1155,6 +1184,8 @@ code {
     #focus-mode-toggle,
     #status-toast,
     #markdown-panel,
+    /* El aviso de la versión de escritorio es de la aplicación, no del texto. */
+    #desktop-release-banner,
     .gutter {
         display: none !important;
     }
@@ -1212,6 +1243,17 @@ code {
     .markdown-textarea,
     .markdown-textarea-wrapper,
     .CodeMirror {
+        display: none !important;
+    }
+    /*
+      Y después de devolverle el alto natural a los paneles: la regla anterior
+      alcanza a `.panel` con más peso que el `display: none` del panel Markdown,
+      así que lo resucitaba a medias —sin el editor, pero con su cabecera— y el
+      contador de caracteres y el botón Copiar salían impresos en la primera
+      página. Se vuelve a esconder aquí, con la misma especificidad.
+    */
+    #editor-container #markdown-panel,
+    body.desktop-mode #editor-container #markdown-panel {
         display: none !important;
     }
     footer,

@@ -115,6 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.__refreshUpdateBanner === 'function') {
       window.__refreshUpdateBanner();
     }
+    if (typeof window.__refreshInheritedDocumentHints === 'function') {
+      window.__refreshInheritedDocumentHints();
+    }
   };
 
   /*

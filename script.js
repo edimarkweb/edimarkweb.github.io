@@ -3267,9 +3267,45 @@ function publishLatexSettings(settings) {
     return window.__edimarkLatexSettings;
 }
 
+const LATEX_SETTINGS_FILE = 'settings.json';
+
+/*
+  En el escritorio, las opciones viven además en un archivo del perfil del
+  usuario. `localStorage` allí es el almacén del webview, que el sistema trata
+  como caché y puede vaciar por su cuenta: el archivo es el que sobrevive a una
+  limpieza, a una reinstalación o a un cambio de motor.
+*/
+function persistLatexSettingsToDisk(settings) {
+    const platform = window.EdiMarkPlatform;
+    if (!platform || !platform.isDesktop || typeof platform.writeSettingsFile !== 'function') return;
+    platform.writeSettingsFile(JSON.stringify(settings, null, 2), LATEX_SETTINGS_FILE)
+        .catch(error => console.warn('No se han podido guardar las opciones en el disco:', error));
+}
+
+/*
+  Al arrancar manda el archivo, si lo hay: `localStorage` es solo su espejo,
+  para que el resto del código siga leyendo las opciones sin esperar al disco.
+*/
+async function loadLatexSettingsFromDisk() {
+    const platform = window.EdiMarkPlatform;
+    if (!platform || !platform.isDesktop || typeof platform.readSettingsFile !== 'function') return null;
+    const contents = await platform.readSettingsFile(LATEX_SETTINGS_FILE);
+    if (!contents) {
+        // Primera vez con esta versión: lo que hubiera en el webview pasa al
+        // archivo y desde aquí ya manda él.
+        persistLatexSettingsToDisk(readLatexSettings());
+        return null;
+    }
+    safeLocalStorageSet(LATEX_SETTINGS_KEY, contents);
+    const settings = readLatexSettings();
+    publishLatexSettings(settings);
+    return settings;
+}
+
 function storeLatexSettings(settings) {
     publishLatexSettings(settings);
     safeLocalStorageSet(LATEX_SETTINGS_KEY, JSON.stringify(settings));
+    persistLatexSettingsToDisk(settings);
     // Los documentos sin idioma propio siguen al general: el indicador cambia.
     if (typeof window.__refreshDocLanguageIndicator === 'function') {
         window.__refreshDocLanguageIndicator();
@@ -4249,9 +4285,6 @@ window.onload = () => {
       siendo el suyo. Sin declarar, el documento usa el idioma general de
       Configuración, que es lo que ocurre con casi todos.
     */
-    const docLangBtn = document.getElementById('doc-lang-btn');
-    const docLangLabel = document.getElementById('doc-lang-label');
-
     function generalDocumentLanguage() {
         const settings = window.__edimarkLatexSettings || {};
         const chosen = String(settings.documentLanguage || '').trim();
@@ -4260,7 +4293,7 @@ window.onload = () => {
     }
 
     function refreshDocLanguageIndicator() {
-        if (!docLangBtn || !markdownEditor) return;
+        if (!markdownEditor) return;
         const own = splitDocumentFrontMatter(markdownEditor.getValue()).lang;
         const effective = own || generalDocumentLanguage();
         if (markdownTextareaEl) markdownTextareaEl.setAttribute('lang', effective);
@@ -4269,20 +4302,6 @@ window.onload = () => {
         if (typeof window.__applyDocumentFormatToPreview === 'function') {
             window.__applyDocumentFormatToPreview();
         }
-        if (docLangLabel) docLangLabel.textContent = effective.toUpperCase();
-        // Sin idioma propio, el botón se ve más apagado: lo hereda.
-        docLangBtn.classList.toggle('doc-lang-inherited', !own);
-        const languageDescription = formatTranslation(
-            own ? 'doc_lang_btn_own' : 'doc_lang_btn_inherited',
-            own ? 'Idioma de este documento: {lang}' : 'Idioma general: {lang}',
-            { lang: effective },
-        );
-        const actionDescription = formatTranslation(
-            'doc_lang_btn_title',
-            'Cambiar idioma y autor de este documento.',
-        );
-        docLangBtn.setAttribute('aria-label', `${actionDescription} ${languageDescription}`);
-        docLangBtn.setAttribute('title', actionDescription);
     }
     window.__refreshDocLanguageIndicator = refreshDocLanguageIndicator;
 
@@ -4320,14 +4339,6 @@ window.onload = () => {
         markdownEditor.setValue(updated);
         updateHtml();
         refreshDocLanguageIndicator();
-    }
-
-    if (docLangBtn) {
-        // Idioma, autor y formato son lo mismo: ajustes de este documento.
-        docLangBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            if (typeof window.__openDocumentSettings === 'function') window.__openDocumentSettings();
-        });
     }
 
     /*
@@ -5611,6 +5622,17 @@ window.onload = () => {
     // El exportador los consulta al generar LaTeX, no al arrancar, pero
     // publicarlos aquí evita que la primera exportación salga sin ellos.
     publishLatexSettings(readLatexSettings());
+    // Y en el escritorio, lo guardado en el disco sustituye a lo del webview en
+    // cuanto se ha leído: lo que dependa de ello se vuelve a pintar.
+    loadLatexSettingsFromDisk().then((settings) => {
+        if (!settings) return;
+        if (typeof window.__refreshDocLanguageIndicator === 'function') {
+            window.__refreshDocLanguageIndicator();
+        }
+        if (typeof window.__applyDocumentFormatToPreview === 'function') {
+            window.__applyDocumentFormatToPreview();
+        }
+    }).catch(error => console.warn('No se han podido leer las opciones del disco:', error));
 
     // --- Carga inicial de documentos y autoguardado ---
     function addOpenedMarkdownDocument(opened) {
@@ -6095,7 +6117,17 @@ window.onload = () => {
       generales, «igual que los generales» en el documento—, así que se
       construye una sola vez desde aquí en vez de repetirlo en el HTML.
     */
-    const DOC_FORMAT_SELECTS = 'mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200';
+    /*
+      Con borde de verdad: sin él, `shadow-sm` deja una sola línea bajo el campo
+      y una fila de listas y casillas se lee como un montón de subrayados.
+      Los numéricos, además, van cortos: un margen de dos cifras en un campo de
+      ancho completo no parece un número, parece un renglón para escribir.
+    */
+    const DOC_FORMAT_SELECTS = 'mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200';
+    // Escritas enteras y no derivadas de la anterior: Tailwind busca las clases
+    // leyendo el archivo, y una construida en marcha no llega a la hoja.
+    const DOC_FORMAT_NUMBERS = 'mt-1 block w-full sm:w-28 rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200';
+    const DOC_FORMAT_MARGINS = 'mt-1 block w-full sm:w-24 rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200';
     const DOC_FORMAT_LABELS = 'block text-sm font-medium text-slate-700 dark:text-slate-300';
 
     function documentFormatApi() {
@@ -6134,7 +6166,7 @@ window.onload = () => {
       luego, donde 2,5 y 2.5 valen lo mismo y lo que se sale del rango se
       descarta.
     */
-    function buildFormatNumber(id, { min, max, step, placeholderKey, placeholderText }) {
+    function buildFormatNumber(id, { min, max, step, placeholderKey, placeholderText, className = DOC_FORMAT_NUMBERS }) {
         const input = document.createElement('input');
         input.type = 'text';
         input.inputMode = 'decimal';
@@ -6142,10 +6174,159 @@ window.onload = () => {
         input.dataset.min = String(min);
         input.dataset.max = String(max);
         input.dataset.step = String(step);
-        input.className = DOC_FORMAT_SELECTS;
+        input.className = className;
         input.setAttribute('data-i18n-key', placeholderKey);
         input.placeholder = getTranslation(placeholderKey, placeholderText);
         return input;
+    }
+
+    /*
+      Sugerencias de tipografía. No hay forma de pedirle al sistema su lista sin
+      permiso, así que se prueban unas cuantas conocidas midiendo texto en un
+      lienzo: si el ancho con la tipografía pedida difiere del de la genérica de
+      reserva, es que existe y el navegador la ha usado. Sale gratis y no
+      pregunta nada.
+
+      Donde hay `queryLocalFonts` —Chromium sobre HTTPS— se puede pedir la lista
+      completa de verdad, pero eso abre un diálogo de permiso, así que solo se
+      hace si la persona pulsa el botón.
+    */
+    const FONT_CANDIDATES = [
+        'Arial', 'Arial Narrow', 'Bookman Old Style', 'Cambria', 'Candara', 'Cantarell',
+        'Century Gothic', 'Century Schoolbook', 'Comic Sans MS', 'Consolas', 'Courier New',
+        'DejaVu Sans', 'DejaVu Sans Mono', 'DejaVu Serif', 'EB Garamond', 'Fira Code',
+        'Fira Sans', 'Franklin Gothic Medium', 'Garamond', 'Georgia', 'Helvetica',
+        'Impact', 'Inter', 'Lato', 'Liberation Mono', 'Liberation Sans', 'Liberation Serif',
+        'Linux Biolinum', 'Linux Libertine', 'Lucida Console', 'Lucida Sans Unicode',
+        'Merriweather', 'Montserrat', 'Nimbus Roman', 'Nimbus Sans', 'Noto Sans',
+        'Noto Serif', 'Open Sans', 'Palatino Linotype', 'PT Sans', 'PT Serif',
+        'Roboto', 'Roboto Mono', 'Segoe UI', 'Source Code Pro', 'Source Sans Pro',
+        'Source Serif Pro', 'Tahoma', 'Times New Roman', 'Trebuchet MS', 'Ubuntu',
+        'Ubuntu Mono', 'Verdana',
+    ];
+
+    let detectedFonts = null;
+
+    function detectAvailableFonts() {
+        if (detectedFonts) return detectedFonts;
+        const context = document.createElement('canvas').getContext('2d');
+        if (!context) {
+            detectedFonts = [];
+            return detectedFonts;
+        }
+        // Letras de anchos muy distintos: cuanto más desigual la muestra, más
+        // difícil es que dos tipografías la midan igual por casualidad.
+        const sample = 'mmmmmmmmmmlliWQ@';
+        const fallbacks = ['monospace', 'serif', 'sans-serif'];
+        const widths = fallbacks.map((fallback) => {
+            context.font = `72px ${fallback}`;
+            return context.measureText(sample).width;
+        });
+        detectedFonts = FONT_CANDIDATES.filter(name => fallbacks.some((fallback, index) => {
+            context.font = `72px "${name}", ${fallback}`;
+            return context.measureText(sample).width !== widths[index];
+        }));
+        return detectedFonts;
+    }
+
+    function fillFontDatalist(list, names) {
+        list.textContent = '';
+        names.forEach((name) => {
+            const option = document.createElement('option');
+            option.value = name;
+            list.appendChild(option);
+        });
+    }
+
+    function syncFontMissingWarning(prefix) {
+        const input = document.getElementById(`${prefix}-font-custom`);
+        const warning = document.getElementById(`${prefix}-font-missing`);
+        if (!input || !warning) return;
+        const name = input.value.trim();
+        const available = detectAvailableFonts();
+        // La detección es aproximada, de ahí el «no parece»: mejor quedarse
+        // corto que acusar de ausente a una tipografía que sí está.
+        const known = !name || available.some(font => font.toLowerCase() === name.toLowerCase());
+        warning.textContent = known ? '' : getTranslation(
+            'doc_format_font_missing',
+            '«{font}» no parece estar instalada aquí: el documento la guarda igual y en un equipo que la tenga se verá bien; aquí sale con una tipografía de reserva.',
+        ).replace('{font}', name);
+        warning.classList.toggle('hidden', known);
+    }
+
+    function buildFontCustomRow(prefix) {
+        const row = document.createElement('div');
+        row.id = `${prefix}-font-custom-row`;
+        row.className = 'mt-3 hidden';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = `${prefix}-font-custom`;
+        input.className = DOC_FORMAT_SELECTS;
+        input.setAttribute('list', `${prefix}-font-list`);
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('data-i18n-key', 'doc_format_font_custom_placeholder');
+        input.placeholder = getTranslation('doc_format_font_custom_placeholder', 'Garamond, Calibri…');
+        row.appendChild(buildFormatField('doc_format_field_font_custom', 'Nombre de la tipografía', input));
+
+        const list = document.createElement('datalist');
+        list.id = `${prefix}-font-list`;
+        fillFontDatalist(list, detectAvailableFonts());
+        row.appendChild(list);
+
+        const hint = document.createElement('p');
+        hint.className = 'mt-1 text-xs text-slate-500 dark:text-slate-400';
+        hint.setAttribute('data-i18n-key', 'doc_format_font_custom_hint');
+        hint.textContent = getTranslation(
+            'doc_format_font_custom_hint',
+            'Se sugieren las tipografías instaladas que se han podido reconocer.',
+        );
+        row.appendChild(hint);
+
+        /*
+          Una tipografía que aquí no está no se toca: el documento la lleva
+          escrita y en el equipo de al lado puede existir perfectamente, así que
+          borrarla sería perder lo que su autor decidió. Solo se avisa, y la
+          vista previa la sustituye por la genérica de reserva.
+        */
+        const missing = document.createElement('p');
+        missing.id = `${prefix}-font-missing`;
+        missing.className = 'mt-1 hidden text-xs text-amber-700 dark:text-amber-300';
+        row.appendChild(missing);
+        input.addEventListener('input', () => syncFontMissingWarning(prefix));
+
+        if (typeof window.queryLocalFonts === 'function') {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'mt-1 text-xs text-blue-600 hover:underline dark:text-blue-400';
+            button.setAttribute('data-i18n-key', 'doc_format_font_system_btn');
+            button.textContent = getTranslation('doc_format_font_system_btn', 'Ver todas las del sistema…');
+            button.addEventListener('click', async () => {
+                try {
+                    const fonts = await window.queryLocalFonts();
+                    const families = [...new Set(fonts.map(font => font.family))].sort((a, b) => a.localeCompare(b));
+                    fillFontDatalist(list, families);
+                    button.remove();
+                    hint.textContent = getTranslation(
+                        'doc_format_font_system_ready',
+                        'Ya se sugieren todas las tipografías del sistema.',
+                    );
+                    hint.setAttribute('data-i18n-key', 'doc_format_font_system_ready');
+                    input.focus();
+                } catch (error) {
+                    // Permiso denegado o navegador que no lo permite aquí: se
+                    // sigue pudiendo escribir el nombre a mano.
+                    console.warn('No se ha podido leer la lista de tipografías del sistema:', error);
+                    hint.textContent = getTranslation(
+                        'doc_format_font_system_denied',
+                        'No se ha podido leer la lista del sistema; escribe el nombre a mano.',
+                    );
+                    hint.setAttribute('data-i18n-key', 'doc_format_font_system_denied');
+                }
+            });
+            row.appendChild(button);
+        }
+        return row;
     }
 
     function renderDocumentFormatFields(container, { inherit }) {
@@ -6163,13 +6344,19 @@ window.onload = () => {
             ['justify', 'doc_format_align_justify', 'Justificada'],
             ['right', 'doc_format_align_right', 'Derecha'],
         ])));
-        grid.appendChild(buildFormatField('doc_format_field_font', 'Tipo de letra', buildFormatSelect(`${prefix}-font`, [
+        // La tipografía escrita a mano solo la respetan los formatos que sepan
+        // resolverla, así que vive escondida hasta que se elige «Otra…», y va
+        // dentro de la misma celda que la lista: es su continuación, no un
+        // campo suelto en medio del tamaño y el interlineado.
+        const fontField = buildFormatField('doc_format_field_font', 'Tipo de letra', buildFormatSelect(`${prefix}-font`, [
             ...blank,
             ['serif', 'doc_format_font_serif', 'Con remates (serif)'],
             ['sans', 'doc_format_font_sans', 'Sin remates (sans)'],
             ['mono', 'doc_format_font_mono', 'Monoespaciada'],
             ['other', 'doc_format_font_other', 'Otra…'],
-        ])));
+        ]));
+        fontField.appendChild(buildFontCustomRow(prefix));
+        grid.appendChild(fontField);
         grid.appendChild(buildFormatField('doc_format_field_fontsize', 'Tamaño (pt)', buildFormatNumber(`${prefix}-fontsize`, {
             min: 5, max: 72, step: 0.5,
             placeholderKey: 'doc_format_placeholder_blank', placeholderText: '—',
@@ -6180,20 +6367,6 @@ window.onload = () => {
         })));
         container.appendChild(grid);
 
-        // La tipografía escrita a mano solo la respetan los formatos que sepan
-        // resolverla, así que vive escondida hasta que se elige «Otra…».
-        const custom = document.createElement('div');
-        custom.id = `${prefix}-font-custom-row`;
-        custom.className = 'hidden';
-        const customInput = document.createElement('input');
-        customInput.type = 'text';
-        customInput.id = `${prefix}-font-custom`;
-        customInput.className = DOC_FORMAT_SELECTS;
-        customInput.setAttribute('data-i18n-key', 'doc_format_font_custom_placeholder');
-        customInput.placeholder = getTranslation('doc_format_font_custom_placeholder', 'Garamond, Calibri…');
-        custom.appendChild(buildFormatField('doc_format_field_font_custom', 'Nombre de la tipografía', customInput));
-        container.appendChild(custom);
-
         const marginsBlock = document.createElement('div');
         const marginsLabel = document.createElement('p');
         marginsLabel.className = DOC_FORMAT_LABELS;
@@ -6201,7 +6374,7 @@ window.onload = () => {
         marginsLabel.textContent = getTranslation('doc_format_field_margins', 'Márgenes de página (cm)');
         marginsBlock.appendChild(marginsLabel);
         const marginsGrid = document.createElement('div');
-        marginsGrid.className = 'mt-1 grid gap-3 grid-cols-2 sm:grid-cols-4';
+        marginsGrid.className = 'mt-1 flex flex-wrap gap-x-4 gap-y-2';
         [
             ['top', 'doc_format_margin_top', 'Superior'],
             ['right', 'doc_format_margin_right', 'Derecho'],
@@ -6211,6 +6384,7 @@ window.onload = () => {
             marginsGrid.appendChild(buildFormatField(key, text, buildFormatNumber(`${prefix}-margin-${side}`, {
                 min: 0, max: 15, step: 0.1,
                 placeholderKey: 'doc_format_placeholder_blank', placeholderText: '—',
+                className: DOC_FORMAT_MARGINS,
             })));
         });
         marginsBlock.appendChild(marginsGrid);
@@ -6240,10 +6414,12 @@ window.onload = () => {
         container.appendChild(hint);
 
         const fontSelect = document.getElementById(`${prefix}-font`);
-        if (fontSelect) {
+        const custom = document.getElementById(`${prefix}-font-custom-row`);
+        if (fontSelect && custom) {
             fontSelect.addEventListener('change', () => {
                 custom.classList.toggle('hidden', fontSelect.value !== 'other');
-                if (fontSelect.value === 'other') customInput.focus();
+                const customInput = document.getElementById(`${prefix}-font-custom`);
+                if (fontSelect.value === 'other' && customInput) customInput.focus();
             });
         }
         container.dataset.rendered = 'true';
@@ -6262,6 +6438,7 @@ window.onload = () => {
         setValue('font-custom', known ? '' : values.font);
         const customRow = document.getElementById(`${prefix}-font-custom-row`);
         if (customRow) customRow.classList.toggle('hidden', known || !values.font);
+        syncFontMissingWarning(prefix);
         setValue('fontsize', values.fontSize);
         setValue('lineheight', values.lineHeight);
         setValue('margin-top', values.marginTop);
@@ -6271,6 +6448,127 @@ window.onload = () => {
         setValue('indent', values.indent);
         setValue('hyphenate', values.hyphenate);
     }
+
+    /*
+      «Igual que las opciones generales» no dice cuál es ese valor, y quien abre
+      este diálogo lo que quiere saber es qué va a heredar el documento si deja
+      un campo en blanco. Así que el valor general se escribe al lado: entre
+      paréntesis en las listas y como marcador en los campos numéricos, que si
+      no se quedan en un guion suelto que no informa de nada.
+    */
+    const DOC_FORMAT_VALUE_LABELS = {
+        align: {
+            left: ['doc_format_align_left', 'Izquierda'],
+            justify: ['doc_format_align_justify', 'Justificada'],
+            right: ['doc_format_align_right', 'Derecha'],
+        },
+        font: {
+            serif: ['doc_format_font_serif', 'Con remates (serif)'],
+            sans: ['doc_format_font_sans', 'Sin remates (sans)'],
+            mono: ['doc_format_font_mono', 'Monoespaciada'],
+        },
+        indent: {
+            yes: ['doc_format_yes', 'Sí'],
+            no: ['doc_format_no', 'No'],
+        },
+        hyphenate: {
+            yes: ['doc_format_yes', 'Sí'],
+            no: ['doc_format_no', 'No'],
+        },
+    };
+
+    const DOC_FORMAT_INHERITED_SELECTS = [
+        ['align', 'align'],
+        ['font', 'font'],
+        ['indent', 'indent'],
+        ['hyphenate', 'hyphenate'],
+    ];
+
+    const DOC_FORMAT_INHERITED_NUMBERS = [
+        ['fontsize', 'fontSize'],
+        ['lineheight', 'lineHeight'],
+        ['margin-top', 'marginTop'],
+        ['margin-right', 'marginRight'],
+        ['margin-bottom', 'marginBottom'],
+        ['margin-left', 'marginLeft'],
+    ];
+
+    function generalDocumentFormat() {
+        const api = documentFormatApi();
+        const raw = (window.__edimarkLatexSettings || {}).documentFormat || {};
+        return api ? api.normalizeDocumentFormat(raw) : raw;
+    }
+
+    /* El nombre de una tipografía escrita a mano se muestra tal cual. */
+    function inheritedValueLabel(field, value) {
+        if (!value) return '';
+        const entry = (DOC_FORMAT_VALUE_LABELS[field] || {})[value];
+        return entry ? getTranslation(entry[0], entry[1]) : String(value);
+    }
+
+    function inheritedLanguageLabel() {
+        const code = String((window.__edimarkLatexSettings || {}).documentLanguage || '').trim();
+        if (!code || code === 'auto') return getTranslation('doc_settings_language_auto', 'Igual que la interfaz');
+        const general = document.getElementById('doc-language');
+        const option = general ? Array.from(general.options).find(item => item.value === code) : null;
+        return option ? option.textContent.trim() : code;
+    }
+
+    /*
+      El valor heredado se escribe debajo del campo, no dentro de la lista: en
+      dos columnas, una opción con el valor añadido se corta a media palabra.
+      Y solo mientras el campo sigue en blanco, que es cuando ese valor manda.
+    */
+    function inheritedHintFor(field) {
+        let hint = field.parentElement.querySelector('[data-inherited-hint]');
+        if (!hint) {
+            hint = document.createElement('p');
+            hint.dataset.inheritedHint = 'true';
+            hint.className = 'mt-1 text-xs text-slate-500 dark:text-slate-400';
+            // Pegado al campo, no al final de la celda: bajo «Tipo de letra»
+            // vive además el nombre de la tipografía escrita a mano.
+            field.insertAdjacentElement('afterend', hint);
+            const event = field.tagName === 'SELECT' ? 'change' : 'input';
+            field.addEventListener(event, () => {
+                hint.classList.toggle('hidden', !hint.textContent || field.value !== '');
+            });
+        }
+        return hint;
+    }
+
+    function setInheritedHint(field, label) {
+        if (!field) return;
+        const hint = inheritedHintFor(field);
+        hint.textContent = label
+            ? `${getTranslation('doc_format_inherited_now', 'Hereda')}: ${label}`
+            : '';
+        hint.classList.toggle('hidden', !label || field.value !== '');
+    }
+
+    function refreshInheritedDocumentHints() {
+        const settings = window.__edimarkLatexSettings || {};
+        setInheritedHint(docOwnLanguage, inheritedLanguageLabel());
+        setInheritedHint(docOwnAuthor, String(settings.documentAuthor || '').trim());
+
+        if (!docFormatFields || docFormatFields.dataset.rendered !== 'true') return;
+        const prefix = docFormatFields.id;
+        const general = generalDocumentFormat();
+        DOC_FORMAT_INHERITED_SELECTS.forEach(([id, field]) => {
+            setInheritedHint(document.getElementById(`${prefix}-${id}`), inheritedValueLabel(field, general[field]));
+        });
+        // Los numéricos ya tienen dónde decirlo: el marcador del campo vacío,
+        // que así deja de ser un guion suelto que no informa de nada.
+        DOC_FORMAT_INHERITED_NUMBERS.forEach(([id, field]) => {
+            const input = document.getElementById(`${prefix}-${id}`);
+            if (!input) return;
+            const value = general[field];
+            input.placeholder = value || getTranslation('doc_format_placeholder_blank', '—');
+            input.title = value
+                ? `${getTranslation('doc_format_inherited_now', 'Hereda')}: ${value}`
+                : '';
+        });
+    }
+    window.__refreshInheritedDocumentHints = refreshInheritedDocumentHints;
 
     function readDocumentFormatFields(prefix) {
         const api = documentFormatApi();
@@ -6410,6 +6708,7 @@ window.onload = () => {
         // Siempre desde el documento: cancelar tiene que descartar de verdad.
         fillDocumentFormatFields('doc-format-fields', currentDocumentFormat());
         fillDocumentOwnFields();
+        refreshInheritedDocumentHints();
     }
     window.__openDocumentSettings = () => toggleDocFormatModal(true);
 
@@ -6458,13 +6757,57 @@ window.onload = () => {
         if (docFormatOverlay.style.display === 'flex') toggleDocFormatModal(false);
     });
 
+    /*
+      Pestañas del cuadro de opciones. Son cuatro asuntos distintos —el
+      documento, el formato del texto, el EPUB y LaTeX— y de una vez no cabían
+      en la pantalla sin desplazarse: mejor una cada vez.
+    */
+    function setupSettingsTabs(tablist) {
+        if (!tablist || tablist.dataset.wired === 'true') return;
+        const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+        const select = (tab) => {
+            tabs.forEach((item) => {
+                const chosen = item === tab;
+                item.setAttribute('aria-selected', chosen ? 'true' : 'false');
+                item.tabIndex = chosen ? 0 : -1;
+                const panel = document.getElementById(item.getAttribute('aria-controls'));
+                if (panel) panel.classList.toggle('hidden', !chosen);
+            });
+        };
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => select(tab));
+            tab.addEventListener('keydown', (event) => {
+                const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+                if (!step) return;
+                event.preventDefault();
+                const next = tabs[(index + step + tabs.length) % tabs.length];
+                select(next);
+                next.focus();
+            });
+        });
+        tablist.dataset.wired = 'true';
+        return select;
+    }
+
+    let selectSettingsTab = null;
+
     function toggleLatexSettingsModal(show) {
         if (!latexSettingsOverlay) return;
         latexSettingsOverlay.style.display = show ? 'flex' : 'none';
         if (show) {
+            const tablist = document.getElementById('doc-settings-tablist');
+            selectSettingsTab = setupSettingsTabs(tablist) || selectSettingsTab;
+            // Siempre por la primera: al abrir, lo que se busca casi nunca es
+            // la pestaña donde se estuvo la última vez.
+            if (selectSettingsTab && tablist) selectSettingsTab(tablist.querySelector('[role="tab"]'));
             // Siempre desde lo guardado: cancelar tiene que descartar de verdad.
             fillLatexSettingsForm(readLatexSettings());
-            setTimeout(() => latexClassSelect && latexClassSelect.focus(), 0);
+            // El foco, en la primera pestaña: el antiguo primer campo vive
+            // ahora en la de LaTeX, y enfocarlo la abriría sin querer.
+            setTimeout(() => {
+                const first = document.querySelector('#doc-settings-tablist [role="tab"]');
+                if (first) first.focus();
+            }, 0);
         }
     }
 

@@ -132,7 +132,9 @@ lang: "ca"
 
 No mesmo cadro —e tamén no botón **Formato** do final da barra— fíxanse a **aliñación** (esquerda, xustificada ou dereita), o **tipo de letra** (con serifa, sen serifa, monoespazada ou a que escribas), o **tamaño** en puntos, o **entreliñado**, as **marxes** dos catro lados en centímetros, a **sangría de primeira liña** e a **partición de palabras con guión**.
 
-O que deixes en *Igual ca as opcións xerais* segue **Configuración → Opcións de exportación…**, onde están os mesmos axustes como valores de partida para todos os documentos. O que fixes aquí gárdase dentro do propio documento, xunto ao idioma e ao autor, así que viaxa co ficheiro. *Quitar todo do documento* déixao sen nada propio:
+Ao escoller *Outra…* no tipo de letra aparece o nome da tipografía xusto debaixo, cunha lista de suxestións: as que a aplicación puido recoñecer como instaladas neste equipo (en Chrome e Edge, ademais, *Ver todas as do sistema…* pide permiso e ofrece a lista completa). Podes escribir calquera nome aínda que non estea instalado: o documento gárdao igual, porque o ficheiro pode acabar nun equipo que si a teña. Se aquí non está, avísase en ámbar e a previsualización usa unha tipografía de reserva; ao exportar, o nome viaxa escrito e resólveo cada programa (Word e LibreOffice se a teñen, e en LaTeX só con XeLaTeX ou LuaLaTeX).
+
+O que deixes en *Herdado* segue **Configuración → Opcións de exportación…**, onde están os mesmos axustes como valores de partida para todos os documentos. Debaixo de cada campo vese, en gris, o valor que herda agora mesmo. O que fixes aquí gárdase dentro do propio documento, xunto ao idioma e ao autor, así que viaxa co ficheiro. *Quitar todo do documento* déixao sen nada propio:
 
 ```
 ---
@@ -183,6 +185,7 @@ Cando un documento leva imaxes en base64 —ao importar un DOCX, ao pegar desde 
 * **Copiar contido**: o panel esquerdo inclúe un botón para copiar o Markdown; na vista previa podes elixir que se copiará (HTML representado ou variantes LaTeX) desde o menú despregable xunto á icona de copia.
 * **Cambiar tema, disposición ou ancho**: usa **Configuración** para o tema, `Ctrl+L` ou o menú de paneis para a disposición e o botón de ancho (só icona), á dereita da frecha dobre, para ampliar o espazo web.
 * **Manual**: dispós deste documento sempre actualizado con `Ctrl+H`.
+* **A carpeta lémbrase**: na aplicación de escritorio, o primeiro cadro de abrir ou gardar sae onde diga o sistema, pero a partir de aí todos —abrir, gardar como, exportar, escoller unha imaxe— volven á última carpeta que usaches. Lémbrase só mentres a aplicación está aberta.
 
 ---
 
@@ -201,6 +204,8 @@ Durante a exportación, a barra superior mostra mensaxes de estado (progreso, é
 ### Opcións de exportación
 
 **Configuración → Opcións de exportación…** garda preferencias que se reutilizan en cada exportación, tamén a próxima vez que abras a aplicación.
+
+O cadro está repartido en catro lapelas —**Documento**, **Formato**, **EPUB** e **LaTeX**— que tamén se percorren coas frechas do teclado. Na aplicación de escritorio, ademais, estas opcións gárdanse nun ficheiro `settings.json` dentro do cartafol de configuración de EdiMarkWeb no teu perfil de usuario, así que sobreviven a unha limpeza de datos do navegador interno ou a unha reinstalación.
 
 **Idioma do documento**, que se aplica aos cinco formatos. É o que decide en que lingua corrixen a ortografía Word e LibreOffice ao abrir un DOCX ou un ODT, como parte as palabras LaTeX e que idioma declaran o HTML e o EPUB para os lectores de pantalla. Por omisión é **Igual ca a interface**: se cambias o idioma de EdiMarkWeb, os documentos ségueno. Podes fixar calquera dos cinco idiomas da aplicación ou escoller **Outro…** e escribir o seu código (`fr`, `de`, `pt-BR`).
 

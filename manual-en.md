@@ -132,7 +132,9 @@ That is the standard way of storing data about a document and many programs unde
 
 In that same dialog —and from the **Formatting** button at the end of the bar— you set the **alignment** (left, justified or right), the **typeface** (serif, sans serif, monospaced or whatever you type), the **size** in points, the **line spacing**, the **margins** on all four sides in centimetres, the **first-line indent** and the **hyphenation**.
 
-Anything left on *Same as the general options* follows **Settings → Export options…**, where the same settings act as the starting values for every document. What you set here is saved inside the document itself, next to the language and the author, so it travels with the file. *Remove everything from the document* leaves it with nothing of its own:
+Choosing *Other…* as the typeface brings up the typeface name right underneath, with a list of suggestions: the ones the application could recognise as installed on this computer (in Chrome and Edge, *Show every typeface on this computer…* asks for permission and offers the full list). You can type any name even if it is not installed: the document keeps it anyway, because the file may end up on a computer that does have it. If it is missing here, an amber note says so and the preview falls back to another typeface; on export the name travels written down and each program resolves it (Word and LibreOffice if they have it, and in LaTeX only with XeLaTeX or LuaLaTeX).
+
+Anything left on *Inherited* follows **Settings → Export options…**, where the same settings act as the starting values for every document. Under each field, in grey, you can see the value it inherits right now. What you set here is saved inside the document itself, next to the language and the author, so it travels with the file. *Remove everything from the document* leaves it with nothing of its own:
 
 ```
 ---
@@ -183,6 +185,7 @@ When a document carries base64 images — after importing a DOCX, after pasting 
 * **Copying content**: the left pane has a button to copy the Markdown; in the preview you can choose what gets copied (rendered HTML or LaTeX variants) from the drop-down next to the copy icon.
 * **Changing theme, layout or width**: use **Settings** for the theme, `Ctrl+L` or the pane menu for the layout, and the icon-only width button, to the right of the double arrow, to widen the web workspace.
 * **Manual**: this document is always available and up to date with `Ctrl+H`.
+* **The folder is remembered**: in the desktop application the first open or save dialog appears wherever the system decides, but from then on all of them —open, save as, export, pick an image— go back to the last folder you used. It is remembered only while the application stays open.
 
 ---
 
@@ -201,6 +204,8 @@ While exporting, the top bar shows status messages (progress, success or errors)
 ### Export options
 
 **Settings → Export options…** stores preferences that are reused in every export, including the next time you open the application.
+
+The dialog is split into four tabs —**Document**, **Formatting**, **EPUB** and **LaTeX**— which you can also walk through with the arrow keys. In the desktop application these options are additionally written to a `settings.json` file inside EdiMarkWeb’s configuration folder in your user profile, so they survive a clean-up of the embedded browser’s data or a reinstall.
 
 **Document language**, which applies to all five formats. It decides which dictionary Word and LibreOffice spell-check a DOCX or an ODT against, how LaTeX hyphenates, and which language HTML and EPUB declare to screen readers. It defaults to **Same as the interface**: change the language of EdiMarkWeb and your documents follow. You can pin any of the five interface languages, or choose **Other…** and type a code (`fr`, `de`, `pt-BR`).
 

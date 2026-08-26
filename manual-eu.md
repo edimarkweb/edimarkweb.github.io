@@ -132,7 +132,9 @@ Dokumentu bati buruzko datuak gordetzeko modu estandarra da eta programa askok u
 
 Koadro berean —eta barraren amaierako **Formatua** botoian ere— finkatzen dira **lerrokatzea** (ezkerrera, justifikatua edo eskuinera), **letra-tipoa** (serifduna, serifgabea, tarte bakarrekoa edo idazten duzuna), **tamaina** puntutan, **lerroartea**, lau aldeetako **marjinak** zentimetrotan, **lehen lerroaren koska** eta **hitzak marratxoz zatitzea**.
 
-*Aukera orokorren berdina* uzten duzunak **Konfigurazioa → Esportazio-aukerak…** jarraitzen du, non ajuste berak dokumentu guztien abiapuntuko balio gisa dauden. Hemen finkatzen duzuna dokumentuaren barruan gordetzen da, hizkuntzaren eta egilearen ondoan, eta fitxategiarekin bidaiatzen du. *Kendu dena dokumentutik* aukerak berezko ezer gabe uzten du:
+Letra-tipoan *Bestelakoa…* aukeratzean, tipografiaren izena agertzen da azpian bertan, iradokizun-zerrenda batekin: aplikazioak ordenagailu honetan instalatuta daudela ezagutu ahal izan dituenak (Chromen eta Edgen, gainera, *Ikusi sistemako guztiak…* aukerak baimena eskatzen du eta zerrenda osoa eskaintzen). Edozein izen idatz dezakezu instalatuta ez badago ere: dokumentuak berdin gordetzen du, fitxategia hura duen ordenagailu batera irits daitekeelako. Hemen ez badago, ohar bat agertzen da anbar kolorez eta aurrebistak ordezko tipografia bat erabiltzen du; esportatzean izena idatzita bidaiatzen du eta programa bakoitzak ebazten du (Word eta LibreOffice hura badute, eta LaTeXen XeLaTeX edo LuaLaTeXekin soilik).
+
+*Heredatua* uzten duzunak **Konfigurazioa → Esportazio-aukerak…** jarraitzen du, non ajuste berak dokumentu guztien abiapuntuko balio gisa dauden. Eremu bakoitzaren azpian, gris kolorez, orain bertan heredatzen duen balioa ikusten da. Hemen finkatzen duzuna dokumentuaren barruan gordetzen da, hizkuntzaren eta egilearen ondoan, eta fitxategiarekin bidaiatzen du. *Kendu dena dokumentutik* aukerak berezko ezer gabe uzten du:
 
 ```
 ---
@@ -183,6 +185,7 @@ Dokumentu batek base64 irudiak dituenean —DOCX bat inportatzean, beste aplikaz
 * **Edukia kopiatu**: ezkerreko panelak Markdown-a kopiatzeko botoi bat du; aurrebistan zer kopiatuko den aukera dezakezu (errendatutako HTMLa edo LaTeX aldaerak) kopiatzeko ikonoaren ondoko menu zabalgarritik.
 * **Gaia, antolaketa edo zabalera aldatu**: erabili **Ezarpenak** gaiarentzat, `Ctrl+L` edo panelen menua antolaketarentzat eta gezi bikoitzaren eskuineko zabalera-botoia (ikonoa soilik) webguneko lan-eremua zabaltzeko.
 * **Eskuliburua**: dokumentu hau beti eguneratuta duzu `Ctrl+H` bidez.
+* **Karpeta gogoratzen da**: mahaigaineko aplikazioan, irekitzeko edo gordetzeko lehen koadroa sistemak esaten duen lekuan agertzen da, baina hortik aurrera guztiak —ireki, gorde honela, esportatu, irudi bat aukeratu— erabili duzun azken karpetara itzultzen dira. Aplikazioa irekita dagoen bitartean baino ez da gogoratzen.
 
 ---
 
@@ -201,6 +204,8 @@ Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapen
 ### Esportazio-aukerak
 
 **Ezarpenak → Esportazio-aukerak…** esportazio bakoitzean berrerabiltzen diren hobespenak gordetzen ditu, baita aplikazioa hurrengoan irekitzean ere.
+
+Koadroa lau fitxatan banatuta dago —**Dokumentua**, **Formatua**, **EPUB** eta **LaTeX**— eta teklatuko geziekin ere ibil zaitezke haietan. Mahaigaineko aplikazioan, gainera, aukera horiek `settings.json` fitxategi batean gordetzen dira zure erabiltzaile-profileko EdiMarkWeb-en konfigurazio-karpetan, eta, beraz, barneko nabigatzailearen datuen garbiketa bat edo berrinstalazio bat gainditzen dute.
 
 **Dokumentuaren hizkuntza**, bost formatuei aplikatzen zaiena. Horrek erabakitzen du zein hizkuntzatan zuzentzen duten ortografia Word-ek eta LibreOffice-k DOCX edo ODT bat irekitzean, nola zatitzen dituen hitzak LaTeX-ek eta zein hizkuntza adierazten duten HTMLak eta EPUBak pantaila-irakurgailuentzat. Lehenespenez **Interfazearen berbera** da: EdiMarkWeb-en hizkuntza aldatzen baduzu, dokumentuek jarraitu egiten diote. Aplikazioaren bost hizkuntzetako edozein finka dezakezu, edo **Bestelakoa…** aukeratu eta bere kodea idatzi (`fr`, `de`, `pt-BR`).
 

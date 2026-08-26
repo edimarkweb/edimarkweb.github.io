@@ -907,8 +907,9 @@ test('los nuevos atajos abren sus acciones y los iconos explican su función', a
   const { context, page } = await openApp();
   t.after(() => context.close());
 
-  assert.equal(await page.locator('#doc-lang-btn').getAttribute('title'), 'Idioma, autor y formato de este documento.');
-  assert.match(await page.locator('#doc-lang-btn').getAttribute('aria-label'), /^Idioma, autor y formato de este documento\. Idioma general: /);
+  assert.equal(await page.locator('#doc-format-toolbar-btn').getAttribute('title'), 'Idioma, autor y formato de este documento.');
+  assert.equal(await page.locator('#doc-format-toolbar-btn [data-lucide="sliders-horizontal"]').count(), 1);
+  assert.equal(await page.locator('#doc-lang-btn').count(), 0);
   assert.equal(await page.locator('#toggle-replace-btn').getAttribute('title'), 'Mostrar opciones de reemplazo');
 
   await page.keyboard.press('Control+Alt+e');
@@ -1287,7 +1288,9 @@ test('Guardar como siempre pide una ruta nueva y la convierte en la ruta activa'
   await page.waitForFunction(() => window.__platformTestCalls.some(call => call[0] === 'dialog.save'));
   const calls = await page.evaluate(() => window.__platformTestCalls);
   assert.deepEqual(calls[0], ['write', '/tmp/original.md', '# Primera versión']);
-  assert.deepEqual(calls[1], ['dialog.save', 'original.md']);
+  // El nombre propuesto cuelga de la última carpeta usada en la sesión, que es
+  // la del documento abierto: así no hay que volver a navegar hasta ella.
+  assert.deepEqual(calls[1], ['dialog.save', '/tmp/original.md']);
   assert.deepEqual(calls[2], ['write', '/tmp/copia.md', '# Copia nueva']);
   assert.equal(await page.locator('.tab-name').getByText('copia', { exact: true }).count(), 1);
 });
@@ -1337,6 +1340,8 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
 
   await page.locator('#settings-menu-btn').click();
   await page.locator('#latex-settings-btn').click();
+  // Las opciones van por pestañas: cada campo vive en la suya.
+  await page.locator('#doc-settings-tab-latex').click();
   await page.locator('#latex-documentclass').selectOption('report');
   await page.locator('#latex-classoption').fill('12pt, a4paper');
   await page.locator('#latex-preamble').fill('\\usepackage{amsthm}');
@@ -1376,6 +1381,8 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
   await page.waitForFunction(() => window.__edimarkReady === true);
   await page.locator('#settings-menu-btn').click();
   await page.locator('#latex-settings-btn').click();
+  // Las opciones van por pestañas: cada campo vive en la suya.
+  await page.locator('#doc-settings-tab-latex').click();
   assert.equal(await page.locator('#latex-documentclass').inputValue(), 'report');
   assert.equal(await page.locator('#latex-preamble').inputValue(), '\\usepackage{amsthm}');
 
@@ -1461,10 +1468,8 @@ test('el idioma del documento se elige desde el panel y se guarda en el archivo'
   await page.locator('#markdown-input').fill('# Notas\n\nTexto.\n');
   await page.locator('#html-output h1').getByText('Notas', { exact: true }).waitFor();
 
-  // Sin idioma propio: hereda el general y el botón se ve atenuado.
-  const boton = page.locator('#doc-lang-btn');
-  assert.equal(await page.locator('#doc-lang-label').textContent(), 'ES');
-  assert.equal(await boton.evaluate(b => b.classList.contains('doc-lang-inherited')), true);
+  // Sin idioma propio: hereda el general.
+  const boton = page.locator('#doc-format-toolbar-btn');
   assert.equal(await page.locator('#markdown-input').evaluate(editor => editor.spellcheck), true);
   assert.equal(await page.locator('#markdown-input').getAttribute('lang'), 'es');
 
@@ -1472,8 +1477,6 @@ test('el idioma del documento se elige desde el panel y se guarda en el archivo'
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
   await page.locator('#doc-own-language').selectOption('ca');
   await page.locator('#doc-format-save-btn').click();
-  assert.equal(await page.locator('#doc-lang-label').textContent(), 'CA');
-  assert.equal(await boton.evaluate(b => b.classList.contains('doc-lang-inherited')), false);
   assert.equal(await page.locator('#markdown-input').getAttribute('lang'), 'ca');
 
   // Queda escrito en el documento, y sin ensuciar la vista previa.
@@ -1485,7 +1488,7 @@ test('el idioma del documento se elige desde el panel y se guarda en el archivo'
   await page.locator('#doc-own-language').selectOption('');
   await page.locator('#doc-format-save-btn').click();
   assert.equal(await page.locator('#markdown-input').inputValue(), '# Notas\n\nTexto.\n');
-  assert.equal(await page.locator('#doc-lang-label').textContent(), 'ES');
+  assert.equal(await page.locator('#markdown-input').getAttribute('lang'), 'es');
 });
 
 test('un documento sin idioma propio sigue al ajuste general', async (t) => {
@@ -1494,14 +1497,14 @@ test('un documento sin idioma propio sigue al ajuste general', async (t) => {
 
   await page.locator('#new-tab-btn').click();
   await page.locator('#markdown-input').fill('Texto suelto\n');
-  assert.equal(await page.locator('#doc-lang-label').textContent(), 'ES');
+  assert.equal(await page.locator('#markdown-input').getAttribute('lang'), 'es');
 
   await page.locator('#settings-menu-btn').click();
   await page.locator('#latex-settings-btn').click();
   await page.locator('#doc-language').selectOption('eu');
   await page.locator('#latex-settings-save-btn').click();
 
-  assert.equal(await page.locator('#doc-lang-label').textContent(), 'EU');
+  assert.equal(await page.locator('#markdown-input').getAttribute('lang'), 'eu');
   // El documento sigue limpio: el idioma general no se escribe en el archivo.
   assert.equal(await page.locator('#markdown-input').inputValue(), 'Texto suelto\n');
 });
@@ -1523,7 +1526,7 @@ test('el autor se guarda como ajuste general y por documento', async (t) => {
   assert.equal(await page.locator('#markdown-input').inputValue(), '# Notas\n\nTexto.\n');
 
   // El autor propio se escribe desde el cuadro del documento.
-  await page.locator('#doc-lang-btn').click();
+  await page.locator('#doc-format-toolbar-btn').click();
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
   await page.locator('#doc-own-author').fill('Ana Ruiz');
   await page.locator('#doc-format-save-btn').click();
@@ -1533,7 +1536,7 @@ test('el autor se guarda como ajuste general y por documento', async (t) => {
   assert.equal((await page.locator('#html-output').innerText()).includes('Ana Ruiz'), false);
 
   // Al reabrirlo el cuadro trae lo que el documento declara.
-  await page.locator('#doc-lang-btn').click();
+  await page.locator('#doc-format-toolbar-btn').click();
   assert.equal(await page.locator('#doc-own-author').inputValue(), 'Ana Ruiz');
 
   // Vaciarlo retira la línea y el bloque vacío.
@@ -1579,6 +1582,8 @@ test('la portada del EPUB ofrece los tres modos y limita el peso de la imagen', 
 
   await page.locator('#settings-menu-btn').click();
   await page.locator('#latex-settings-btn').click();
+  // Las opciones van por pestañas: cada campo vive en la suya.
+  await page.locator('#doc-settings-tab-epub').click();
 
   // De fábrica, la generada; el selector de archivo solo aparece con «una imagen mía».
   assert.equal(await page.locator('input[name="epub-cover"][value="auto"]').isChecked(), true);
@@ -1614,6 +1619,8 @@ test('la portada del EPUB ofrece los tres modos y limita el peso de la imagen', 
   await page.waitForFunction(() => window.__edimarkReady === true);
   await page.locator('#settings-menu-btn').click();
   await page.locator('#latex-settings-btn').click();
+  // Las opciones van por pestañas: cada campo vive en la suya.
+  await page.locator('#doc-settings-tab-epub').click();
   assert.equal(await page.locator('input[name="epub-cover"][value="custom"]').isChecked(), true);
   assert.equal(await page.locator('#epub-cover-name').textContent(), 'portada.png');
 
@@ -1715,4 +1722,26 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
   assert.equal(/align:|fontsize:|margin-left:|hyphenate:/.test(limpio), false);
   assert.match(limpio, /# Prueba/);
   assert.equal(await page.locator('#html-output').evaluate(preview => preview.style.textAlign), '');
+});
+
+/*
+  Al imprimir solo debe salir el documento. La hoja de impresión esconde el
+  panel Markdown, pero una regla posterior devolvía el alto natural a todo
+  `.panel` con más peso, y la cabecera del panel —el contador de caracteres y
+  el botón Copiar— reaparecía en la primera página.
+*/
+test('al imprimir no sale nada de la interfaz, solo el documento', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').fill('# Para imprimir\n\nUn párrafo.');
+  await page.emulateMedia({ media: 'print' });
+
+  for (const selector of ['#markdown-panel', '#markdown-char-counter', '#copy-md-btn', '#toolbar', '#tab-bar', '#desktop-release-banner']) {
+    assert.equal(await page.locator(selector).isVisible(), false, `${selector} no debe imprimirse`);
+  }
+  await page.locator('#html-output').waitFor({ state: 'visible' });
+  assert.match(await page.locator('#html-output').innerText(), /Para imprimir/);
+
+  await page.emulateMedia({ media: 'screen' });
 });

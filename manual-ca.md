@@ -132,7 +132,9 @@ lang: "ca"
 
 En el mateix quadre —i també al botó **Format** del final de la barra— es fixen l'**alineació** (esquerra, justificada o dreta), el **tipus de lletra** (amb serifa, sense serifa, monoespaiada o la que escriguis), la **mida** en punts, l'**interlineat**, els **marges** dels quatre costats en centímetres, la **sagnia de primera línia** i la **partició de mots amb guionet**.
 
-El que deixis a *Igual que les opcions generals* segueix **Configuració → Opcions d'exportació…**, on hi ha els mateixos ajustos com a valors de partida per a tots els documents. El que fixis aquí es desa dins del document mateix, al costat de l'idioma i de l'autor, així que viatja amb el fitxer. *Treure-ho tot del document* el deixa sense res propi:
+En triar *Altra…* al tipus de lletra apareix el nom de la tipografia just a sota, amb una llista de suggeriments: les que l’aplicació ha pogut reconèixer com a instal·lades en aquest equip (a Chrome i Edge, a més, *Veure totes les del sistema…* demana permís i ofereix la llista completa). Pots escriure qualsevol nom encara que no estigui instal·lat: el document el desa igualment, perquè el fitxer pot acabar en un equip que sí que la tingui. Si aquí no hi és, s’avisa en ambre i la previsualització fa servir una tipografia de reserva; en exportar, el nom viatja escrit i el resol cada programa (Word i LibreOffice si la tenen, i en LaTeX només amb XeLaTeX o LuaLaTeX).
+
+El que deixis a *Heretat* segueix **Configuració → Opcions d'exportació…**, on hi ha els mateixos ajustos com a valors de partida per a tots els documents. Sota cada camp es veu, en gris, el valor que hereta ara mateix. El que fixis aquí es desa dins del document mateix, al costat de l'idioma i de l'autor, així que viatja amb el fitxer. *Treure-ho tot del document* el deixa sense res propi:
 
 ```
 ---
@@ -183,6 +185,7 @@ Quan un document porta imatges en base64 —en importar un DOCX, en enganxar des
 * **Copiar contingut**: el plafó esquerre inclou un botó per copiar el Markdown; a la vista prèvia pots triar què es copiarà (HTML representat o variants LaTeX) des del menú desplegable del costat de la icona de còpia.
 * **Canviar tema, disposició o amplada**: fes servir **Configuració** per al tema, `Ctrl+L` o el menú de plafons per a la disposició i el botó d'amplada (només icona), a la dreta de la doble fletxa, per eixamplar l'espai web.
 * **Manual**: disposes d'aquest document sempre actualitzat amb `Ctrl+H`.
+* **La carpeta es recorda**: a l'aplicació d'escriptori, el primer quadre d'obrir o desar surt on digui el sistema, però a partir d'aquí tots —obrir, desar com a, exportar, triar una imatge— tornen a la darrera carpeta que has fet servir. Només es recorda mentre l'aplicació està oberta.
 
 ---
 
@@ -201,6 +204,8 @@ Durant l'exportació, la barra superior mostra missatges d'estat (progrés, èxi
 ### Opcions d'exportació
 
 **Configuració → Opcions d'exportació…** desa preferències que es reutilitzen en cada exportació, també la propera vegada que obris l'aplicació.
+
+El quadre està repartit en quatre pestanyes —**Document**, **Format**, **EPUB** i **LaTeX**— que també es recorren amb les fletxes del teclat. A l'aplicació d'escriptori, a més, aquestes opcions es desen en un fitxer `settings.json` dins la carpeta de configuració d'EdiMarkWeb al teu perfil d'usuari, de manera que sobreviuen a una neteja de dades del navegador intern o a una reinstal·lació.
 
 **Idioma del document**, que s'aplica als cinc formats. És el que decideix en quina llengua corregeixen l'ortografia el Word i el LibreOffice en obrir un DOCX o un ODT, com parteix els mots el LaTeX i quin idioma declaren l'HTML i l'EPUB per als lectors de pantalla. Per defecte és **Igual que la interfície**: si canvies l'idioma d'EdiMarkWeb, els documents el segueixen. Pots fixar qualsevol dels cinc idiomes de l'aplicació o triar **Altre…** i escriure'n el codi (`fr`, `de`, `pt-BR`).
 

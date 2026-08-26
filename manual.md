@@ -116,7 +116,7 @@ Puedes arrastrar la barra central para dar más espacio a cualquiera de los pane
 
 Junto al contador de caracteres hay un botón corto con el idioma del documento: `ES`, `CA`, `FR`… Si se ve atenuado, ese documento no tiene idioma propio y usa el **idioma general** de *Configuración → Opciones de exportación…*, que es lo normal. Al pulsarlo se abre el cuadro **Este documento**, con su idioma, su autor y su formato.
 
-Al elegir un idioma concreto, la aplicación lo guarda **dentro del propio documento**, de modo que viaja con el archivo: si lo guardas y lo abres mañana, aquí o en otro equipo, o se lo pasas a alguien, seguirá siendo ese. Para volver a lo anterior, elige *Igual que las opciones generales*. Y con *Otro…* puedes escribir el código de cualquier lengua (`fr`, `de`, `pt-BR`). El **autor** funciona igual, en el campo de al lado.
+Al elegir un idioma concreto, la aplicación lo guarda **dentro del propio documento**, de modo que viaja con el archivo: si lo guardas y lo abres mañana, aquí o en otro equipo, o se lo pasas a alguien, seguirá siendo ese. Para volver a lo anterior, elige *Heredado*. Y con *Otro…* puedes escribir el código de cualquier lengua (`fr`, `de`, `pt-BR`). El **autor** funciona igual, en el campo de al lado.
 
 Si alguna vez abres tu `.md` con un editor de texto plano, verás esa preferencia arriba del todo, en unas líneas entre rayas:
 
@@ -132,7 +132,9 @@ Es la forma estándar de guardar datos sobre un documento y la entienden muchos 
 
 En el mismo cuadro —y también en el botón **Formato** del final de la barra— se fijan la **alineación** (izquierda, justificada o derecha), el **tipo de letra** (con remates, sin remates, monoespaciada o la que escribas), el **tamaño** en puntos, el **interlineado**, los **márgenes** de los cuatro lados en centímetros, la **sangría de primera línea** y la **partición de palabras con guion**.
 
-Lo que dejes en *Igual que las opciones generales* sigue a **Configuración → Opciones de exportación…**, donde están los mismos ajustes como valores de partida para todos los documentos. Lo que fijes aquí se guarda dentro del propio documento, junto al idioma y al autor, así que viaja con el archivo. *Quitar todo del documento* lo deja sin nada propio:
+Al elegir *Otra…* en el tipo de letra aparece el nombre de la tipografía justo debajo, con una lista de sugerencias: las que la aplicación ha podido reconocer como instaladas en este equipo (en Chrome y Edge, además, *Ver todas las del sistema…* pide permiso y ofrece la lista completa). Puedes escribir cualquier nombre aunque no esté instalado: el documento lo guarda igual, porque el archivo puede acabar en un equipo que sí la tenga. Si aquí no está, se avisa en ámbar y la previsualización usa una tipografía de reserva; al exportar, el nombre viaja escrito y lo resuelve cada programa (Word y LibreOffice si la tienen, y en LaTeX solo con XeLaTeX o LuaLaTeX).
+
+Lo que dejes en *Heredado* sigue a **Configuración → Opciones de exportación…**, donde están los mismos ajustes como valores de partida para todos los documentos. Debajo de cada campo se ve, en gris, el valor que hereda ahora mismo. Lo que fijes aquí se guarda dentro del propio documento, junto al idioma y al autor, así que viaja con el archivo. *Quitar todo del documento* lo deja sin nada propio:
 
 ```
 ---
@@ -183,6 +185,7 @@ Cuando un documento lleva imágenes en base64 —al importar un DOCX, al pegar d
 * **Copiar contenido**: El panel izquierdo incluye un botón para copiar el Markdown; en la vista previa puedes elegir qué se copiará (HTML renderizado o variantes LaTeX) desde el menú desplegable junto al icono de copia.
 * **Cambiar tema, diseño o ancho**: usa **Configuración** para el tema, `Ctrl+L` o el menú de paneles para el diseño y el botón de ancho (solo icono), a la derecha de la doble flecha, para ampliar la superficie web.
 * **Manual**: Dispones de este documento siempre actualizado con `Ctrl+H`.
+* **La carpeta se recuerda**: en la aplicación de escritorio, el primer cuadro de abrir o guardar sale donde diga el sistema, pero a partir de ahí todos —abrir, guardar como, exportar, elegir una imagen— vuelven a la última carpeta que usaste. Se recuerda solo mientras la aplicación está abierta.
 
 ---
 
@@ -201,6 +204,8 @@ Durante la exportación, la barra superior muestra mensajes de estado (progreso,
 ### Opciones de exportación
 
 **Configuración → Opciones de exportación…** guarda preferencias que se reutilizan en cada exportación, también la próxima vez que abras la aplicación.
+
+El cuadro está repartido en cuatro pestañas —**Documento**, **Formato**, **EPUB** y **LaTeX**— y se recorren también con las flechas del teclado. En la aplicación de escritorio, además de recordarse, estas opciones se guardan en un archivo `settings.json` dentro de la carpeta de configuración de EdiMarkWeb en tu perfil de usuario, así que sobreviven a una limpieza de datos del navegador interno o a una reinstalación.
 
 **Idioma del documento**, que se aplica a los cinco formatos. Es el que decide en qué lengua corrigen la ortografía Word y LibreOffice al abrir un DOCX o un ODT, cómo parte las palabras LaTeX y qué idioma declaran el HTML y el EPUB para los lectores de pantalla. Por omisión es **Igual que la interfaz**: si cambias el idioma de EdiMarkWeb, los documentos lo siguen. Puedes fijar cualquiera de los cinco idiomas de la aplicación o elegir **Otro…** y escribir su código (`fr`, `de`, `pt-BR`).
 
