@@ -276,7 +276,7 @@ Instalatzaileak [deskarga-orrian](https://github.com/edimarkweb/edimarkweb.githu
 
 ### Egunean mantentzea
 
-Abiaraztean, aplikazioak egunean behin egiaztatzen du bertsio berriagorik dagoen. Halakorik dagoenean, ohar bat agertzen da tresna-barraren azpian **Deskargatu eta instalatu** botoiarekin: zure sistemari dagokion instalatzailea jaisten du, aurrerapena erakusten du eta sistemaren instalatzaileari ematen dio, klik pare batean amai dezazun. AppImage batekin ez dago ezer instalatzeko, beraz aplikazioak berria deskargatzen du eta bere karpeta irekitzen du zeneukana ordezka dezazun.
+Abiaraztean, aplikazioak egunean behin egiaztatzen du bertsio berriagorik dagoen. Halakorik dagoenean, ohar bat agertzen da tresna-barraren azpian **Deskargatu eta instalatu** botoiarekin: zure sistemari dagokion instalatzailea jaisten du, aurrerapena erakusten du eta sistemaren instalatzaileari ematen dio, klik pare batean amai dezazun. AppImage batekin ez dago ezer instalatzeko, beraz aplikazioak berria deskargatzen du eta bere karpeta irekitzen du zeneukana ordezka dezazun. Instalatzaile batek ere ezin ditu ordezkatu irekita dagoen aplikazio baten fitxategiak; hortaz, abiatu bezain laster **Itxi EdiMarkWeb** botoia agertzen da ohar berean: idazten ari zarena gorde eta ixten du. Instalazioa amaitzean, ireki berriro eta bertsio berria izango duzu.
 
 Oharrak **Egiaztatu abiaraztean** laukia dakar, egiaztapen automatiko hori desaktibatzeko, eta **Ikusi berritasunak** esteka, aldaketen zerrendarekin. Nahi duzunean eska dezakezu **Ezarpenak → Bilatu eguneraketak…** bidez; azken bertsioa jada baduzu, egoera-barran esango dizu.
 

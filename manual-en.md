@@ -276,7 +276,7 @@ The installers live on the [downloads page](https://github.com/edimarkweb/edimar
 
 ### Keeping it up to date
 
-At startup the application checks once a day whether a newer version exists. When there is one, a notice appears below the toolbar with a **Download and install** button: it fetches the installer for your system, shows the progress and hands it to the system installer so you can finish in a couple of clicks. With an AppImage there is nothing to install, so the application downloads the new one and opens its folder for you to replace the old file.
+At startup the application checks once a day whether a newer version exists. When there is one, a notice appears below the toolbar with a **Download and install** button: it fetches the installer for your system, shows the progress and hands it to the system installer so you can finish in a couple of clicks. With an AppImage there is nothing to install, so the application downloads the new one and opens its folder for you to replace the old file. No installer can replace the files of a running application, so as soon as it starts a **Close EdiMarkWeb** button appears in the same notice: it saves what you are writing and closes. When the installation finishes, open the application again and the new version is there.
 
 The notice includes a **Check at startup** box that turns off the automatic check, and a **Release notes** link with the list of changes. You can ask for it whenever you like from **Settings → Check for updates…**; if you already have the latest version, it says so in the status bar.
 

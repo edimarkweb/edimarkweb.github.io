@@ -276,7 +276,7 @@ Los instaladores están en la [página de descargas](https://github.com/edimarkw
 
 ### Mantenerla al día
 
-Al arrancar, la aplicación comprueba una vez al día si hay una versión más reciente. Cuando la hay, aparece un aviso bajo la barra de herramientas con el botón **Descargar e instalar**: baja el instalador que corresponde a tu sistema, muestra el progreso y se lo entrega al instalador del sistema para que termines en un par de clics. Con una AppImage no hay nada que instalar, así que la aplicación descarga la nueva y abre su carpeta para que sustituyas la que tenías.
+Al arrancar, la aplicación comprueba una vez al día si hay una versión más reciente. Cuando la hay, aparece un aviso bajo la barra de herramientas con el botón **Descargar e instalar**: baja el instalador que corresponde a tu sistema, muestra el progreso y se lo entrega al instalador del sistema para que termines en un par de clics. Con una AppImage no hay nada que instalar, así que la aplicación descarga la nueva y abre su carpeta para que sustituyas la que tenías. Ningún instalador puede sustituir los archivos de una aplicación abierta, así que en cuanto arranca aparece en el mismo aviso el botón **Cerrar EdiMarkWeb**, que guarda lo que estés escribiendo y cierra: al terminar la instalación, vuelve a abrirla y ya tendrás la versión nueva.
 
 El aviso incluye la casilla **Comprobar al iniciar**, que desactiva esa comprobación automática, y el enlace **Ver novedades** con la lista de cambios. Puedes pedirla cuando quieras desde **Configuración → Buscar actualizaciones…**; si ya tienes la última versión, te lo dirá en la barra de estado.
 

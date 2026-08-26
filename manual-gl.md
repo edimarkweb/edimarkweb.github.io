@@ -276,7 +276,7 @@ Os instaladores están na [páxina de descargas](https://github.com/edimarkweb/e
 
 ### Mantela ao día
 
-Ao arrincar, a aplicación comproba unha vez ao día se hai unha versión máis recente. Cando a hai, aparece un aviso baixo a barra de ferramentas co botón **Descargar e instalar**: baixa o instalador que corresponde ao teu sistema, amosa o progreso e entrégallo ao instalador do sistema para que remates nun par de clics. Cunha AppImage non hai nada que instalar, así que a aplicación descarga a nova e abre o seu cartafol para que substitúas a que tiñas.
+Ao arrincar, a aplicación comproba unha vez ao día se hai unha versión máis recente. Cando a hai, aparece un aviso baixo a barra de ferramentas co botón **Descargar e instalar**: baixa o instalador que corresponde ao teu sistema, amosa o progreso e entrégallo ao instalador do sistema para que remates nun par de clics. Cunha AppImage non hai nada que instalar, así que a aplicación descarga a nova e abre o seu cartafol para que substitúas a que tiñas. Ningún instalador pode substituír os ficheiros dunha aplicación aberta, así que en canto arranca aparece no mesmo aviso o botón **Pechar EdiMarkWeb**, que garda o que esteas a escribir e pecha: ao rematar a instalación, volve abrila e xa terás a versión nova.
 
 O aviso inclúe a caixa **Comprobar ao iniciar**, que desactiva esa comprobación automática, e a ligazón **Ver novidades** coa lista de cambios. Podes pedila cando queiras desde **Configuración → Buscar actualizacións…**; se xa tes a última versión, dirácho na barra de estado.
 

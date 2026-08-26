@@ -276,7 +276,7 @@ Els instal·ladors són a la [pàgina de baixades](https://github.com/edimarkweb
 
 ### Mantenir-la al dia
 
-En arrencar, l'aplicació comprova un cop al dia si hi ha una versió més recent. Quan n'hi ha, apareix un avís sota la barra d'eines amb el botó **Baixa i instal·la**: descarrega l'instal·lador que correspon al teu sistema, mostra el progrés i el lliura a l'instal·lador del sistema perquè acabis en un parell de clics. Amb una AppImage no hi ha res a instal·lar, així que l'aplicació baixa la nova i obre la seva carpeta perquè substitueixis la que tenies.
+En arrencar, l'aplicació comprova un cop al dia si hi ha una versió més recent. Quan n'hi ha, apareix un avís sota la barra d'eines amb el botó **Baixa i instal·la**: descarrega l'instal·lador que correspon al teu sistema, mostra el progrés i el lliura a l'instal·lador del sistema perquè acabis en un parell de clics. Amb una AppImage no hi ha res a instal·lar, així que l'aplicació baixa la nova i obre la seva carpeta perquè substitueixis la que tenies. Cap instal·lador no pot substituir els fitxers d'una aplicació oberta, així que tan bon punt arrenca apareix al mateix avís el botó **Tanca EdiMarkWeb**, que desa el que estiguis escrivint i tanca: en acabar la instal·lació, torna a obrir-la i ja tindràs la versió nova.
 
 L'avís inclou la casella **Comprova en iniciar**, que desactiva aquesta comprovació automàtica, i l'enllaç **Mira les novetats** amb la llista de canvis. La pots demanar quan vulguis des de **Configuració → Cerca actualitzacions…**; si ja tens l'última versió, t'ho dirà a la barra d'estat.
 

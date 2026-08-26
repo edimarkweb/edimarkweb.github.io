@@ -3839,6 +3839,7 @@ window.onload = () => {
     const updateBanner = document.getElementById('update-banner');
     const updateBannerMessage = document.getElementById('update-banner-message');
     const updateInstallBtn = document.getElementById('update-install-btn');
+    const updateQuitBtn = document.getElementById('update-quit-btn');
     const updateNotesLink = document.getElementById('update-notes-link');
     const updateAutoCheck = document.getElementById('update-auto-check');
     const updateBannerClose = document.getElementById('update-banner-close');
@@ -4473,6 +4474,8 @@ window.onload = () => {
             updateInstallBtn.hidden = !asset;
             updateInstallBtn.disabled = updateInstallInProgress;
         }
+        // El de cerrar solo tiene sentido con un instalador ya lanzado.
+        if (updateQuitBtn) updateQuitBtn.hidden = true;
         if (updateAutoCheck) updateAutoCheck.checked = autoUpdateCheckEnabled();
         updateBanner.hidden = false;
         mainContainer.classList.add('release-banner-visible');
@@ -4544,16 +4547,24 @@ window.onload = () => {
             const message = /\.appimage$/i.test(asset.name)
                 ? formatTranslation(
                     'update_ready_appimage',
-                    'Descargado en {path}. Sustituye tu AppImage por este archivo.',
+                    'Descargado en {path}. Cierra EdiMarkWeb y sustituye tu AppImage por este archivo.',
                     { path },
                 )
                 : getTranslation(
                     'update_ready_installer',
-                    'Instalador descargado. Termina la instalación y vuelve a abrir EdiMarkWeb.',
+                    'El instalador ya está abierto. Cierra EdiMarkWeb para que pueda sustituir los archivos y vuelve a abrirlo al terminar.',
                 );
             if (updateBannerMessage) updateBannerMessage.textContent = message;
             reportStatus(message);
             if (updateInstallBtn) updateInstallBtn.hidden = true;
+            /*
+              Y un botón para cerrar aquí mismo: el instalador no puede
+              sustituir los archivos de una aplicación que sigue abierta, y
+              hasta ahora el aviso lo contaba pero había que ir a buscar Salir
+              en el menú. Reiniciar sola no puede: el instalador es otro
+              proceso, tarda lo que tarde y puede pedir contraseña.
+            */
+            if (updateQuitBtn) updateQuitBtn.hidden = false;
         } catch (error) {
             console.error('No se pudo instalar la actualización:', error);
             reportStatus(getTranslation('update_download_failed', 'No se pudo descargar la actualización.'));
@@ -4572,6 +4583,18 @@ window.onload = () => {
     }
     if (updateBannerClose) updateBannerClose.addEventListener('click', hideUpdateBanner);
     if (updateInstallBtn) updateInstallBtn.addEventListener('click', () => { downloadAndInstallUpdate(); });
+    if (updateQuitBtn) {
+        updateQuitBtn.addEventListener('click', () => {
+            // Lo que se esté escribiendo se guarda antes de cerrar, igual que
+            // en Salir: entre dos tics del temporizador caben tres segundos.
+            autosaveCurrentDoc();
+            const platform = window.EdiMarkPlatform;
+            if (!platform || typeof platform.quitApplication !== 'function') return;
+            platform.quitApplication().catch((error) => {
+                console.error('No se pudo cerrar la aplicación:', error);
+            });
+        });
+    }
     if (quitAppBtn && nativeMode) {
         quitAppBtn.classList.remove('hidden');
         quitAppBtn.classList.add('flex');
