@@ -324,6 +324,8 @@
   "image_insert_mode_relative_help": "The image stays in its folder and the document just names it. The text stays small and the image can be replaced without touching it.",
   "image_insert_mode_embedded": "Inside the document",
   "image_insert_mode_embedded_help": "The image travels embedded in the file itself, which becomes self-contained but much heavier.",
+  "image_insert_mode_url": "From a web address",
+  "image_insert_mode_url_help": "The document points to an image that lives online: it takes up no space, but it stops showing if that address changes or there is no connection.",
   "image_insert_mode_unsaved_warning": "This document has not been saved yet, so there is no folder to work the path out from: only the file name will be written. Save it next to the image or embed the image instead.",
   "image_insert_mode_browser_warning": "In the browser the image folder is unknown: only its name will be written, and the document will find it if both sit side by side.",
   "image_insert_mode_outside_warning": "The image is outside the document folder: the path climbs with “../” and will only work if both are moved together.",

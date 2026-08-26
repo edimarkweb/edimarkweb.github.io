@@ -324,6 +324,8 @@
   "image_insert_mode_relative_help": "Irudia bere karpetan geratzen da eta dokumentuak izendatu baino ez du egiten. Testua arina da eta irudia alda daiteke testua ukitu gabe.",
   "image_insert_mode_embedded": "Dokumentuaren barruan",
   "image_insert_mode_embedded_help": "Irudia fitxategiaren barruan txertatuta doa: dokumentua bere kabuz nahikoa da, baina askoz astunagoa.",
+  "image_insert_mode_url": "Web helbide batetik",
+  "image_insert_mode_url_help": "Dokumentuak interneten dagoen irudi bat seinalatzen du: ez du lekurik hartzen, baina helbide hori aldatzen bada edo konexiorik ez badago, ez da ikusiko.",
   "image_insert_mode_unsaved_warning": "Dokumentua ez da oraindik gorde, eta ez dago bidea kalkulatzeko karpetarik: fitxategiaren izena baino ez da idatziko. Gorde ezazu irudiaren ondoan edo txertatu irudia dokumentuaren barruan.",
   "image_insert_mode_browser_warning": "Nabigatzailean ez da ezagutzen irudiaren karpeta: izena baino ez da idatziko, eta dokumentuak aurkituko du ondoan badago.",
   "image_insert_mode_outside_warning": "Irudia dokumentuaren karpetatik kanpo dago: bideak «../» erabiliz igotzen du eta biak batera mugitzen badira baino ez du funtzionatuko.",

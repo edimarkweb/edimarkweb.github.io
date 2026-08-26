@@ -324,6 +324,8 @@
   "image_insert_mode_relative_help": "La imatge es queda a la seva carpeta i el document només l'anomena. El text es manté lleuger i la imatge es pot canviar sense tocar-lo.",
   "image_insert_mode_embedded": "Dins del document",
   "image_insert_mode_embedded_help": "La imatge viatja incrustada dins del fitxer, que esdevé autònom però molt més pesant.",
+  "image_insert_mode_url": "Des d'una adreça web",
+  "image_insert_mode_url_help": "El document apunta a una imatge que és a internet: no ocupa res, però deixa de veure's si aquella adreça canvia o si no hi ha connexió.",
   "image_insert_mode_unsaved_warning": "El document encara no s'ha desat i no hi ha cap carpeta des d'on comptar la ruta: només s'escriurà el nom del fitxer. Deseu-lo al costat de la imatge o inseriu-la dins del document.",
   "image_insert_mode_browser_warning": "Al navegador no es coneix la carpeta de la imatge: només se n'escriurà el nom, i el document la trobarà si és al seu costat.",
   "image_insert_mode_outside_warning": "La imatge és fora de la carpeta del document: la ruta puja amb «../» i només funcionarà si es mouen totes dues juntes.",

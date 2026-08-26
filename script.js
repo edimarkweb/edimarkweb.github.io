@@ -3320,15 +3320,12 @@ function toggleImageModal(show, presetText = '') {
     document.getElementById('image-modal-overlay').style.display = show ? 'flex' : 'none';
     if (show) {
         document.getElementById('image-alt-text').value = presetText;
-        document.getElementById('image-url').value  = '';
         const fileInput = document.getElementById('image-file-input');
-        const fileName = document.getElementById('image-file-name');
         if (fileInput) fileInput.value = '';
-        if (fileName) {
-            fileName.textContent = getTranslation('image_file_none', 'Ninguna seleccionada');
-            fileName.setAttribute('data-i18n-key', 'image_file_none');
-        }
-        setTimeout(() => document.getElementById(presetText ? 'image-url' : 'image-alt-text').focus(), 0);
+        const defaultMode = document.querySelector('input[name="image-insert-mode"][value="relative"]');
+        if (defaultMode) defaultMode.checked = true;
+        if (typeof window.__edimarkResetImageSource === 'function') window.__edimarkResetImageSource();
+        setTimeout(() => document.getElementById(presetText ? 'image-file-input' : 'image-alt-text').focus(), 0);
     }
 }
 
@@ -7131,6 +7128,9 @@ window.onload = () => {
     const imageFileInput = document.getElementById('image-file-input');
     const imageFileName = document.getElementById('image-file-name');
     const imageModeWarning = document.getElementById('image-insert-mode-warning');
+    const imageSourceFile = document.getElementById('image-source-file');
+    const imageSourceUrl = document.getElementById('image-source-url');
+    const imageUrlInput = document.getElementById('image-url');
 
     /*
       La imagen elegida del disco. En la aplicación de escritorio se pide con el
@@ -7197,8 +7197,32 @@ window.onload = () => {
       imageModeWarning.classList.toggle('hidden', !message);
     }
 
+    /*
+      Las tres maneras de insertar una imagen son opciones del mismo grupo, así
+      que solo una de ellas necesita datos a la vez: las dos que parten de un
+      archivo piden el archivo, y la dirección web pide la dirección. Enseñar
+      los dos campos siempre invitaba a rellenar el que no se iba a usar.
+    */
+    function refreshImageSource() {
+      const url = selectedInsertMode() === 'url';
+      imageSourceFile?.classList.toggle('hidden', url);
+      imageSourceUrl?.classList.toggle('hidden', !url);
+      refreshImageModeWarning();
+    }
+
+    function resetImageSource() {
+      pickedImage = null;
+      showImageFileName('');
+      if (imageUrlInput) imageUrlInput.value = '';
+      refreshImageSource();
+    }
+    window.__edimarkResetImageSource = resetImageSource;
+
     document.querySelectorAll('input[name="image-insert-mode"]').forEach(radio => {
-      radio.addEventListener('change', refreshImageModeWarning);
+      radio.addEventListener('change', () => {
+        refreshImageSource();
+        if (selectedInsertMode() === 'url') imageUrlInput?.focus();
+      });
     });
 
     if (imageFileInput) {
@@ -7228,11 +7252,10 @@ window.onload = () => {
     }
 
     insertImageBtn.addEventListener('click', async () => {
-      const typedUrl = document.getElementById('image-url').value.trim();
       const mode = selectedInsertMode();
-      let reference = typedUrl;
+      let reference = mode === 'url' ? (imageUrlInput?.value.trim() || '') : '';
 
-      if (pickedImage) {
+      if (mode !== 'url' && pickedImage) {
         if (mode === 'embedded') {
           try {
             reference = pickedImage.file
@@ -7252,10 +7275,8 @@ window.onload = () => {
       const defaultAlt = pickedImage?.name || getTranslation('base64_image_default_alt', 'imagen');
       const alt = document.getElementById('image-alt-text').value.trim() || defaultAlt;
       markdownEditor.replaceSelection(`![${alt}](${reference || '#'})`);
-      pickedImage = null;
-      showImageFileName('');
-      refreshImageModeWarning();
       if (imageFileInput) imageFileInput.value = '';
+      resetImageSource();
       toggleImageModal(false);
       markdownEditor.focus();
     });
