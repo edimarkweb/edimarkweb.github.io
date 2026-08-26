@@ -398,6 +398,10 @@
                     <i data-lucide="square-radical"></i>
                     <span class="hidden sm:inline" data-i18n-key="edicuatex_btn_text">Editor</span>
                 </button>
+                <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
+                <button id="doc-format-toolbar-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="doc_format_toolbar_btn_title" title="Alineación, letra y márgenes de este documento">
+                    <i data-lucide="a-large-small"></i>
+                </button>
             </div>
         </div>
 
@@ -442,8 +446,8 @@
                     <div class="flex items-center gap-2">
                         <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
                         <div class="relative" id="doc-lang-container">
-                            <button id="doc-lang-btn" type="button" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" aria-haspopup="true" aria-expanded="false" data-i18n-key="doc_lang_btn_title" title="Cambiar idioma y autor de este documento.">
-                                <i data-lucide="languages" class="w-4 h-4"></i>
+                            <button id="doc-lang-btn" type="button" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" aria-haspopup="true" aria-expanded="false" data-i18n-key="doc_lang_btn_title" title="Cambiar el idioma, el autor y el formato de este documento.">
+                                <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
                                 <span id="doc-lang-label" class="text-xs font-semibold uppercase">ES</span>
                             </button>
                             <div id="doc-lang-menu" class="hidden absolute right-0 top-full z-20 mt-2 w-56 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800" role="menu" aria-labelledby="doc-lang-btn">
@@ -479,6 +483,10 @@
                                 <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
                                 <button type="button" id="doc-author-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
                                     <span data-i18n-key="doc_author_btn">Autor de este documento…</span>
+                                </button>
+                                <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
+                                <button type="button" id="doc-format-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
+                                    <span data-i18n-key="doc_format_btn">Formato de este documento…</span>
                                 </button>
                             </div>
                         </div>
@@ -709,6 +717,11 @@
                     </div>
                 </div>
                 <div class="border-t border-slate-200 pt-4 dark:border-slate-700">
+                    <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200" data-i18n-key="doc_settings_format_section">Formato del texto</h4>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_format_section_hint">Valores de partida para todos los documentos. Cada documento puede fijar los suyos desde el panel Markdown.</p>
+                </div>
+                <div id="export-format-fields" class="space-y-4"></div>
+                <div class="border-t border-slate-200 pt-4 dark:border-slate-700">
                     <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200" data-i18n-key="doc_settings_latex_section">Solo para LaTeX</h4>
                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_latex_section_hint">Se aplica al exportar a TEX y al copiar LaTeX como documento completo.</p>
                 </div>
@@ -736,6 +749,19 @@
                 <button id="latex-settings-reset-btn" type="button" class="mr-auto px-4 py-2 text-slate-600 rounded-md hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-700" data-i18n-key="doc_settings_reset_btn">Restablecer</button>
                 <button id="latex-settings-cancel-btn" type="button" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
                 <button id="latex-settings-save-btn" type="button" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="doc_settings_save_btn">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="doc-format-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center overflow-y-auto p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="doc-format-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl my-8 dark:bg-slate-800">
+            <h3 id="doc-format-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_format_modal_title">Formato de este documento</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" data-i18n-key="doc_format_modal_hint">Se guarda en el propio documento y viaja con él. Lo que dejes en «Igual que las opciones generales» sigue a las opciones de exportación.</p>
+            <div id="doc-format-fields" class="space-y-4"></div>
+            <div class="mt-6 flex flex-wrap justify-end gap-3">
+                <button id="doc-format-reset-btn" type="button" class="mr-auto px-4 py-2 text-slate-600 rounded-md hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-700" data-i18n-key="doc_format_reset_btn">Quitar del documento</button>
+                <button id="doc-format-cancel-btn" type="button" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
+                <button id="doc-format-save-btn" type="button" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="doc_format_save_btn">Aplicar</button>
             </div>
         </div>
     </div>
@@ -841,6 +867,7 @@
     </div>
 
     <script src="asset-paths.js"></script>
+    <script src="document-format.js"></script>
     <script src="platform-api.js"></script>
     <script src="desktop-updater.js"></script>
     <script type="module" src="pandoc-exporter.js"></script>

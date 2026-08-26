@@ -3120,6 +3120,9 @@ const LATEX_SETTINGS_DEFAULTS = {
     documentClass: 'article',
     classOptions: '',
     preamble: '',
+    // Alineación, letra, interlineado, márgenes, sangría y partición: los
+    // valores de partida que hereda cualquier documento que no fije los suyos.
+    documentFormat: {},
 };
 
 function readLatexSettings() {
@@ -3141,6 +3144,9 @@ function readLatexSettings() {
             documentClass: typeof parsed.documentClass === 'string' ? parsed.documentClass : LATEX_SETTINGS_DEFAULTS.documentClass,
             classOptions: typeof parsed.classOptions === 'string' ? parsed.classOptions : '',
             preamble: typeof parsed.preamble === 'string' ? parsed.preamble : '',
+            documentFormat: window.EdiMarkDocumentFormat
+                ? window.EdiMarkDocumentFormat.normalizeDocumentFormat(parsed.documentFormat)
+                : {},
         };
     } catch (error) {
         console.warn('Ajustes del documento ilegibles, se usan los predeterminados:', error);
@@ -3843,6 +3849,14 @@ window.onload = () => {
     }
     
     // --- Elementos de modales ---
+    const exportFormatFields = document.getElementById('export-format-fields');
+    const docFormatFields = document.getElementById('doc-format-fields');
+    const docFormatOverlay = document.getElementById('doc-format-modal-overlay');
+    const docFormatBtn = document.getElementById('doc-format-btn');
+    const docFormatToolbarBtn = document.getElementById('doc-format-toolbar-btn');
+    const docFormatSaveBtn = document.getElementById('doc-format-save-btn');
+    const docFormatCancelBtn = document.getElementById('doc-format-cancel-btn');
+    const docFormatResetBtn = document.getElementById('doc-format-reset-btn');
     const tableModalOverlay = document.getElementById('table-modal-overlay');
     const createTableBtn = document.getElementById('create-table-btn');
     const cancelTableBtn = document.getElementById('cancel-table-btn');
@@ -4086,6 +4100,10 @@ window.onload = () => {
         const effective = own || generalDocumentLanguage();
         if (markdownTextareaEl) markdownTextareaEl.setAttribute('lang', effective);
         applySpellChecking(effective);
+        // El bloque de metadatos también lleva el formato, y se edita a mano.
+        if (typeof window.__applyDocumentFormatToPreview === 'function') {
+            window.__applyDocumentFormatToPreview();
+        }
         if (docLangLabel) docLangLabel.textContent = effective.toUpperCase();
         // Sin idioma propio, el botón se ve más apagado: lo hereda.
         docLangBtn.classList.toggle('doc-lang-inherited', !own);
@@ -4979,6 +4997,9 @@ window.onload = () => {
                 markdown: rawMarkdown,
                 standalone: Boolean(includePreamble),
                 onStatus: updateExportStatus,
+                onNotification: (message) => {
+                    if (message) alert(message);
+                },
             });
             await writeTextToClipboard(latexResult);
             showCopyFeedback(copyHtmlBtn, true);
@@ -5101,6 +5122,9 @@ window.onload = () => {
                         markdown: rawMarkdown,
                         standalone: true,
                         onStatus: updateExportStatus,
+                        onNotification: (message) => {
+                            if (message) alert(message);
+                        },
                     });
                 } catch (err) {
                     console.error('No se pudo generar LaTeX:', err);
@@ -5894,6 +5918,8 @@ window.onload = () => {
         if (latexClassSelect) latexClassSelect.value = settings.documentClass || 'article';
         if (latexClassOptionsInput) latexClassOptionsInput.value = settings.classOptions || '';
         if (latexPreambleTextarea) latexPreambleTextarea.value = settings.preamble || '';
+        renderDocumentFormatFields(exportFormatFields, { inherit: false });
+        fillDocumentFormatFields('export-format-fields', settings.documentFormat || {});
     }
 
     coverRadios.forEach(radio => radio.addEventListener('change', syncCoverPicker));
@@ -5927,6 +5953,328 @@ window.onload = () => {
             if (docLanguageSelect.value === 'other' && docLanguageCodeInput) docLanguageCodeInput.focus();
         });
     }
+
+    /*
+      Campos de formato del documento. El mismo formulario sirve para los
+      valores generales y para los de un documento concreto: lo único que
+      cambia es qué significa dejar un campo vacío —«sin fijar» en los
+      generales, «igual que los generales» en el documento—, así que se
+      construye una sola vez desde aquí en vez de repetirlo en el HTML.
+    */
+    const DOC_FORMAT_SELECTS = 'mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200';
+    const DOC_FORMAT_LABELS = 'block text-sm font-medium text-slate-700 dark:text-slate-300';
+
+    function documentFormatApi() {
+        return window.EdiMarkDocumentFormat || null;
+    }
+
+    function buildFormatField(labelKey, labelText, control) {
+        const wrapper = document.createElement('div');
+        const label = document.createElement('label');
+        label.className = DOC_FORMAT_LABELS;
+        label.setAttribute('data-i18n-key', labelKey);
+        label.textContent = getTranslation(labelKey, labelText);
+        if (control.id) label.setAttribute('for', control.id);
+        wrapper.appendChild(label);
+        wrapper.appendChild(control);
+        return wrapper;
+    }
+
+    function buildFormatSelect(id, options) {
+        const select = document.createElement('select');
+        select.id = id;
+        select.className = DOC_FORMAT_SELECTS;
+        options.forEach(([value, key, text]) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.setAttribute('data-i18n-key', key);
+            option.textContent = getTranslation(key, text);
+            select.appendChild(option);
+        });
+        return select;
+    }
+
+    function buildFormatNumber(id, { min, max, step, placeholderKey, placeholderText }) {
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = id;
+        input.min = String(min);
+        input.max = String(max);
+        input.step = String(step);
+        input.className = DOC_FORMAT_SELECTS;
+        input.setAttribute('data-i18n-key', placeholderKey);
+        input.placeholder = getTranslation(placeholderKey, placeholderText);
+        return input;
+    }
+
+    function renderDocumentFormatFields(container, { inherit }) {
+        if (!container || container.dataset.rendered === 'true') return;
+        const blankKey = inherit ? 'doc_format_inherit' : 'doc_format_unset';
+        const blankText = inherit ? 'Igual que las opciones generales' : 'Sin fijar';
+        const prefix = container.id;
+        const blank = [['', blankKey, blankText]];
+
+        const grid = document.createElement('div');
+        grid.className = 'grid gap-4 sm:grid-cols-2';
+        grid.appendChild(buildFormatField('doc_format_field_align', 'Alineación', buildFormatSelect(`${prefix}-align`, [
+            ...blank,
+            ['left', 'doc_format_align_left', 'Izquierda'],
+            ['justify', 'doc_format_align_justify', 'Justificada'],
+            ['right', 'doc_format_align_right', 'Derecha'],
+        ])));
+        grid.appendChild(buildFormatField('doc_format_field_font', 'Tipo de letra', buildFormatSelect(`${prefix}-font`, [
+            ...blank,
+            ['serif', 'doc_format_font_serif', 'Con remates (serif)'],
+            ['sans', 'doc_format_font_sans', 'Sin remates (sans)'],
+            ['mono', 'doc_format_font_mono', 'Monoespaciada'],
+            ['other', 'doc_format_font_other', 'Otra…'],
+        ])));
+        grid.appendChild(buildFormatField('doc_format_field_fontsize', 'Tamaño (pt)', buildFormatNumber(`${prefix}-fontsize`, {
+            min: 5, max: 72, step: 0.5,
+            placeholderKey: 'doc_format_placeholder_blank', placeholderText: '—',
+        })));
+        grid.appendChild(buildFormatField('doc_format_field_lineheight', 'Interlineado', buildFormatNumber(`${prefix}-lineheight`, {
+            min: 0.8, max: 4, step: 0.05,
+            placeholderKey: 'doc_format_placeholder_blank', placeholderText: '—',
+        })));
+        container.appendChild(grid);
+
+        // La tipografía escrita a mano solo la respetan los formatos que sepan
+        // resolverla, así que vive escondida hasta que se elige «Otra…».
+        const custom = document.createElement('div');
+        custom.id = `${prefix}-font-custom-row`;
+        custom.className = 'hidden';
+        const customInput = document.createElement('input');
+        customInput.type = 'text';
+        customInput.id = `${prefix}-font-custom`;
+        customInput.className = DOC_FORMAT_SELECTS;
+        customInput.setAttribute('data-i18n-key', 'doc_format_font_custom_placeholder');
+        customInput.placeholder = getTranslation('doc_format_font_custom_placeholder', 'Garamond, Calibri…');
+        custom.appendChild(buildFormatField('doc_format_field_font_custom', 'Nombre de la tipografía', customInput));
+        container.appendChild(custom);
+
+        const marginsBlock = document.createElement('div');
+        const marginsLabel = document.createElement('p');
+        marginsLabel.className = DOC_FORMAT_LABELS;
+        marginsLabel.setAttribute('data-i18n-key', 'doc_format_field_margins');
+        marginsLabel.textContent = getTranslation('doc_format_field_margins', 'Márgenes de página (cm)');
+        marginsBlock.appendChild(marginsLabel);
+        const marginsGrid = document.createElement('div');
+        marginsGrid.className = 'mt-1 grid gap-3 grid-cols-2 sm:grid-cols-4';
+        [
+            ['top', 'doc_format_margin_top', 'Superior'],
+            ['right', 'doc_format_margin_right', 'Derecho'],
+            ['bottom', 'doc_format_margin_bottom', 'Inferior'],
+            ['left', 'doc_format_margin_left', 'Izquierdo'],
+        ].forEach(([side, key, text]) => {
+            marginsGrid.appendChild(buildFormatField(key, text, buildFormatNumber(`${prefix}-margin-${side}`, {
+                min: 0, max: 15, step: 0.1,
+                placeholderKey: 'doc_format_placeholder_blank', placeholderText: '—',
+            })));
+        });
+        marginsBlock.appendChild(marginsGrid);
+        container.appendChild(marginsBlock);
+
+        const switches = document.createElement('div');
+        switches.className = 'grid gap-4 sm:grid-cols-2';
+        switches.appendChild(buildFormatField('doc_format_field_indent', 'Sangría de primera línea', buildFormatSelect(`${prefix}-indent`, [
+            ...blank,
+            ['yes', 'doc_format_yes', 'Sí'],
+            ['no', 'doc_format_no', 'No'],
+        ])));
+        switches.appendChild(buildFormatField('doc_format_field_hyphenate', 'Partir palabras con guion', buildFormatSelect(`${prefix}-hyphenate`, [
+            ...blank,
+            ['yes', 'doc_format_yes', 'Sí'],
+            ['no', 'doc_format_no', 'No'],
+        ])));
+        container.appendChild(switches);
+
+        const hint = document.createElement('p');
+        hint.className = 'text-xs text-slate-500 dark:text-slate-400';
+        hint.setAttribute('data-i18n-key', 'doc_format_hyphenate_hint');
+        hint.textContent = getTranslation(
+            'doc_format_hyphenate_hint',
+            'La partición usa los diccionarios de guiones del sistema: en Linux, LibreOffice necesita el paquete del idioma (por ejemplo, hyphen-es).',
+        );
+        container.appendChild(hint);
+
+        const fontSelect = document.getElementById(`${prefix}-font`);
+        if (fontSelect) {
+            fontSelect.addEventListener('change', () => {
+                custom.classList.toggle('hidden', fontSelect.value !== 'other');
+                if (fontSelect.value === 'other') customInput.focus();
+            });
+        }
+        container.dataset.rendered = 'true';
+    }
+
+    function fillDocumentFormatFields(prefix, format) {
+        const api = documentFormatApi();
+        const values = api ? api.normalizeDocumentFormat(format) : {};
+        const setValue = (id, value) => {
+            const field = document.getElementById(`${prefix}-${id}`);
+            if (field) field.value = value ?? '';
+        };
+        setValue('align', values.align);
+        const known = api && api.FONT_KINDS.includes(values.font);
+        setValue('font', values.font ? (known ? values.font : 'other') : '');
+        setValue('font-custom', known ? '' : values.font);
+        const customRow = document.getElementById(`${prefix}-font-custom-row`);
+        if (customRow) customRow.classList.toggle('hidden', known || !values.font);
+        setValue('fontsize', values.fontSize);
+        setValue('lineheight', values.lineHeight);
+        setValue('margin-top', values.marginTop);
+        setValue('margin-right', values.marginRight);
+        setValue('margin-bottom', values.marginBottom);
+        setValue('margin-left', values.marginLeft);
+        setValue('indent', values.indent);
+        setValue('hyphenate', values.hyphenate);
+    }
+
+    function readDocumentFormatFields(prefix) {
+        const api = documentFormatApi();
+        const value = (id) => {
+            const field = document.getElementById(`${prefix}-${id}`);
+            return field ? field.value.trim() : '';
+        };
+        const font = value('font');
+        const raw = {
+            align: value('align'),
+            font: font === 'other' ? value('font-custom') : font,
+            fontSize: value('fontsize'),
+            lineHeight: value('lineheight'),
+            marginTop: value('margin-top'),
+            marginRight: value('margin-right'),
+            marginBottom: value('margin-bottom'),
+            marginLeft: value('margin-left'),
+            indent: value('indent'),
+            hyphenate: value('hyphenate'),
+        };
+        return api ? api.normalizeDocumentFormat(raw) : raw;
+    }
+
+    /*
+      El formato de un documento vive en su propio bloque de metadatos, igual
+      que el idioma y el autor: así viaja con el archivo y no depende de este
+      navegador. Lo que el documento no diga lo pone el ajuste general.
+    */
+    function currentDocumentFormat() {
+        const api = documentFormatApi();
+        if (!api || !markdownEditor) return {};
+        const { frontMatter } = splitDocumentFrontMatter(markdownEditor.getValue());
+        return api.readFromFrontMatter(frontMatter);
+    }
+
+    function effectiveDocumentFormat() {
+        const api = documentFormatApi();
+        if (!api) return {};
+        const general = (window.__edimarkLatexSettings || {}).documentFormat || {};
+        return api.resolveDocumentFormat(general, currentDocumentFormat());
+    }
+
+    /*
+      La vista previa es donde se comprueba el ajuste antes de exportar. Los
+      encabezados no se tocan: la hoja de estilos ya los mide en `em` y siguen
+      al cuerpo solos.
+    */
+    function applyDocumentFormatToPreview() {
+        const api = documentFormatApi();
+        const preview = document.getElementById('html-output');
+        if (!api || !preview) return;
+        const styles = api.toPreviewStyles(effectiveDocumentFormat());
+        Object.keys(api.toPreviewStyles({
+            align: 'left', font: 'serif', fontSize: '12', lineHeight: '1',
+            marginTop: '1', marginRight: '1', marginBottom: '1', marginLeft: '1',
+            indent: 'no', hyphenate: 'no',
+        })).forEach(property => preview.style.removeProperty(property));
+        Object.entries(styles).forEach(([property, value]) => {
+            preview.style.setProperty(property, value);
+        });
+    }
+    window.__applyDocumentFormatToPreview = applyDocumentFormatToPreview;
+
+    /* Escribe en el documento solo los ajustes con valor y borra los demás. */
+    function setDocumentFormat(format) {
+        const api = documentFormatApi();
+        if (!api || !markdownEditor) return;
+        const entries = api.toFrontMatterEntries(format);
+        const wanted = new Map(entries.map(entry => [entry.key, entry.lines[0]]));
+        const managed = api.YAML_KEYS.map(([, key]) => key);
+        const current = markdownEditor.getValue();
+        const { frontMatter, body } = splitDocumentFrontMatter(current);
+
+        const kept = [];
+        if (frontMatter) {
+            frontMatter.split('\n').slice(1, -1).forEach((line) => {
+                const key = (line.match(/^([A-Za-z][\w-]*)\s*:/) || [])[1];
+                if (key && managed.includes(key)) {
+                    // Una clave que sigue teniendo valor se reescribe en su sitio.
+                    if (wanted.has(key)) {
+                        kept.push(wanted.get(key));
+                        wanted.delete(key);
+                    }
+                    return;
+                }
+                kept.push(line);
+            });
+        }
+        wanted.forEach(line => kept.push(line));
+
+        const hasFields = kept.some(line => line.trim());
+        const updated = hasFields
+            ? `---\n${kept.join('\n')}\n---\n\n${body || (frontMatter ? '' : current)}`
+            : (body || (frontMatter ? '' : current));
+        if (updated === current) {
+            applyDocumentFormatToPreview();
+            return;
+        }
+        markdownEditor.setValue(updated);
+        updateHtml();
+        applyDocumentFormatToPreview();
+    }
+
+    function toggleDocFormatModal(show) {
+        if (!docFormatOverlay) return;
+        docFormatOverlay.style.display = show ? 'flex' : 'none';
+        if (!show) return;
+        renderDocumentFormatFields(docFormatFields, { inherit: true });
+        // Siempre desde el documento: cancelar tiene que descartar de verdad.
+        fillDocumentFormatFields('doc-format-fields', currentDocumentFormat());
+    }
+
+    if (docFormatBtn) {
+        docFormatBtn.addEventListener('click', () => {
+            closeDocLangMenu();
+            toggleDocFormatModal(true);
+        });
+    }
+    if (docFormatToolbarBtn) {
+        docFormatToolbarBtn.addEventListener('click', () => toggleDocFormatModal(true));
+    }
+    if (docFormatCancelBtn) {
+        docFormatCancelBtn.addEventListener('click', () => toggleDocFormatModal(false));
+    }
+    if (docFormatResetBtn) {
+        // Deja el documento sin ajustes propios: vuelve a seguir a los generales.
+        docFormatResetBtn.addEventListener('click', () => {
+            fillDocumentFormatFields('doc-format-fields', {});
+        });
+    }
+    if (docFormatSaveBtn) {
+        docFormatSaveBtn.addEventListener('click', () => {
+            setDocumentFormat(readDocumentFormatFields('doc-format-fields'));
+            toggleDocFormatModal(false);
+        });
+    }
+    if (docFormatOverlay) {
+        docFormatOverlay.addEventListener('click', (event) => {
+            if (event.target === docFormatOverlay) toggleDocFormatModal(false);
+        });
+    }
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !docFormatOverlay) return;
+        if (docFormatOverlay.style.display === 'flex') toggleDocFormatModal(false);
+    });
 
     function toggleLatexSettingsModal(show) {
         if (!latexSettingsOverlay) return;
@@ -5974,7 +6322,9 @@ window.onload = () => {
                 documentClass: latexClassSelect ? latexClassSelect.value : 'article',
                 classOptions: latexClassOptionsInput ? latexClassOptionsInput.value.trim() : '',
                 preamble: latexPreambleTextarea ? latexPreambleTextarea.value : '',
+                documentFormat: readDocumentFormatFields('export-format-fields'),
             });
+            applyDocumentFormatToPreview();
             toggleLatexSettingsModal(false);
             updateExportStatus(getTranslation('doc_settings_saved', 'Ajustes del documento guardados.'));
         });

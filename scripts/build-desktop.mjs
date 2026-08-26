@@ -9,6 +9,7 @@ const outputRoot = join(projectRoot, 'dist');
 const appFiles = [
   'asset-paths.js',
   'desktop-updater.js',
+  'document-format.js',
   'favicon.ico',
   'i18n.js',
   'index.html',

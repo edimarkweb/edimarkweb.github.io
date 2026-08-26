@@ -506,6 +506,7 @@ export function prepareLatexStandalone(markdown, {
   documentClass = '',
   classOptions = '',
   preamble = '',
+  extraEntries = [],
 } = {}) {
   const source = typeof markdown === 'string' ? markdown : '';
   const { keys, body: sourceBody, frontMatter } = splitFrontMatter(source);
@@ -536,6 +537,7 @@ export function prepareLatexStandalone(markdown, {
   }
   const optionLines = yamlClassOptions(classOptions || '');
   if (optionLines.length) entries.push({ key: 'classoption', lines: optionLines });
+  entries.push(...extraEntries);
   if (String(preamble || '').trim()) {
     entries.push({ key: 'header-includes', lines: yamlLiteralBlock('header-includes', preamble) });
   }

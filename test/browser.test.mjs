@@ -907,8 +907,8 @@ test('los nuevos atajos abren sus acciones y los iconos explican su función', a
   const { context, page } = await openApp();
   t.after(() => context.close());
 
-  assert.equal(await page.locator('#doc-lang-btn').getAttribute('title'), 'Cambiar idioma y autor de este documento.');
-  assert.match(await page.locator('#doc-lang-btn').getAttribute('aria-label'), /^Cambiar idioma y autor de este documento\. Idioma general: /);
+  assert.equal(await page.locator('#doc-lang-btn').getAttribute('title'), 'Cambiar el idioma, el autor y el formato de este documento.');
+  assert.match(await page.locator('#doc-lang-btn').getAttribute('aria-label'), /^Cambiar el idioma, el autor y el formato de este documento\. Idioma general: /);
   assert.equal(await page.locator('#toggle-replace-btn').getAttribute('title'), 'Mostrar opciones de reemplazo');
 
   await page.keyboard.press('Control+Alt+e');
@@ -1203,6 +1203,19 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
       documentClass: 'report',
       classOptions: '12pt, a4paper',
       preamble: '\\usepackage{amsthm}',
+      // Sin tocar el formato del texto, sus diez ajustes quedan sin fijar.
+      documentFormat: {
+        align: '',
+        font: '',
+        fontSize: '',
+        lineHeight: '',
+        marginTop: '',
+        marginRight: '',
+        marginBottom: '',
+        marginLeft: '',
+        indent: '',
+        hyphenate: '',
+      },
     }
   );
 

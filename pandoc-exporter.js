@@ -186,6 +186,55 @@ function documentAuthor() {
 }
 
 /*
+  Formato del documento: alineación, letra, interlineado, márgenes, sangría y
+  partición. El documento manda sobre los ajustes generales, y lo que ninguno
+  fije no se escribe, de modo que un documento sin formato propio se exporta
+  como se ha exportado siempre.
+*/
+function documentFormatApi() {
+  return window.EdiMarkDocumentFormat || null;
+}
+
+function resolvedDocumentFormat(markdown) {
+  const api = documentFormatApi();
+  if (!api) return null;
+  const general = documentSettings().documentFormat || {};
+  const { frontMatter } = splitFrontMatter(typeof markdown === 'string' ? markdown : '');
+  const own = api.readFromFrontMatter(frontMatter);
+  const resolved = api.resolveDocumentFormat(general, own);
+  return api.isEmptyFormat(resolved) ? null : resolved;
+}
+
+/*
+  Hoja de estilos para HTML y EPUB. En el EPUB va como archivo, que es lo que
+  Pandoc empaqueta dentro del libro; en el HTML como bloque en la cabecera,
+  porque una hoja aparte sería un enlace roto en cuanto se mueva el archivo.
+*/
+function documentFormatCss(markdown) {
+  const api = documentFormatApi();
+  const format = resolvedDocumentFormat(markdown);
+  if (!api || !format) return '';
+  return api.toCssRules(format);
+}
+
+/*
+  Lo que el formato del documento aporta al TEX. Lo que Pandoc sabe escribir
+  viaja como metadato y el resto se suma al preámbulo del usuario, que va
+  primero: si él ya carga `geometry`, sus márgenes mandan y los del menú se
+  descartan en vez de romper la compilación con un choque de opciones.
+*/
+function documentFormatForLatex(markdown, userPreamble) {
+  const api = documentFormatApi();
+  const format = resolvedDocumentFormat(markdown);
+  const preamble = String(userPreamble || '');
+  if (!api || !format) return { entries: [], preamble, dropped: [] };
+  const hasGeometry = /\\usepackage(\[[^\]]*\])?\{geometry\}/.test(preamble);
+  const latex = api.toLatex(format, { hasGeometry });
+  const lines = [preamble.trim(), ...latex.preamble].filter(Boolean);
+  return { entries: latex.entries, preamble: lines.join('\n'), dropped: latex.dropped };
+}
+
+/*
   Portada del EPUB.
 
   Sin imagen de portada, el libro sale con el icono genérico en la estantería
@@ -632,6 +681,9 @@ async function exportDocument({
       tocTitle: tocTitleFor(documentLanguage()),
     }).markdown;
   }
+  // Se lee antes de tocar nada más: las claves siguen en el bloque de metadatos
+  // del documento y de ahí salen los estilos que se aplican al archivo final.
+  const exportFormat = resolvedDocumentFormat(normalized);
 
   triggerStatus(onStatus, config.preparingKey, config.preparingFallback);
 
@@ -679,6 +731,13 @@ async function exportDocument({
       el sistema de ficheros del WASM para que Pandoc la encuentre.
     */
     const extraFiles = {};
+    if (normalizedFormat === 'epub' && exportFormat) {
+      const css = documentFormatCss(normalized);
+      if (css) {
+        extraFiles['edimark-format.css'] = new TextEncoder().encode(css);
+        pandocArgs += ' --css=/edimark-format.css';
+      }
+    }
     if (normalizedFormat === 'epub') {
       const cover = epubCoverFile({
         title: extractMarkdownTitle(normalized) || String(documentTitle || '').trim(),
@@ -753,6 +812,8 @@ async function generateHtml({
     }).markdown
     : normalized;
 
+  const htmlFormatCss = standalone ? documentFormatCss(normalized) : '';
+
   triggerStatus(onStatus, 'html_export_preparing', 'Preparando HTML, espera...');
 
   try {
@@ -769,6 +830,12 @@ async function generateHtml({
       throw new Error('pandoc_empty_output');
     }
     let htmlResult = new TextDecoder().decode(resultadoBytes);
+
+    if (htmlFormatCss) {
+      // Al final de la cabecera para ganar a los estilos de la plantilla.
+      const styleBlock = `<style>\n${htmlFormatCss}\n</style>\n</head>`;
+      htmlResult = htmlResult.replace(/<\/head>/i, () => styleBlock);
+    }
 
     if (standalone) {
       // extractMarkdownTitle salta el código cercado: un `# npm install` dentro
@@ -793,6 +860,7 @@ async function generateLatex({
   markdown = '',
   standalone = false,
   onStatus = () => {},
+  onNotification = () => {},
 } = {}) {
   let normalized = normalizeThematicBreaks(normalizeNewlines(trimInlineMath(markdown || '')));
   if (!normalized.trim()) {
@@ -806,11 +874,24 @@ async function generateLatex({
   */
   let shiftHeadings = false;
   if (standalone) {
+    const settings = currentLatexSettings();
+    const latexFormat = documentFormatForLatex(normalized, settings.preamble || '');
+    if (latexFormat.dropped.length) {
+      // Dos `\usepackage{geometry}` abortan la compilación, así que manda el
+      // preámbulo escrito a mano y los márgenes del menú se quedan fuera.
+      triggerNotification(
+        onNotification,
+        'latex_margins_dropped',
+        'El preámbulo ya carga geometry, así que los márgenes del formato del documento no se han aplicado al TEX.',
+      );
+    }
     const prepared = prepareLatexStandalone(normalized, {
       lang: documentLanguage(),
       author: documentAuthor(),
       tocTitle: tocTitleFor(documentLanguage()),
-      ...currentLatexSettings(),
+      ...settings,
+      preamble: latexFormat.preamble,
+      extraEntries: latexFormat.entries,
     });
     normalized = prepared.markdown;
     shiftHeadings = prepared.shiftHeadings;
