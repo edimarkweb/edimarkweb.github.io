@@ -396,6 +396,16 @@ async function fetchImageBlob(url) {
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
+  /*
+    Una ruta que no existe rara vez responde 404: muchos servidores devuelven
+    la página de inicio con un 200 tan campante. Sin mirar el tipo, esa página
+    acababa incrustada como `data:text/html` y Pandoc la volcaba como texto,
+    llenando el documento exportado de base64.
+  */
+  const type = (response.headers.get('content-type') || '').toLowerCase();
+  if (type && !type.startsWith('image/')) {
+    throw new Error(`No es una imagen: ${type}`);
+  }
   // Si el servidor anuncia el tamaño, se descarta sin llegar a descargarla.
   const announced = Number(response.headers.get('content-length'));
   if (Number.isFinite(announced) && announced > MAX_IMAGE_BYTES) {

@@ -391,6 +391,40 @@ test('collectFetchableImageUrls recoge también las rutas relativas', () => {
   assert.deepEqual(collectRemoteImageUrls(markdown), ['https://ejemplo.org/x.png']);
 });
 
+/*
+  Un manual que explica cómo se escribe una imagen no está usando ninguna. Sin
+  esto, exportar el manual de EdiMarkWeb descargaba `imagenes/01.png`, recibía
+  del servidor la página de la aplicación entera y la incrustaba como texto:
+  páginas y páginas de base64 en el DOCX, el ODT y el EPUB.
+*/
+test('las imágenes escritas como código son ejemplos, no imágenes', () => {
+  const markdown = [
+    '![real](logo.png)',
+    'Se escribe `![Gráfico](imagenes/01.png)` y la imagen se queda donde está.',
+    '```markdown',
+    '![Otro](imagenes/02.png)',
+    '<img src="imagenes/03.png">',
+    '```',
+    '~~~',
+    '![Tercero](imagenes/04.png)',
+    '~~~',
+  ].join('\n\n');
+
+  assert.deepEqual(collectFetchableImageUrls(markdown), ['logo.png']);
+});
+
+test('tampoco se sustituye ni se descarta lo que está escrito como código', () => {
+  const markdown = 'Ejemplo: `![Gráfico](foto.png)`\n\n![de verdad](foto.png)';
+
+  const replaced = replaceImageUrls(markdown, { 'foto.png': 'data:image/png;base64,AAA' });
+  assert.match(replaced, /`!\[Gráfico\]\(foto\.png\)`/);
+  assert.match(replaced, /!\[de verdad\]\(data:image\/png;base64,AAA\)/);
+
+  const dropped = dropImagesByUrl(markdown, ['foto.png']);
+  assert.match(dropped, /`!\[Gráfico\]\(foto\.png\)`/);
+  assert.match(dropped, /\n\nde verdad$/);
+});
+
 test('inlineArchiveImages saca las imágenes del archivo y las incrusta', async () => {
   const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4]);
   const zip = await makeZip({

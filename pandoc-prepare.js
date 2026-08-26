@@ -585,11 +585,47 @@ export function collectArchiveImagePaths(markdown) {
   return collectImageSources(markdown).filter(url => !isRemote(url) && !isEmbedded(url));
 }
 
+/*
+  Lo escrito como código no es contenido: un manual que enseña `![Foto](x.png)`
+  entre acentos graves no está usando ninguna imagen, está hablando de ella.
+  Tratarlo como una imagen de verdad llevaba a descargar esa ruta y a incrustar
+  en el documento exportado lo que devolviera el servidor —una página de error
+  entera, en el peor caso—, así que estos tramos se apartan antes de buscar.
+
+  Se reconocen los bloques cercados y el código en línea. El de cuatro espacios
+  se queda fuera: distinguirlo de un párrafo sangrado pide analizar el
+  documento entero, y no es la forma en que se escribe un ejemplo suelto.
+*/
+const CODE_SEGMENT_RE = /(^|\n)([ \t]{0,3})(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:\n[ \t]{0,3}\3[^\n]*(?=\n|$)|$)|(`+)(?:[^`]|(?!\4)`)*\4/g;
+
+export function splitCodeSegments(markdown) {
+  const source = typeof markdown === 'string' ? markdown : '';
+  const segments = [];
+  let index = 0;
+  for (const match of source.matchAll(CODE_SEGMENT_RE)) {
+    if (match.index > index) segments.push({ text: source.slice(index, match.index), code: false });
+    segments.push({ text: match[0], code: true });
+    index = match.index + match[0].length;
+  }
+  if (index < source.length) segments.push({ text: source.slice(index), code: false });
+  return segments;
+}
+
+/* Aplica una transformación solo al texto que no es código. */
+export function mapOutsideCode(markdown, transform) {
+  return splitCodeSegments(markdown)
+    .map(segment => (segment.code ? segment.text : transform(segment.text)))
+    .join('');
+}
+
 function collectImageSources(markdown) {
   if (typeof markdown !== 'string') return [];
   const urls = new Set();
-  for (const match of markdown.matchAll(MD_IMAGE_RE)) urls.add(match[1]);
-  for (const match of markdown.matchAll(HTML_IMAGE_RE)) urls.add(match[2]);
+  splitCodeSegments(markdown).forEach((segment) => {
+    if (segment.code) return;
+    for (const match of segment.text.matchAll(MD_IMAGE_RE)) urls.add(match[1]);
+    for (const match of segment.text.matchAll(HTML_IMAGE_RE)) urls.add(match[2]);
+  });
   return [...urls];
 }
 
@@ -598,7 +634,8 @@ export function replaceImageUrls(markdown, replacements) {
   if (typeof markdown !== 'string' || !replacements) return markdown || '';
   const lookup = replacements instanceof Map ? replacements : new Map(Object.entries(replacements));
   if (lookup.size === 0) return markdown;
-  return markdown
+  // Igual que al buscarlas: un ejemplo escrito como código no es una imagen.
+  return mapOutsideCode(markdown, text => text
     .replace(MD_IMAGE_RE, (match, url) => {
       const next = lookup.get(url);
       return next ? match.replace(url, next) : match;
@@ -606,7 +643,7 @@ export function replaceImageUrls(markdown, replacements) {
     .replace(HTML_IMAGE_RE, (match, _quote, url) => {
       const next = lookup.get(url);
       return next ? match.replace(url, next) : match;
-    });
+    }));
 }
 
 // Fallback when an image cannot be fetched: keep the alt text so the export
@@ -615,13 +652,13 @@ export function dropImagesByUrl(markdown, urls) {
   if (typeof markdown !== 'string') return '';
   const targets = new Set(urls || []);
   if (targets.size === 0) return markdown;
-  return markdown
+  return mapOutsideCode(markdown, text => text
     .replace(MD_IMAGE_RE, (match, url) => {
       if (!targets.has(url)) return match;
       const alt = match.match(/^!\[([^\]]*)\]/);
       return alt ? alt[1] : '';
     })
-    .replace(HTML_IMAGE_RE, (match, _quote, url) => (targets.has(url) ? '' : match));
+    .replace(HTML_IMAGE_RE, (match, _quote, url) => (targets.has(url) ? '' : match)));
 }
 
 /*
