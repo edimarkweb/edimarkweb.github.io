@@ -194,7 +194,7 @@
   "table_btn_title": "Táboa (Ctrl+Shift+T)",
   "latex_inline_btn_title": "Fórmula LaTeX (Ctrl+M)",
   "latex_block_btn_title": "Fórmula LaTeX bloque (Ctrl+Shift+M)",
-  "formula_menu_btn_title": "Inserir fórmula",
+  "formula_menu_btn_title": "Inserir fórmula manualmente",
   "formula_menu_btn_text": "Fórmulas",
   "formula_inline_dollar": "$...$ (en liña)",
   "formula_inline_paren": "\\(...\\) (en liña)",
