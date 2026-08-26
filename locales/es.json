@@ -338,6 +338,8 @@
   "doc_format_identity_section": "Idioma y autor",
   "doc_format_reset_btn": "Quitar todo del documento",
   "doc_format_save_btn": "Aplicar",
+  "doc_settings_reset_btn": "Restablecer",
+  "doc_settings_save_btn": "Guardar",
   "doc_settings_format_section": "Formato del texto",
   "doc_settings_tab_document": "Documento",
   "doc_settings_tab_format": "Formato",

@@ -338,6 +338,8 @@
   "doc_format_identity_section": "Hizkuntza eta egilea",
   "doc_format_reset_btn": "Kendu dena dokumentutik",
   "doc_format_save_btn": "Aplikatu",
+  "doc_settings_reset_btn": "Berrezarri",
+  "doc_settings_save_btn": "Gorde",
   "doc_settings_format_section": "Testuaren formatua",
   "doc_settings_tab_document": "Dokumentua",
   "doc_settings_tab_format": "Formatua",

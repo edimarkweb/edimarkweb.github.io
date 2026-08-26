@@ -338,6 +338,8 @@
   "doc_format_identity_section": "Language and author",
   "doc_format_reset_btn": "Remove everything from the document",
   "doc_format_save_btn": "Apply",
+  "doc_settings_reset_btn": "Reset",
+  "doc_settings_save_btn": "Save",
   "doc_settings_format_section": "Text formatting",
   "doc_settings_tab_document": "Document",
   "doc_settings_tab_format": "Formatting",

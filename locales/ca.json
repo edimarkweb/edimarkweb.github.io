@@ -338,6 +338,8 @@
   "doc_format_identity_section": "Idioma i autor",
   "doc_format_reset_btn": "Treure-ho tot del document",
   "doc_format_save_btn": "Aplicar",
+  "doc_settings_reset_btn": "Restablir",
+  "doc_settings_save_btn": "Desar",
   "doc_settings_format_section": "Format del text",
   "doc_settings_tab_document": "Document",
   "doc_settings_tab_format": "Format",
