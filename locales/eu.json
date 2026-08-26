@@ -297,6 +297,7 @@
   "clipboard_empty_or_unsupported": "Arbela hutsik dago edo formatua ez da bateragarria.",
   "rename_document_aria_label": "Dokumentuaren izen berria",
   "save_file_done": "Dokumentua gorde da.",
+  "save_file_bundle_done": "Dokumentua eta irudiak {name} fitxategian gorde dira; deskonprimitu karpetak mantentzeko.",
   "save_file_error": "Ezin izan da dokumentua gorde.",
   "open_file_error": "Ezin izan da dokumentua ireki.",
   "unsaved_changes_title": "Gorde gabeko aldaketak",

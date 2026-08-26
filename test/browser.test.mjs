@@ -1077,6 +1077,105 @@ test('lo que sale de la vista previa conserva la ruta relativa, no el blob', asy
   assert.ok(!exportedHtml.includes('blob:'), 'el HTML exportado no debe llevar blobs de esta sesión');
 });
 
+test('en web Guardar escribe el Markdown y las imágenes vinculadas en la carpeta elegida', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__webSaveCalls = [];
+      const makeDirectory = (prefix = '') => ({
+        getDirectoryHandle: async (name) => makeDirectory(`${prefix}${name}/`),
+        getFileHandle: async (name) => ({
+          createWritable: async () => ({
+            write: async (contents) => {
+              const value = contents instanceof Blob
+                ? [...new Uint8Array(await contents.arrayBuffer())]
+                : String(contents);
+              window.__webSaveCalls.push(['write', `${prefix}${name}`, value]);
+            },
+            close: async () => {
+              window.__webSaveCalls.push(['close', `${prefix}${name}`]);
+            },
+          }),
+        }),
+      });
+      Object.defineProperty(window, 'showDirectoryPicker', {
+        configurable: true,
+        value: async options => {
+          window.__webSaveCalls.push(['picker', options.mode]);
+          return makeDirectory();
+        },
+      });
+    },
+  });
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('![Gráfico](imagenes/01-grafico.png)');
+  const carpeta = await crearCarpetaConImagen();
+  t.after(() => rm(carpeta, { recursive: true, force: true }));
+  await page.locator('#assets-folder-input').setInputFiles(carpeta);
+  await page.waitForSelector('#missing-assets-notice.hidden', { state: 'attached' });
+
+  await page.keyboard.press('Control+s');
+  await page.waitForFunction(() => window.__webSaveCalls.filter(call => call[0] === 'close').length === 2);
+
+  const calls = await page.evaluate(() => window.__webSaveCalls);
+  assert.deepEqual(calls[0], ['picker', 'readwrite']);
+  const markdownWrite = calls.find(call => call[0] === 'write' && call[1].endsWith('.md'));
+  assert.equal(markdownWrite[2], '![Gráfico](imagenes/01-grafico.png)');
+  const imageWrite = calls.find(call => call[0] === 'write' && call[1] === 'imagenes/01-grafico.png');
+  assert.deepEqual(imageWrite[2], [...PNG_PIXEL]);
+});
+
+test('en escritorio Guardar como copia las imágenes relativas del documento original', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__desktopAssetSaveCalls = [];
+      window.__EDIMARK_TAURI__ = {
+        dialog: {
+          open: async () => '/origen/tema.md',
+          save: async () => '/destino/tema.md',
+        },
+        fs: {
+          readTextFile: async () => '# Tema\n\n![Gráfico](imagenes/grafico.png)',
+          writeTextFile: async (path, contents) => {
+            window.__desktopAssetSaveCalls.push(['text', path, contents]);
+          },
+          mkdir: async (path, options) => {
+            window.__desktopAssetSaveCalls.push(['mkdir', path, options.recursive]);
+          },
+          writeFile: async (path, contents) => {
+            window.__desktopAssetSaveCalls.push(['bytes', path, [...contents]]);
+          },
+        },
+        app: {
+          readDocumentAsset: async path => {
+            window.__desktopAssetSaveCalls.push(['read-image', path]);
+            return [1, 2, 3, 4];
+          },
+          writeDocumentAsset: async (documentPath, relativePath, contents) => {
+            window.__desktopAssetSaveCalls.push([
+              'write-image', documentPath, relativePath, [...contents],
+            ]);
+          },
+        },
+      };
+    },
+  });
+  t.after(() => context.close());
+
+  await page.keyboard.press('Control+o');
+  await page.locator('.tab-name').getByText('tema.md', { exact: true }).waitFor();
+  await page.keyboard.press('Control+Shift+s');
+  await page.waitForFunction(() => window.__desktopAssetSaveCalls.some(call => call[0] === 'write-image'));
+
+  const calls = await page.evaluate(() => window.__desktopAssetSaveCalls);
+  assert.ok(calls.some(call => call[0] === 'read-image' && call[1] === '/origen/imagenes/grafico.png'));
+  assert.ok(calls.some(call => call[0] === 'write-image'
+    && call[1] === '/destino/tema.md'
+    && call[2] === 'imagenes/grafico.png'
+    && JSON.stringify(call[3]) === '[1,2,3,4]'));
+});
+
 test('pegar detecta imágenes publicadas solo en clipboardData.items', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());

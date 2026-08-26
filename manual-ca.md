@@ -156,6 +156,7 @@ Un `.md` corrent no porta les imatges a dins: les desa en una carpeta al costat 
 * A l'**aplicació d'escriptori** no cal fer res: en obrir el document, les imatges es busquen a la seva carpeta i apareixen.
 * Al **navegador** cap pàgina no pot llegir una carpeta del disc sense permís. Si el document anomena imatges que no es troben, sobre la previsualització apareix un avís amb el botó **Cerca la seva carpeta…**: en triar la carpeta del document, totes les imatges es veuen. N'hi ha prou de fer-ho un cop per sessió.
 * Arrossegar una carpeta sencera a l'editor obre els seus documents **i** registra les seves imatges alhora.
+* En **desar**, les imatges recuperades es copien al costat del `.md`, conservant rutes com `imatges/01.png`. Al navegador es tria la carpeta de destinació; si el navegador no permet escriure carpetes, es baixa un ZIP llest per descomprimir. **Desar com a…** fa la mateixa còpia a l'aplicació d'escriptori.
 
 El Markdown no canvia en cap moment: el que es desa, es copia o s'exporta continua portant la ruta que vas escriure. Les imatges que no es troben es marquen amb un requadre discontinu en lloc de la icona trencada del navegador.
 

@@ -297,6 +297,7 @@
   "clipboard_empty_or_unsupported": "O portapapeis está baleiro ou ten un formato non compatible.",
   "rename_document_aria_label": "Novo nome do documento",
   "save_file_done": "Documento gardado.",
+  "save_file_bundle_done": "Documento e imaxes gardados en {name}; descomprímeo para conservar os seus cartafoles.",
   "save_file_error": "Non se puido gardar o documento.",
   "open_file_error": "Non se puido abrir o documento.",
   "unsaved_changes_title": "Cambios sen gardar",

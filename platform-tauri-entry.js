@@ -53,6 +53,12 @@ if (window.__TAURI_INTERNALS__) {
       initialMarkdownPaths: () => invoke('initial_markdown_paths'),
       readMarkdownDocument: path => invoke('read_markdown_document', { path }),
       readDocumentAsset: path => invoke('read_document_asset', { path }),
+      writeDocumentAsset: (documentPath, relativePath, bytes) => invoke('write_document_asset', bytes, {
+        headers: {
+          'x-document-path': encodeURIComponent(documentPath),
+          'x-relative-path': encodeURIComponent(relativePath),
+        },
+      }),
       // El corrector de WebKitGTK (Linux) solo se enciende desde Rust; en los
       // demás sistemas la orden llega y no hace nada.
       setSpellChecking: (enabled, lang) => invoke('set_spell_checking', { enabled, lang }),

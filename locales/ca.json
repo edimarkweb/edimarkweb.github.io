@@ -297,6 +297,7 @@
   "clipboard_empty_or_unsupported": "El porta-retalls és buit o té un format no admès.",
   "rename_document_aria_label": "Nom nou del document",
   "save_file_done": "Document desat.",
+  "save_file_bundle_done": "Document i imatges desats a {name}; descomprimeix-lo per conservar-ne les carpetes.",
   "save_file_error": "No s'ha pogut desar el document.",
   "open_file_error": "No s'ha pogut obrir el document.",
   "unsaved_changes_title": "Canvis sense desar",

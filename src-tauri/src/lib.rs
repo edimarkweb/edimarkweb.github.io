@@ -99,6 +99,132 @@ fn document_asset_bytes(path: &str) -> Result<Vec<u8>, String> {
     std::fs::read(candidate).map_err(|error| error.to_string())
 }
 
+fn decode_ipc_header(value: &str) -> Result<String, String> {
+    fn hex_value(byte: u8) -> Option<u8> {
+        match byte {
+            b'0'..=b'9' => Some(byte - b'0'),
+            b'a'..=b'f' => Some(byte - b'a' + 10),
+            b'A'..=b'F' => Some(byte - b'A' + 10),
+            _ => None,
+        }
+    }
+
+    let input = value.as_bytes();
+    let mut decoded = Vec::with_capacity(input.len());
+    let mut index = 0;
+    while index < input.len() {
+        if input[index] == b'%' {
+            if index + 2 >= input.len() {
+                return Err("La ruta codificada no es válida.".to_string());
+            }
+            let high = hex_value(input[index + 1])
+                .ok_or_else(|| "La ruta codificada no es válida.".to_string())?;
+            let low = hex_value(input[index + 2])
+                .ok_or_else(|| "La ruta codificada no es válida.".to_string())?;
+            decoded.push((high << 4) | low);
+            index += 3;
+        } else {
+            decoded.push(input[index]);
+            index += 1;
+        }
+    }
+    String::from_utf8(decoded).map_err(|_| "La ruta no está codificada en UTF-8.".to_string())
+}
+
+fn write_document_asset_bytes(
+    document_path: &str,
+    relative_path: &str,
+    bytes: &[u8],
+) -> Result<(), String> {
+    use std::path::Component;
+
+    const MAX_BYTES: usize = 64 * 1024 * 1024;
+    if bytes.len() > MAX_BYTES {
+        return Err("La imagen es demasiado grande para guardarla.".to_string());
+    }
+
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let document = markdown_path(document_path, &cwd)
+        .ok_or_else(|| "La ruta no corresponde a un documento Markdown válido.".to_string())?;
+    let relative = Path::new(relative_path);
+    if relative.is_absolute()
+        || relative
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_)))
+    {
+        return Err(
+            "La ruta de la imagen debe quedar dentro de la carpeta del documento.".to_string(),
+        );
+    }
+    let extension = relative
+        .extension()
+        .map(|ext| ext.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
+    if !IMAGE_EXTENSIONS.contains(&extension.as_str()) {
+        return Err("Solo se pueden guardar imágenes junto al documento.".to_string());
+    }
+
+    let document_directory = document
+        .parent()
+        .ok_or_else(|| "El documento no tiene una carpeta válida.".to_string())?;
+    let mut safe_parent = document_directory.to_path_buf();
+    if let Some(relative_parent) = relative.parent() {
+        for component in relative_parent.components() {
+            let Component::Normal(name) = component else {
+                return Err("La carpeta de la imagen no es válida.".to_string());
+            };
+            let candidate = safe_parent.join(name);
+            if candidate.exists() {
+                let canonical = candidate.canonicalize().map_err(|error| error.to_string())?;
+                if !canonical.starts_with(document_directory) || !canonical.is_dir() {
+                    return Err("La carpeta de la imagen sale de la carpeta del documento.".to_string());
+                }
+                safe_parent = canonical;
+            } else {
+                std::fs::create_dir(&candidate).map_err(|error| error.to_string())?;
+                safe_parent = candidate;
+            }
+        }
+    }
+    let file_name = relative
+        .file_name()
+        .ok_or_else(|| "La imagen no tiene un nombre válido.".to_string())?;
+    let destination = safe_parent.join(file_name);
+    if destination.exists() {
+        let current_destination = destination
+            .canonicalize()
+            .map_err(|error| error.to_string())?;
+        if !current_destination.starts_with(document_directory) {
+            return Err("La imagen existente sale de la carpeta del documento.".to_string());
+        }
+    }
+    std::fs::write(destination, bytes).map_err(|error| error.to_string())
+}
+
+/// Copia una imagen recuperada junto al `.md` recién guardado. La ruta del
+/// documento y la relativa viajan codificadas en cabeceras ASCII; los bytes
+/// ocupan el cuerpo binario para no multiplicar su tamaño al serializarlos.
+#[tauri::command]
+fn write_document_asset(request: tauri::ipc::Request<'_>) -> Result<(), String> {
+    let document_path = request
+        .headers()
+        .get("x-document-path")
+        .and_then(|value| value.to_str().ok())
+        .ok_or_else(|| "Falta la ruta del documento.".to_string())
+        .and_then(decode_ipc_header)?;
+    let relative_path = request
+        .headers()
+        .get("x-relative-path")
+        .and_then(|value| value.to_str().ok())
+        .ok_or_else(|| "Falta la ruta de la imagen.".to_string())
+        .and_then(decode_ipc_header)?;
+    let bytes = match request.body() {
+        tauri::ipc::InvokeBody::Raw(bytes) => bytes,
+        _ => return Err("La imagen debe enviarse en binario.".to_string()),
+    };
+    write_document_asset_bytes(&document_path, &relative_path, bytes)
+}
+
 /// Sistema y arquitectura del binario en marcha, para elegir el instalador
 /// adecuado entre los adjuntos de la publicación de GitHub.
 #[tauri::command]
@@ -337,6 +463,7 @@ pub fn run() {
             initial_markdown_paths,
             read_markdown_document,
             read_document_asset,
+            write_document_asset,
             update_target,
             install_downloaded_update,
             set_spell_checking
@@ -367,7 +494,7 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::document_asset_bytes;
+    use super::{decode_ipc_header, document_asset_bytes, write_document_asset_bytes};
 
     /// Carpeta de trabajo con un documento y su imagen al lado, como la de
     /// cualquier artículo.
@@ -403,5 +530,66 @@ mod tests {
     fn exige_rutas_absolutas_y_archivos_existentes() {
         assert!(document_asset_bytes("imagenes/01.png").is_err());
         assert!(document_asset_bytes("/no/existe/01.png").is_err());
+    }
+
+    #[test]
+    fn guarda_una_imagen_dentro_de_la_carpeta_del_documento() {
+        let raiz = carpeta_con_imagen("guardar-imagen");
+        let documento = raiz.join("apuntes.md");
+        write_document_asset_bytes(
+            &documento.to_string_lossy(),
+            "nuevas/gráfico.png",
+            &[1, 2, 3, 4],
+        )
+        .expect("debería guardar la imagen");
+        assert_eq!(
+            std::fs::read(raiz.join("nuevas").join("gráfico.png")).expect("falta la imagen"),
+            vec![1, 2, 3, 4]
+        );
+        let _ = std::fs::remove_dir_all(raiz);
+    }
+
+    #[test]
+    fn no_guarda_fuera_del_documento_ni_permite_otras_extensiones() {
+        let raiz = carpeta_con_imagen("guardar-segura");
+        let documento = raiz.join("apuntes.md");
+        assert!(
+            write_document_asset_bytes(&documento.to_string_lossy(), "../fuera.png", &[1]).is_err()
+        );
+        assert!(
+            write_document_asset_bytes(&documento.to_string_lossy(), "datos.txt", &[1]).is_err()
+        );
+        let _ = std::fs::remove_dir_all(raiz);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn no_sigue_enlaces_simbolicos_fuera_de_la_carpeta_del_documento() {
+        use std::os::unix::fs::symlink;
+
+        let raiz = carpeta_con_imagen("guardar-enlace");
+        let fuera = std::env::temp_dir().join("edimark-test-destino-externo");
+        std::fs::create_dir_all(&fuera).expect("no se pudo crear el destino externo");
+        symlink(&fuera, raiz.join("enlace")).expect("no se pudo crear el enlace");
+        let documento = raiz.join("apuntes.md");
+        assert!(write_document_asset_bytes(
+            &documento.to_string_lossy(),
+            "enlace/fuera.png",
+            &[1]
+        )
+        .is_err());
+        assert!(!fuera.join("fuera.png").exists());
+        let _ = std::fs::remove_dir_all(raiz);
+        let _ = std::fs::remove_dir_all(fuera);
+    }
+
+    #[test]
+    fn descodifica_las_rutas_unicode_de_las_cabeceras_ipc() {
+        assert_eq!(
+            decode_ipc_header("%2Forigen%2FApuntes%20de%20biolog%C3%ADa.md")
+                .expect("debería descodificar"),
+            "/origen/Apuntes de biología.md"
+        );
+        assert!(decode_ipc_header("%GG").is_err());
     }
 }

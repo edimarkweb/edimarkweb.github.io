@@ -22,6 +22,18 @@
     return match ? match[1].toLowerCase() : '';
   }
 
+  function directoryFromPath(path) {
+    const raw = String(path || '');
+    const index = Math.max(raw.lastIndexOf('/'), raw.lastIndexOf('\\'));
+    return index < 0 ? '' : raw.slice(0, index);
+  }
+
+  function resolveChildPath(directory, relativePath) {
+    const windowsStyle = directory.includes('\\') && !directory.includes('/');
+    const separator = windowsStyle ? '\\' : '/';
+    return `${directory.replace(/[\\/]+$/, '')}${separator}${relativePath.replaceAll('/', separator)}`;
+  }
+
   function browserDownload(root, contents, suggestedName, mimeType) {
     const blob = contents instanceof root.Blob
       ? contents
@@ -46,6 +58,105 @@
       return new Uint8Array(await contents.arrayBuffer());
     }
     return new TextEncoder().encode(String(contents ?? ''));
+  }
+
+  /*
+    Una carpeta elegida para guardar solo puede recibir rutas descendentes.
+    Además de evitar que un ZIP contenga entradas peligrosas, esto impide que
+    una referencia como `../comunes/logo.png` escriba fuera de la carpeta que
+    el usuario acaba de autorizar.
+  */
+  function safeCompanionPath(path) {
+    const value = String(path || '').replace(/\\/g, '/');
+    if (!value || value.startsWith('/') || /^[a-zA-Z]:/.test(value)) return '';
+    const segments = value.split('/');
+    if (segments.some(segment => !segment || segment === '.' || segment === '..')) return '';
+    return segments.join('/');
+  }
+
+  function usableCompanionFiles(files) {
+    return (Array.isArray(files) ? files : [])
+      .map(file => ({
+        path: safeCompanionPath(file && (file.relativePath || file.path)),
+        contents: file && file.contents,
+      }))
+      .filter(file => file.path && file.contents != null);
+  }
+
+  async function writeDirectoryFile(directory, path, contents) {
+    const segments = path.split('/');
+    const name = segments.pop();
+    let targetDirectory = directory;
+    for (const segment of segments) {
+      targetDirectory = await targetDirectory.getDirectoryHandle(segment, { create: true });
+    }
+    const fileHandle = await targetDirectory.getFileHandle(name, { create: true });
+    const writable = await fileHandle.createWritable();
+    try {
+      await writable.write(contents);
+      await writable.close();
+    } catch (error) {
+      if (typeof writable.abort === 'function') await writable.abort().catch(() => {});
+      throw error;
+    }
+  }
+
+  async function saveBrowserDocumentWithAssets(root, {
+    suggestedName,
+    contents,
+    mimeType,
+    companionFiles,
+    directoryHandle,
+  }) {
+    const files = usableCompanionFiles(companionFiles);
+    let directory = directoryHandle || null;
+
+    if (!directory && typeof root.showDirectoryPicker === 'function') {
+      try {
+        directory = await root.showDirectoryPicker({ mode: 'readwrite' });
+      } catch (error) {
+        if (error && error.name === 'AbortError') {
+          return { saved: false, path: '', name: suggestedName };
+        }
+        throw error;
+      }
+    }
+
+    if (directory) {
+      await writeDirectoryFile(directory, suggestedName, contents);
+      for (const file of files) {
+        await writeDirectoryFile(directory, file.path, file.contents);
+      }
+      return {
+        saved: true,
+        path: '',
+        name: suggestedName,
+        directoryHandle: directory,
+        companionCount: files.length,
+      };
+    }
+
+    /*
+      Firefox no ofrece todavía un selector de carpeta con permiso de
+      escritura. Varias descargas sueltas perderían `imagenes/…`, porque el
+      atributo `download` no puede crear subcarpetas. Un ZIP conserva el `.md`
+      y exactamente la misma estructura relativa en todos los navegadores.
+    */
+    const archiveFiles = new Map([[suggestedName, await toBytes(root, contents)]]);
+    for (const file of files) {
+      archiveFiles.set(file.path, await toBytes(root, file.contents));
+    }
+    const { createZip } = await import('./zip-writer.js');
+    const archive = await createZip(archiveFiles);
+    const archiveName = suggestedName.replace(/\.[^.]+$/, '') + '.zip';
+    browserDownload(root, archive, archiveName, 'application/zip');
+    return {
+      saved: true,
+      path: '',
+      name: suggestedName,
+      archiveName,
+      companionCount: files.length,
+    };
   }
 
   function createPlatformApi(root = defaultRoot) {
@@ -208,8 +319,19 @@
         mimeType = 'application/octet-stream',
         existingPath = '',
         extensions,
+        companionFiles,
+        directoryHandle,
       } = {}) {
         if (!desktop) {
+          if (Array.isArray(companionFiles) && companionFiles.length) {
+            return saveBrowserDocumentWithAssets(root, {
+              suggestedName,
+              contents,
+              mimeType,
+              companionFiles,
+              directoryHandle,
+            });
+          }
           browserDownload(root, contents, suggestedName, mimeType);
           return { saved: true, path: '', name: suggestedName };
         }
@@ -233,7 +355,29 @@
         } else {
           await fs.writeFile(path, await toBytes(root, contents));
         }
-        return { saved: true, path, name: fileNameFromPath(path) || suggestedName };
+
+        const files = usableCompanionFiles(companionFiles);
+        const targetDirectory = directoryFromPath(path);
+        for (const file of files) {
+          const bytes = await toBytes(root, file.contents);
+          if (app && typeof app.writeDocumentAsset === 'function') {
+            await app.writeDocumentAsset(path, file.path, bytes);
+            continue;
+          }
+          const targetPath = resolveChildPath(targetDirectory, file.path);
+          const parentDirectory = directoryFromPath(targetPath);
+          if (parentDirectory && typeof fs.mkdir === 'function') {
+            await fs.mkdir(parentDirectory, { recursive: true });
+          }
+          await fs.writeFile(targetPath, bytes);
+        }
+        const result = {
+          saved: true,
+          path,
+          name: fileNameFromPath(path) || suggestedName,
+        };
+        if (Array.isArray(companionFiles)) result.companionCount = files.length;
+        return result;
       },
     };
   }

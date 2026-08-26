@@ -87,6 +87,40 @@ test('guarda datos binarios en la ruta escogida', async () => {
   assert.equal(result.saved, true);
 });
 
+test('en escritorio copia las imágenes relativas junto al Markdown guardado', async () => {
+  const writes = [];
+  const platform = createPlatformApi({
+    Blob,
+    __EDIMARK_TAURI__: {
+      dialog: { save: async () => '/tmp/copia/tema.md' },
+      fs: {
+        writeTextFile: async (path, contents) => writes.push([path, contents]),
+        writeFile: async () => assert.fail('la imagen debe pasar por el comando seguro'),
+      },
+      app: {
+        writeDocumentAsset: async (documentPath, relativePath, contents) => {
+          writes.push(['asset', documentPath, relativePath, [...contents]]);
+        },
+      },
+    },
+  });
+
+  const result = await platform.saveFile({
+    suggestedName: 'tema.md',
+    contents: '# Tema',
+    companionFiles: [{
+      relativePath: 'imagenes/grafico.png',
+      contents: new Uint8Array([1, 2, 3]),
+    }],
+  });
+
+  assert.deepEqual(writes, [
+    ['/tmp/copia/tema.md', '# Tema'],
+    ['asset', '/tmp/copia/tema.md', 'imagenes/grafico.png', [1, 2, 3]],
+  ]);
+  assert.equal(result.companionCount, 1);
+});
+
 test('cancelar el diálogo no escribe ni marca el documento como guardado', async () => {
   const platform = createPlatformApi({
     Blob,
@@ -101,6 +135,137 @@ test('cancelar el diálogo no escribe ni marca el documento como guardado', asyn
     path: '',
     name: 'tema.md',
   });
+});
+
+test('en web guarda el Markdown y sus imágenes relativas dentro de la carpeta elegida', async () => {
+  const writes = new Map();
+
+  function directoryHandle(prefix = '') {
+    return {
+      async getDirectoryHandle(name, options) {
+        assert.deepEqual(options, { create: true });
+        return directoryHandle(`${prefix}${name}/`);
+      },
+      async getFileHandle(name, options) {
+        assert.deepEqual(options, { create: true });
+        const path = `${prefix}${name}`;
+        return {
+          async createWritable() {
+            return {
+              async write(contents) {
+                writes.set(path, contents instanceof Blob
+                  ? new Uint8Array(await contents.arrayBuffer())
+                  : contents);
+              },
+              async close() {},
+            };
+          },
+        };
+      },
+    };
+  }
+
+  const selectedDirectory = directoryHandle();
+  let pickerOptions;
+  const platform = createPlatformApi({
+    Blob,
+    showDirectoryPicker: async options => {
+      pickerOptions = options;
+      return selectedDirectory;
+    },
+  });
+
+  const result = await platform.saveFile({
+    suggestedName: 'tema.md',
+    contents: '# Tema\n\n![Gráfico](imagenes/grafico.png)',
+    mimeType: 'text/markdown',
+    companionFiles: [{
+      relativePath: 'imagenes/grafico.png',
+      contents: new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' }),
+    }],
+  });
+
+  assert.deepEqual(pickerOptions, { mode: 'readwrite' });
+  assert.equal(writes.get('tema.md'), '# Tema\n\n![Gráfico](imagenes/grafico.png)');
+  assert.deepEqual([...writes.get('imagenes/grafico.png')], [1, 2, 3]);
+  assert.equal(result.saved, true);
+  assert.equal(result.name, 'tema.md');
+  assert.equal(result.directoryHandle, selectedDirectory);
+  assert.equal(result.companionCount, 1);
+});
+
+test('en web no permite que una imagen acompañante salga de la carpeta elegida', async () => {
+  const writes = [];
+  const selectedDirectory = {
+    async getDirectoryHandle() {
+      assert.fail('no debe crear una carpeta superior');
+    },
+    async getFileHandle(name) {
+      return {
+        async createWritable() {
+          return {
+            async write() { writes.push(name); },
+            async close() {},
+          };
+        },
+      };
+    },
+  };
+  const platform = createPlatformApi({
+    Blob,
+    showDirectoryPicker: async () => selectedDirectory,
+  });
+
+  const result = await platform.saveFile({
+    suggestedName: 'tema.md',
+    contents: '# Tema',
+    companionFiles: [{ relativePath: '../privada.png', contents: new Uint8Array([1]) }],
+  });
+
+  assert.deepEqual(writes, ['tema.md']);
+  assert.equal(result.companionCount, 0);
+});
+
+test('en web sin escritura de carpetas descarga un ZIP con el Markdown y sus imágenes', async () => {
+  let downloadedBlob;
+  let downloadedName;
+  const link = {
+    click() { downloadedName = this.download; },
+  };
+  const platform = createPlatformApi({
+    Blob,
+    URL: {
+      createObjectURL(blob) {
+        downloadedBlob = blob;
+        return 'blob:prueba';
+      },
+      revokeObjectURL() {},
+    },
+    document: {
+      createElement: () => link,
+      body: {
+        appendChild() {},
+        removeChild() {},
+      },
+    },
+    setTimeout() {},
+  });
+
+  const result = await platform.saveFile({
+    suggestedName: 'tema.md',
+    contents: '# Tema\n\n![Gráfico](imagenes/grafico.png)',
+    companionFiles: [{
+      relativePath: 'imagenes/grafico.png',
+      contents: new Uint8Array([1, 2, 3]),
+    }],
+  });
+
+  const { readZipEntries } = await import('../zip-reader.js');
+  const entries = await readZipEntries(await downloadedBlob.arrayBuffer());
+  assert.equal(downloadedName, 'tema.zip');
+  assert.equal(result.archiveName, 'tema.zip');
+  assert.equal(new TextDecoder().decode(entries.get('tema.md')), '# Tema\n\n![Gráfico](imagenes/grafico.png)');
+  assert.deepEqual([...entries.get('imagenes/grafico.png')], [1, 2, 3]);
 });
 
 test('abre los enlaces externos con el navegador del sistema en Tauri', async () => {

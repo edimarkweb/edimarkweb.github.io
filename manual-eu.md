@@ -156,6 +156,7 @@ Aurrebistan eta esportazio-formatu bostetan aplikatzen da, jakitea komeni den hi
 * **Mahaigaineko aplikazioan** ez dago ezer egin beharrik: dokumentua irekitzean, irudiak bere karpetan bilatzen dira eta agertu egiten dira.
 * **Nabigatzailean** orri batek ezin du diskoko karpetarik irakurri baimenik gabe. Dokumentuak aurkitzen ez diren irudiak izendatzen baditu, aurrebistaren gainean ohar bat agertzen da **Bilatu bere karpeta…** botoiarekin: dokumentuaren karpeta aukeratuta, irudi guztiak ikusten dira. Saio bakoitzeko behin egitea nahikoa da.
 * Karpeta oso bat editorera arrastatzeak bertako dokumentuak irekitzen ditu **eta** bertako irudiak erregistratzen ditu aldi berean.
+* **Gordetzean**, berreskuratutako irudiak `.md` fitxategiaren ondoan kopiatzen dira, `irudiak/01.png` bezalako bideak mantenduz. Nabigatzailean helmugako karpeta aukeratzen da; nabigatzaileak ezin badu karpetetan idatzi, deskonprimitzeko prest dagoen ZIP bat deskargatzen da. **Gorde honela…** aukerak kopia bera egiten du mahaigaineko aplikazioan.
 
 Markdown-a ez da inoiz aldatzen: gordetzen, kopiatzen edo esportatzen dena idatzi zenuen bidearekin doa. Aurkitzen ez diren irudiak marra etenezko lauki batekin markatzen dira, nabigatzailearen ikono hautsiaren ordez.
 

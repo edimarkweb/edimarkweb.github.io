@@ -297,6 +297,7 @@
   "clipboard_empty_or_unsupported": "El portapapeles está vacío o en un formato no soportado.",
   "rename_document_aria_label": "Nuevo nombre del documento",
   "save_file_done": "Documento guardado.",
+  "save_file_bundle_done": "Documento e imágenes guardados en {name}; descomprímelo para mantener sus carpetas.",
   "save_file_error": "No se pudo guardar el documento.",
   "open_file_error": "No se pudo abrir el documento.",
   "unsaved_changes_title": "Cambios sin guardar",

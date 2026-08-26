@@ -297,6 +297,7 @@
   "clipboard_empty_or_unsupported": "The clipboard is empty or uses an unsupported format.",
   "rename_document_aria_label": "New document name",
   "save_file_done": "Document saved.",
+  "save_file_bundle_done": "Document and images saved in {name}; extract it to preserve their folders.",
   "save_file_error": "The document could not be saved.",
   "open_file_error": "The document could not be opened.",
   "unsaved_changes_title": "Unsaved changes",

@@ -156,6 +156,7 @@ An ordinary `.md` does not carry its images inside: it keeps them in a folder ne
 * In the **desktop application** there is nothing to do: when the document opens, its images are looked up in its folder and appear.
 * In the **browser** no page can read a folder from disk without permission. If the document names images that cannot be found, a notice appears above the preview with a **Find its folder…** button: choose the document folder and every image shows up. Once per session is enough.
 * Dragging a whole folder onto the editor opens its documents **and** registers its images in one go.
+* When you **save**, recovered images are copied next to the `.md`, preserving paths such as `images/01.png`. In the browser you choose the destination folder; if the browser cannot write folders, a ready-to-extract ZIP is downloaded. **Save as…** makes the same copy in the desktop application.
 
 The Markdown never changes: what you save, copy or export still carries the path you wrote. Images that cannot be found are marked with a dashed frame instead of the browser's broken icon.
 

@@ -3215,7 +3215,12 @@ function setLatexImportBusy(isBusy) {
     }
 }
 
-async function saveFile(filename, content, type, { existingPath = '', extensions } = {}) {
+async function saveFile(filename, content, type, {
+    existingPath = '',
+    extensions,
+    companionFiles,
+    directoryHandle,
+} = {}) {
     const platform = window.EdiMarkPlatform;
     if (platform && typeof platform.saveFile === 'function') {
         return platform.saveFile({
@@ -3224,6 +3229,8 @@ async function saveFile(filename, content, type, { existingPath = '', extensions
             mimeType: type,
             existingPath,
             extensions,
+            companionFiles,
+            directoryHandle,
         });
     }
 
@@ -3240,16 +3247,62 @@ async function saveFile(filename, content, type, { existingPath = '', extensions
     return { saved: true, path: '', name: filename };
 }
 
+/*
+  Reúne solo las imágenes relativas que aparecen de verdad en el Markdown y
+  que el navegador recuperó de una carpeta vinculada o arrastrada. `marked`
+  evita confundir con imágenes los ejemplos escritos dentro de bloques de
+  código. Las rutas que suben con `../` no pueden copiarse de forma segura a la
+  carpeta de destino y se dejan como estaban.
+*/
+async function collectLinkedDocumentAssets(doc, content) {
+    const platform = window.EdiMarkPlatform;
+    if (!doc || !assetPathUtils || !window.marked) return [];
+    const container = document.createElement('div');
+    container.innerHTML = marked.parse(splitDocumentFrontMatter(content).body);
+    const relativePaths = new Set();
+    container.querySelectorAll('img[src]').forEach(img => {
+        const original = img.getAttribute('src') || '';
+        if (!assetPathUtils.isRelativeAssetPath(original)) return;
+        const relativePath = assetPathUtils.normalizeRelativePath(original);
+        if (!relativePath || relativePath === '..' || relativePath.startsWith('../')) return;
+        relativePaths.add(relativePath);
+    });
+
+    const assets = [];
+    for (const relativePath of relativePaths) {
+        const file = lookupAssetFile(doc, relativePath);
+        if (file) {
+            assets.push({ relativePath, contents: file });
+            continue;
+        }
+        if (platform?.isDesktop && doc.filePath && typeof platform.readDocumentAsset === 'function') {
+            const baseDir = assetPathUtils.directoryOf(doc.filePath);
+            const sourcePath = assetPathUtils.resolveAgainstDirectory(baseDir, relativePath);
+            try {
+                const bytes = await platform.readDocumentAsset(sourcePath);
+                if (bytes && bytes.length) assets.push({ relativePath, contents: bytes });
+            } catch (error) {
+                console.debug('No se pudo preparar la imagen para guardarla:', sourcePath, error);
+            }
+        }
+    }
+    return assets;
+}
+
 async function saveCurrentDocument({ saveAs = false } = {}) {
     const content = markdownEditor.getValue();
     const doc = docs.find(d => d.id === currentId);
     const rawName = doc && typeof doc.name === 'string' ? doc.name.trim() : '';
     const cleanName = rawName.replace(/\.md$/i, '') || 'documento';
     const filename = `${cleanName}.md`;
+    const assetEntry = doc ? documentAssetEntry(doc.id) : null;
     try {
+        const companionFiles = await collectLinkedDocumentAssets(doc, content);
         const result = await saveFile(filename, content, 'text/markdown;charset=utf-8', {
             existingPath: saveAs ? '' : (doc?.filePath || ''),
             extensions: ['md', 'markdown'],
+            companionFiles,
+            directoryHandle: saveAs ? null : (assetEntry?.saveDirectoryHandle || null),
         });
         if (!result || !result.saved) return false;
         if (doc) {
@@ -3262,8 +3315,18 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
             if (tabNameEl) tabNameEl.textContent = savedName;
             updateDirtyIndicator(currentId, false);
             saveDocsList();
+            if (assetEntry && result.directoryHandle) {
+                assetEntry.saveDirectoryHandle = result.directoryHandle;
+            }
         }
-        reportStatus(getTranslation('save_file_done', 'Documento guardado.'));
+        if (result.archiveName) {
+            reportStatus(getTranslation(
+                'save_file_bundle_done',
+                'Documento e imágenes guardados en {name}; descomprímelo para mantener sus carpetas.'
+            ).replace('{name}', result.archiveName));
+        } else {
+            reportStatus(getTranslation('save_file_done', 'Documento guardado.'));
+        }
         return true;
     } catch (error) {
         console.error('No se pudo guardar el documento:', error);
