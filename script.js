@@ -4609,11 +4609,18 @@ window.onload = () => {
         });
     }
     if (spellcheckToggleBtn) {
-        const spellcheckCheck = spellcheckToggleBtn.querySelector('.submenu-check');
+        /*
+          El icono se busca cada vez y no se guarda en una variable: el SVG que
+          escribe Lucide conserva su `data-lucide`, así que la siguiente llamada
+          a `createIcons()` lo sustituye por otro y la referencia guardada se
+          queda apuntando a un nodo que ya no está en la página. Con ella, el
+          corrector se apagaba de verdad pero la marca no se movía.
+        */
         const syncSpellcheckToggle = () => {
             const enabled = spellCheckEnabled();
             spellcheckToggleBtn.setAttribute('aria-checked', enabled ? 'true' : 'false');
-            if (spellcheckCheck) spellcheckCheck.classList.toggle('hidden', !enabled);
+            const check = spellcheckToggleBtn.querySelector('.submenu-check');
+            if (check) check.classList.toggle('hidden', !enabled);
         };
         syncSpellcheckToggle();
         spellcheckToggleBtn.addEventListener('click', () => {

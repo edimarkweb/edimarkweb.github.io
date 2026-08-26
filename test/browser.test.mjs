@@ -1745,3 +1745,30 @@ test('al imprimir no sale nada de la interfaz, solo el documento', async (t) => 
 
   await page.emulateMedia({ media: 'screen' });
 });
+
+/*
+  La marca del corrector se quedaba puesta aunque el corrector se apagara: el
+  SVG que escribe Lucide conserva su `data-lucide`, la siguiente pasada de
+  `createIcons()` lo sustituye y la referencia guardada apuntaba a un nodo que
+  ya no estaba en la página.
+*/
+test('la marca del corrector ortográfico sigue al estado real', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const boton = page.locator('#spellcheck-toggle-btn');
+  const marca = page.locator('#spellcheck-toggle-btn .submenu-check');
+  const marcaVisible = () => marca.evaluate(check => getComputedStyle(check).display !== 'none');
+
+  assert.equal(await boton.getAttribute('aria-checked'), 'true');
+  assert.equal(await marcaVisible(), true, 'de fábrica está encendido y marcado');
+
+  await boton.evaluate(btn => btn.click());
+  assert.equal(await boton.getAttribute('aria-checked'), 'false');
+  assert.equal(await marcaVisible(), false, 'al apagarlo la marca se quita');
+  assert.equal(await page.locator('#markdown-input').getAttribute('spellcheck'), 'false');
+
+  await boton.evaluate(btn => btn.click());
+  assert.equal(await marcaVisible(), true, 'y vuelve al encenderlo');
+  assert.equal(await page.locator('#markdown-input').getAttribute('spellcheck'), 'true');
+});
