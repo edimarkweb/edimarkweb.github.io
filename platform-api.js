@@ -48,6 +48,95 @@
     root.setTimeout(() => root.URL.revokeObjectURL(url), 1000);
   }
 
+  /*
+    Guardar en el navegador con el diálogo del sistema, cuando lo hay.
+
+    Un `<a download>` no guarda: descarga. El navegador decide solo dónde cae
+    el archivo y lo hace pasar por su filtro de descargas, que con un `.md`
+    grande —el manual importado, con sus imágenes en base64— avisa de que el
+    archivo «no es seguro»; y si el usuario elige un nombre que ya existe, el
+    aviso de reemplazo lo da el propio navegador y luego descarta la descarga
+    sin escribir nada ni volver a preguntar. `showSaveFilePicker` es un
+    «Guardar como» de verdad: la ruta la elige el usuario, el reemplazo lo
+    resuelve el sistema de archivos y nada de esto es una descarga.
+
+    Firefox todavía no lo tiene, y el propio Chrome lo rechaza fuera de un
+    gesto del usuario, así que cualquier fallo que no sea una cancelación
+    vuelve al camino de siempre en lugar de dejar el trabajo sin guardar.
+  */
+  function saveFilePickerTypes(suggestedName, mimeType) {
+    const extension = extensionFromName(suggestedName);
+    if (!extension) return undefined;
+    return [{
+      description: extension.toUpperCase(),
+      accept: { [mimeType || 'application/octet-stream']: [`.${extension}`] },
+    }];
+  }
+
+  async function writeFileHandle(fileHandle, contents) {
+    const writable = await fileHandle.createWritable();
+    try {
+      await writable.write(contents);
+      await writable.close();
+    } catch (error) {
+      if (typeof writable.abort === 'function') await writable.abort().catch(() => {});
+      throw error;
+    }
+  }
+
+  /*
+    El permiso de escritura sobre un archivo elegido dura lo que dura la
+    página, y el usuario puede retirarlo. Se comprueba antes de escribir para
+    que un permiso caducado acabe en el diálogo de siempre y no en un error.
+  */
+  async function canWriteToHandle(fileHandle) {
+    if (!fileHandle || typeof fileHandle.createWritable !== 'function') return false;
+    if (typeof fileHandle.queryPermission !== 'function') return true;
+    const options = { mode: 'readwrite' };
+    try {
+      if (await fileHandle.queryPermission(options) === 'granted') return true;
+      if (typeof fileHandle.requestPermission !== 'function') return false;
+      return await fileHandle.requestPermission(options) === 'granted';
+    } catch (error) {
+      console.warn('No se pudo comprobar el permiso del archivo guardado:', error);
+      return false;
+    }
+  }
+
+  /*
+    Volver a guardar el mismo documento escribe en el archivo que ya se eligió,
+    sin preguntar otra vez: es lo que hace `Ctrl+S` en la aplicación de
+    escritorio. Si el archivo ya no está donde estaba, o el permiso caducó, se
+    vuelve al diálogo en lugar de dar un error.
+  */
+  async function browserSaveToHandle(fileHandle, contents, suggestedName) {
+    if (!await canWriteToHandle(fileHandle)) return null;
+    try {
+      await writeFileHandle(fileHandle, contents);
+    } catch (error) {
+      console.warn('No se pudo escribir en el archivo guardado:', error);
+      return null;
+    }
+    return { saved: true, name: fileHandle.name || suggestedName, fileHandle };
+  }
+
+  async function browserSaveWithPicker(root, contents, suggestedName, mimeType) {
+    if (typeof root.showSaveFilePicker !== 'function') return null;
+    let fileHandle;
+    try {
+      fileHandle = await root.showSaveFilePicker({
+        suggestedName,
+        types: saveFilePickerTypes(suggestedName, mimeType),
+      });
+    } catch (error) {
+      if (error && error.name === 'AbortError') return { saved: false };
+      console.warn('No se pudo abrir el diálogo de guardado del navegador:', error);
+      return null;
+    }
+    await writeFileHandle(fileHandle, contents);
+    return { saved: true, name: fileHandle.name || suggestedName, fileHandle };
+  }
+
   async function toBytes(root, contents) {
     if (contents instanceof Uint8Array) return contents;
     if (contents instanceof ArrayBuffer) return new Uint8Array(contents);
@@ -415,6 +504,7 @@
         extensions,
         companionFiles,
         directoryHandle,
+        fileHandle,
       } = {}) {
         if (!desktop) {
           if (Array.isArray(companionFiles) && companionFiles.length) {
@@ -425,6 +515,16 @@
               companionFiles,
               directoryHandle,
             });
+          }
+          const picked = (fileHandle && await browserSaveToHandle(fileHandle, contents, suggestedName))
+            || await browserSaveWithPicker(root, contents, suggestedName, mimeType);
+          if (picked) {
+            return {
+              saved: picked.saved,
+              path: '',
+              name: picked.name || suggestedName,
+              ...(picked.fileHandle ? { fileHandle: picked.fileHandle } : {}),
+            };
           }
           browserDownload(root, contents, suggestedName, mimeType);
           return { saved: true, path: '', name: suggestedName };

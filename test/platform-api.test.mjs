@@ -473,3 +473,178 @@ test('los diálogos recuerdan la última carpeta de la sesión', async () => {
   await platform.saveFile({ suggestedName: 'tema-1.docx', contents: 'x', extensions: ['docx'] });
   assert.deepEqual(dialogos[2], ['save', '/home/juanjo/apuntes/tema-1.docx']);
 });
+
+/*
+  Un `<a download>` no es un guardado: el navegador lo pasa por su filtro de
+  descargas y un reemplazo puede acabar sin escribir nada. Donde hay diálogo
+  del sistema se usa ese.
+*/
+test('en web guarda con el diálogo del navegador en lugar de descargar', async () => {
+  let pickerOptions;
+  let written = '';
+  let closed = false;
+  const fileHandle = {
+    name: 'apuntes.md',
+    async createWritable() {
+      return {
+        async write(contents) { written = contents; },
+        async close() { closed = true; },
+      };
+    },
+  };
+  const platform = createPlatformApi({
+    Blob,
+    showSaveFilePicker: async options => {
+      pickerOptions = options;
+      return fileHandle;
+    },
+    document: { createElement: () => assert.fail('no debe descargar') },
+  });
+
+  const result = await platform.saveFile({
+    suggestedName: 'tema.md',
+    contents: '# Tema',
+    mimeType: 'text/markdown;charset=utf-8',
+  });
+
+  assert.equal(pickerOptions.suggestedName, 'tema.md');
+  assert.deepEqual(pickerOptions.types, [{
+    description: 'MD',
+    accept: { 'text/markdown;charset=utf-8': ['.md'] },
+  }]);
+  assert.equal(written, '# Tema');
+  assert.equal(closed, true);
+  // El nombre que vale es el que eligió el usuario, no el propuesto.
+  assert.deepEqual(result, { saved: true, path: '', name: 'apuntes.md', fileHandle });
+});
+
+test('cancelar el diálogo del navegador no descarga ni marca el documento como guardado', async () => {
+  const platform = createPlatformApi({
+    Blob,
+    showSaveFilePicker: async () => {
+      const error = new Error('cancelado');
+      error.name = 'AbortError';
+      throw error;
+    },
+    document: { createElement: () => assert.fail('no debe descargar') },
+  });
+
+  assert.deepEqual(await platform.saveFile({ suggestedName: 'tema.md', contents: '# Tema' }), {
+    saved: false,
+    path: '',
+    name: 'tema.md',
+  });
+});
+
+/*
+  Firefox no tiene el diálogo, y Chrome lo rechaza fuera de un gesto del
+  usuario: antes que perder el documento, se descarga como siempre.
+*/
+test('sin diálogo utilizable el navegador vuelve a la descarga de siempre', async () => {
+  let downloadedName = '';
+  const platform = createPlatformApi({
+    Blob,
+    showSaveFilePicker: async () => { throw new Error('gesto de usuario requerido'); },
+    URL: { createObjectURL: () => 'blob:tema', revokeObjectURL() {} },
+    document: {
+      createElement: () => ({ click() {} }),
+      body: { appendChild(node) { downloadedName = node.download; }, removeChild() {} },
+    },
+    setTimeout() {},
+  });
+
+  assert.deepEqual(await platform.saveFile({ suggestedName: 'tema.md', contents: '# Tema' }), {
+    saved: true,
+    path: '',
+    name: 'tema.md',
+  });
+  assert.equal(downloadedName, 'tema.md');
+});
+
+/*
+  Guardar dos veces el mismo documento no debe volver a preguntar: el segundo
+  `Ctrl+S` escribe en el archivo que ya se eligió, como en el escritorio.
+*/
+test('en web vuelve a escribir en el archivo ya elegido sin abrir el diálogo', async () => {
+  const writes = [];
+  const permissions = [];
+  const fileHandle = {
+    name: 'apuntes.md',
+    async queryPermission(options) { permissions.push(options); return 'granted'; },
+    async createWritable() {
+      return { async write(contents) { writes.push(contents); }, async close() {} };
+    },
+  };
+  const platform = createPlatformApi({
+    Blob,
+    showSaveFilePicker: async () => assert.fail('no debe volver a preguntar'),
+    document: { createElement: () => assert.fail('no debe descargar') },
+  });
+
+  const result = await platform.saveFile({
+    suggestedName: 'tema.md',
+    contents: '# Tema corregido',
+    fileHandle,
+  });
+
+  assert.deepEqual(permissions, [{ mode: 'readwrite' }]);
+  assert.deepEqual(writes, ['# Tema corregido']);
+  assert.deepEqual(result, { saved: true, path: '', name: 'apuntes.md', fileHandle });
+});
+
+test('un permiso retirado sobre el archivo guardado devuelve al diálogo', async () => {
+  let asked = false;
+  const staleHandle = {
+    name: 'apuntes.md',
+    async queryPermission() { return 'prompt'; },
+    async requestPermission() { return 'denied'; },
+    async createWritable() { assert.fail('no debe escribir sin permiso'); },
+  };
+  const freshHandle = {
+    name: 'apuntes.md',
+    async createWritable() {
+      return { async write() {}, async close() {} };
+    },
+  };
+  const platform = createPlatformApi({
+    Blob,
+    showSaveFilePicker: async () => { asked = true; return freshHandle; },
+  });
+
+  const result = await platform.saveFile({
+    suggestedName: 'tema.md',
+    contents: '# Tema',
+    fileHandle: staleHandle,
+  });
+
+  assert.equal(asked, true);
+  assert.equal(result.saved, true);
+  assert.equal(result.fileHandle, freshHandle);
+});
+
+test('si el archivo guardado ya no admite escritura se pide otra ubicación', async () => {
+  let asked = false;
+  const brokenHandle = {
+    name: 'apuntes.md',
+    async createWritable() { throw new Error('el archivo ya no está'); },
+  };
+  const freshHandle = {
+    name: 'apuntes.md',
+    async createWritable() {
+      return { async write() {}, async close() {} };
+    },
+  };
+  const platform = createPlatformApi({
+    Blob,
+    showSaveFilePicker: async () => { asked = true; return freshHandle; },
+  });
+
+  const result = await platform.saveFile({
+    suggestedName: 'tema.md',
+    contents: '# Tema',
+    fileHandle: brokenHandle,
+  });
+
+  assert.equal(asked, true);
+  assert.equal(result.fileHandle, freshHandle);
+});
