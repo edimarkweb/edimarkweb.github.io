@@ -404,7 +404,7 @@
                     <span class="hidden sm:inline" data-i18n-key="edicuatex_btn_text">Editor</span>
                 </button>
                 <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
-                <button id="doc-format-toolbar-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="doc_lang_btn_title" title="Idioma, autor y formato de este documento.">
+                <button id="doc-format-toolbar-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="doc_lang_btn_title" title="Idioma, autor, índice y formato de este documento.">
                     <i data-lucide="sliders-horizontal"></i>
                     <span class="hidden sm:inline" data-i18n-key="doc_format_toolbar_btn_text">Formato</span>
                 </button>
@@ -743,35 +743,67 @@
             <p class="text-sm text-slate-500 dark:text-slate-400" data-i18n-key="doc_format_modal_hint">Se guarda en el propio documento y viaja con él. Todo lo que dejes en «Heredado» sigue a las opciones de exportación.</p>
             <p class="text-sm text-slate-500 dark:text-slate-400 mb-5" data-i18n-key="doc_format_inherited_hint">Debajo de cada campo vacío se ve el valor que hereda ahora mismo.</p>
             <div class="space-y-4">
-                <fieldset class="rounded-lg border border-slate-200 px-4 pb-4 pt-2 dark:border-slate-700">
-                    <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" data-i18n-key="doc_format_identity_section">Idioma y autor</legend>
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label for="doc-own-language" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_own_language_label">Idioma</label>
-                            <select id="doc-own-language" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
-                                <option value="" data-i18n-key="doc_format_inherit">Heredado</option>
-                                <option value="es">Español</option>
-                                <option value="en">English</option>
-                                <option value="ca">Català</option>
-                                <option value="gl">Galego</option>
-                                <option value="eu">Euskara</option>
-                                <option value="other" data-i18n-key="doc_own_language_other">Otro…</option>
-                            </select>
+                <div id="doc-format-tablist" role="tablist" class="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700">
+                    <button type="button" role="tab" id="doc-format-tab-document" aria-controls="doc-format-panel-document" aria-selected="true" class="settings-tab" data-i18n-key="doc_settings_tab_document">Documento</button>
+                    <button type="button" role="tab" id="doc-format-tab-format" aria-controls="doc-format-panel-format" aria-selected="false" class="settings-tab" data-i18n-key="doc_settings_tab_format">Formato</button>
+                </div>
+
+                <div id="doc-format-panel-document" role="tabpanel" aria-labelledby="doc-format-tab-document" class="space-y-4">
+                    <fieldset class="rounded-lg border border-slate-200 px-4 pb-4 pt-2 dark:border-slate-700">
+                        <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" data-i18n-key="doc_format_identity_section">Idioma y autor</legend>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="doc-own-language" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_own_language_label">Idioma</label>
+                                <select id="doc-own-language" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                    <option value="" data-i18n-key="doc_format_inherit">Heredado</option>
+                                    <option value="es">Español</option>
+                                    <option value="en">English</option>
+                                    <option value="ca">Català</option>
+                                    <option value="gl">Galego</option>
+                                    <option value="eu">Euskara</option>
+                                    <option value="other" data-i18n-key="doc_own_language_other">Otro…</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="doc-own-author" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_own_author_label">Autor</label>
+                                <input type="text" id="doc-own-author" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" data-i18n-key="doc_own_author_placeholder" placeholder="Heredado">
+                            </div>
                         </div>
-                        <div>
-                            <label for="doc-own-author" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_own_author_label">Autor</label>
-                            <input type="text" id="doc-own-author" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" data-i18n-key="doc_own_author_placeholder" placeholder="Heredado">
+                        <div id="doc-own-language-code-row" class="mt-4 hidden sm:w-1/2 sm:pr-2">
+                            <label for="doc-own-language-code" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_own_language_code_label">Código del idioma</label>
+                            <input type="text" id="doc-own-language-code" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="fr, de, pt-BR">
                         </div>
-                    </div>
-                    <div id="doc-own-language-code-row" class="mt-4 hidden sm:w-1/2 sm:pr-2">
-                        <label for="doc-own-language-code" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_own_language_code_label">Código del idioma</label>
-                        <input type="text" id="doc-own-language-code" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="fr, de, pt-BR">
-                    </div>
-                </fieldset>
-                <fieldset class="rounded-lg border border-slate-200 px-4 pb-4 pt-2 dark:border-slate-700">
-                    <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_format_section">Formato del texto</legend>
-                    <div id="doc-format-fields" class="space-y-4"></div>
-                </fieldset>
+                    </fieldset>
+                    <fieldset class="rounded-lg border border-slate-200 px-4 pb-4 pt-2 dark:border-slate-700">
+                        <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_toc_section">Índice y numeración</legend>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="doc-own-toc" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_settings_toc_label">Índice automático</label>
+                                <select id="doc-own-toc" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                    <option value="" data-i18n-key="doc_format_inherit">Heredado</option>
+                                    <option value="yes" data-i18n-key="doc_format_yes">Sí</option>
+                                    <option value="no" data-i18n-key="doc_format_no">No</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="doc-own-numbersections" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_settings_numbering_label">Numerar los apartados</label>
+                                <select id="doc-own-numbersections" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                    <option value="" data-i18n-key="doc_format_inherit">Heredado</option>
+                                    <option value="yes" data-i18n-key="doc_format_yes">Sí</option>
+                                    <option value="no" data-i18n-key="doc_format_no">No</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="mt-3 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_own_outline_hint">El índice se escribe al principio del documento exportado; en el EPUB no hace falta, porque el lector ya tiene el suyo. La numeración de apartados no la admite el ODT.</p>
+                    </fieldset>
+                </div>
+
+                <div id="doc-format-panel-format" role="tabpanel" aria-labelledby="doc-format-tab-format" class="hidden">
+                    <fieldset class="rounded-lg border border-slate-200 px-4 pb-4 pt-2 dark:border-slate-700">
+                        <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_format_section">Formato del texto</legend>
+                        <div id="doc-format-fields" class="space-y-4"></div>
+                    </fieldset>
+                </div>
             </div>
             <div class="mt-6 flex flex-wrap justify-end gap-3">
                 <button id="doc-format-reset-btn" type="button" class="mr-auto px-4 py-2 text-slate-600 rounded-md hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-700" data-i18n-key="doc_format_reset_btn">Quitar del documento</button>

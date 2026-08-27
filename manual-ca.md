@@ -118,11 +118,14 @@ Al costat del comptador de caràcters hi ha un botó curt amb l'idioma del docum
 
 En triar un idioma concret, l'aplicació el desa **dins del document mateix**, de manera que viatja amb el fitxer: si el deses i l'obres demà, aquí o en un altre equip, o l'hi passes a algú, continuarà sent aquell. Per tornar enrere, tria *Idioma general*. I amb *Un altre idioma…* pots escriure el codi de qualsevol llengua (`fr`, `de`, `pt-BR`). En aquest mateix menú, *Autor d'aquest document…* fa el mateix amb l'autor.
 
+Al quadre **Aquest document** hi ha també l'**índex automàtic** i la **numeració dels apartats**, amb les mateixes tres possibilitats: *Heretat*, *Sí* i *No*. Són els mateixos ajustos d'*Opcions d'exportació*, però dits per aquest document, que és on solen decidir-se: un manual vol índex numerat i una nota de dos paràgrafs no. Sota cada camp es llegeix què hereta ara mateix, i un *No* explícit li treu l'índex a aquest document encara que l'opció general el demani.
+
 Si algun dia obres el teu `.md` amb un editor de text pla, veuràs aquesta preferència a dalt de tot, en unes línies entre ratlles:
 
 ```
 ---
 lang: "ca"
+toc: true
 ---
 ```
 
@@ -216,11 +219,11 @@ El quadre està repartit en quatre pestanyes —**Document**, **Format**, **EPUB
 
 **Format del text**: alineació, tipus i mida de lletra, interlineat, marges, sagnia i partició de mots, amb els valors de partida per a tots els documents. Cada document pot fixar els seus des del plafó Markdown, i el que no fixi ho hereta d'aquí.
 
-**Índex automàtic**, que afegeix al principi del document un índex amb els apartats. En DOCX és un índex del Word de debò i en ODT un de natiu del LibreOffice; l'EPUB no el necessita, perquè el lector ja porta el seu índex de navegació.
+**Índex automàtic**, que afegeix al principi del document un índex amb els apartats. En DOCX és un índex del Word de debò i en ODT un de natiu del LibreOffice; l'EPUB no el necessita, perquè el lector ja porta el seu índex de navegació. És el valor de partida: cada document pot demanar-lo o rebutjar-lo pel seu compte al quadre **Aquest document**.
 
 > **Sobre els números de pàgina**: en DOCX i ODT l'índex és un camp que calcula el processador de textos, perquè cal maquetar les pàgines per saber on cau cada apartat. EdiMarkWeb hi escriu la llista d'apartats, de manera que el document s'obre amb l'índex a la vista, però sense números. Perquè hi surtin, actualitza'l: al Word, clic dret a l'índex → *Actualitza el camp*; al LibreOffice, *Eines → Actualitza → Índexs*.
 
-**Numerar els apartats**, que anteposa 1, 1.1, 1.2… als encapçalaments. Funciona en DOCX, HTML i LaTeX; l'ODT no admet aquesta numeració i surt sense.
+**Numerar els apartats**, que anteposa 1, 1.1, 1.2… als encapçalaments. Funciona en DOCX, HTML i LaTeX; l'ODT no admet aquesta numeració i surt sense. També la pot fixar cada document.
 
 I tres ajustos **només per a LaTeX**, que s'apliquen en exportar a TEX i en copiar *LaTeX – document complet*:
 

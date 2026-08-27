@@ -118,11 +118,14 @@ Next to the character counter there is a short button with the document language
 
 Pick a specific language and the application stores it **inside the document itself**, so it travels with the file: save it and open it tomorrow, here or on another computer, or hand it to someone else, and it stays. To go back, choose *General language*. And with *Other language…* you can type the code of any language (`fr`, `de`, `pt-BR`). In that same menu, *This document's author…* does the same for the author.
 
+The **This document** dialog also holds the **table of contents** and the **section numbering**, with the same three choices: *Inherited*, *Yes* and *No*. They are the same settings as in *Export options*, but stated by this document, which is where they are usually decided: a manual wants a numbered table of contents and a two-paragraph note does not. Under each field you can read what it inherits right now, and an explicit *No* takes the table of contents away from this document even when the general option asks for one.
+
 If you ever open your `.md` in a plain text editor, you will see that preference at the very top, in a few lines between dashes:
 
 ```
 ---
 lang: "ca"
+toc: true
 ---
 ```
 
@@ -216,11 +219,11 @@ The dialog is split into four tabs —**Document**, **Formatting**, **EPUB** and
 
 **Text formatting**: alignment, typeface and size, line spacing, margins, indent and hyphenation, as the starting values for every document. Each document can set its own from the Markdown pane, and whatever it does not set is inherited from here.
 
-**Table of contents**, which adds a list of the sections at the start of the document. In DOCX it is a real Word table of contents and in ODT a native LibreOffice one; the EPUB does not need it, since the reader already provides its navigation index.
+**Table of contents**, which adds a list of the sections at the start of the document. In DOCX it is a real Word table of contents and in ODT a native LibreOffice one; the EPUB does not need it, since the reader already provides its navigation index. This is the starting value: each document can ask for it, or turn it down, on its own in the **This document** dialog.
 
 > **About page numbers**: in DOCX and ODT the table of contents is a field the word processor calculates, because the pages have to be laid out before it knows where each section falls. EdiMarkWeb writes the list of sections into it, so the document opens with the table of contents visible, but without numbers. To get them, refresh it: in Word, right-click the table of contents → *Update field*; in LibreOffice, *Tools → Update → Indexes*.
 
-**Number the sections**, which puts 1, 1.1, 1.2… before the headings. It works in DOCX, HTML and LaTeX; ODT does not support this numbering and comes out without it.
+**Number the sections**, which puts 1, 1.1, 1.2… before the headings. It works in DOCX, HTML and LaTeX; ODT does not support this numbering and comes out without it. Each document can set this one too.
 
 Plus three **LaTeX only** settings, applied when exporting to TEX and when copying *LaTeX – full document*:
 

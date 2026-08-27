@@ -69,6 +69,62 @@ export function buildExportArgs(pandocFormat, {
 }
 
 /*
+  Índice y numeración de apartados. Son dos interruptores con tres estados: el
+  documento puede pedirlos, puede rechazarlos y puede no decir nada, que es
+  cuando manda la opción general. Las claves son las de Pandoc (`toc` y
+  `numbersections`) aunque las banderas se sigan pasando por la línea de
+  órdenes: así el bloque de metadatos se lee igual que el resto.
+*/
+export const OUTLINE_YAML_KEYS = [
+  ['toc', 'toc'],
+  ['numberSections', 'numbersections'],
+];
+
+/*
+  `true`, `false` o cadena vacía si el documento no se pronuncia. Se aceptan las
+  formas que escribiría una persona, no solo las de Pandoc, porque el bloque de
+  metadatos se teclea a mano.
+*/
+export function normalizeOutlineSwitch(value) {
+  if (value === true) return true;
+  if (value === false) return false;
+  const raw = String(value ?? '').trim().toLowerCase().replace(/^["']|["']$/g, '');
+  if (!raw) return '';
+  if (['yes', 'true', 'sí', 'si', '1'].includes(raw)) return true;
+  if (['no', 'false', '0'].includes(raw)) return false;
+  return '';
+}
+
+/* Lo que el documento declare por su cuenta, sin resolver herencias. */
+export function readOutlineFromFrontMatter(frontMatter) {
+  const source = typeof frontMatter === 'string' ? frontMatter : '';
+  const outline = { toc: '', numberSections: '' };
+  OUTLINE_YAML_KEYS.forEach(([field, key]) => {
+    const match = source.match(new RegExp(`^${key}\\s*:\\s*(.*)$`, 'm'));
+    if (!match) return;
+    outline[field] = normalizeOutlineSwitch(match[1].trim().replace(/\s+#.*$/, ''));
+  });
+  return outline;
+}
+
+/* Lo que el documento no diga lo pone el ajuste general. */
+export function resolveOutlineOptions(general = {}, own = {}) {
+  const document = { toc: normalizeOutlineSwitch(own.toc), numberSections: normalizeOutlineSwitch(own.numberSections) };
+  return {
+    toc: document.toc === '' ? general.toc === true : document.toc,
+    numberSections: document.numberSections === '' ? general.numberSections === true : document.numberSections,
+  };
+}
+
+/* Solo lo que el documento fije ocupa una línea en su bloque de metadatos. */
+export function outlineFrontMatterEntries(outline = {}) {
+  return OUTLINE_YAML_KEYS
+    .map(([field, key]) => [key, normalizeOutlineSwitch(outline[field])])
+    .filter(([, value]) => value !== '')
+    .map(([key, value]) => ({ key, lines: [`${key}: ${value ? 'true' : 'false'}`] }));
+}
+
+/*
   Importing an EPUB with the default writer produces `:::` fenced divs, empty
   `[]{#ch001.xhtml}` anchors and attribute-laden headings — structure that means
   nothing once the text is back in the editor. Turning those extensions off

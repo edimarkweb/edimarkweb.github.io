@@ -114,15 +114,18 @@ Puedes arrastrar la barra central para dar más espacio a cualquiera de los pane
 
 ### Los ajustes de cada documento
 
-Junto al contador de caracteres hay un botón corto con el idioma del documento: `ES`, `CA`, `FR`… Si se ve atenuado, ese documento no tiene idioma propio y usa el **idioma general** de *Configuración → Opciones de exportación…*, que es lo normal. Al pulsarlo se abre el cuadro **Este documento**, con su idioma, su autor y su formato.
+Junto al contador de caracteres hay un botón corto con el idioma del documento: `ES`, `CA`, `FR`… Si se ve atenuado, ese documento no tiene idioma propio y usa el **idioma general** de *Configuración → Opciones de exportación…*, que es lo normal. Al pulsarlo se abre el cuadro **Este documento**, repartido en dos pestañas: **Documento** —idioma, autor, índice y numeración— y **Formato**, con el formato del texto.
 
 Al elegir un idioma concreto, la aplicación lo guarda **dentro del propio documento**, de modo que viaja con el archivo: si lo guardas y lo abres mañana, aquí o en otro equipo, o se lo pasas a alguien, seguirá siendo ese. Para volver a lo anterior, elige *Heredado*. Y con *Otro…* puedes escribir el código de cualquier lengua (`fr`, `de`, `pt-BR`). El **autor** funciona igual, en el campo de al lado.
+
+En la misma pestaña están el **índice automático** y la **numeración de los apartados**, con las mismas tres posibilidades: *Heredado*, *Sí* y *No*. Son los mismos ajustes de *Opciones de exportación*, pero dichos por este documento, que es donde suelen decidirse: un manual quiere índice numerado y una nota de dos párrafos no. Debajo de cada campo se lee lo que hereda ahora mismo, y un *No* explícito le quita el índice a este documento aunque la opción general lo pida.
 
 Si alguna vez abres tu `.md` con un editor de texto plano, verás esa preferencia arriba del todo, en unas líneas entre rayas:
 
 ```
 ---
 lang: "ca"
+toc: true
 ---
 ```
 
@@ -216,11 +219,11 @@ El cuadro está repartido en cuatro pestañas —**Documento**, **Formato**, **E
 
 **Formato del texto**: alineación, tipo y tamaño de letra, interlineado, márgenes, sangría y partición de palabras, con los valores de partida para todos los documentos. Cada documento puede fijar los suyos desde el panel Markdown, y lo que no fije lo hereda de aquí.
 
-**Índice automático**, que añade al principio del documento un índice con los apartados. En DOCX es un índice de Word de verdad y en ODT uno nativo de LibreOffice; el EPUB no lo necesita, porque el lector ya trae su índice de navegación.
+**Índice automático**, que añade al principio del documento un índice con los apartados. En DOCX es un índice de Word de verdad y en ODT uno nativo de LibreOffice; el EPUB no lo necesita, porque el lector ya trae su índice de navegación. Es el valor de partida: cada documento puede pedirlo o rechazarlo por su cuenta en el cuadro **Este documento**.
 
 > **Sobre los números de página**: en DOCX y ODT el índice es un campo que el procesador de textos calcula, porque hace falta maquetar las páginas para saber en cuál cae cada apartado. EdiMarkWeb le escribe dentro la lista de apartados, así que el documento se abre con el índice a la vista, pero sin números. Para que aparezcan, actualízalo: en Word, clic derecho sobre el índice → *Actualizar campos*; en LibreOffice, *Herramientas → Actualizar → Índices*.
 
-**Numerar los apartados**, que antepone 1, 1.1, 1.2… a los encabezados. Funciona en DOCX, HTML y LaTeX; el ODT no admite esta numeración y sale sin ella.
+**Numerar los apartados**, que antepone 1, 1.1, 1.2… a los encabezados. Funciona en DOCX, HTML y LaTeX; el ODT no admite esta numeración y sale sin ella. También lo puede fijar cada documento.
 
 Y tres ajustes **solo para LaTeX**, que se aplican al exportar a TEX y al copiar *LaTeX – documento completo*:
 

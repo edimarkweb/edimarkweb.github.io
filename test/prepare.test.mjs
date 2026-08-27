@@ -17,6 +17,9 @@ import {
   normalizeThematicBreaks,
   buildImportArgs,
   buildExportArgs,
+  readOutlineFromFrontMatter,
+  resolveOutlineOptions,
+  outlineFrontMatterEntries,
   stripEpubAnchorPrefixes,
   stripUnsafeMarkup,
   collectArchiveImagePaths,
@@ -93,6 +96,42 @@ test('buildExportArgs añade índice y numeración solo cuando se piden', () => 
   // El EPUB ya trae su índice de navegación; otro encima sobra.
   assert.equal(buildExportArgs('epub3', { toc: true }).includes('--toc'), false);
   assert.match(buildExportArgs('epub3', { toc: true, numberSections: true }), /--number-sections/);
+});
+
+test('readOutlineFromFrontMatter distingue el sí, el no y el silencio', () => {
+  const dicho = readOutlineFromFrontMatter('---\ntoc: true\nnumbersections: false\n---');
+  assert.deepEqual(dicho, { toc: true, numberSections: false });
+  // Sin línea, el documento no se pronuncia y manda la opción general.
+  assert.deepEqual(readOutlineFromFrontMatter('---\nlang: "es"\n---'), { toc: '', numberSections: '' });
+  // El bloque se teclea a mano: valen las formas que escribiría una persona.
+  assert.equal(readOutlineFromFrontMatter('---\ntoc: "sí"\n---').toc, true);
+  assert.equal(readOutlineFromFrontMatter('---\ntoc: no  # esta vez no\n---').toc, false);
+  // Lo que no se entiende se descarta en vez de decidir por el usuario.
+  assert.equal(readOutlineFromFrontMatter('---\ntoc: quizá\n---').toc, '');
+});
+
+test('el documento manda sobre el índice general, también para quitarlo', () => {
+  const general = { toc: true, numberSections: true };
+  assert.deepEqual(resolveOutlineOptions(general, {}), { toc: true, numberSections: true });
+  assert.deepEqual(
+    resolveOutlineOptions(general, { toc: false, numberSections: false }),
+    { toc: false, numberSections: false },
+  );
+  assert.deepEqual(
+    resolveOutlineOptions({}, { toc: true, numberSections: '' }),
+    { toc: true, numberSections: false },
+  );
+});
+
+test('solo lo que el documento fija ocupa una línea en sus metadatos', () => {
+  assert.deepEqual(outlineFrontMatterEntries({ toc: '', numberSections: '' }), []);
+  assert.deepEqual(
+    outlineFrontMatterEntries({ toc: true, numberSections: false }),
+    [
+      { key: 'toc', lines: ['toc: true'] },
+      { key: 'numbersections', lines: ['numbersections: false'] },
+    ],
+  );
 });
 
 test('el rótulo del índice viaja como metadato', () => {

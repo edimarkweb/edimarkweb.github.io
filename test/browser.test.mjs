@@ -1045,7 +1045,7 @@ test('los nuevos atajos abren sus acciones y los iconos explican su función', a
   const { context, page } = await openApp();
   t.after(() => context.close());
 
-  assert.equal(await page.locator('#doc-format-toolbar-btn').getAttribute('title'), 'Idioma, autor y formato de este documento.');
+  assert.equal(await page.locator('#doc-format-toolbar-btn').getAttribute('title'), 'Idioma, autor, índice y formato de este documento.');
   assert.equal(await page.locator('#doc-format-toolbar-btn [data-lucide="sliders-horizontal"]').count(), 1);
   assert.equal(await page.locator('#doc-lang-btn').count(), 0);
   assert.equal(await page.locator('#toggle-replace-btn').getAttribute('title'), 'Mostrar opciones de reemplazo');
@@ -1823,6 +1823,8 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
   // El botón Aa de la barra abre el mismo cuadro que el menú del documento.
   await page.locator('#doc-format-toolbar-btn').click();
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  // El formato del texto vive en su propia pestaña.
+  await page.locator('#doc-format-tab-format').click();
   await page.locator('#doc-format-fields-align').selectOption('justify');
   await page.locator('#doc-format-fields-font').selectOption('serif');
   await page.locator('#doc-format-fields-fontsize').fill('13');
@@ -1850,6 +1852,7 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
 
   // Al reabrirlo, el cuadro muestra lo que el documento declara.
   await page.locator('#doc-format-toolbar-btn').click();
+  await page.locator('#doc-format-tab-format').click();
   assert.equal(await page.locator('#doc-format-fields-align').inputValue(), 'justify');
   assert.equal(await page.locator('#doc-format-fields-fontsize').inputValue(), '13');
 
@@ -1860,6 +1863,45 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
   assert.equal(/align:|fontsize:|margin-left:|hyphenate:/.test(limpio), false);
   assert.match(limpio, /# Prueba/);
   assert.equal(await page.locator('#html-output').evaluate(preview => preview.style.textAlign), '');
+});
+
+/*
+  El índice y la numeración eran de la aplicación entera: activarlos para un
+  manual se los ponía también a la nota de dos líneas del día siguiente. Ahora
+  cada documento puede decir lo suyo, y decirlo también para quitárselos.
+*/
+test('el índice y la numeración de este documento viajan en sus metadatos', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').fill('# Manual\n\nUn párrafo cualquiera.');
+
+  await page.locator('#doc-format-toolbar-btn').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  await page.locator('#doc-own-toc').selectOption('yes');
+  await page.locator('#doc-own-numbersections').selectOption('no');
+  await page.locator('#doc-format-save-btn').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'hidden' });
+
+  const markdown = await page.locator('#markdown-input').inputValue();
+  assert.match(markdown, /toc: true/);
+  assert.match(markdown, /numbersections: false/);
+  assert.match(markdown, /# Manual/);
+
+  // Al reabrirlo, el cuadro muestra lo que el documento declara.
+  await page.locator('#doc-format-toolbar-btn').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#doc-own-toc').inputValue(), 'yes');
+  assert.equal(await page.locator('#doc-own-numbersections').inputValue(), 'no');
+
+  // Y volver a «Heredado» deja el documento sin decir nada.
+  await page.locator('#doc-own-toc').selectOption('');
+  await page.locator('#doc-own-numbersections').selectOption('');
+  await page.locator('#doc-format-save-btn').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'hidden' });
+  const limpio = await page.locator('#markdown-input').inputValue();
+  assert.equal(/toc:|numbersections:/.test(limpio), false);
+  assert.match(limpio, /# Manual/);
 });
 
 /*

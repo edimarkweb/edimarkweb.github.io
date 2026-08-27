@@ -118,11 +118,14 @@ Xunto ao contador de caracteres hai un botón curto co idioma do documento: `ES`
 
 Ao escoller un idioma concreto, a aplicación gárdao **dentro do propio documento**, de xeito que viaxa co ficheiro: se o gardas e o abres mañá, aquí ou noutro equipo, ou llo pasas a alguén, seguirá sendo ese. Para volver ao anterior, escolle *Idioma xeral*. E con *Outro idioma…* podes escribir o código de calquera lingua (`fr`, `de`, `pt-BR`). Nese mesmo menú, *Autor deste documento…* fai o propio co autor.
 
+No cadro **Este documento** están tamén o **índice automático** e a **numeración dos apartados**, coas mesmas tres posibilidades: *Herdado*, *Si* e *Non*. Son os mesmos axustes de *Opcións de exportación*, pero ditos por este documento, que é onde adoitan decidirse: un manual quere índice numerado e unha nota de dous parágrafos non. Debaixo de cada campo lese o que herda agora mesmo, e un *Non* explícito quítalle o índice a este documento aínda que a opción xeral o pida.
+
 Se algunha vez abres o teu `.md` cun editor de texto plano, verás esa preferencia arriba de todo, nunhas liñas entre raias:
 
 ```
 ---
 lang: "ca"
+toc: true
 ---
 ```
 
@@ -216,11 +219,11 @@ O cadro está repartido en catro lapelas —**Documento**, **Formato**, **EPUB**
 
 **Formato do texto**: aliñación, tipo e tamaño de letra, entreliñado, marxes, sangría e partición de palabras, cos valores de partida para todos os documentos. Cada documento pode fixar os seus desde o panel Markdown, e o que non fixe hérdao de aquí.
 
-**Índice automático**, que engade ao principio do documento un índice cos apartados. En DOCX é un índice de Word de verdade e en ODT un nativo de LibreOffice; o EPUB non o precisa, porque o lector xa trae o seu índice de navegación.
+**Índice automático**, que engade ao principio do documento un índice cos apartados. En DOCX é un índice de Word de verdade e en ODT un nativo de LibreOffice; o EPUB non o precisa, porque o lector xa trae o seu índice de navegación. É o valor de partida: cada documento pode pedilo ou rexeitalo pola súa conta no cadro **Este documento**.
 
 > **Sobre os números de páxina**: en DOCX e ODT o índice é un campo que calcula o procesador de textos, porque hai que maquetar as páxinas para saber en cal cae cada apartado. EdiMarkWeb escríbelle dentro a lista de apartados, así que o documento ábrese co índice á vista, pero sen números. Para que aparezan, actualízao: en Word, clic dereito sobre o índice → *Actualizar campos*; en LibreOffice, *Ferramentas → Actualizar → Índices*.
 
-**Numerar os apartados**, que antepón 1, 1.1, 1.2… aos encabezamentos. Funciona en DOCX, HTML e LaTeX; o ODT non admite esta numeración e sae sen ela.
+**Numerar os apartados**, que antepón 1, 1.1, 1.2… aos encabezamentos. Funciona en DOCX, HTML e LaTeX; o ODT non admite esta numeración e sae sen ela. Tamén a pode fixar cada documento.
 
 E tres axustes **só para LaTeX**, que se aplican ao exportar a TEX e ao copiar *LaTeX – documento completo*:
 

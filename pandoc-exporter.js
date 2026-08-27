@@ -18,6 +18,9 @@ import {
   requestDocxFieldUpdate,
   fillOdtTableOfContents,
   splitFrontMatter,
+  readOutlineFromFrontMatter,
+  resolveOutlineOptions,
+  outlineFrontMatterEntries,
   appendEpubStylesheet,
   applyOfficeFormat,
   mergeFrontMatter,
@@ -338,16 +341,20 @@ function epubCoverFile({ title, author }) {
 }
 
 /*
-  Índice y numeración de apartados. Son opciones del conversor, no datos del
+  Índice y numeración de apartados. Se aplican con banderas y no como datos del
   documento: `toc: true` en los metadatos lo entienden LaTeX y HTML, pero el
-  escritor DOCX lo ignora, y la numeración solo funciona con la bandera.
+  escritor DOCX lo ignora, y la numeración solo funciona con la bandera. Aun
+  así las claves viven en el bloque de metadatos, porque son decisiones de cada
+  documento —un manual quiere índice y una nota de dos párrafos no— y lo que el
+  documento no diga lo ponen las opciones generales.
 */
-function documentOutlineOptions() {
+function documentOutlineOptions(markdown) {
   const settings = documentSettings();
-  return {
-    toc: settings.documentToc === true,
-    numberSections: settings.documentNumberSections === true,
-  };
+  const { frontMatter } = splitFrontMatter(typeof markdown === 'string' ? markdown : '');
+  return resolveOutlineOptions(
+    { toc: settings.documentToc === true, numberSections: settings.documentNumberSections === true },
+    readOutlineFromFrontMatter(frontMatter),
+  );
 }
 
 /*
@@ -365,8 +372,8 @@ const TOC_TITLES = {
   eu: 'Aurkibidea',
 };
 
-function tocTitleFor(lang) {
-  if (!documentOutlineOptions().toc) return '';
+function tocTitleFor(lang, markdown) {
+  if (!documentOutlineOptions(markdown).toc) return '';
   const base = String(lang || '').toLowerCase().split(/[-_]/)[0];
   return TOC_TITLES[base] || '';
 }
@@ -676,7 +683,7 @@ async function exportDocument({
       untitledLabel: translate('untitled_document', 'Documento sin título'),
       lang: documentLanguage(),
       author: documentAuthor(),
-      tocTitle: tocTitleFor(documentLanguage()),
+      tocTitle: tocTitleFor(documentLanguage(), normalized),
     });
     normalized = prepared.markdown;
     titleFromHeading = prepared.titleFromHeading;
@@ -690,12 +697,13 @@ async function exportDocument({
     normalized = ensureExportMetadata(normalized, {
       lang: documentLanguage(),
       author: documentAuthor(),
-      tocTitle: tocTitleFor(documentLanguage()),
+      tocTitle: tocTitleFor(documentLanguage(), normalized),
     }).markdown;
   }
   // Se lee antes de tocar nada más: las claves siguen en el bloque de metadatos
   // del documento y de ahí salen los estilos que se aplican al archivo final.
   const exportFormat = resolvedDocumentFormat(normalized);
+  const outline = documentOutlineOptions(normalized);
 
   triggerStatus(onStatus, config.preparingKey, config.preparingFallback);
 
@@ -736,7 +744,7 @@ async function exportDocument({
     let pandocArgs = buildExportArgs(config.pandocFormat || normalizedFormat, {
       mathml: normalizedFormat === 'odt' || normalizedFormat === 'epub',
       titleFromHeading,
-      ...documentOutlineOptions(),
+      ...outline,
     });
     /*
       La portada solo existe en el EPUB, y la imagen tiene que estar montada en
@@ -767,7 +775,7 @@ async function exportDocument({
       actualización de campos, el documento se abre con el índice vacío.
     */
     let finalBytes = resultadoBytes;
-    if (documentOutlineOptions().toc) {
+    if (outline.toc) {
       if (normalizedFormat === 'docx') finalBytes = await requestDocxFieldUpdate(resultadoBytes);
       else if (normalizedFormat === 'odt') finalBytes = await fillOdtTableOfContents(resultadoBytes);
     }
@@ -826,7 +834,7 @@ async function generateHtml({
       lang: documentLanguage(),
       author: documentAuthor(),
       pageTitle: extractMarkdownTitle(normalized) || String(documentTitle || '').trim(),
-      tocTitle: tocTitleFor(documentLanguage()),
+      tocTitle: tocTitleFor(documentLanguage(), normalized),
     }).markdown
     : normalized;
 
@@ -839,7 +847,7 @@ async function generateHtml({
     let pandocArgs = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --mathjax`;
     if (standalone) {
       pandocArgs += ' -s';
-      const { toc, numberSections } = documentOutlineOptions();
+      const { toc, numberSections } = documentOutlineOptions(normalized);
       if (toc) pandocArgs += ' --toc';
       if (numberSections) pandocArgs += ' --number-sections';
     }
@@ -906,7 +914,7 @@ async function generateLatex({
     const prepared = prepareLatexStandalone(normalized, {
       lang: documentLanguage(),
       author: documentAuthor(),
-      tocTitle: tocTitleFor(documentLanguage()),
+      tocTitle: tocTitleFor(documentLanguage(), normalized),
       ...settings,
       preamble: latexFormat.preamble,
       extraEntries: latexFormat.entries,
@@ -925,7 +933,7 @@ async function generateLatex({
       // El encabezado promovido a \title dejaría el resto colgando un nivel
       // por debajo del que les corresponde.
       if (shiftHeadings) pandocArgs += ' --shift-heading-level-by=-1';
-      const { toc, numberSections } = documentOutlineOptions();
+      const { toc, numberSections } = documentOutlineOptions(normalized);
       if (toc) pandocArgs += ' --toc';
       if (numberSections) pandocArgs += ' --number-sections';
     }
@@ -1091,6 +1099,9 @@ window.PandocExporter = {
   // previa y para escribir el idioma del documento.
   splitFrontMatter,
   mergeFrontMatter,
+  // Y para leer y escribir el índice y la numeración de este documento.
+  readOutlineFromFrontMatter,
+  outlineFrontMatterEntries,
 };
 
 export { exportDocument, generateHtml, generateLatex, convertLatexToMarkdown, importToMarkdown, trimInlineMath, warmUpExporter, splitFrontMatter, mergeFrontMatter };

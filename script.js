@@ -4398,6 +4398,8 @@ window.onload = async () => {
     const docOwnLanguageCode = document.getElementById('doc-own-language-code');
     const docOwnLanguageRow = document.getElementById('doc-own-language-code-row');
     const docOwnAuthor = document.getElementById('doc-own-author');
+    const docOwnToc = document.getElementById('doc-own-toc');
+    const docOwnNumberSections = document.getElementById('doc-own-numbersections');
     const docFormatOverlay = document.getElementById('doc-format-modal-overlay');
     const docFormatToolbarBtn = document.getElementById('doc-format-toolbar-btn');
     const docFormatSaveBtn = document.getElementById('doc-format-save-btn');
@@ -6907,6 +6909,13 @@ window.onload = async () => {
         return entry ? getTranslation(entry[0], entry[1]) : String(value);
     }
 
+    /* Los interruptores generales son booleanos, no las claves de tres estados. */
+    function inheritedSwitchLabel(value) {
+        return value === true
+            ? getTranslation('doc_format_yes', 'Sí')
+            : getTranslation('doc_format_no', 'No');
+    }
+
     function inheritedLanguageLabel() {
         const code = String((window.__edimarkLatexSettings || {}).documentLanguage || '').trim();
         if (!code || code === 'auto') return getTranslation('doc_settings_language_auto', 'Igual que la interfaz');
@@ -6950,6 +6959,8 @@ window.onload = async () => {
         const settings = window.__edimarkLatexSettings || {};
         setInheritedHint(docOwnLanguage, inheritedLanguageLabel());
         setInheritedHint(docOwnAuthor, String(settings.documentAuthor || '').trim());
+        setInheritedHint(docOwnToc, inheritedSwitchLabel(settings.documentToc));
+        setInheritedHint(docOwnNumberSections, inheritedSwitchLabel(settings.documentNumberSections));
 
         if (!docFormatFields || docFormatFields.dataset.rendered !== 'true') return;
         const prefix = docFormatFields.id;
@@ -7033,13 +7044,33 @@ window.onload = async () => {
     }
     window.__applyDocumentFormatToPreview = applyDocumentFormatToPreview;
 
+    /*
+      Índice y numeración de este documento. Viven en el mismo bloque de
+      metadatos que el formato y con la misma regla: sin línea, manda la opción
+      general; con ella, manda el documento aunque diga que no.
+    */
+    function currentDocumentOutline() {
+        const api = window.PandocExporter;
+        if (!api || typeof api.readOutlineFromFrontMatter !== 'function' || !markdownEditor) {
+            return { toc: '', numberSections: '' };
+        }
+        const { frontMatter } = splitDocumentFrontMatter(markdownEditor.getValue());
+        return api.readOutlineFromFrontMatter(frontMatter);
+    }
+
+    const OUTLINE_YAML_KEYS = ['toc', 'numbersections'];
+
+    function outlineEntries(outline) {
+        const api = window.PandocExporter;
+        return api && typeof api.outlineFrontMatterEntries === 'function'
+            ? api.outlineFrontMatterEntries(outline)
+            : [];
+    }
+
     /* Escribe en el documento solo los ajustes con valor y borra los demás. */
-    function setDocumentFormat(format) {
-        const api = documentFormatApi();
-        if (!api || !markdownEditor) return;
-        const entries = api.toFrontMatterEntries(format);
+    function writeDocumentMetadata(entries, managed) {
+        if (!markdownEditor) return;
         const wanted = new Map(entries.map(entry => [entry.key, entry.lines[0]]));
-        const managed = api.YAML_KEYS.map(([, key]) => key);
         const current = markdownEditor.getValue();
         const { frontMatter, body } = splitDocumentFrontMatter(current);
 
@@ -7074,6 +7105,20 @@ window.onload = async () => {
     }
 
     /*
+      Formato, índice y numeración se guardan de una sola vez: los tres viven en
+      el mismo bloque, y reescribirlo una vez por ajuste movería el cursor tres
+      veces y dejaría tres pasos en el historial de deshacer.
+    */
+    function setDocumentFormat(format, outline) {
+        const api = documentFormatApi();
+        if (!api) return;
+        writeDocumentMetadata(
+            [...api.toFrontMatterEntries(format), ...outlineEntries(outline)],
+            [...api.YAML_KEYS.map(([, key]) => key), ...OUTLINE_YAML_KEYS],
+        );
+    }
+
+    /*
       Idioma y autor viven en el mismo bloque de metadatos que el formato, así
       que se editan en el mismo cuadro: todo lo que es de este documento junto.
     */
@@ -7092,7 +7137,25 @@ window.onload = async () => {
         if (docOwnLanguage) docOwnLanguage.value = language ? (listed ? language : 'other') : '';
         if (docOwnLanguageCode) docOwnLanguageCode.value = listed ? '' : language;
         if (docOwnAuthor) docOwnAuthor.value = own.author() || '';
+        const outline = currentDocumentOutline();
+        if (docOwnToc) docOwnToc.value = outlineFieldValue(outline.toc);
+        if (docOwnNumberSections) docOwnNumberSections.value = outlineFieldValue(outline.numberSections);
         syncOwnLanguageCodeField();
+    }
+
+    /* Los campos hablan en sí/no/vacío y el modelo en true/false/vacío. */
+    function outlineFieldValue(value) {
+        if (value === true) return 'yes';
+        if (value === false) return 'no';
+        return '';
+    }
+
+    function readOwnOutlineFromFields() {
+        const value = (field) => {
+            if (!field || !field.value) return '';
+            return field.value === 'yes';
+        };
+        return { toc: value(docOwnToc), numberSections: value(docOwnNumberSections) };
     }
 
     function readOwnLanguageFromFields() {
@@ -7101,15 +7164,29 @@ window.onload = async () => {
         return docOwnLanguageCode ? docOwnLanguageCode.value.trim() : '';
     }
 
+    let selectDocFormatTab = null;
+
     function toggleDocFormatModal(show) {
         if (!docFormatOverlay) return;
         docFormatOverlay.style.display = show ? 'flex' : 'none';
         if (!show) return;
+        /*
+          Las mismas dos pestañas que el cuadro de opciones, y en el mismo
+          orden: lo de este documento y lo general se leen en paralelo, y una
+          lista de veinte campos seguidos no se abarca de una mirada.
+        */
+        const tablist = document.getElementById('doc-format-tablist');
+        selectDocFormatTab = setupSettingsTabs(tablist) || selectDocFormatTab;
+        if (selectDocFormatTab && tablist) selectDocFormatTab(tablist.querySelector('[role="tab"]'));
         renderDocumentFormatFields(docFormatFields, { inherit: true });
         // Siempre desde el documento: cancelar tiene que descartar de verdad.
         fillDocumentFormatFields('doc-format-fields', currentDocumentFormat());
         fillDocumentOwnFields();
         refreshInheritedDocumentHints();
+        setTimeout(() => {
+            const first = document.querySelector('#doc-format-tablist [role="tab"]');
+            if (first) first.focus();
+        }, 0);
     }
     window.__openDocumentSettings = () => toggleDocFormatModal(true);
 
@@ -7132,6 +7209,8 @@ window.onload = async () => {
             if (docOwnLanguage) docOwnLanguage.value = '';
             if (docOwnLanguageCode) docOwnLanguageCode.value = '';
             if (docOwnAuthor) docOwnAuthor.value = '';
+            if (docOwnToc) docOwnToc.value = '';
+            if (docOwnNumberSections) docOwnNumberSections.value = '';
             syncOwnLanguageCodeField();
         });
     }
@@ -7144,7 +7223,7 @@ window.onload = async () => {
                 own.setLanguage(readOwnLanguageFromFields());
                 own.setAuthor(docOwnAuthor ? docOwnAuthor.value : '');
             }
-            setDocumentFormat(readDocumentFormatFields('doc-format-fields'));
+            setDocumentFormat(readDocumentFormatFields('doc-format-fields'), readOwnOutlineFromFields());
             toggleDocFormatModal(false);
         });
     }
