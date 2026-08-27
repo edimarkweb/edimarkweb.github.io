@@ -863,16 +863,29 @@ function classifyClipboardDataPayload(clipboardData) {
     const rawHtml = clipboardData.getData('text/html') || '';
     const htmlFragment = extractClipboardFragment(rawHtml);
     const files = [];
+    /*
+      La misma imagen suele venir publicada a la vez en `files` y como item, y
+      `getAsFile()` construye un objeto nuevo en cada llamada: comparados por
+      identidad parecían dos imágenes distintas y se pegaban por duplicado. Se
+      comparan por sus datos, que es lo único que tienen en común.
+    */
+    const seenFiles = new Set();
+    const addClipboardFile = (file) => {
+        if (!file) return;
+        const key = `${file.name || ''}|${file.size}|${file.type || ''}`;
+        if (seenFiles.has(key)) return;
+        seenFiles.add(key);
+        files.push(file);
+    };
     if (clipboardData.files) {
-        files.push(...Array.from(clipboardData.files));
+        Array.from(clipboardData.files).forEach(addClipboardFile);
     }
     // Chromium, Firefox y los WebView de escritorio no siempre publican una
     // imagen pegada en `files`; en esos casos sí aparece como un item.
     if (clipboardData.items) {
         Array.from(clipboardData.items).forEach((item) => {
             if (!item || item.kind !== 'file' || typeof item.getAsFile !== 'function') return;
-            const file = item.getAsFile();
-            if (file && !files.includes(file)) files.push(file);
+            addClipboardFile(item.getAsFile());
         });
     }
     const imageFiles = files.filter(file => file && file.size > 0 && String(file.type || '').toLowerCase().startsWith('image/'));

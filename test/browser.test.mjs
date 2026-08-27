@@ -73,8 +73,8 @@ function startStaticServer() {
   });
 }
 
-async function openApp({ locale = 'es-ES', initStorage } = {}) {
-  const context = await browser.newContext({ locale });
+async function openApp({ locale = 'es-ES', initStorage, permissions } = {}) {
+  const context = await browser.newContext({ locale, ...(permissions ? { permissions } : {}) });
   if (initStorage) {
     await context.addInitScript(initStorage);
   }
@@ -431,6 +431,39 @@ test('cerrar la búsqueda devuelve el foco al editor', async (t) => {
   repintado es lo que vuelca el Markdown al editor HTML: la escritura seguida no
   puede dejar ningún panel con contenido viejo.
 */
+/*
+  Una imagen copiada de una página web llega publicada a la vez en `files` y
+  como item del portapapeles, y `getAsFile()` devuelve un objeto nuevo cada
+  vez: se colaban como dos imágenes distintas y se pegaban por duplicado. El
+  portapapeles hay que prepararlo desde la propia página, así que hace falta el
+  permiso de escritura, que solo se concede en Chromium.
+*/
+test('una imagen copiada de la web se pega una sola vez', {
+  skip: process.env.BROWSER === 'firefox'
+    ? 'preparar un portapapeles con imagen solo funciona en Chromium'
+    : false,
+}, async (t) => {
+  const { context, page } = await openApp({ permissions: ['clipboard-read', 'clipboard-write'] });
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(async (pixel) => {
+    const bytes = Uint8Array.from(atob(pixel), caracter => caracter.charCodeAt(0));
+    await navigator.clipboard.write([new ClipboardItem({
+      'image/png': new Blob([bytes], { type: 'image/png' }),
+      'text/html': new Blob(['<img src="https://ejemplo.test/foto.png" alt="foto">'], { type: 'text/html' }),
+    })]);
+  }, PNG_PIXEL.toString('base64'));
+
+  await page.locator('#markdown-input').click();
+  await page.keyboard.press('Control+V');
+  await page.locator('#html-output img').first().waitFor();
+
+  assert.equal(await page.locator('#html-output img').count(), 1);
+  const markdown = await page.locator('#markdown-input').inputValue();
+  assert.equal(markdown.match(/!\[/g)?.length ?? 0, 1, `Markdown obtenido: ${markdown.slice(0, 200)}`);
+});
+
 test('escribir sin pausas mantiene los dos paneles al día', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
