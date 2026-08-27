@@ -52,20 +52,21 @@ Trabaja con varios documentos a la vez, cada uno en su propia pestaña.
 
 ## Barra superior de controles
 
-La barra junto al logotipo agrupa las opciones globales de la aplicación y ahora concentra todas las acciones de archivo en un único botón desplegable:
+La cabecera tiene dos mitades. Junto al logotipo están los dos menús —**Archivo** y **Configuración**—, con su nombre escrito y sin icono, como la barra de menús de cualquier programa de escritorio. En el extremo derecho, las acciones sobre el documento que se usan a diario, como botones de un solo icono: **Guardar**, **Exportar**, **Imprimir**, **Buscar** y **Ayuda**.
 
-* **Archivo**: reúne las acciones sobre el documento en dos grupos. Primero las que traen contenido —`Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` y `Pegar LaTeX (Ctrl+Mayús+V)`— y después las que lo sacan: `Guardar (Ctrl+S)`, `Guardar como… (Ctrl+Mayús+S)` y el submenú **Exportar**, que se despliega a la derecha con DOCX, ODT, EPUB, HTML, TEX y PDF. Cada opción muestra su atajo de teclado. En la aplicación de escritorio el menú termina con **Salir**, que guarda el documento en curso y cierra la aplicación.
+* **Guardar (Ctrl+S)**: el primer botón de la derecha. Cuando el documento abierto tiene cambios pendientes, le aparece un punto rojo en la esquina, el mismo que marca la pestaña.
+* **Exportar (Ctrl+Alt+E)**: despliega DOCX, ODT, EPUB, HTML, TEX y PDF.
+* **Archivo**: lo que no se hace a diario. `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` y `Pegar LaTeX (Ctrl+Mayús+V)` traen contenido; `Guardar como… (Ctrl+Mayús+S)` lo saca con otro nombre. Cada opción muestra su atajo de teclado. En la aplicación de escritorio el menú termina con **Salir**, que guarda el documento en curso y cierra la aplicación.
 * **Configuración**: agrupa todos los ajustes de la aplicación, cada uno con un submenú que indica el valor activo.
   * **Idioma**: cambia el idioma de la interfaz.
   * **Tamaño de texto**: pequeño, normal, grande o muy grande.
   * **Tema**: `Sistema` sigue el del equipo y cambia con él; `Claro` y `Oscuro` lo fijan. La elección se recuerda la próxima vez que abras la aplicación.
   * **Ventana independiente**: abre EdiMarkWeb en una ventana propia del navegador, sin pestañas ni barra de direcciones. Solo aparece en la versión web; la aplicación de escritorio ya es una ventana propia.
   * **Corrector ortográfico**: subraya las faltas del panel Markdown con los diccionarios instalados en el equipo y sigue el idioma del documento. Viene activado; al desmarcarlo se apaga y la elección se recuerda.
-  * **Buscar actualizaciones…**: solo aparece en la aplicación de escritorio. Consulta si hay una versión más reciente y, si la hay, muestra un aviso con el botón **Descargar e instalar**, que baja el instalador de tu sistema y lo abre. La aplicación hace esta comprobación sola una vez al día al arrancar; la casilla **Comprobar al iniciar** del aviso permite desactivarla.
   * **Opciones de exportación…**: abre los ajustes de los archivos que genera la aplicación (idioma y, para LaTeX, clase y preámbulo), explicados más abajo.
 * **Imprimir (Ctrl+P)**: genera una vista preparada para papel o PDF con los estilos actuales.
-* **Buscar (Ctrl+F)** y **Manual (Ctrl+H)**: abren el buscador avanzado o este mismo documento.
-* **Acerca de**: muestra la versión instalada, el autor, la licencia y las licencias de las bibliotecas de terceros, además de los enlaces a la versión web y a las descargas de escritorio.
+* **Buscar (Ctrl+F)**: abre el buscador avanzado.
+* **Ayuda**: el botón de la interrogación reúne el **Manual de uso (F1)**, **Acerca de EdiMarkWeb** —versión instalada, autor, licencia y licencias de las bibliotecas de terceros, con los enlaces a la versión web y a las descargas— y, en la aplicación de escritorio, **Buscar actualizaciones…**.
 
 El diseño de los paneles se cambia con `Ctrl+L` o con el botón de disposición situado junto al botón que maximiza el área de edición. Su menú permite **Maximizar panel Markdown**, **Maximizar Vista previa** o **Dividir paneles**. En pantallas pequeñas, la barra se pliega en dos botones —**Acciones** y **Formato**— que muestran cada grupo cuando lo necesitas.
 
@@ -80,7 +81,7 @@ La franja gris bajo la barra superior contiene accesos rápidos a formateo y ele
 * **Listas y citas**: Viñetas, numeración y bloques de cita con atajos asociados.
 * **Código, enlaces, imágenes y tablas**: Inserciones guiadas mediante modales.
 * **Pegar**: Trae al documento lo que haya en el portapapeles, como se explica más arriba.
-* **Fórmulas LaTeX**: Menú para insertar comandos en línea o en bloque con la sintaxis correcta.
+* **Fórmulas LaTeX**: menú con los cuatro delimitadores —`$...$`, `$$...$$`, `\(...\)` y `\[...\]`—, cada uno con su atajo al lado. Van en acorde: `Ctrl+M` abre la espera —la barra de estado recuerda las teclas— y después `1`, `2`, `3` o `4` elige el delimitador; `Intro` o una `M` repetida insertan `$...$`, que es el de siempre, y `Esc` o cualquier otra tecla cancelan. Se hace así porque una combinación distinta para cada delimitador acaba chocando con el navegador o con el escritorio: `Ctrl+Mayús+J` es la consola del navegador y `Ctrl+Mayús+M` puede ser la lupa del sistema, y ninguno de los dos suelta su atajo.
 * **Editor de fórmulas (EdiCuaTeX)**: abre el asistente integrado con `Ctrl+Alt+M`. Al aceptar, la fórmula vuelve insertada en el editor.
 
 Cada botón muestra una descripción al pasar el ratón e indica el atajo de teclado equivalente.
@@ -133,7 +134,7 @@ Es la forma estándar de guardar datos sobre un documento y la entienden muchos 
 
 #### El formato del texto
 
-En el mismo cuadro —y también en el botón **Formato** del final de la barra— se fijan la **alineación** (izquierda, justificada o derecha), el **tipo de letra** (con remates, sin remates, monoespaciada o la que escribas), el **tamaño** en puntos, el **interlineado**, los **márgenes** de los cuatro lados en centímetros, la **sangría de primera línea** y la **partición de palabras con guion**.
+En el mismo cuadro —que también abre el botón de los controles deslizantes del final de la barra— se fijan la **alineación** (izquierda, justificada o derecha), el **tipo de letra** (con remates, sin remates, monoespaciada o la que escribas), el **tamaño** en puntos, el **interlineado**, los **márgenes** de los cuatro lados en centímetros, la **sangría de primera línea** y la **partición de palabras con guion**.
 
 Al elegir *Otra…* en el tipo de letra aparece el nombre de la tipografía justo debajo, con una lista de sugerencias: las que la aplicación ha podido reconocer como instaladas en este equipo (en Chrome y Edge, además, *Ver todas las del sistema…* pide permiso y ofrece la lista completa). Puedes escribir cualquier nombre aunque no esté instalado: el documento lo guarda igual, porque el archivo puede acabar en un equipo que sí la tenga. Si aquí no está, se avisa en ámbar y la previsualización usa una tipografía de reserva; al exportar, el nombre viaja escrito y lo resuelve cada programa (Word y LibreOffice si la tienen, y en LaTeX solo con XeLaTeX o LuaLaTeX).
 
@@ -201,7 +202,7 @@ Abre el botón **Archivo** y selecciona `Exportar` para descargar versiones list
 * **EPUB (libro digital)**: Crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). El título se toma del primer encabezado de nivel 1 (o del nombre del documento), y el autor, la portada y el idioma salen de los ajustes que se explican más abajo.
 * **HTML (página web)**: Genera un archivo autónomo con estilos y fórmulas incrustadas, listo para alojar en la web. El título de la pestaña del navegador se toma del primer encabezado, o del nombre del documento si no lo hay.
 * **TEX (LaTeX)**: Crea un documento `.tex` completo con cabecera preparada para compilar. Lleva el idioma del documento, de modo que la partición de palabras y los rótulos automáticos salen en tu lengua, y si el documento empieza con un único encabezado de nivel 1 este pasa a ser el título (`\title` y `\maketitle`) en lugar de una sección más.
-* **PDF (mediante impresión)**: Abre el diálogo de impresión del sistema, donde eliges «Guardar como PDF» como destino. Sale exactamente lo que ves en la vista previa, con las fórmulas compuestas y los márgenes del documento, y el texto queda seleccionable y buscable. Es el mismo camino que el botón **Imprimir (Ctrl+P)**.
+* **PDF**: Abre el diálogo de impresión del sistema, donde eliges «Guardar como PDF» como destino. Sale exactamente lo que ves en la vista previa, con las fórmulas compuestas y los márgenes del documento, y el texto queda seleccionable y buscable. Es el mismo camino que el botón **Imprimir (Ctrl+P)**.
 
 Durante la exportación, la barra superior muestra mensajes de estado (progreso, éxito o errores).
 
@@ -282,7 +283,7 @@ Los instaladores están en la [página de descargas](https://github.com/edimarkw
 
 Al arrancar, la aplicación comprueba una vez al día si hay una versión más reciente. Cuando la hay, aparece un aviso bajo la barra de herramientas con el botón **Descargar e instalar**: baja el instalador que corresponde a tu sistema, muestra el progreso y se lo entrega al instalador del sistema para que termines en un par de clics. Con una AppImage no hay nada que instalar, así que la aplicación descarga la nueva y abre su carpeta para que sustituyas la que tenías. Ningún instalador puede sustituir los archivos de una aplicación abierta, así que en cuanto arranca aparece en el mismo aviso el botón **Cerrar EdiMarkWeb**, que guarda lo que estés escribiendo y cierra: al terminar la instalación, vuelve a abrirla y ya tendrás la versión nueva.
 
-El aviso incluye la casilla **Comprobar al iniciar**, que desactiva esa comprobación automática, y el enlace **Ver novedades** con la lista de cambios. Puedes pedirla cuando quieras desde **Configuración → Buscar actualizaciones…**; si ya tienes la última versión, te lo dirá en la barra de estado.
+El aviso incluye la casilla **Comprobar al iniciar**, que desactiva esa comprobación automática, y el enlace **Ver novedades** con la lista de cambios. Puedes pedirla cuando quieras desde **Ayuda → Buscar actualizaciones…**; si ya tienes la última versión, te lo dirá en la barra de estado.
 
 ### Lo que no cambia
 
@@ -305,8 +306,10 @@ Los documentos que empieces en el navegador y los de la aplicación de escritori
 | Enlace | `Ctrl` + `K` | `Cmd` + `K` |
 | Imagen | `Ctrl` + `Shift` + `I` | `Cmd` + `Shift` + `I` |
 | Tabla | `Ctrl` + `Shift` + `T` | `Cmd` + `Shift` + `T` |
-| Fórmula en línea | `Ctrl` + `M` | `Cmd` + `M` |
-| Fórmula en bloque | `Ctrl` + `Shift` + `M` | `Cmd` + `Shift` + `M` |
+| Fórmula `$...$` (en línea) | `Ctrl` + `M` luego `1` | `Cmd` + `M` luego `1` |
+| Fórmula `$$...$$` (en bloque) | `Ctrl` + `M` luego `2` | `Cmd` + `M` luego `2` |
+| Fórmula `\(...\)` (en línea) | `Ctrl` + `M` luego `3` | `Cmd` + `M` luego `3` |
+| Fórmula `\[...\]` (en bloque) | `Ctrl` + `M` luego `4` | `Cmd` + `M` luego `4` |
 | Deshacer / Rehacer | `Ctrl` + `Z` / `Ctrl` + `Shift` + `Z` | `Cmd` + `Z` / `Cmd` + `Shift` + `Z` |
 | **Gestión de documentos** | | |
 | Nueva pestaña | `Ctrl` + `T` | `Cmd` + `T` |

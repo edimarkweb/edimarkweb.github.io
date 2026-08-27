@@ -2846,6 +2846,14 @@ function updateDirtyIndicator(id, isDirty) {
     if (tab) {
         tab.classList.toggle('hidden', !isDirty);
     }
+    // Guardar vive ahora en la barra, donde no hay nombre de documento que
+    // marcar: el punto del botón dice si al documento abierto le falta guardar.
+    if (id === currentId) updateSaveButtonState(isDirty);
+}
+
+function updateSaveButtonState(isDirty) {
+    const dot = document.getElementById('save-dirty-dot');
+    if (dot) dot.classList.toggle('hidden', !isDirty);
 }
 
 // El manual existe en los cinco idiomas de la interfaz; el castellano hace de
@@ -4144,6 +4152,9 @@ window.onload = async () => {
     const printBtn = document.getElementById('print-btn');
     const helpBtn = document.getElementById('help-btn');
     const aboutBtn = document.getElementById('about-btn');
+    const helpMenuContainer = document.getElementById('help-menu-container');
+    const helpMenuBtn = document.getElementById('help-menu-btn');
+    const helpMenu = document.getElementById('help-menu');
     const aboutModalOverlay = document.getElementById('about-modal-overlay');
     const aboutCloseBtn = document.getElementById('about-close-btn');
     const desktopReleaseBanner = document.getElementById('desktop-release-banner');
@@ -5099,10 +5110,7 @@ window.onload = async () => {
         exportMenuBtn.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
-            // Con ratón el submenú ya se abre al pasar por encima; el clic no
-            // debe cerrarlo, como en cualquier submenú de escritorio.
-            if (POINTER_HAS_HOVER) openExportMenu();
-            else toggleExportMenu();
+            toggleExportMenu();
             if (window.lucide && typeof window.lucide.createIcons === 'function') {
                 window.lucide.createIcons();
             }
@@ -5223,29 +5231,6 @@ window.onload = async () => {
                 closeExportMenu();
             }
         }, { capture: true });
-
-        if (POINTER_HAS_HOVER) {
-            let closeTimer;
-            const cancelClose = () => clearTimeout(closeTimer);
-            exportMenuContainer.addEventListener('mouseenter', () => {
-                cancelClose();
-                openExportMenu();
-            });
-            // Un margen para el recorrido diagonal hasta el submenú.
-            exportMenuContainer.addEventListener('mouseleave', () => {
-                cancelClose();
-                closeTimer = setTimeout(closeExportMenu, 250);
-            });
-
-            // Volver a cualquier otra opción del menú cierra el submenú.
-            actionsMenu?.querySelectorAll('[role="menuitem"]').forEach((item) => {
-                if (exportMenuContainer.contains(item)) return;
-                item.addEventListener('mouseenter', () => {
-                    cancelClose();
-                    closeExportMenu();
-                });
-            });
-        }
     }
 
     document.addEventListener('keydown', (event) => {
@@ -5266,6 +5251,11 @@ window.onload = async () => {
             if (actionsMenuBtn) actionsMenuBtn.focus();
             handled = true;
         }
+        if (isHelpMenuOpen()) {
+            closeHelpMenu();
+            if (helpMenuBtn) helpMenuBtn.focus();
+            handled = true;
+        }
         if (isSettingsMenuOpen()) {
             closeSettingsMenu();
             if (settingsMenuBtn) settingsMenuBtn.focus();
@@ -5274,6 +5264,55 @@ window.onload = async () => {
         if (handled) event.preventDefault();
     });
 
+    /*
+      Manual, «Acerca de» y las actualizaciones bajo un solo botón: eran dos
+      circulitos idénticos —una interrogación y una i— pegados en la barra, que
+      sin rótulo no se distinguían, y su contenido es el mismo asunto.
+    */
+    function isHelpMenuOpen() {
+        return helpMenu && !helpMenu.classList.contains('hidden');
+    }
+
+    function openHelpMenu() {
+        if (!helpMenu) return;
+        closeActionsMenu();
+        closeSettingsMenu();
+        closeExportMenu();
+        closePreviewCopyMenu();
+        helpMenu.classList.remove('hidden');
+        if (helpMenuBtn) helpMenuBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeHelpMenu() {
+        if (!helpMenu) return;
+        helpMenu.classList.add('hidden');
+        if (helpMenuBtn) helpMenuBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleHelpMenu() {
+        if (isHelpMenuOpen()) closeHelpMenu();
+        else openHelpMenu();
+    }
+
+    if (helpMenuBtn) {
+        helpMenuBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            toggleHelpMenu();
+        });
+    }
+    if (helpMenu) {
+        helpMenu.querySelectorAll('[role="menuitem"]').forEach((item) => {
+            item.addEventListener('click', () => closeHelpMenu());
+        });
+    }
+    if (helpMenuContainer) {
+        document.addEventListener('click', (event) => {
+            if (!isHelpMenuOpen()) return;
+            if (!helpMenuContainer.contains(event.target)) closeHelpMenu();
+        }, { capture: true });
+    }
+
     function isActionsMenuOpen() {
         return actionsMenu && !actionsMenu.classList.contains('hidden');
     }
@@ -5281,6 +5320,7 @@ window.onload = async () => {
     function openActionsMenu() {
         if (!actionsMenu) return;
         closeExportMenu();
+        closeHelpMenu();
         closePreviewCopyMenu();
         closeSettingsMenu();
         actionsMenu.classList.remove('hidden');
@@ -5289,7 +5329,6 @@ window.onload = async () => {
 
     function closeActionsMenu() {
         if (!actionsMenu) return;
-        closeExportMenu();
         actionsMenu.classList.add('hidden');
         if (actionsMenuBtn) actionsMenuBtn.setAttribute('aria-expanded', 'false');
     }
@@ -5310,6 +5349,7 @@ window.onload = async () => {
     function openSettingsMenu() {
         if (!settingsMenu) return;
         closeActionsMenu();
+        closeHelpMenu();
         closeExportMenu();
         closePreviewCopyMenu();
         settingsMenu.classList.remove('hidden');
@@ -5445,6 +5485,8 @@ window.onload = async () => {
         if (!exportMenu) return;
         closePreviewCopyMenu();
         closeSettingsMenu();
+        closeActionsMenu();
+        closeHelpMenu();
         exportMenu.classList.remove('hidden');
         if (exportMenuBtn) exportMenuBtn.setAttribute('aria-expanded', 'true');
     }
@@ -7582,8 +7624,6 @@ window.onload = async () => {
         'i': 'italic',
         '`': 'code',
         'k': 'link',
-        'm': 'latex-inline-dollar',
-        'M': 'latex-block-bracket',
         'Q': 'quote',
         'L': 'list-ul',
         'O': 'list-ol',
@@ -7597,9 +7637,80 @@ window.onload = async () => {
         '6': 'heading-6',
     };
 
+    /*
+      Los cuatro delimitadores en un acorde y no en cuatro combinaciones.
+
+      Cada combinación nueva es una negociación con el navegador y con el
+      escritorio —Ctrl+Mayús+J es la consola del navegador y Ctrl+Mayús+M, la
+      lupa del sistema, y ninguno de los dos deja que la página se los quede—,
+      así que solo se expone una: Ctrl+M abre la espera y la segunda tecla, ya
+      sin modificadores, elige el delimitador. Ninguna la reserva nadie, y para
+      añadir un quinto delimitador basta con un 5.
+    */
+    const FORMULA_CHORD_FORMATS = {
+        '1': 'latex-inline-dollar',
+        '2': 'latex-block-dollar',
+        '3': 'latex-inline-paren',
+        '4': 'latex-block-bracket',
+    };
+    let formulaChordPending = false;
+
+    function formulaChordHint() {
+        return getTranslation(
+            'formula_chord_hint',
+            'Fórmula: 1 $…$ · 2 $$…$$ · 3 \\(…\\) · 4 \\[…\\] · Esc cancela',
+        );
+    }
+
+    function startFormulaChord() {
+        formulaChordPending = true;
+        reportStatus(formulaChordHint());
+    }
+
+    function endFormulaChord() {
+        if (!formulaChordPending) return;
+        formulaChordPending = false;
+        reportStatus('');
+    }
+    window.__formulaChordPending = () => formulaChordPending;
+
+    // Una espera olvidada se comería la siguiente tecla que se pulse: en cuanto
+    // la atención se va a otra parte, se cancela sola.
+    document.addEventListener('mousedown', endFormulaChord);
+    window.addEventListener('blur', endFormulaChord);
+
+    /*
+      Devuelve true cuando la pulsación pertenecía al acorde, para que el resto
+      de atajos no la vean. Los modificadores sueltos no cuentan: pulsar Mayús
+      camino del siguiente carácter no puede cancelar la espera.
+    */
+    function handleFormulaChordKey(event) {
+        if (!formulaChordPending) return false;
+        if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(event.key)) return true;
+
+        const format = FORMULA_CHORD_FORMATS[event.key];
+        // Enter y una M repetida insertan el de siempre: el caso común se
+        // resuelve con dos pulsaciones cómodas y sin mirar la ayuda.
+        const repeated = event.key === 'Enter' || event.key.toLowerCase() === 'm';
+        endFormulaChord();
+        if (format || repeated) {
+            event.preventDefault();
+            applyFormat(format || 'latex-inline-dollar');
+            return true;
+        }
+        // Escape solo cancela; cualquier otra tecla cancela y se escribe.
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            return true;
+        }
+        return false;
+    }
+
     document.addEventListener('keydown', e => {
         const accel = isMac ? e.metaKey : e.ctrlKey;
         if (accel) ctrlPressed = true;
+
+        if (handleFormulaChordKey(e)) return;
 
         if (e.key === 'F1') {
             e.preventDefault();
@@ -7622,7 +7733,7 @@ window.onload = async () => {
             if (e.altKey) {
                 switch (e.key.toLowerCase()) {
                     case 'o': e.preventDefault(); importFileBtn?.click(); return;
-                    case 'e': e.preventDefault(); openActionsMenu(); openExportMenu(); return;
+                    case 'e': e.preventDefault(); openExportMenu(); return;
                     case 'm': e.preventDefault(); openEdicuatexBtn?.click(); return;
                     case 'v': e.preventDefault(); pasteBtn?.click(); return;
                 }
@@ -7649,6 +7760,7 @@ window.onload = async () => {
               ejecutaría las dos acciones a la vez.
             */
             switch (e.shiftKey ? null : e.key.toLowerCase()) {
+                case 'm': e.preventDefault(); startFormulaChord(); break;
                 case 'o': e.preventDefault(); openFileBtn.click(); break;
                 case 's': e.preventDefault(); saveBtn.click(); break;
                 case 'p': e.preventDefault(); printBtn.click(); break;

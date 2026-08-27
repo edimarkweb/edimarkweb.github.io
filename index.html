@@ -49,6 +49,161 @@
             <img src="logo_256.png" alt="Logo EdiMarkWeb" class="w-12 h-12">
             <h1 data-i18n-key="h1" class="text-xl font-semibold text-slate-800 dark:text-slate-100">EdiMarkWeb</h1>
         </div>
+        <div id="header-menus" class="flex items-center gap-1 sm:mr-auto">
+        <div id="actions-menu-container" class="relative">
+          <button type="button" id="actions-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="actions_menu_btn_title" title="Archivo" aria-haspopup="true" aria-expanded="false">
+            <span data-i18n-key="actions_menu_btn_text">Archivo</span>
+            <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
+          </button>
+          <div id="actions-menu" class="hidden absolute left-0 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="actions-menu-btn">
+            <button type="button" id="open-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+O">
+              <i data-lucide="folder-open" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+              <span class="whitespace-nowrap" data-i18n-key="open_file_btn_text">Abrir</span>
+              <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_open">Ctrl+O</span>
+            </button>
+            <button type="button" id="import-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+Alt+O" data-i18n-key="import_file_btn_title" title="Importar con Pandoc (Ctrl+Alt+O)">
+              <i data-lucide="upload" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+              <span class="whitespace-nowrap" data-i18n-key="import_file_btn_text">Importar</span>
+              <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_import">Ctrl+Alt+O</span>
+            </button>
+            <button type="button" id="latex-import-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+Shift+V">
+              <i data-lucide="file-text" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+              <span class="whitespace-nowrap" data-i18n-key="import_latex_btn_text">Pegar LaTeX</span>
+              <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_paste_latex">Ctrl+Mayús+V</span>
+            </button>
+            <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+                                <button type="button" id="save-as-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+Shift+S" data-i18n-key="save_as_btn_title" title="Guardar como (Ctrl+Mayús+S)">
+              <i data-lucide="save-all" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+              <span class="whitespace-nowrap" data-i18n-key="save_as_btn_text">Guardar como…</span>
+              <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_save_as">Ctrl+Mayús+S</span>
+            </button>
+                                <div id="quit-app-separator" class="hidden border-t border-slate-200 dark:border-slate-700 my-1"></div>
+            <button type="button" id="quit-app-btn" class="hidden w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="quit_app_btn_title" title="Cerrar la aplicación">
+              <i data-lucide="log-out" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+              <span class="whitespace-nowrap" data-i18n-key="quit_app_btn_text">Salir</span>
+            </button>
+          </div>
+        </div>
+        <div id="settings-menu-container" class="relative">
+          <button type="button" id="settings-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="settings_menu_btn_title" title="Configuración (Ctrl+,)" aria-haspopup="true" aria-expanded="false" aria-keyshortcuts="Control+Comma">
+            <span data-i18n-key="settings_menu_btn_text">Configuración</span>
+            <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
+          </button>
+          <div id="settings-menu" class="hidden absolute left-0 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="settings-menu-btn">
+            <div id="language-menu-container" class="relative">
+              <button type="button" id="language-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                <i data-lucide="languages" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                <span class="whitespace-nowrap" data-i18n-key="language_select_label">Idioma</span>
+                <span id="language-select-label" class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500">Español</span>
+                <i data-lucide="chevron-right" class="w-4 h-4 shrink-0 opacity-60"></i>
+              </button>
+              <div id="language-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-48 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="language-menu-btn">
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="es">
+                <span>Español</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="en">
+                <span>English</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="ca">
+                <span>Català</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="gl">
+                <span>Galego</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="eu">
+                <span>Euskara</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              </div>
+              <select id="language-select" class="hidden" aria-label="Seleccionar idioma">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+                <option value="ca">Català</option>
+                <option value="gl">Galego</option>
+                <option value="eu">Euskara</option>
+              </select>
+            </div>
+            <div id="font-size-menu-container" class="relative">
+              <button type="button" id="font-size-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false" data-i18n-key="font_size_select_aria_label" aria-label="Tamaño de texto">
+                <i data-lucide="type" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                <span class="whitespace-nowrap" data-i18n-key="font_size_select_label">Tamaño de texto</span>
+                <span id="font-size-select-label" class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500">Normal</span>
+                <i data-lucide="chevron-right" class="w-4 h-4 shrink-0 opacity-60"></i>
+              </button>
+              <div id="font-size-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-48 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="font-size-menu-btn">
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="14">
+                <span data-i18n-key="font_size_small">Pequeño</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="16">
+                <span data-i18n-key="font_size_normal">Normal</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="18">
+                <span data-i18n-key="font_size_large">Grande</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="20">
+                <span data-i18n-key="font_size_xlarge">Muy grande</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              </div>
+              <select id="font-size-select" class="hidden" aria-label="Tamaño de texto">
+                <option value="14" data-i18n-key="font_size_small">Pequeño</option>
+                <option value="16" data-i18n-key="font_size_normal">Normal</option>
+                <option value="18" data-i18n-key="font_size_large">Grande</option>
+                <option value="20" data-i18n-key="font_size_xlarge">Muy grande</option>
+              </select>
+            </div>
+            <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+            <div id="theme-menu-container" class="relative">
+              <button type="button" id="theme-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false" data-i18n-key="theme_toggle_btn_aria_label" aria-label="Cambiar tema">
+                <span class="theme-icon flex"><i data-lucide="monitor" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i></span>
+                <span class="whitespace-nowrap" data-i18n-key="theme_menu_label">Tema</span>
+                <span id="theme-select-label" class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500">Sistema</span>
+                <i data-lucide="chevron-right" class="w-4 h-4 shrink-0 opacity-60"></i>
+              </button>
+              <div id="theme-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-48 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="theme-menu-btn">
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-theme="system">
+                <span data-i18n-key="theme_option_system">Sistema</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-theme="light">
+                <span data-i18n-key="theme_option_light">Claro</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-theme="dark">
+                <span data-i18n-key="theme_option_dark">Oscuro</span>
+                <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              </button>
+              </div>
+              <select id="theme-select" class="hidden" aria-label="Modo">
+                <option value="system" data-i18n-key="theme_option_system">Sistema</option>
+                <option value="light" data-i18n-key="theme_option_light">Claro</option>
+                <option value="dark" data-i18n-key="theme_option_dark">Oscuro</option>
+              </select>
+            </div>
+            <button type="button" id="desktop-window-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="desktop_window_btn_title" title="Abrir como ventana independiente">
+              <i data-lucide="app-window" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              <span class="whitespace-nowrap" data-i18n-key="desktop_window_btn_text">Ventana independiente</span>
+            </button>
+            <button type="button" id="spellcheck-toggle-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemcheckbox" aria-checked="true" data-i18n-key="spellcheck_toggle_title" title="Subrayar las faltas mientras se escribe">
+              <i data-lucide="spell-check" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              <span class="whitespace-nowrap" data-i18n-key="spellcheck_toggle_text">Corrector ortográfico</span>
+              <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+            </button>
+            <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+                                <button type="button" id="latex-settings-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="doc_settings_btn_title" title="Opciones de los documentos exportados">
+              <i data-lucide="file-cog" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              <span class="whitespace-nowrap" data-i18n-key="doc_settings_btn_text">Opciones de exportación…</span>
+            </button>
+          </div>
+        </div>
+        </div>
         <div id="mobile-toolbar-controls">
             <button id="mobile-actions-toggle" type="button" class="mobile-toolbar-btn" aria-expanded="false" aria-controls="toolbar-actions">
                 <i data-lucide="layout-grid"></i>
@@ -60,215 +215,68 @@
             </button>
         </div>
         <div id="toolbar-actions" class="toolbar-actions flex items-center justify-end gap-1 sm:gap-2 flex-wrap sm:ml-auto">
-            <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="file-controls-group">
-<div id="actions-menu-container" class="relative">
-                  <button type="button" id="actions-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="actions_menu_btn_title" title="Archivo" aria-haspopup="true" aria-expanded="false">
-                    <i data-lucide="folder" class="text-slate-700 dark:text-slate-300"></i>
-                    <span class="hidden sm:inline" data-i18n-key="actions_menu_btn_text">Archivo</span>
-                    <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
-                  </button>
-                  <div id="actions-menu" class="hidden absolute left-0 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="actions-menu-btn">
-                    <button type="button" id="open-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+O">
-                      <i data-lucide="folder-open" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
-                      <span data-i18n-key="open_file_btn_text">Abrir</span>
-                      <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_open">Ctrl+O</span>
-                    </button>
-                    <button type="button" id="import-file-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+Alt+O" data-i18n-key="import_file_btn_title" title="Importar con Pandoc (Ctrl+Alt+O)">
-                      <i data-lucide="upload" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
-                      <span data-i18n-key="import_file_btn_text">Importar</span>
-                      <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_import">Ctrl+Alt+O</span>
-                    </button>
-                    <button type="button" id="latex-import-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+Shift+V">
-                      <i data-lucide="file-text" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
-                      <span data-i18n-key="import_latex_btn_text">Pegar LaTeX</span>
-                      <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_paste_latex">Ctrl+Mayús+V</span>
-                    </button>
-                    <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
-                    <button type="button" id="save-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+S">
-                      <i data-lucide="save" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                      <span data-i18n-key="save_btn_text">Guardar</span>
-                      <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_save">Ctrl+S</span>
-                    </button>
-                    <button type="button" id="save-as-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="Control+Shift+S" data-i18n-key="save_as_btn_title" title="Guardar como (Ctrl+Mayús+S)">
-                      <i data-lucide="save-all" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                      <span data-i18n-key="save_as_btn_text">Guardar como…</span>
-                      <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_save_as">Ctrl+Mayús+S</span>
-                    </button>
-                    <div id="export-menu-container" class="relative">
-                        <button type="button" id="export-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false" aria-keyshortcuts="Control+Alt+E" data-i18n-key="export_menu_btn_title" title="Exportar (Ctrl+Alt+E)">
-                          <i data-lucide="download" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                          <span data-i18n-key="export_menu_btn_text">Exportar</span>
-                          <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_export">Ctrl+Alt+E</span>
-                          <i data-lucide="chevron-right" class="w-4 h-4 opacity-60"></i>
-                        </button>
-                      <div id="export-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-60 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="export-menu-btn">
-                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="docx" role="menuitem">
-                          <i data-lucide="file-text" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                          <span data-i18n-key="export_menu_option_docx">DOCX (Microsoft Word)</span>
-                        </button>
-                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="odt" role="menuitem">
-                          <i data-lucide="file" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                          <span data-i18n-key="export_menu_option_odt">ODT (LibreOffice)</span>
-                        </button>
-                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="epub" role="menuitem">
-                          <i data-lucide="book-open" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                          <span data-i18n-key="export_menu_option_epub">EPUB (libro digital)</span>
-                        </button>
-                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="html-download" role="menuitem">
-                          <i data-lucide="globe" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                          <span data-i18n-key="export_menu_option_html_download">HTML (página web)</span>
-                        </button>
-                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-download" role="menuitem">
-                          <i data-lucide="sigma" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                          <span data-i18n-key="export_menu_option_latex_full_download">TEX (LaTeX)</span>
-                        </button>
-                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="pdf" role="menuitem">
-                          <i data-lucide="file-down" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                          <span data-i18n-key="export_menu_option_pdf">PDF (mediante impresión)</span>
-                        </button>
-                      </div>
-                    </div>
-                    <div id="quit-app-separator" class="hidden border-t border-slate-200 dark:border-slate-700 my-1"></div>
-                    <button type="button" id="quit-app-btn" class="hidden w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="quit_app_btn_title" title="Cerrar la aplicación">
-                      <i data-lucide="log-out" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
-                      <span data-i18n-key="quit_app_btn_text">Salir</span>
-                    </button>
-                  </div>
-                </div>
-<div id="settings-menu-container" class="relative">
-                  <button type="button" id="settings-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="settings_menu_btn_title" title="Configuración (Ctrl+,)" aria-haspopup="true" aria-expanded="false" aria-keyshortcuts="Control+Comma">
-                    <i data-lucide="settings" class="text-slate-700 dark:text-slate-300"></i>
-                    <span class="hidden sm:inline" data-i18n-key="settings_menu_btn_text">Configuración</span>
-                    <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
-                  </button>
-                  <div id="settings-menu" class="hidden absolute left-0 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="settings-menu-btn">
-                    <div id="language-menu-container" class="relative">
-                      <button type="button" id="language-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false">
-                        <i data-lucide="languages" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                        <span data-i18n-key="language_select_label">Idioma</span>
-                        <span id="language-select-label" class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500">Español</span>
-                        <i data-lucide="chevron-right" class="w-4 h-4 shrink-0 opacity-60"></i>
-                      </button>
-                      <div id="language-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-48 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="language-menu-btn">
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="es">
-                        <span>Español</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="en">
-                        <span>English</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="ca">
-                        <span>Català</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="gl">
-                        <span>Galego</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-lang="eu">
-                        <span>Euskara</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      </div>
-                      <select id="language-select" class="hidden" aria-label="Seleccionar idioma">
-                        <option value="es">Español</option>
-                        <option value="en">English</option>
-                        <option value="ca">Català</option>
-                        <option value="gl">Galego</option>
-                        <option value="eu">Euskara</option>
-                      </select>
-                    </div>
-                    <div id="font-size-menu-container" class="relative">
-                      <button type="button" id="font-size-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false" data-i18n-key="font_size_select_aria_label" aria-label="Tamaño de texto">
-                        <i data-lucide="type" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                        <span data-i18n-key="font_size_select_label">Tamaño de texto</span>
-                        <span id="font-size-select-label" class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500">Normal</span>
-                        <i data-lucide="chevron-right" class="w-4 h-4 shrink-0 opacity-60"></i>
-                      </button>
-                      <div id="font-size-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-48 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="font-size-menu-btn">
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="14">
-                        <span data-i18n-key="font_size_small">Pequeño</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="16">
-                        <span data-i18n-key="font_size_normal">Normal</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="18">
-                        <span data-i18n-key="font_size_large">Grande</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-font-size="20">
-                        <span data-i18n-key="font_size_xlarge">Muy grande</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      </div>
-                      <select id="font-size-select" class="hidden" aria-label="Tamaño de texto">
-                        <option value="14" data-i18n-key="font_size_small">Pequeño</option>
-                        <option value="16" data-i18n-key="font_size_normal">Normal</option>
-                        <option value="18" data-i18n-key="font_size_large">Grande</option>
-                        <option value="20" data-i18n-key="font_size_xlarge">Muy grande</option>
-                      </select>
-                    </div>
-                    <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
-                    <div id="theme-menu-container" class="relative">
-                      <button type="button" id="theme-menu-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-haspopup="true" aria-expanded="false" data-i18n-key="theme_toggle_btn_aria_label" aria-label="Cambiar tema">
-                        <span class="theme-icon flex"><i data-lucide="monitor" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i></span>
-                        <span data-i18n-key="theme_menu_label">Tema</span>
-                        <span id="theme-select-label" class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500">Sistema</span>
-                        <i data-lucide="chevron-right" class="w-4 h-4 shrink-0 opacity-60"></i>
-                      </button>
-                      <div id="theme-menu" class="hidden absolute left-0 top-full mt-1 sm:left-full sm:top-0 sm:ml-1 sm:mt-0 w-48 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-30" role="menu" aria-labelledby="theme-menu-btn">
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-theme="system">
-                        <span data-i18n-key="theme_option_system">Sistema</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-theme="light">
-                        <span data-i18n-key="theme_option_light">Claro</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemradio" aria-checked="false" data-theme="dark">
-                        <span data-i18n-key="theme_option_dark">Oscuro</span>
-                        <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      </button>
-                      </div>
-                      <select id="theme-select" class="hidden" aria-label="Modo">
-                        <option value="system" data-i18n-key="theme_option_system">Sistema</option>
-                        <option value="light" data-i18n-key="theme_option_light">Claro</option>
-                        <option value="dark" data-i18n-key="theme_option_dark">Oscuro</option>
-                      </select>
-                    </div>
-                    <button type="button" id="desktop-window-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="desktop_window_btn_title" title="Abrir como ventana independiente">
-                      <i data-lucide="app-window" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      <span data-i18n-key="desktop_window_btn_text">Ventana independiente</span>
-                    </button>
-                    <button type="button" id="spellcheck-toggle-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitemcheckbox" aria-checked="true" data-i18n-key="spellcheck_toggle_title" title="Subrayar las faltas mientras se escribe">
-                      <i data-lucide="spell-check" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      <span data-i18n-key="spellcheck_toggle_text">Corrector ortográfico</span>
-                      <i data-lucide="check" class="submenu-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                    </button>
-                    <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
-                    <button type="button" id="check-updates-btn" class="hidden flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="check_updates_btn_title" title="Buscar actualizaciones de la aplicación">
-                      <i data-lucide="refresh-cw" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      <span data-i18n-key="check_updates_btn_text">Buscar actualizaciones…</span>
-                    </button>
-                    <button type="button" id="latex-settings-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="doc_settings_btn_title" title="Opciones de los documentos exportados">
-                      <i data-lucide="file-cog" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                      <span data-i18n-key="doc_settings_btn_text">Opciones de exportación…</span>
-                    </button>
-                  </div>
-                </div>
-            </div>
-            <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
             <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="document-actions-group">
+                <button type="button" id="save-btn" class="action-btn relative focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="save_btn_title" title="Guardar archivo (Ctrl+S)" aria-keyshortcuts="Control+S">
+                    <i data-lucide="save"></i>
+                    <span id="save-dirty-dot" class="save-dirty-dot hidden" aria-hidden="true"></span>
+                </button>
+<div id="export-menu-container" class="relative">
+                    <button type="button" id="export-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" aria-haspopup="true" aria-expanded="false" aria-keyshortcuts="Control+Alt+E" data-i18n-key="export_menu_btn_title" title="Exportar (Ctrl+Alt+E)">
+                      <i data-lucide="download"></i>
+                      <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
+                    </button>
+                  <div id="export-menu" class="hidden absolute right-0 mt-2 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 w-60 z-30" role="menu" aria-labelledby="export-menu-btn">
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="docx" role="menuitem">
+                      <i data-lucide="file-text" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                      <span data-i18n-key="export_menu_option_docx">DOCX (Microsoft Word)</span>
+                    </button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="odt" role="menuitem">
+                      <i data-lucide="file" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                      <span data-i18n-key="export_menu_option_odt">ODT (LibreOffice)</span>
+                    </button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="epub" role="menuitem">
+                      <i data-lucide="book-open" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                      <span data-i18n-key="export_menu_option_epub">EPUB (libro digital)</span>
+                    </button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="html-download" role="menuitem">
+                      <i data-lucide="globe" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                      <span data-i18n-key="export_menu_option_html_download">HTML (página web)</span>
+                    </button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-download" role="menuitem">
+                      <i data-lucide="sigma" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                      <span data-i18n-key="export_menu_option_latex_full_download">TEX (LaTeX)</span>
+                    </button>
+                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="pdf" role="menuitem">
+                      <i data-lucide="file-down" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                      <span data-i18n-key="export_menu_option_pdf">PDF</span>
+                    </button>
+                  </div>
+                </div>
+                <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
                 <button id="print-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="print_btn_title" title="Imprimir (Ctrl+P)"><i data-lucide="printer"></i></button>
                 <button id="open-search-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="open_search_btn_title" title="Buscar (Ctrl+F)"><i data-lucide="search"></i></button>
-            </div>
-            <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
-            <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="help-controls-group">
-                <button id="help-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="help_btn_title" title="Manual de EdiMarkWeb (F1)" aria-label="Abrir manual" aria-keyshortcuts="F1"><i data-lucide="help-circle"></i></button>
-                <button id="about-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="about_btn_title" title="Acerca de EdiMarkWeb" aria-label="Acerca de EdiMarkWeb"><i data-lucide="info"></i></button>
+                <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
+                <div id="help-menu-container" class="relative">
+                    <button type="button" id="help-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="help_menu_btn_title" title="Ayuda y acerca de" aria-haspopup="true" aria-expanded="false">
+                        <i data-lucide="help-circle"></i>
+                        <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
+                    </button>
+                    <div id="help-menu" class="hidden absolute right-0 mt-2 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 w-64 z-20" role="menu" aria-labelledby="help-menu-btn">
+                        <button type="button" id="help-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" aria-keyshortcuts="F1">
+                            <i data-lucide="book-open" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                            <span class="whitespace-nowrap" data-i18n-key="help_menu_manual_text">Manual de uso</span>
+                            <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_help">F1</span>
+                        </button>
+                        <button type="button" id="about-btn" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
+                            <i data-lucide="info" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                            <span class="whitespace-nowrap" data-i18n-key="about_btn_text">Acerca de EdiMarkWeb</span>
+                        </button>
+                        <button type="button" id="check-updates-btn" class="hidden flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem" data-i18n-key="check_updates_btn_title" title="Buscar actualizaciones de la aplicación">
+                        <i data-lucide="refresh-cw" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+                        <span class="whitespace-nowrap" data-i18n-key="check_updates_btn_text">Buscar actualizaciones…</span>
+                        </button>
+                    </div>
+                </div>
             </div>
             <input
               type="file"
@@ -386,27 +394,36 @@
             <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
             <div class="flex items-center gap-1">
                 <div class="relative" id="formula-dropdown-container">
-                    <button id="formula-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" title="Insertar fórmula manualmente" data-i18n-key="formula_menu_btn_title" aria-haspopup="true" aria-expanded="false">
-                        <i data-lucide="function-square"></i>
-                        <span class="hidden sm:inline" data-i18n-key="formula_menu_btn_text">Fórmulas</span>
+                    <button id="formula-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" title="Insertar fórmula manualmente (Ctrl+M)" data-i18n-key="formula_menu_btn_title" aria-haspopup="true" aria-expanded="false">
+                        <i data-lucide="braces"></i>
                         <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
                     </button>
-                    <div id="formula-options" class="hidden absolute z-20 -left-2 mt-2 w-48 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
-                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-inline-dollar" data-i18n-key="formula_inline_dollar" role="menuitem">$...$ (en línea)</button>
-                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-block-dollar" data-i18n-key="formula_block_dollar" role="menuitem">$$...$$ (bloque)</button>
+                    <div id="formula-options" class="hidden absolute z-20 -left-2 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
+                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-inline-dollar" role="menuitem" aria-keyshortcuts="Control+M 1">
+                            <span class="whitespace-nowrap" data-i18n-key="formula_inline_dollar">$...$ (en línea)</span>
+                            <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_inline_dollar">Ctrl+M 1</span>
+                        </button>
+                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-block-dollar" role="menuitem" aria-keyshortcuts="Control+M 2">
+                            <span class="whitespace-nowrap" data-i18n-key="formula_block_dollar">$$...$$ (bloque)</span>
+                            <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_block_dollar">Ctrl+M 2</span>
+                        </button>
                         <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
-                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-inline-paren" data-i18n-key="formula_inline_paren" role="menuitem">\(...\) (en línea)</button>
-                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-block-bracket" data-i18n-key="formula_block_bracket" role="menuitem">\[...\] (bloque)</button>
+                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-inline-paren" role="menuitem" aria-keyshortcuts="Control+M 3">
+                            <span class="whitespace-nowrap" data-i18n-key="formula_inline_paren">\(...\) (en línea)</span>
+                            <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_inline_paren">Ctrl+M 3</span>
+                        </button>
+                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-block-bracket" role="menuitem" aria-keyshortcuts="Control+M 4">
+                            <span class="whitespace-nowrap" data-i18n-key="formula_block_bracket">\[...\] (bloque)</span>
+                            <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_block_bracket">Ctrl+M 4</span>
+                        </button>
                     </div>
                 </div>
                 <button id="open-edicuatex-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="edicuatex_btn_title" title="Editor visual de fórmulas matemáticas (EdiCuaTeX, Ctrl+Alt+M)" aria-keyshortcuts="Control+Alt+M">
                     <i data-lucide="square-radical"></i>
-                    <span class="hidden sm:inline" data-i18n-key="edicuatex_btn_text">Editor</span>
                 </button>
                 <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
                 <button id="doc-format-toolbar-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="doc_lang_btn_title" title="Idioma, autor, índice y formato de este documento.">
                     <i data-lucide="sliders-horizontal"></i>
-                    <span class="hidden sm:inline" data-i18n-key="doc_format_toolbar_btn_text">Formato</span>
                 </button>
             </div>
         </div>

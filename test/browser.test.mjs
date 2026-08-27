@@ -126,6 +126,7 @@ test('un idioma no disponible recurre al español', async (t) => {
     'https://github.com/edimarkweb/edimarkweb.github.io/releases/latest',
   );
 
+  await page.locator('#help-menu-btn').click();
   await page.locator('#about-btn').click();
   await page.locator('#about-modal-overlay').waitFor({ state: 'visible' });
   assert.equal(
@@ -178,6 +179,7 @@ test('la aplicación nativa aprovecha toda la ventana y comparte el cuadro Acerc
   assert.ok(bottomGap >= 15 && bottomGap <= 17, `margen inferior inesperado: ${bottomGap}px`);
 
   const packageVersion = JSON.parse(await readFile(resolve(repoRoot, 'package.json'), 'utf8')).version;
+  await page.locator('#help-menu-btn').click();
   await page.locator('#about-btn').click();
   await page.locator('#about-modal-overlay').waitFor({ state: 'visible' });
   assert.equal(await page.locator('[data-app-version]').textContent(), packageVersion);
@@ -329,7 +331,6 @@ test('el PDF del menú de exportación sale por la impresión, no por Pandoc', a
     sustituye la impresión para que la prueba no abra un diálogo de verdad.
   */
   await page.evaluate(() => { window.__impresiones = 0; window.print = () => { window.__impresiones += 1; }; });
-  await page.locator('#actions-menu-btn').click();
   await page.locator('#export-menu-btn').click();
   await page.locator('#export-menu').waitFor({ state: 'visible' });
   await page.locator('[data-export-format="pdf"]').click();
@@ -767,6 +768,7 @@ test('Acerca de muestra la versión de package.json en cada idioma', async (t) =
   t.after(() => context.close());
 
   await page.waitForFunction(() => document.documentElement.lang === 'en');
+  await page.locator('#help-menu-btn').click();
   await page.locator('#about-btn').click();
   await page.locator('#about-modal-overlay').waitFor({ state: 'visible' });
   assert.equal(await page.locator('[data-app-version]').textContent(), packageVersion);
@@ -1051,7 +1053,6 @@ test('los nuevos atajos abren sus acciones y los iconos explican su función', a
   assert.equal(await page.locator('#toggle-replace-btn').getAttribute('title'), 'Mostrar opciones de reemplazo');
 
   await page.keyboard.press('Control+Alt+e');
-  assert.equal(await page.locator('#actions-menu').isVisible(), true);
   assert.equal(await page.locator('#export-menu').isVisible(), true);
   await page.keyboard.press('Escape');
 
@@ -1863,6 +1864,95 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
   assert.equal(/align:|fontsize:|margin-left:|hyphenate:/.test(limpio), false);
   assert.match(limpio, /# Prueba/);
   assert.equal(await page.locator('#html-output').evaluate(preview => preview.style.textAlign), '');
+});
+
+/*
+  La cabecera tenía todo apilado en el borde derecho y el centro desierto, con
+  la carpeta de «Archivo» repitiendo el icono de su propia primera opción y dos
+  circulitos idénticos —la interrogación y la i— al final. Ahora los menús se
+  leen escritos junto al logotipo y a la derecha quedan las acciones del día a
+  día, cada una con un icono distinto.
+*/
+test('la cabecera separa los menús de las acciones del documento', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  // Los menús, con su nombre y sin icono, junto a la marca.
+  const menus = page.locator('#header-menus');
+  assert.equal(await menus.locator('#actions-menu-btn').count(), 1);
+  assert.equal(await menus.locator('#settings-menu-btn').count(), 1);
+  assert.equal(await menus.locator('[data-lucide="folder"], [data-lucide="settings"]').count(), 0);
+  assert.equal((await menus.locator('#actions-menu-btn').innerText()).trim(), 'Archivo');
+
+  // Guardar y Exportar salen a la barra; el resto se queda en el menú.
+  const acciones = page.locator('#document-actions-group');
+  assert.equal(await acciones.locator('#save-btn').count(), 1);
+  assert.equal(await acciones.locator('#export-menu-btn').count(), 1);
+  assert.equal(await page.locator('#actions-menu #save-btn').count(), 0);
+  assert.equal(await page.locator('#actions-menu #save-as-btn').count(), 1);
+
+  // Exportar ya no es un submenú de Archivo: se abre por su cuenta.
+  await page.locator('#export-menu-btn').click();
+  await page.locator('#export-menu').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#actions-menu').isVisible(), false);
+  await page.keyboard.press('Escape');
+
+  // Un solo botón de ayuda para el manual y el «Acerca de».
+  assert.equal(await page.locator('#help-controls-group').count(), 0);
+  await page.locator('#help-menu-btn').click();
+  await page.locator('#help-menu').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#help-menu #help-btn').isVisible(), true);
+  assert.equal(await page.locator('#help-menu #about-btn').isVisible(), true);
+  await page.keyboard.press('Escape');
+
+  // Y el punto dice que al documento abierto le falta guardar.
+  assert.equal(await page.locator('#save-dirty-dot').isVisible(), false);
+  await page.locator('#markdown-input').fill('# Con cambios');
+  await page.waitForFunction(() => !document.getElementById('save-dirty-dot').classList.contains('hidden'));
+});
+
+/*
+  Los cuatro delimitadores en un acorde: Ctrl+M abre la espera y la segunda
+  tecla elige. Cada combinación nueva chocaba con algo —Ctrl+Mayús+J es la
+  consola del navegador y Ctrl+Mayús+M, la lupa del sistema—, así que solo se
+  expone una y las segundas teclas son teclas normales.
+*/
+test('Ctrl+M abre la espera y la segunda tecla elige el delimitador', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const editor = page.locator('#markdown-input');
+  const acorde = async (segunda) => {
+    await editor.fill('');
+    await editor.click();
+    await page.keyboard.press('Control+KeyM');
+    if (segunda) await page.keyboard.press(segunda);
+    return editor.inputValue();
+  };
+
+  assert.equal(await acorde('Digit1'), '$$');
+  assert.equal(await acorde('Digit2'), '\n$$\n\n$$\n');
+  assert.equal(await acorde('Digit3'), '\\(\\)');
+  assert.equal(await acorde('Digit4'), '\n\\[\n\n\\]\n');
+  // El caso común, en dos pulsaciones y sin mirar la ayuda.
+  assert.equal(await acorde('Enter'), '$$');
+  assert.equal(await acorde('KeyM'), '$$');
+  // Escape cancela sin escribir; cualquier otra tecla cancela y se escribe.
+  assert.equal(await acorde('Escape'), '');
+  assert.equal(await acorde('KeyA'), 'a');
+
+  // Mientras espera, la barra de estado dice qué teclas valen.
+  await editor.click();
+  await page.keyboard.press('Control+KeyM');
+  assert.match(await page.locator('#status-toast-message').textContent(), /1 \$…\$/);
+  await page.keyboard.press('Digit1');
+  assert.equal(await page.locator('#status-toast-message').textContent(), '');
+
+  // Y el menú enseña el acorde, para aprenderlo sin abrir el manual.
+  await page.locator('#formula-btn').click();
+  await page.locator('#formula-options').waitFor({ state: 'visible' });
+  const atajos = await page.locator('#formula-options [data-shortcut]').allTextContents();
+  assert.deepEqual(atajos, ['Ctrl+M 1', 'Ctrl+M 2', 'Ctrl+M 3', 'Ctrl+M 4']);
 });
 
 /*

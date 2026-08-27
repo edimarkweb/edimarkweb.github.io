@@ -52,20 +52,21 @@ Egin lan hainbat dokumenturekin aldi berean, bakoitza bere fitxan.
 
 ## Goiko kontrol-barra
 
-Logotipoaren ondoko barrak aplikazioaren aukera orokorrak biltzen ditu eta fitxategiaren ekintza guztiak botoi zabalgarri bakar batean elkartzen ditu:
+Goiburuak bi erdi ditu. Logotipoaren ondoan bi menuak daude —**Fitxategia** eta **Ezarpenak**—, izena idatzita eta ikonorik gabe, edozein mahaigaineko programaren menu-barra bezala. Eskuineko muturrean, egunero erabiltzen diren dokumentuaren gaineko ekintzak, ikono bakarreko botoi gisa: **Gorde**, **Esportatu**, **Inprimatu**, **Bilatu** eta **Laguntza**.
 
-* **Fitxategia**: dokumentuaren gaineko ekintzak bi multzotan biltzen ditu. Lehenik edukia ekartzen dutenak —`Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)`— eta ondoren ateratzen dutenak: `Gorde (Ctrl+S)`, `Gorde honela… (Ctrl+Shift+S)` eta **Esportatu** azpimenua, eskuinera zabaltzen dena DOCX, ODT, EPUB, HTML, TEX eta PDF aukerekin. Aukera bakoitzak bere teklatu-lasterbidea erakusten du. Mahaigaineko aplikazioan menua **Irten** aukerarekin amaitzen da: uneko dokumentua gorde eta aplikazioa ixten du.
+* **Gorde (Ctrl+S)**: eskuineko lehen botoia. Irekitako dokumentuak aldaketak zain dituenean, puntu gorri bat agertzen zaio izkinan, fitxa markatzen duen bera.
+* **Esportatu (Ctrl+Alt+E)**: DOCX, ODT, EPUB, HTML, TEX eta PDF zabaltzen ditu.
+* **Fitxategia**: egunero egiten ez dena. `Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)` edukia ekartzen dute; `Gorde honela… (Ctrl+Shift+S)` beste izen batekin ateratzen du. Aukera bakoitzak bere teklatu-lasterbidea erakusten du. Mahaigaineko aplikazioan menua **Irten** aukerarekin amaitzen da: uneko dokumentua gorde eta aplikazioa ixten du.
 * **Ezarpenak**: aplikazioaren ezarpen guztiak biltzen ditu, bakoitza uneko balioa adierazten duen azpimenu batekin.
   * **Hizkuntza**: interfazearen hizkuntza aldatzen du.
   * **Testuaren tamaina**: txikia, normala, handia edo oso handia.
   * **Gaia**: `Sistemakoa` aukerak ekipoarena jarraitzen du eta harekin batera aldatzen da; `Argia` eta `Iluna` aukerek finkatu egiten dute. Aukeraketa gogoratu egiten da aplikazioa hurrengoan irekitzean.
   * **Leiho independentea**: EdiMarkWeb nabigatzailearen leiho propio batean irekitzen du, fitxarik eta helbide-barrarik gabe. Web bertsioan bakarrik agertzen da; mahaigaineko aplikazioa dagoeneko leiho propioa da.
   * **Zuzentzaile ortografikoa**: Markdown paneleko akatsak azpimarratzen ditu ordenagailuan instalatutako hiztegiekin, dokumentuaren hizkuntzari jarraituz. Aktibatuta dator; desmarkatuz gero itzali egiten da eta aukera gogoratu egiten da.
-  * **Bilatu eguneraketak…**: mahaigaineko aplikazioan bakarrik agertzen da. Bertsio berriagorik dagoen begiratzen du eta, halakorik badago, ohar bat erakusten du **Deskargatu eta instalatu** botoiarekin: zure sistemaren instalatzailea deskargatu eta irekitzen du. Aplikazioak berak egunean behin egiten du egiaztapena abiaraztean; oharreko **Egiaztatu abiaraztean** laukiak desaktibatzeko aukera ematen du.
   * **Esportazio-aukerak…**: aplikazioak sortzen dituen fitxategien ezarpenak irekitzen ditu (hizkuntza eta, LaTeX-erako, klasea eta atarikoa), behean azalduta.
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia sortzen du uneko estiloekin.
-* **Bilatu (Ctrl+F)** eta **Eskuliburua (Ctrl+H)**: bilatzaile aurreratua edo dokumentu hau bera irekitzen dituzte.
-* **Honi buruz**: instalatutako bertsioa, egilea, lizentzia eta hirugarrenen liburutegien lizentziak erakusten ditu, web bertsiorako eta mahaigaineko deskargetarako estekekin batera.
+* **Bilatu (Ctrl+F)**: bilatzaile aurreratua irekitzen du.
+* **Laguntza**: galdera-ikurraren botoiak **Erabiltzailearen eskuliburua (F1)**, **EdiMarkWeb-i buruz** —instalatutako bertsioa, egilea, lizentzia eta hirugarrenen liburutegien lizentziak, web bertsiorako eta deskargetarako estekekin— eta, mahaigaineko aplikazioan, **Bilatu eguneraketak…** biltzen ditu.
 
 Panelen antolaketa `Ctrl+L` teklarekin edo edizio-eremua maximizatzeko botoiaren ondoko antolaketa-botoiarekin aldatzen da. Menuak **Markdown panela maximizatu**, **Aurrebista panela maximizatu** eta **Panelak zatitu** aukerak eskaintzen ditu. Pantaila txikietan, barra bi botoitan tolesten da —**Ekintzak** eta **Formatua**— eta talde bakoitza behar duzunean erakusten dute.
 
@@ -80,7 +81,7 @@ Goiko barraren azpiko marra grisak formaturako eta elementuetarako sarbide azkar
 * **Zerrendak eta aipuak**: buletak, zenbakitzea eta aipu-blokeak, beren lasterbideekin.
 * **Kodea, estekak, irudiak eta taulak**: elkarrizketa-koadroen bidezko txertaketa gidatua.
 * **Itsatsi**: arbelean dagoena dokumentura ekartzen du, goian azaldu bezala.
-* **LaTeX formulak**: lerroko edo blokeko aginduak sintaxi zuzenarekin txertatzeko menua.
+* **LaTeX formulak**: lau mugatzaileak dituen menua —`$...$`, `$$...$$`, `\(...\)` eta `\[...\]`—, bakoitza bere lasterbidearekin alboan. Akordean doaz: `Ctrl+M` itxarotea irekitzen du —egoera-barrak teklak gogorarazten ditu— eta gero `1`, `2`, `3` edo `4` teklak mugatzailea aukeratzen du; `Sartu` edo `M` errepikatuak `$...$` txertatzen dute, betikoa, eta `Esc`-ek edo beste edozein teklak uzten du. Horrela egiten da mugatzaile bakoitzarentzat konbinazio bat izateak nabigatzailearekin edo mahaigainarekin talka egiten duelako: `Ctrl+Shift+J` nabigatzailearen kontsola da eta `Ctrl+Shift+M` sistemaren lupa izan daiteke, eta ez batak ez besteak ez dute beren lasterbidea uzten.
 * **Formulen editorea (EdiCuaTeX)**: integratutako laguntzailea `Ctrl+Alt+M` bidez irekitzen du. Onartzean, formula editorean txertatuta itzultzen da.
 
 Botoi bakoitzak deskribapen bat erakusten du sagua gainetik pasatzean, eta baliokidea den teklatu-lasterbidea adierazten du.
@@ -133,7 +134,7 @@ Dokumentu bati buruzko datuak gordetzeko modu estandarra da eta programa askok u
 
 #### Testuaren formatua
 
-Koadro berean —eta barraren amaierako **Formatua** botoian ere— finkatzen dira **lerrokatzea** (ezkerrera, justifikatua edo eskuinera), **letra-tipoa** (serifduna, serifgabea, tarte bakarrekoa edo idazten duzuna), **tamaina** puntutan, **lerroartea**, lau aldeetako **marjinak** zentimetrotan, **lehen lerroaren koska** eta **hitzak marratxoz zatitzea**.
+Koadro berean —barraren amaierako graduatzaile-botoiak ere irekitzen duena— finkatzen dira **lerrokatzea** (ezkerrera, justifikatua edo eskuinera), **letra-tipoa** (serifduna, serifgabea, tarte bakarrekoa edo idazten duzuna), **tamaina** puntutan, **lerroartea**, lau aldeetako **marjinak** zentimetrotan, **lehen lerroaren koska** eta **hitzak marratxoz zatitzea**.
 
 Letra-tipoan *Bestelakoa…* aukeratzean, tipografiaren izena agertzen da azpian bertan, iradokizun-zerrenda batekin: aplikazioak ordenagailu honetan instalatuta daudela ezagutu ahal izan dituenak (Chromen eta Edgen, gainera, *Ikusi sistemako guztiak…* aukerak baimena eskatzen du eta zerrenda osoa eskaintzen). Edozein izen idatz dezakezu instalatuta ez badago ere: dokumentuak berdin gordetzen du, fitxategia hura duen ordenagailu batera irits daitekeelako. Hemen ez badago, ohar bat agertzen da anbar kolorez eta aurrebistak ordezko tipografia bat erabiltzen du; esportatzean izena idatzita bidaiatzen du eta programa bakoitzak ebazten du (Word eta LibreOffice hura badute, eta LaTeXen XeLaTeX edo LuaLaTeXekin soilik).
 
@@ -201,7 +202,7 @@ Ireki **Fitxategia** botoia eta hautatu `Esportatu` entregatzeko edo argitaratze
 * **EPUB (liburu digitala)**: EPUB 3 irakurgailuekin bateragarria den liburu elektroniko bat sortzen du (Calibre, Apple Liburuak, Thorium, tinta elektronikoa…). Izenburua 1. mailako lehen goiburutik hartzen da (edo dokumentuaren izenetik), eta egilea, azala eta hizkuntza behean azaltzen diren ezarpenetatik ateratzen dira.
 * **HTML (web-orria)**: fitxategi autonomo bat sortzen du, estiloak eta formulak kapsulatuta dituena, webean ostatatzeko prest. Nabigatzailearen fitxaren titulua lehen izenburutik hartzen da, edo dokumentuaren izenetik halakorik ez badago.
 * **TEX (LaTeX)**: `.tex` dokumentu oso bat sortzen du, konpilatzeko prest dagoen goiburuarekin. Dokumentuaren hizkuntza darama, beraz hitz-zatiketa eta etiketa automatikoak zure hizkuntzan ateratzen dira, eta dokumentua 1. mailako izenburu bakar batekin hasten bada, izenburu hori dokumentuaren titulu bihurtzen da (`\title` eta `\maketitle`), beste atal bat izan beharrean.
-* **PDF (inprimatzearen bidez)**: sistemaren inprimatze-elkarrizketa irekitzen du, eta han «Gorde PDF gisa» aukeratzen duzu helburu gisa. Aurrebistan ikusten duzuna bera ateratzen da, formulak konposatuta eta dokumentuaren marjinekin, eta testua hautagarri eta bilagarri geratzen da. **Inprimatu (Ctrl+P)** botoiaren bide bera da.
+* **PDF**: sistemaren inprimatze-elkarrizketa irekitzen du, eta han «Gorde PDF gisa» aukeratzen duzu helburu gisa. Aurrebistan ikusten duzuna bera ateratzen da, formulak konposatuta eta dokumentuaren marjinekin, eta testua hautagarri eta bilagarri geratzen da. **Inprimatu (Ctrl+P)** botoiaren bide bera da.
 
 Esportatzen den bitartean, goiko barrak egoera-mezuak erakusten ditu (aurrerapena, arrakasta edo erroreak).
 
@@ -282,7 +283,7 @@ Instalatzaileak [deskarga-orrian](https://github.com/edimarkweb/edimarkweb.githu
 
 Abiaraztean, aplikazioak egunean behin egiaztatzen du bertsio berriagorik dagoen. Halakorik dagoenean, ohar bat agertzen da tresna-barraren azpian **Deskargatu eta instalatu** botoiarekin: zure sistemari dagokion instalatzailea jaisten du, aurrerapena erakusten du eta sistemaren instalatzaileari ematen dio, klik pare batean amai dezazun. AppImage batekin ez dago ezer instalatzeko, beraz aplikazioak berria deskargatzen du eta bere karpeta irekitzen du zeneukana ordezka dezazun. Instalatzaile batek ere ezin ditu ordezkatu irekita dagoen aplikazio baten fitxategiak; hortaz, abiatu bezain laster **Itxi EdiMarkWeb** botoia agertzen da ohar berean: idazten ari zarena gorde eta ixten du. Instalazioa amaitzean, ireki berriro eta bertsio berria izango duzu.
 
-Oharrak **Egiaztatu abiaraztean** laukia dakar, egiaztapen automatiko hori desaktibatzeko, eta **Ikusi berritasunak** esteka, aldaketen zerrendarekin. Nahi duzunean eska dezakezu **Ezarpenak → Bilatu eguneraketak…** bidez; azken bertsioa jada baduzu, egoera-barran esango dizu.
+Oharrak **Egiaztatu abiaraztean** laukia dakar, egiaztapen automatiko hori desaktibatzeko, eta **Ikusi berritasunak** esteka, aldaketen zerrendarekin. Nahi duzunean eska dezakezu **Laguntza → Bilatu eguneraketak…** bidez; azken bertsioa jada baduzu, egoera-barran esango dizu.
 
 ### Zer ez den aldatzen
 
@@ -305,8 +306,10 @@ Nabigatzailean hasitako dokumentuak eta mahaigaineko aplikaziokoak Markdown fitx
 | Esteka | `Ctrl` + `K` | `Cmd` + `K` |
 | Irudia | `Ctrl` + `Shift` + `I` | `Cmd` + `Shift` + `I` |
 | Taula | `Ctrl` + `Shift` + `T` | `Cmd` + `Shift` + `T` |
-| Lerroko formula | `Ctrl` + `M` | `Cmd` + `M` |
-| Blokeko formula | `Ctrl` + `Shift` + `M` | `Cmd` + `Shift` + `M` |
+| `$...$` formula (lerroan) | `Ctrl` + `M` gero `1` | `Cmd` + `M` gero `1` |
+| `$$...$$` formula (blokean) | `Ctrl` + `M` gero `2` | `Cmd` + `M` gero `2` |
+| `\(...\)` formula (lerroan) | `Ctrl` + `M` gero `3` | `Cmd` + `M` gero `3` |
+| `\[...\]` formula (blokean) | `Ctrl` + `M` gero `4` | `Cmd` + `M` gero `4` |
 | Desegin / Berregin | `Ctrl` + `Z` / `Ctrl` + `Shift` + `Z` | `Cmd` + `Z` / `Cmd` + `Shift` + `Z` |
 | **Dokumentuen kudeaketa** | | |
 | Fitxa berria | `Ctrl` + `T` | `Cmd` + `T` |

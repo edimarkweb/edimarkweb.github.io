@@ -52,20 +52,21 @@ Traballa con varios documentos á vez, cada un na súa propia lapela.
 
 ## Barra superior de controis
 
-A barra xunto ao logotipo agrupa as opcións globais da aplicación e concentra todas as accións de ficheiro nun único botón despregable:
+A cabeceira ten dúas metades. Xunto ao logotipo están os dous menús —**Arquivo** e **Configuración**—, co seu nome escrito e sen icona, como a barra de menús de calquera programa de escritorio. No extremo dereito, as accións sobre o documento que se usan a diario, como botóns dunha soa icona: **Gardar**, **Exportar**, **Imprimir**, **Buscar** e **Axuda**.
 
-* **Arquivo**: reúne as accións sobre o documento en dous grupos. Primeiro as que traen contido —`Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` e `Pegar LaTeX (Ctrl+Maiús+V)`— e despois as que o sacan: `Gardar (Ctrl+S)`, `Gardar como… (Ctrl+Maiús+S)` e o submenú **Exportar**, que se desprega á dereita con DOCX, ODT, EPUB, HTML, TEX e PDF. Cada opción mostra o seu atallo de teclado. Na aplicación de escritorio o menú remata con **Saír**, que garda o documento en curso e pecha a aplicación.
+* **Gardar (Ctrl+S)**: o primeiro botón da dereita. Cando o documento aberto ten cambios pendentes, aparécelle un punto vermello no canto, o mesmo que marca a lapela.
+* **Exportar (Ctrl+Alt+E)**: desprega DOCX, ODT, EPUB, HTML, TEX e PDF.
+* **Arquivo**: o que non se fai a diario. `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` e `Pegar LaTeX (Ctrl+Maiús+V)` traen contido; `Gardar como… (Ctrl+Maiús+S)` sácao con outro nome. Cada opción mostra o seu atallo de teclado. Na aplicación de escritorio o menú remata con **Saír**, que garda o documento en curso e pecha a aplicación.
 * **Configuración**: agrupa todos os axustes da aplicación, cada un cun submenú que indica o valor activo.
   * **Idioma**: cambia o idioma da interface.
   * **Tamaño do texto**: pequeno, normal, grande ou moi grande.
   * **Tema**: `Sistema` segue o do equipo e cambia con el; `Claro` e `Escuro` fíxano. A elección lémbrase a próxima vez que abras a aplicación.
   * **Xanela independente**: abre EdiMarkWeb nunha xanela propia do navegador, sen lapelas nin barra de enderezos. Só aparece na versión web; a aplicación de escritorio xa é unha xanela propia.
   * **Corrector ortográfico**: subliña as faltas do panel Markdown cos dicionarios instalados no equipo e segue o idioma do documento. Vén activado; ao desmarcalo apágase e a escolla lémbrase.
-  * **Buscar actualizacións…**: só aparece na aplicación de escritorio. Consulta se hai unha versión máis recente e, se a hai, amosa un aviso co botón **Descargar e instalar**, que baixa o instalador do teu sistema e o abre. A aplicación fai esta comprobación soa unha vez ao día ao arrincar; a caixa **Comprobar ao iniciar** do aviso permite desactivala.
   * **Opcións de exportación…**: abre os axustes dos ficheiros que xera a aplicación (idioma e, para LaTeX, clase e preámbulo), explicados máis abaixo.
 * **Imprimir (Ctrl+P)**: xera unha vista preparada para papel ou PDF cos estilos actuais.
-* **Buscar (Ctrl+F)** e **Manual (Ctrl+H)**: abren o buscador avanzado ou este mesmo documento.
-* **Acerca de**: amosa a versión instalada, o autor, a licenza e as licenzas das bibliotecas de terceiros, ademais das ligazóns á versión web e ás descargas de escritorio.
+* **Buscar (Ctrl+F)**: abre o buscador avanzado.
+* **Axuda**: o botón da interrogación reúne o **Manual de uso (F1)**, **Acerca de EdiMarkWeb** —versión instalada, autor, licenza e licenzas das bibliotecas de terceiros, coas ligazóns á versión web e ás descargas— e, na aplicación de escritorio, **Buscar actualizacións…**.
 
 A disposición dos paneis cámbiase con `Ctrl+L` ou co botón de disposición situado xunto ao botón que maximiza a área de edición. O seu menú permite **Maximizar panel Markdown**, **Maximizar panel de vista previa** ou **Dividir paneis**. En pantallas pequenas, a barra prégase en dous botóns —**Accións** e **Formato**— que mostran cada grupo cando o precisas.
 
@@ -80,7 +81,7 @@ A franxa gris baixo a barra superior contén accesos rápidos a formato e elemen
 * **Listas e citas**: viñetas, numeración e bloques de cita con atallos asociados.
 * **Código, ligazóns, imaxes e táboas**: insercións guiadas mediante diálogos.
 * **Pegar**: trae ao documento o que haxa no portapapeis, tal e como se explica máis arriba.
-* **Fórmulas LaTeX**: menú para inserir ordes en liña ou en bloque coa sintaxe correcta.
+* **Fórmulas LaTeX**: menú cos catro delimitadores —`$...$`, `$$...$$`, `\(...\)` e `\[...\]`—, cada un co seu atallo ao lado. Van en acorde: `Ctrl+M` abre a espera —a barra de estado lembra as teclas— e despois `1`, `2`, `3` ou `4` escolle o delimitador; `Intro` ou unha `M` repetida inseren `$...$`, o de sempre, e `Esc` ou calquera outra tecla cancelan. Faise así porque unha combinación distinta para cada delimitador acaba chocando co navegador ou co escritorio: `Ctrl+Maiús+J` é a consola do navegador e `Ctrl+Maiús+M` pode ser a lupa do sistema, e ningún dos dous solta o seu atallo.
 * **Editor de fórmulas (EdiCuaTeX)**: abre o asistente integrado con `Ctrl+Alt+M`. Ao aceptar, a fórmula volve inserida no editor.
 
 Cada botón mostra unha descrición ao pasar o rato e indica o atallo de teclado equivalente.
@@ -133,7 +134,7 @@ toc: true
 
 #### O formato do texto
 
-No mesmo cadro —e tamén no botón **Formato** do final da barra— fíxanse a **aliñación** (esquerda, xustificada ou dereita), o **tipo de letra** (con serifa, sen serifa, monoespazada ou a que escribas), o **tamaño** en puntos, o **entreliñado**, as **marxes** dos catro lados en centímetros, a **sangría de primeira liña** e a **partición de palabras con guión**.
+No mesmo cadro —que tamén abre o botón dos controis deslizantes do final da barra— fíxanse a **aliñación** (esquerda, xustificada ou dereita), o **tipo de letra** (con serifa, sen serifa, monoespazada ou a que escribas), o **tamaño** en puntos, o **entreliñado**, as **marxes** dos catro lados en centímetros, a **sangría de primeira liña** e a **partición de palabras con guión**.
 
 Ao escoller *Outra…* no tipo de letra aparece o nome da tipografía xusto debaixo, cunha lista de suxestións: as que a aplicación puido recoñecer como instaladas neste equipo (en Chrome e Edge, ademais, *Ver todas as do sistema…* pide permiso e ofrece a lista completa). Podes escribir calquera nome aínda que non estea instalado: o documento gárdao igual, porque o ficheiro pode acabar nun equipo que si a teña. Se aquí non está, avísase en ámbar e a previsualización usa unha tipografía de reserva; ao exportar, o nome viaxa escrito e resólveo cada programa (Word e LibreOffice se a teñen, e en LaTeX só con XeLaTeX ou LuaLaTeX).
 
@@ -201,7 +202,7 @@ Abre o botón **Arquivo** e selecciona `Exportar` para descargar versións lista
 * **EPUB (libro dixital)**: crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). O título tómase da primeira cabeceira de nivel 1 (ou do nome do documento), e o autor, a portada e o idioma saen dos axustes que se explican máis abaixo.
 * **HTML (páxina web)**: xera un ficheiro autónomo con estilos e fórmulas incrustados, listo para aloxar na web. O título da lapela do navegador tómase do primeiro encabezamento, ou do nome do documento se non o hai.
 * **TEX (LaTeX)**: crea un documento `.tex` completo con cabeceira preparada para compilar. Leva o idioma do documento, de xeito que a partición de palabras e os rótulos automáticos saen na túa lingua, e se o documento comeza cun único encabezamento de nivel 1 este pasa a ser o título (`\title` e `\maketitle`) no canto dunha sección máis.
-* **PDF (mediante impresión)**: abre o diálogo de impresión do sistema, onde escolles «Gardar como PDF» como destino. Sae exactamente o que ves na vista previa, coas fórmulas compostas e as marxes do documento, e o texto queda seleccionable e buscable. É o mesmo camiño que o botón **Imprimir (Ctrl+P)**.
+* **PDF**: abre o diálogo de impresión do sistema, onde escolles «Gardar como PDF» como destino. Sae exactamente o que ves na vista previa, coas fórmulas compostas e as marxes do documento, e o texto queda seleccionable e buscable. É o mesmo camiño que o botón **Imprimir (Ctrl+P)**.
 
 Durante a exportación, a barra superior mostra mensaxes de estado (progreso, éxito ou erros).
 
@@ -282,7 +283,7 @@ Os instaladores están na [páxina de descargas](https://github.com/edimarkweb/e
 
 Ao arrincar, a aplicación comproba unha vez ao día se hai unha versión máis recente. Cando a hai, aparece un aviso baixo a barra de ferramentas co botón **Descargar e instalar**: baixa o instalador que corresponde ao teu sistema, amosa o progreso e entrégallo ao instalador do sistema para que remates nun par de clics. Cunha AppImage non hai nada que instalar, así que a aplicación descarga a nova e abre o seu cartafol para que substitúas a que tiñas. Ningún instalador pode substituír os ficheiros dunha aplicación aberta, así que en canto arranca aparece no mesmo aviso o botón **Pechar EdiMarkWeb**, que garda o que esteas a escribir e pecha: ao rematar a instalación, volve abrila e xa terás a versión nova.
 
-O aviso inclúe a caixa **Comprobar ao iniciar**, que desactiva esa comprobación automática, e a ligazón **Ver novidades** coa lista de cambios. Podes pedila cando queiras desde **Configuración → Buscar actualizacións…**; se xa tes a última versión, dirácho na barra de estado.
+O aviso inclúe a caixa **Comprobar ao iniciar**, que desactiva esa comprobación automática, e a ligazón **Ver novidades** coa lista de cambios. Podes pedila cando queiras desde **Axuda → Buscar actualizacións…**; se xa tes a última versión, dirácho na barra de estado.
 
 ### O que non cambia
 
@@ -305,8 +306,10 @@ Os documentos que comeces no navegador e os da aplicación de escritorio son fic
 | Ligazón | `Ctrl` + `K` | `Cmd` + `K` |
 | Imaxe | `Ctrl` + `Maiús` + `I` | `Cmd` + `Maiús` + `I` |
 | Táboa | `Ctrl` + `Maiús` + `T` | `Cmd` + `Maiús` + `T` |
-| Fórmula en liña | `Ctrl` + `M` | `Cmd` + `M` |
-| Fórmula en bloque | `Ctrl` + `Maiús` + `M` | `Cmd` + `Maiús` + `M` |
+| Fórmula `$...$` (en liña) | `Ctrl` + `M` logo `1` | `Cmd` + `M` logo `1` |
+| Fórmula `$$...$$` (en bloque) | `Ctrl` + `M` logo `2` | `Cmd` + `M` logo `2` |
+| Fórmula `\(...\)` (en liña) | `Ctrl` + `M` logo `3` | `Cmd` + `M` logo `3` |
+| Fórmula `\[...\]` (en bloque) | `Ctrl` + `M` logo `4` | `Cmd` + `M` logo `4` |
 | Desfacer / Refacer | `Ctrl` + `Z` / `Ctrl` + `Maiús` + `Z` | `Cmd` + `Z` / `Cmd` + `Maiús` + `Z` |
 | **Xestión de documentos** | | |
 | Nova lapela | `Ctrl` + `T` | `Cmd` + `T` |

@@ -52,20 +52,21 @@ Treballa amb diversos documents alhora, cadascun a la seva pestanya.
 
 ## Barra superior de controls
 
-La barra del costat del logotip agrupa les opcions globals de l'aplicació i concentra totes les accions de fitxer en un únic botó desplegable:
+La capçalera té dues meitats. Al costat del logotip hi ha els dos menús —**Fitxer** i **Configuració**—, amb el nom escrit i sense icona, com la barra de menús de qualsevol programa d'escriptori. A l'extrem dret, les accions sobre el document que es fan cada dia, com a botons d'una sola icona: **Desar**, **Exportar**, **Imprimir**, **Cercar** i **Ajuda**.
 
-* **Fitxer**: reuneix les accions sobre el document en dos grups. Primer les que hi porten contingut —`Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)`— i després les que el treuen: `Desar (Ctrl+S)`, `Desar com a… (Ctrl+Maj+S)` i el submenú **Exportar**, que es desplega a la dreta amb DOCX, ODT, EPUB, HTML, TEX i PDF. Cada opció mostra la seva drecera de teclat. A l'aplicació d'escriptori el menú acaba amb **Surt**, que desa el document en curs i tanca l'aplicació.
+* **Desar (Ctrl+S)**: el primer botó de la dreta. Quan el document obert té canvis pendents, li apareix un punt vermell al cantó, el mateix que marca la pestanya.
+* **Exportar (Ctrl+Alt+E)**: desplega DOCX, ODT, EPUB, HTML, TEX i PDF.
+* **Fitxer**: el que no es fa cada dia. `Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)` hi porten contingut; `Desar com a… (Ctrl+Maj+S)` el treu amb un altre nom. Cada opció mostra la seva drecera de teclat. A l'aplicació d'escriptori el menú acaba amb **Surt**, que desa el document en curs i tanca l'aplicació.
 * **Configuració**: agrupa tots els ajustos de l'aplicació, cadascun amb un submenú que n'indica el valor actiu.
   * **Idioma**: canvia l'idioma de la interfície.
   * **Mida del text**: petita, normal, gran o molt gran.
   * **Tema**: `Sistema` segueix el de l'equip i canvia amb ell; `Clar` i `Fosc` el fixen. L'elecció es recorda el pròxim cop que obris l'aplicació.
   * **Finestra independent**: obre EdiMarkWeb en una finestra pròpia del navegador, sense pestanyes ni barra d'adreces. Només apareix a la versió web; l'aplicació d'escriptori ja és una finestra pròpia.
   * **Corrector ortogràfic**: subratlla les faltes del plafó Markdown amb els diccionaris instal·lats a l'equip i segueix l'idioma del document. Ve activat; en desmarcar-lo s'apaga i la tria es recorda.
-  * **Cerca actualitzacions…**: només apareix a l'aplicació d'escriptori. Comprova si hi ha una versió més recent i, si n'hi ha, mostra un avís amb el botó **Baixa i instal·la**, que descarrega l'instal·lador del teu sistema i l'obre. L'aplicació fa aquesta comprovació tota sola un cop al dia en arrencar; la casella **Comprova en iniciar** de l'avís permet desactivar-la.
   * **Opcions d'exportació…**: obre els ajustos dels fitxers que genera l'aplicació (idioma i, per al LaTeX, classe i preàmbul), explicats més avall.
 * **Imprimir (Ctrl+P)**: genera una vista preparada per a paper o PDF amb els estils actuals.
-* **Cercar (Ctrl+F)** i **Manual (Ctrl+H)**: obren el cercador avançat o aquest mateix document.
-* **Quant a**: mostra la versió instal·lada, l'autor, la llicència i les llicències de les biblioteques de tercers, a més dels enllaços a la versió web i a les baixades d'escriptori.
+* **Cercar (Ctrl+F)**: obre el cercador avançat.
+* **Ajuda**: el botó de l'interrogant reuneix el **Manual d'ús (F1)**, **Quant a EdiMarkWeb** —versió instal·lada, autor, llicència i llicències de les biblioteques de tercers, amb els enllaços a la versió web i a les baixades— i, a l'aplicació d'escriptori, **Cerca actualitzacions…**.
 
 La disposició dels plafons es canvia amb `Ctrl+L` o amb el botó de disposició situat al costat del botó que maximitza l'àrea d'edició. El menú permet **Maximitzar el plafó Markdown**, **Maximitzar el plafó de vista prèvia** o **Dividir els plafons**. En pantalles petites, la barra es plega en dos botons —**Accions** i **Format**— que mostren cada grup quan el necessites.
 
@@ -80,7 +81,7 @@ La franja grisa sota la barra superior conté accessos ràpids a format i elemen
 * **Llistes i cites**: pics, numeració i blocs de cita amb dreceres associades.
 * **Codi, enllaços, imatges i taules**: insercions guiades mitjançant diàlegs.
 * **Enganxar**: porta al document el que hi hagi al porta-retalls, tal com s'explica més amunt.
-* **Fórmules LaTeX**: menú per inserir ordres en línia o en bloc amb la sintaxi correcta.
+* **Fórmules LaTeX**: menú amb els quatre delimitadors —`$...$`, `$$...$$`, `\(...\)` i `\[...\]`—, cadascun amb la seva drecera al costat. Van en acord: `Ctrl+M` obre l'espera —la barra d'estat recorda les tecles— i després `1`, `2`, `3` o `4` tria el delimitador; `Retorn` o una `M` repetida insereixen `$...$`, el de sempre, i `Esc` o qualsevol altra tecla cancel·len. Es fa així perquè una combinació diferent per a cada delimitador acaba xocant amb el navegador o amb l'escriptori: `Ctrl+Maj+J` és la consola del navegador i `Ctrl+Maj+M` pot ser la lupa del sistema, i cap dels dos no deixa la seva drecera.
 * **Editor de fórmules (EdiCuaTeX)**: obre l'assistent integrat amb `Ctrl+Alt+M`. En acceptar, la fórmula torna inserida a l'editor.
 
 Cada botó mostra una descripció en passar-hi el ratolí i indica la drecera de teclat equivalent.
@@ -133,7 +134,7 @@ toc: true
 
 #### El format del text
 
-En el mateix quadre —i també al botó **Format** del final de la barra— es fixen l'**alineació** (esquerra, justificada o dreta), el **tipus de lletra** (amb serifa, sense serifa, monoespaiada o la que escriguis), la **mida** en punts, l'**interlineat**, els **marges** dels quatre costats en centímetres, la **sagnia de primera línia** i la **partició de mots amb guionet**.
+En el mateix quadre —que també obre el botó dels controls lliscants del final de la barra— es fixen l'**alineació** (esquerra, justificada o dreta), el **tipus de lletra** (amb serifa, sense serifa, monoespaiada o la que escriguis), la **mida** en punts, l'**interlineat**, els **marges** dels quatre costats en centímetres, la **sagnia de primera línia** i la **partició de mots amb guionet**.
 
 En triar *Altra…* al tipus de lletra apareix el nom de la tipografia just a sota, amb una llista de suggeriments: les que l’aplicació ha pogut reconèixer com a instal·lades en aquest equip (a Chrome i Edge, a més, *Veure totes les del sistema…* demana permís i ofereix la llista completa). Pots escriure qualsevol nom encara que no estigui instal·lat: el document el desa igualment, perquè el fitxer pot acabar en un equip que sí que la tingui. Si aquí no hi és, s’avisa en ambre i la previsualització fa servir una tipografia de reserva; en exportar, el nom viatja escrit i el resol cada programa (Word i LibreOffice si la tenen, i en LaTeX només amb XeLaTeX o LuaLaTeX).
 
@@ -201,7 +202,7 @@ Obre el botó **Fitxer** i selecciona `Exportar` per baixar versions llestes per
 * **EPUB (llibre digital)**: crea un llibre electrònic compatible amb lectors d'EPUB 3 (Calibre, Apple Llibres, Thorium, tinta electrònica…). El títol es pren del primer encapçalament de nivell 1 (o del nom del document), i l'autor, la portada i l'idioma surten dels ajustos que s'expliquen més avall.
 * **HTML (pàgina web)**: genera un fitxer autònom amb estils i fórmules incrustats, a punt per allotjar-lo al web. El títol de la pestanya del navegador es pren del primer encapçalament, o del nom del document si no n'hi ha.
 * **TEX (LaTeX)**: crea un document `.tex` complet amb la capçalera preparada per compilar. Porta l'idioma del document, de manera que la partició de mots i els rètols automàtics surten en la teva llengua, i si el document comença amb un únic encapçalament de nivell 1 aquest passa a ser el títol (`\title` i `\maketitle`) en lloc d'una secció més.
-* **PDF (mitjançant impressió)**: obre el diàleg d'impressió del sistema, on tries «Desa com a PDF» com a destinació. En surt exactament el que veus a la vista prèvia, amb les fórmules compostes i els marges del document, i el text queda seleccionable i cercable. És el mateix camí que el botó **Imprimir (Ctrl+P)**.
+* **PDF**: obre el diàleg d'impressió del sistema, on tries «Desa com a PDF» com a destinació. En surt exactament el que veus a la vista prèvia, amb les fórmules compostes i els marges del document, i el text queda seleccionable i cercable. És el mateix camí que el botó **Imprimir (Ctrl+P)**.
 
 Durant l'exportació, la barra superior mostra missatges d'estat (progrés, èxit o errors).
 
@@ -282,7 +283,7 @@ Els instal·ladors són a la [pàgina de baixades](https://github.com/edimarkweb
 
 En arrencar, l'aplicació comprova un cop al dia si hi ha una versió més recent. Quan n'hi ha, apareix un avís sota la barra d'eines amb el botó **Baixa i instal·la**: descarrega l'instal·lador que correspon al teu sistema, mostra el progrés i el lliura a l'instal·lador del sistema perquè acabis en un parell de clics. Amb una AppImage no hi ha res a instal·lar, així que l'aplicació baixa la nova i obre la seva carpeta perquè substitueixis la que tenies. Cap instal·lador no pot substituir els fitxers d'una aplicació oberta, així que tan bon punt arrenca apareix al mateix avís el botó **Tanca EdiMarkWeb**, que desa el que estiguis escrivint i tanca: en acabar la instal·lació, torna a obrir-la i ja tindràs la versió nova.
 
-L'avís inclou la casella **Comprova en iniciar**, que desactiva aquesta comprovació automàtica, i l'enllaç **Mira les novetats** amb la llista de canvis. La pots demanar quan vulguis des de **Configuració → Cerca actualitzacions…**; si ja tens l'última versió, t'ho dirà a la barra d'estat.
+L'avís inclou la casella **Comprova en iniciar**, que desactiva aquesta comprovació automàtica, i l'enllaç **Mira les novetats** amb la llista de canvis. La pots demanar quan vulguis des de **Ajuda → Cerca actualitzacions…**; si ja tens l'última versió, t'ho dirà a la barra d'estat.
 
 ### El que no canvia
 
@@ -305,8 +306,10 @@ Els documents que comencis al navegador i els de l'aplicació d'escriptori són 
 | Enllaç | `Ctrl` + `K` | `Cmd` + `K` |
 | Imatge | `Ctrl` + `Maj` + `I` | `Cmd` + `Maj` + `I` |
 | Taula | `Ctrl` + `Maj` + `T` | `Cmd` + `Maj` + `T` |
-| Fórmula en línia | `Ctrl` + `M` | `Cmd` + `M` |
-| Fórmula en bloc | `Ctrl` + `Maj` + `M` | `Cmd` + `Maj` + `M` |
+| Fórmula `$...$` (en línia) | `Ctrl` + `M` després `1` | `Cmd` + `M` després `1` |
+| Fórmula `$$...$$` (en bloc) | `Ctrl` + `M` després `2` | `Cmd` + `M` després `2` |
+| Fórmula `\(...\)` (en línia) | `Ctrl` + `M` després `3` | `Cmd` + `M` després `3` |
+| Fórmula `\[...\]` (en bloc) | `Ctrl` + `M` després `4` | `Cmd` + `M` després `4` |
 | Desfer / Refer | `Ctrl` + `Z` / `Ctrl` + `Maj` + `Z` | `Cmd` + `Z` / `Cmd` + `Maj` + `Z` |
 | **Gestió de documents** | | |
 | Pestanya nova | `Ctrl` + `T` | `Cmd` + `T` |

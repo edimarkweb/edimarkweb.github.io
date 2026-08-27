@@ -52,20 +52,21 @@ Work on several documents at once, each in its own tab.
 
 ## Top control bar
 
-The bar next to the logo holds the application's global options and gathers every file action under a single drop-down button:
+The header has two halves. Next to the logo sit the two menus —**File** and **Settings**—, spelled out and without an icon, like the menu bar of any desktop program. At the far right, the everyday actions on the document, as single-icon buttons: **Save**, **Export**, **Print**, **Search** and **Help**.
 
-* **File**: groups the document actions in two families. First the ones that bring content in — `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` — and then the ones that take it out: `Save (Ctrl+S)`, `Save as… (Ctrl+Shift+S)` and the **Export** submenu, which opens to the right with DOCX, ODT, EPUB, HTML, TEX and PDF. Each option shows its keyboard shortcut. In the desktop application the menu ends with **Quit**, which saves the current document and closes the application.
+* **Save (Ctrl+S)**: the first button on the right. When the open document has pending changes, a red dot appears in its corner, the same one that marks the tab.
+* **Export (Ctrl+Alt+E)**: opens DOCX, ODT, EPUB, HTML, TEX and PDF.
+* **File**: everything that is not everyday work. `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` bring content in; `Save as… (Ctrl+Shift+S)` takes it out under another name. Each option shows its keyboard shortcut. In the desktop application the menu ends with **Quit**, which saves the current document and closes the application.
 * **Settings**: gathers every application setting, each one in a submenu showing the current value.
   * **Language**: changes the interface language.
   * **Font size**: small, normal, large or very large.
   * **Theme**: `System` follows your computer's setting and changes with it; `Light` and `Dark` fix it. Your choice is remembered next time you open the application.
   * **Separate window**: opens EdiMarkWeb in a browser window of its own, with no tabs or address bar. It only appears in the web version; the desktop application is already a window of its own.
   * **Spell checker**: underlines mistakes in the Markdown pane using the dictionaries installed on the computer, following the document language. It is on by default; unchecking it turns it off and the choice is remembered.
-  * **Check for updates…**: only appears in the desktop application. It looks for a newer version and, if there is one, shows a notice with a **Download and install** button that fetches the installer for your system and opens it. The application checks on its own once a day at startup; the notice's **Check at startup** box turns that off.
   * **Export options…**: opens the settings for the files the application generates (language, plus class and preamble for LaTeX), explained below.
 * **Print (Ctrl+P)**: produces a view ready for paper or PDF using the current styles.
-* **Search (Ctrl+F)** and **Manual (Ctrl+H)**: open the advanced search panel or this very document.
-* **About**: shows the installed version, the author, the licence and the third-party licences, along with links to the web version and to the desktop downloads.
+* **Search (Ctrl+F)**: opens the advanced search panel.
+* **Help**: the question-mark button holds the **User manual (F1)**, **About EdiMarkWeb** —installed version, author, licence and third-party licences, with links to the web version and to the downloads— and, in the desktop application, **Check for updates…**.
 
 The pane layout is changed with `Ctrl+L` or with the layout button next to the editing-area button. Its menu offers **Maximize Markdown panel**, **Maximize preview panel** and **Split panels**. On small screens the bar folds into two buttons — **Actions** and **Format** — that show each group when you need it.
 
@@ -80,7 +81,7 @@ The grey strip below the top bar holds quick access to formatting and elements:
 * **Lists and quotes**: bullets, numbering and quote blocks with their own shortcuts.
 * **Code, links, images and tables**: guided insertion through dialogs.
 * **Paste**: brings whatever is on the clipboard into the document, as explained above.
-* **LaTeX formulas**: a menu for inserting inline or block commands with the correct syntax.
+* **LaTeX formulas**: a menu with the four delimiters —`$...$`, `$$...$$`, `\(...\)` and `\[...\]`—, each with its shortcut alongside. They work as a chord: `Ctrl+M` starts the wait —the status bar lists the keys— and then `1`, `2`, `3` or `4` picks the delimiter; `Enter` or a repeated `M` insert `$...$`, the usual one, and `Esc` or any other key cancels. A separate combination for each delimiter ends up clashing with the browser or the desktop: `Ctrl+Shift+J` is the browser console and `Ctrl+Shift+M` may be the system magnifier, and neither gives its shortcut up.
 * **Formula editor (EdiCuaTeX)**: opens the integrated assistant with `Ctrl+Alt+M`. On accepting, the formula comes back inserted in the editor.
 
 Each button shows a description on hover and states the equivalent keyboard shortcut.
@@ -133,7 +134,7 @@ That is the standard way of storing data about a document and many programs unde
 
 #### The text formatting
 
-In that same dialog —and from the **Formatting** button at the end of the bar— you set the **alignment** (left, justified or right), the **typeface** (serif, sans serif, monospaced or whatever you type), the **size** in points, the **line spacing**, the **margins** on all four sides in centimetres, the **first-line indent** and the **hyphenation**.
+In that same dialog —which the sliders button at the end of the bar also opens— you set the **alignment** (left, justified or right), the **typeface** (serif, sans serif, monospaced or whatever you type), the **size** in points, the **line spacing**, the **margins** on all four sides in centimetres, the **first-line indent** and the **hyphenation**.
 
 Choosing *Other…* as the typeface brings up the typeface name right underneath, with a list of suggestions: the ones the application could recognise as installed on this computer (in Chrome and Edge, *Show every typeface on this computer…* asks for permission and offers the full list). You can type any name even if it is not installed: the document keeps it anyway, because the file may end up on a computer that does have it. If it is missing here, an amber note says so and the preview falls back to another typeface; on export the name travels written down and each program resolves it (Word and LibreOffice if they have it, and in LaTeX only with XeLaTeX or LuaLaTeX).
 
@@ -201,7 +202,7 @@ Open the **File** button and choose `Export` to download versions ready to hand 
 * **EPUB (e-book)**: creates an e-book compatible with EPUB 3 readers (Calibre, Apple Books, Thorium, e-ink devices…). The title comes from the first level-1 heading (or from the document name), and the author, the cover and the language come from the settings explained below.
 * **HTML (web page)**: produces a self-contained file with embedded styles and formulas, ready to host on the web. The browser tab title comes from the first heading, or from the document name if there is none.
 * **TEX (LaTeX)**: creates a complete `.tex` document with a preamble ready to compile. It carries the document language, so hyphenation and the automatic labels come out in your language, and if the document opens with a single level-1 heading that heading becomes the title (`\title` and `\maketitle`) instead of just another section.
-* **PDF (through printing)**: opens the system print dialog, where you pick “Save as PDF” as the destination. What comes out is exactly what the preview shows, with typeset formulas and the document margins, and the text stays selectable and searchable. It is the same path as the **Print (Ctrl+P)** button.
+* **PDF**: opens the system print dialog, where you pick “Save as PDF” as the destination. What comes out is exactly what the preview shows, with typeset formulas and the document margins, and the text stays selectable and searchable. It is the same path as the **Print (Ctrl+P)** button.
 
 While exporting, the top bar shows status messages (progress, success or errors).
 
@@ -282,7 +283,7 @@ The installers live on the [downloads page](https://github.com/edimarkweb/edimar
 
 At startup the application checks once a day whether a newer version exists. When there is one, a notice appears below the toolbar with a **Download and install** button: it fetches the installer for your system, shows the progress and hands it to the system installer so you can finish in a couple of clicks. With an AppImage there is nothing to install, so the application downloads the new one and opens its folder for you to replace the old file. No installer can replace the files of a running application, so as soon as it starts a **Close EdiMarkWeb** button appears in the same notice: it saves what you are writing and closes. When the installation finishes, open the application again and the new version is there.
 
-The notice includes a **Check at startup** box that turns off the automatic check, and a **Release notes** link with the list of changes. You can ask for it whenever you like from **Settings → Check for updates…**; if you already have the latest version, it says so in the status bar.
+The notice includes a **Check at startup** box that turns off the automatic check, and a **Release notes** link with the list of changes. You can ask for it whenever you like from **Help → Check for updates…**; if you already have the latest version, it says so in the status bar.
 
 ### What does not change
 
@@ -305,8 +306,10 @@ Documents started in the browser and those from the desktop application are ordi
 | Link | `Ctrl` + `K` | `Cmd` + `K` |
 | Image | `Ctrl` + `Shift` + `I` | `Cmd` + `Shift` + `I` |
 | Table | `Ctrl` + `Shift` + `T` | `Cmd` + `Shift` + `T` |
-| Inline formula | `Ctrl` + `M` | `Cmd` + `M` |
-| Block formula | `Ctrl` + `Shift` + `M` | `Cmd` + `Shift` + `M` |
+| Formula `$...$` (inline) | `Ctrl` + `M` then `1` | `Cmd` + `M` then `1` |
+| Formula `$$...$$` (block) | `Ctrl` + `M` then `2` | `Cmd` + `M` then `2` |
+| Formula `\(...\)` (inline) | `Ctrl` + `M` then `3` | `Cmd` + `M` then `3` |
+| Formula `\[...\]` (block) | `Ctrl` + `M` then `4` | `Cmd` + `M` then `4` |
 | Undo / Redo | `Ctrl` + `Z` / `Ctrl` + `Shift` + `Z` | `Cmd` + `Z` / `Cmd` + `Shift` + `Z` |
 | **Managing documents** | | |
 | New tab | `Ctrl` + `T` | `Cmd` + `T` |

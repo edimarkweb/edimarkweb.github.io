@@ -875,6 +875,25 @@ body.desktop-mode .markdown-textarea {
     appearance: none;
 }
 
+/*
+  Guardar salió del menú a la barra, y un botón de barra no puede decir si hay
+  algo pendiente: el punto lo dice. Mismo color que el de la pestaña, que es
+  donde el usuario ya lo ha aprendido.
+*/
+.save-dirty-dot {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 9999px;
+    background-color: #ef4444;
+    box-shadow: 0 0 0 2px #ffffff;
+}
+.dark .save-dirty-dot {
+    box-shadow: 0 0 0 2px #0f172a;
+}
+
 .toolbar-group {
     display: flex;
     align-items: center;
@@ -1049,8 +1068,8 @@ body.desktop-mode .markdown-textarea {
         height: 40vh;
     }
 
-    /* Ajustes del contenedor de acciones en cabecera */
-    header > div:nth-child(2) {
+    /* Los menús Archivo y Configuración, en su propia fila bajo la marca. */
+    #header-menus {
         width: 100%;
     }
     
