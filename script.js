@@ -87,6 +87,58 @@ let statusReporter = null;
 function reportStatus(message) {
     if (typeof statusReporter === 'function') statusReporter(message);
 }
+
+/*
+  Los desplegables se anclan al botón que los abre. En pantallas estrechas eso
+  deja media lista fuera de la pantalla, así que tras abrirlos se recolocan:
+  se limita su anchura al viewport y se desplazan en horizontal lo justo para
+  que quepan. La altura solo se acota en móvil, donde los submenús se abren
+  dentro del panel; en escritorio salen por el lateral y un recorte los cortaría.
+*/
+const MENU_VIEWPORT_MARGIN = 8;
+const MENU_NARROW_VIEWPORT = 640;
+const openViewportMenus = new Set();
+
+function fitMenuInViewport(menu) {
+    if (!menu || menu.classList.contains('hidden')) return;
+    menu.style.transform = '';
+    menu.style.maxWidth = '';
+    menu.style.maxHeight = '';
+    menu.style.overflowY = '';
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = document.documentElement.clientHeight;
+    const margin = MENU_VIEWPORT_MARGIN;
+    menu.style.maxWidth = `${Math.max(160, viewportWidth - margin * 2)}px`;
+    let rect = menu.getBoundingClientRect();
+    let shift = 0;
+    if (rect.right > viewportWidth - margin) shift = viewportWidth - margin - rect.right;
+    if (rect.left + shift < margin) shift = margin - rect.left;
+    if (shift) {
+        menu.style.transform = `translateX(${Math.round(shift)}px)`;
+        rect = menu.getBoundingClientRect();
+    }
+    if (viewportWidth < MENU_NARROW_VIEWPORT && rect.bottom > viewportHeight - margin) {
+        const available = viewportHeight - rect.top - margin;
+        if (available > 120) {
+            menu.style.maxHeight = `${Math.round(available)}px`;
+            menu.style.overflowY = 'auto';
+        }
+    }
+    openViewportMenus.add(menu);
+}
+
+function refitOpenMenus() {
+    openViewportMenus.forEach((menu) => {
+        if (!menu.isConnected || menu.classList.contains('hidden')) {
+            openViewportMenus.delete(menu);
+            return;
+        }
+        fitMenuInViewport(menu);
+    });
+}
+
+window.addEventListener('resize', refitOpenMenus);
+window.addEventListener('orientationchange', refitOpenMenus);
 const shownStorageNoticeKeys = new Set();
 
 function queueStorageNotice(notice) {
@@ -4598,6 +4650,7 @@ window.onload = async () => {
             closeSettingsSubmenus(menu);
             syncChecks();
             menu.classList.remove('hidden');
+            fitMenuInViewport(menu);
             button.setAttribute('aria-expanded', 'true');
         };
         const close = () => {
@@ -4673,6 +4726,7 @@ window.onload = async () => {
     const openFormulaOptions = () => {
         if (!formulaOptions) return;
         formulaOptions.classList.remove('hidden');
+        fitMenuInViewport(formulaOptions);
         if (formulaBtn) formulaBtn.setAttribute('aria-expanded', 'true');
         const firstBtn = formulaOptionButtons[0];
         if (firstBtn) firstBtn.focus();
@@ -5371,6 +5425,7 @@ window.onload = async () => {
         closeExportMenu();
         closePreviewCopyMenu();
         helpMenu.classList.remove('hidden');
+        fitMenuInViewport(helpMenu);
         if (helpMenuBtn) helpMenuBtn.setAttribute('aria-expanded', 'true');
     }
 
@@ -5415,6 +5470,7 @@ window.onload = async () => {
         closePreviewCopyMenu();
         closeSettingsMenu();
         actionsMenu.classList.remove('hidden');
+        fitMenuInViewport(actionsMenu);
         if (actionsMenuBtn) actionsMenuBtn.setAttribute('aria-expanded', 'true');
     }
 
@@ -5444,6 +5500,7 @@ window.onload = async () => {
         closeExportMenu();
         closePreviewCopyMenu();
         settingsMenu.classList.remove('hidden');
+        fitMenuInViewport(settingsMenu);
         if (settingsMenuBtn) settingsMenuBtn.setAttribute('aria-expanded', 'true');
     }
 
@@ -5579,6 +5636,7 @@ window.onload = async () => {
         closeActionsMenu();
         closeHelpMenu();
         exportMenu.classList.remove('hidden');
+        fitMenuInViewport(exportMenu);
         if (exportMenuBtn) exportMenuBtn.setAttribute('aria-expanded', 'true');
     }
 
@@ -5607,6 +5665,7 @@ window.onload = async () => {
         closeActionsMenu();
         closeSettingsMenu();
         previewCopyMenu.classList.remove('hidden');
+        fitMenuInViewport(previewCopyMenu);
         if (previewCopyToggleBtn) previewCopyToggleBtn.setAttribute('aria-expanded', 'true');
     }
 
@@ -6271,6 +6330,7 @@ window.onload = async () => {
         }
         e.stopPropagation();
         headingOptions.classList.toggle('hidden');
+        fitMenuInViewport(headingOptions);
     });
 
     document.addEventListener('click', (e) => {
@@ -6324,6 +6384,7 @@ window.onload = async () => {
       layoutMenuBtn.addEventListener('click', () => {
         const willOpen = layoutMenu.classList.contains('hidden');
         layoutMenu.classList.toggle('hidden', !willOpen);
+        if (willOpen) fitMenuInViewport(layoutMenu);
         layoutMenuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
       });
       layoutOptions.forEach((option) => {
