@@ -1036,7 +1036,19 @@ body.desktop-mode .markdown-textarea {
     .CodeMirror, .editor-pane, .markdown-textarea {
        height: 40vh;
     }
-    
+
+    /*
+      En columna los paneles ya no se estiran a la misma altura: el de Markdown
+      mide lo que mida su contenido, y el `flex: 1 1 0` del editor lo dejaba en
+      cero, así que en el móvil solo se veía una rendija de texto. Aquí el editor
+      recupera un alto propio y la lista de imágenes incrustadas sigue debajo.
+    */
+    body:not(.desktop-mode) #markdown-panel .markdown-textarea-wrapper,
+    body:not(.desktop-mode) #markdown-panel .CodeMirror {
+        flex: 0 0 auto;
+        height: 40vh;
+    }
+
     /* Ajustes del contenedor de acciones en cabecera */
     header > div:nth-child(2) {
         width: 100%;
