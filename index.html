@@ -84,6 +84,56 @@
             </button>
           </div>
         </div>
+        <div id="export-menu-container" class="relative">
+            <button type="button" id="export-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" aria-haspopup="true" aria-expanded="false" aria-keyshortcuts="Control+Alt+E" data-i18n-key="export_menu_btn_title" title="Exportar (Ctrl+Alt+E)">
+              <span data-i18n-key="export_menu_btn_text">Exportar</span>
+              <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
+            </button>
+          <div id="export-menu" class="hidden absolute left-0 mt-2 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 w-72 z-30" role="menu" aria-labelledby="export-menu-btn">
+            <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="docx" role="menuitem">
+              <span class="flex w-full items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
+                <span class="whitespace-nowrap" data-i18n-key="export_menu_option_docx">DOCX</span>
+              </span>
+              <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="export_menu_hint_docx">Microsoft Word y compatibles</span>
+            </button>
+            <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="odt" role="menuitem">
+              <span class="flex w-full items-center gap-2">
+                <i data-lucide="file" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
+                <span class="whitespace-nowrap" data-i18n-key="export_menu_option_odt">ODT</span>
+              </span>
+              <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="export_menu_hint_odt">LibreOffice y OpenOffice</span>
+            </button>
+            <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="epub" role="menuitem">
+              <span class="flex w-full items-center gap-2">
+                <i data-lucide="book-open" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
+                <span class="whitespace-nowrap" data-i18n-key="export_menu_option_epub">EPUB</span>
+              </span>
+              <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="export_menu_hint_epub">Libro digital para lectores electrónicos</span>
+            </button>
+            <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="html-download" role="menuitem">
+              <span class="flex w-full items-center gap-2">
+                <i data-lucide="globe" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
+                <span class="whitespace-nowrap" data-i18n-key="export_menu_option_html_download">HTML</span>
+              </span>
+              <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="export_menu_hint_html">Página web autónoma, con sus estilos</span>
+            </button>
+            <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-download" role="menuitem">
+              <span class="flex w-full items-center gap-2">
+                <i data-lucide="sigma" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
+                <span class="whitespace-nowrap" data-i18n-key="export_menu_option_latex_full_download">TEX</span>
+              </span>
+              <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="export_menu_hint_latex">Fuente LaTeX lista para compilar</span>
+            </button>
+            <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="pdf" role="menuitem">
+              <span class="flex w-full items-center gap-2">
+                <i data-lucide="file-down" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
+                <span class="whitespace-nowrap" data-i18n-key="export_menu_option_pdf">PDF</span>
+              </span>
+              <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="export_menu_hint_pdf">Mediante el diálogo de impresión</span>
+            </button>
+          </div>
+        </div>
         <div id="settings-menu-container" class="relative">
           <button type="button" id="settings-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="settings_menu_btn_title" title="Configuración (Ctrl+,)" aria-haspopup="true" aria-expanded="false" aria-keyshortcuts="Control+Comma">
             <span data-i18n-key="settings_menu_btn_text">Configuración</span>
@@ -220,38 +270,6 @@
                     <i data-lucide="save"></i>
                     <span id="save-dirty-dot" class="save-dirty-dot hidden" aria-hidden="true"></span>
                 </button>
-<div id="export-menu-container" class="relative">
-                    <button type="button" id="export-menu-btn" class="action-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" aria-haspopup="true" aria-expanded="false" aria-keyshortcuts="Control+Alt+E" data-i18n-key="export_menu_btn_title" title="Exportar (Ctrl+Alt+E)">
-                      <i data-lucide="download"></i>
-                      <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
-                    </button>
-                  <div id="export-menu" class="hidden absolute right-0 mt-2 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 w-60 z-30" role="menu" aria-labelledby="export-menu-btn">
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="docx" role="menuitem">
-                      <i data-lucide="file-text" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                      <span data-i18n-key="export_menu_option_docx">DOCX (Microsoft Word)</span>
-                    </button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="odt" role="menuitem">
-                      <i data-lucide="file" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                      <span data-i18n-key="export_menu_option_odt">ODT (LibreOffice)</span>
-                    </button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="epub" role="menuitem">
-                      <i data-lucide="book-open" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                      <span data-i18n-key="export_menu_option_epub">EPUB (libro digital)</span>
-                    </button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="html-download" role="menuitem">
-                      <i data-lucide="globe" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                      <span data-i18n-key="export_menu_option_html_download">HTML (página web)</span>
-                    </button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="latex-full-download" role="menuitem">
-                      <i data-lucide="sigma" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                      <span data-i18n-key="export_menu_option_latex_full_download">TEX (LaTeX)</span>
-                    </button>
-                    <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-export-format="pdf" role="menuitem">
-                      <i data-lucide="file-down" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                      <span data-i18n-key="export_menu_option_pdf">PDF</span>
-                    </button>
-                  </div>
-                </div>
 <div id="preview-copy-container" class="relative inline-flex items-center">
                 <button type="button" id="copy-html-btn" class="action-btn gap-1.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="copy_html_btn_title" title="Copiar HTML" aria-keyshortcuts="Control+Alt+C">
                     <i data-lucide="copy"></i>
@@ -446,23 +464,35 @@
                         <i data-lucide="braces"></i>
                         <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
                     </button>
-                    <div id="formula-options" class="hidden absolute z-20 -left-2 mt-2 w-64 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
-                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-inline-dollar" role="menuitem" aria-keyshortcuts="Control+M 1">
-                            <span class="whitespace-nowrap" data-i18n-key="formula_inline_dollar">$...$ (en línea)</span>
-                            <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_inline_dollar">Ctrl+M 1</span>
+                    <div id="formula-options" class="hidden absolute z-20 -left-2 mt-2 w-72 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
+                        <button class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-inline-dollar" role="menuitem" aria-keyshortcuts="Control+M 1">
+                            <span class="flex w-full items-center gap-2">
+                                <span class="whitespace-nowrap" data-i18n-key="formula_inline_dollar">$...$</span>
+                                <span class="ml-auto whitespace-nowrap pl-3 text-xs font-normal tabular-nums text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_inline_dollar">Ctrl+M 1</span>
+                            </span>
+                            <span class="text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="formula_hint_inline_dollar">En línea, dentro del párrafo</span>
                         </button>
-                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-block-dollar" role="menuitem" aria-keyshortcuts="Control+M 2">
-                            <span class="whitespace-nowrap" data-i18n-key="formula_block_dollar">$$...$$ (bloque)</span>
-                            <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_block_dollar">Ctrl+M 2</span>
+                        <button class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-block-dollar" role="menuitem" aria-keyshortcuts="Control+M 2">
+                            <span class="flex w-full items-center gap-2">
+                                <span class="whitespace-nowrap" data-i18n-key="formula_block_dollar">$$...$$</span>
+                                <span class="ml-auto whitespace-nowrap pl-3 text-xs font-normal tabular-nums text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_block_dollar">Ctrl+M 2</span>
+                            </span>
+                            <span class="text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="formula_hint_block_dollar">En bloque, en su propia línea</span>
                         </button>
                         <div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>
-                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-inline-paren" role="menuitem" aria-keyshortcuts="Control+M 3">
-                            <span class="whitespace-nowrap" data-i18n-key="formula_inline_paren">\(...\) (en línea)</span>
-                            <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_inline_paren">Ctrl+M 3</span>
+                        <button class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-inline-paren" role="menuitem" aria-keyshortcuts="Control+M 3">
+                            <span class="flex w-full items-center gap-2">
+                                <span class="whitespace-nowrap" data-i18n-key="formula_inline_paren">\(...\)</span>
+                                <span class="ml-auto whitespace-nowrap pl-3 text-xs font-normal tabular-nums text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_inline_paren">Ctrl+M 3</span>
+                            </span>
+                            <span class="text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="formula_hint_inline_paren">En línea, con la sintaxis de LaTeX</span>
                         </button>
-                        <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-block-bracket" role="menuitem" aria-keyshortcuts="Control+M 4">
-                            <span class="whitespace-nowrap" data-i18n-key="formula_block_bracket">\[...\] (bloque)</span>
-                            <span class="ml-auto pl-3 text-xs text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_block_bracket">Ctrl+M 4</span>
+                        <button class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-block-bracket" role="menuitem" aria-keyshortcuts="Control+M 4">
+                            <span class="flex w-full items-center gap-2">
+                                <span class="whitespace-nowrap" data-i18n-key="formula_block_bracket">\[...\]</span>
+                                <span class="ml-auto whitespace-nowrap pl-3 text-xs font-normal tabular-nums text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_formula_block_bracket">Ctrl+M 4</span>
+                            </span>
+                            <span class="text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="formula_hint_block_bracket">En bloque, con la sintaxis de LaTeX</span>
                         </button>
                     </div>
                 </div>

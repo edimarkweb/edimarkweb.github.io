@@ -52,10 +52,10 @@ Traballa con varios documentos á vez, cada un na súa propia lapela.
 
 ## Barra superior de controis
 
-A cabeceira ten dúas metades. Xunto ao logotipo están os dous menús —**Arquivo** e **Configuración**—, co seu nome escrito e sen icona, como a barra de menús de calquera programa de escritorio. No extremo dereito, as accións sobre o documento que se usan a diario, como botóns dunha soa icona: **Gardar**, **Exportar**, **Imprimir**, **Buscar** e **Axuda**.
+A cabeceira ten dúas metades. Xunto ao logotipo están os tres menús —**Arquivo**, **Exportar** e **Configuración**—, co seu nome escrito e sen icona, como a barra de menús de calquera programa de escritorio. No extremo dereito, as accións que se usan a diario, como botóns dunha soa icona: **Gardar**, **Copiar**, **Imprimir**, **Buscar** e **Axuda**.
 
 * **Gardar (Ctrl+S)**: o primeiro botón da dereita. Cando o documento aberto ten cambios pendentes, aparécelle un punto vermello no canto, o mesmo que marca a lapela.
-* **Exportar (Ctrl+Alt+E)**: desprega DOCX, ODT, EPUB, HTML, TEX e PDF.
+* **Exportar (Ctrl+Alt+E)**: os seis formatos —DOCX, ODT, EPUB, HTML, TEX e PDF—, cada un cunha liña que di para que serve.
 * **Arquivo**: o que non se fai a diario. `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` e `Pegar LaTeX (Ctrl+Maiús+V)` traen contido; `Gardar como… (Ctrl+Maiús+S)` sácao con outro nome. Cada opción mostra o seu atallo de teclado. Na aplicación de escritorio o menú remata con **Saír**, que garda o documento en curso e pecha a aplicación.
 * **Configuración**: agrupa todos os axustes da aplicación, cada un cun submenú que indica o valor activo.
   * **Idioma**: cambia o idioma da interface.

@@ -52,10 +52,10 @@ Egin lan hainbat dokumenturekin aldi berean, bakoitza bere fitxan.
 
 ## Goiko kontrol-barra
 
-Goiburuak bi erdi ditu. Logotipoaren ondoan bi menuak daude —**Fitxategia** eta **Ezarpenak**—, izena idatzita eta ikonorik gabe, edozein mahaigaineko programaren menu-barra bezala. Eskuineko muturrean, egunero erabiltzen diren dokumentuaren gaineko ekintzak, ikono bakarreko botoi gisa: **Gorde**, **Esportatu**, **Inprimatu**, **Bilatu** eta **Laguntza**.
+Goiburuak bi erdi ditu. Logotipoaren ondoan hiru menuak daude —**Fitxategia**, **Esportatu** eta **Ezarpenak**—, izena idatzita eta ikonorik gabe, edozein mahaigaineko programaren menu-barra bezala. Eskuineko muturrean, egunero erabiltzen diren ekintzak, ikono bakarreko botoi gisa: **Gorde**, **Kopiatu**, **Inprimatu**, **Bilatu** eta **Laguntza**.
 
 * **Gorde (Ctrl+S)**: eskuineko lehen botoia. Irekitako dokumentuak aldaketak zain dituenean, puntu gorri bat agertzen zaio izkinan, fitxa markatzen duen bera.
-* **Esportatu (Ctrl+Alt+E)**: DOCX, ODT, EPUB, HTML, TEX eta PDF zabaltzen ditu.
+* **Esportatu (Ctrl+Alt+E)**: sei formatuak —DOCX, ODT, EPUB, HTML, TEX eta PDF—, bakoitza zertarako balio duen esaten duen lerro batekin.
 * **Fitxategia**: egunero egiten ez dena. `Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)` edukia ekartzen dute; `Gorde honela… (Ctrl+Shift+S)` beste izen batekin ateratzen du. Aukera bakoitzak bere teklatu-lasterbidea erakusten du. Mahaigaineko aplikazioan menua **Irten** aukerarekin amaitzen da: uneko dokumentua gorde eta aplikazioa ixten du.
 * **Ezarpenak**: aplikazioaren ezarpen guztiak biltzen ditu, bakoitza uneko balioa adierazten duen azpimenu batekin.
   * **Hizkuntza**: interfazearen hizkuntza aldatzen du.

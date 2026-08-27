@@ -1911,10 +1911,17 @@ test('la cabecera separa los menús de las acciones del documento', async (t) =>
   assert.equal(await menus.locator('[data-lucide="folder"], [data-lucide="settings"]').count(), 0);
   assert.equal((await menus.locator('#actions-menu-btn').innerText()).trim(), 'Archivo');
 
-  // Guardar y Exportar salen a la barra; el resto se queda en el menú.
+  // Exportar es un menú más, entre Archivo y Configuración: son seis formatos
+  // con su descripción, no una acción de un clic.
+  assert.equal(await menus.locator('#export-menu-btn').count(), 1);
+  assert.deepEqual(
+    await menus.locator(':scope > div > button[aria-haspopup="true"]').allInnerTexts(),
+    ['Archivo', 'Exportar', 'Configuración'],
+  );
+
+  // Guardar sí sale a la barra; el resto se queda en el menú.
   const acciones = page.locator('#document-actions-group');
   assert.equal(await acciones.locator('#save-btn').count(), 1);
-  assert.equal(await acciones.locator('#export-menu-btn').count(), 1);
   assert.equal(await page.locator('#actions-menu #save-btn').count(), 0);
   assert.equal(await page.locator('#actions-menu #save-as-btn').count(), 1);
 
@@ -1936,6 +1943,35 @@ test('la cabecera separa los menús de las acciones del documento', async (t) =>
   assert.equal(await page.locator('#save-dirty-dot').isVisible(), false);
   await page.locator('#markdown-input').fill('# Con cambios');
   await page.waitForFunction(() => !document.getElementById('save-dirty-dot').classList.contains('hidden'));
+});
+
+/*
+  Los menús explicaban el formato con un paréntesis pegado al nombre —«DOCX
+  (Microsoft Word)», «$...$ (en línea)»—, que alarga la etiqueta y obliga a
+  leerla entera para distinguir una opción de otra. El nombre va solo y la
+  explicación, debajo y en gris.
+*/
+test('cada opción de formato se explica debajo, no entre paréntesis', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const revisar = async (boton, menu, esperadas) => {
+    await page.locator(boton).click();
+    await page.locator(menu).waitFor({ state: 'visible' });
+    const etiquetas = await page.locator(`${menu} [role="menuitem"] > span > span:not([data-shortcut]), ${menu} [role="menuitemradio"] > span > span:not([data-shortcut])`)
+      .allTextContents();
+    assert.deepEqual(etiquetas, esperadas, `etiquetas de ${menu}`);
+    // Una descripción por opción, y ningún paréntesis en el nombre.
+    const descripciones = await page.locator(`${menu} [role="menuitem"] > span:not(:first-child), ${menu} [role="menuitemradio"] > span:not(:first-child)`)
+      .allTextContents();
+    assert.equal(descripciones.length, esperadas.length, `descripciones de ${menu}`);
+    assert.ok(descripciones.every(texto => texto.trim().length > 0), `alguna descripción vacía en ${menu}`);
+    await page.keyboard.press('Escape');
+  };
+
+  await revisar('#export-menu-btn', '#export-menu', ['DOCX', 'ODT', 'EPUB', 'HTML', 'TEX', 'PDF']);
+  await revisar('#formula-btn', '#formula-options', ['$...$', '$$...$$', '\\(...\\)', '\\[...\\]']);
+  await revisar('#copy-html-menu-toggle', '#preview-copy-menu', ['Markdown', 'HTML', 'LaTeX', 'LaTeX completo']);
 });
 
 /*

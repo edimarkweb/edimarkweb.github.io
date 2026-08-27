@@ -52,10 +52,10 @@ Treballa amb diversos documents alhora, cadascun a la seva pestanya.
 
 ## Barra superior de controls
 
-La capçalera té dues meitats. Al costat del logotip hi ha els dos menús —**Fitxer** i **Configuració**—, amb el nom escrit i sense icona, com la barra de menús de qualsevol programa d'escriptori. A l'extrem dret, les accions sobre el document que es fan cada dia, com a botons d'una sola icona: **Desar**, **Exportar**, **Imprimir**, **Cercar** i **Ajuda**.
+La capçalera té dues meitats. Al costat del logotip hi ha els tres menús —**Fitxer**, **Exportar** i **Configuració**—, amb el nom escrit i sense icona, com la barra de menús de qualsevol programa d'escriptori. A l'extrem dret, les accions que es fan cada dia, com a botons d'una sola icona: **Desar**, **Copiar**, **Imprimir**, **Cercar** i **Ajuda**.
 
 * **Desar (Ctrl+S)**: el primer botó de la dreta. Quan el document obert té canvis pendents, li apareix un punt vermell al cantó, el mateix que marca la pestanya.
-* **Exportar (Ctrl+Alt+E)**: desplega DOCX, ODT, EPUB, HTML, TEX i PDF.
+* **Exportar (Ctrl+Alt+E)**: els sis formats —DOCX, ODT, EPUB, HTML, TEX i PDF—, cadascun amb una línia que diu per a què serveix.
 * **Fitxer**: el que no es fa cada dia. `Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)` hi porten contingut; `Desar com a… (Ctrl+Maj+S)` el treu amb un altre nom. Cada opció mostra la seva drecera de teclat. A l'aplicació d'escriptori el menú acaba amb **Surt**, que desa el document en curs i tanca l'aplicació.
 * **Configuració**: agrupa tots els ajustos de l'aplicació, cadascun amb un submenú que n'indica el valor actiu.
   * **Idioma**: canvia l'idioma de la interfície.

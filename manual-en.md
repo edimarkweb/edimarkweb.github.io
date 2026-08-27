@@ -52,10 +52,10 @@ Work on several documents at once, each in its own tab.
 
 ## Top control bar
 
-The header has two halves. Next to the logo sit the two menus —**File** and **Settings**—, spelled out and without an icon, like the menu bar of any desktop program. At the far right, the everyday actions on the document, as single-icon buttons: **Save**, **Export**, **Print**, **Search** and **Help**.
+The header has two halves. Next to the logo sit the three menus —**File**, **Export** and **Settings**—, spelled out and without an icon, like the menu bar of any desktop program. At the far right, the everyday actions, as single-icon buttons: **Save**, **Copy**, **Print**, **Search** and **Help**.
 
 * **Save (Ctrl+S)**: the first button on the right. When the open document has pending changes, a red dot appears in its corner, the same one that marks the tab.
-* **Export (Ctrl+Alt+E)**: opens DOCX, ODT, EPUB, HTML, TEX and PDF.
+* **Export (Ctrl+Alt+E)**: the six formats —DOCX, ODT, EPUB, HTML, TEX and PDF—, each with a line saying what it is for.
 * **File**: everything that is not everyday work. `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` bring content in; `Save as… (Ctrl+Shift+S)` takes it out under another name. Each option shows its keyboard shortcut. In the desktop application the menu ends with **Quit**, which saves the current document and closes the application.
 * **Settings**: gathers every application setting, each one in a submenu showing the current value.
   * **Language**: changes the interface language.
