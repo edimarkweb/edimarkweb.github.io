@@ -56,10 +56,10 @@ The header has two halves. Next to the logo sit the three menus —**File**, **E
 
 * **Save (Ctrl+S)**: the first button on the right. When the open document has pending changes, a red dot appears in its corner, the same one that marks the tab.
 * **Export (Ctrl+Alt+E)**: the six formats —DOCX, ODT, EPUB, HTML, TEX and PDF—, each with a line saying what it is for.
-* **File**: everything that is not everyday work. `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` bring content in; `Save as… (Ctrl+Shift+S)` takes it out under another name. Each option shows its keyboard shortcut. In the desktop application the menu ends with **Quit**, which saves the current document and closes the application.
+* **File**: everything that is not everyday work. `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` bring content in; `Save (Ctrl+S)` and `Save as… (Ctrl+Shift+S)` take it out. Save is here as well as on its icon: the menu entry spells out its shortcut, and «Save as…» reads oddly without «Save» beside it. Each option shows its keyboard shortcut. In the desktop application the menu ends with **Quit**, which saves the current document and closes the application.
 * **Settings**: gathers every application setting, each one in a submenu showing the current value.
   * **Language**: changes the interface language.
-  * **Font size**: small, normal, large or very large.
+  * **Font size**: small, normal, large or very large. It changes the Markdown panel and the generated-HTML view, which are editors; the preview does not follow it, because there the size is the one the document declares —the one under *Text formatting*— and that is what gets exported.
   * **Theme**: `System` follows your computer's setting and changes with it; `Light` and `Dark` fix it. Your choice is remembered next time you open the application.
   * **Separate window**: opens EdiMarkWeb in a browser window of its own, with no tabs or address bar. It only appears in the web version; the desktop application is already a window of its own.
   * **Spell checker**: underlines mistakes in the Markdown pane using the dictionaries installed on the computer, following the document language. It is on by default; unchecking it turns it off and the choice is remembered.
@@ -184,7 +184,7 @@ When a document carries base64 images — after importing a DOCX, after pasting 
 ## Main actions
 
 * **Open (`Ctrl+O`)**: imports `.md` or `.markdown` files.
-* **Import**: converts documents in other formats to Markdown using Pandoc: `.docx`, `.odt`, `.epub`, `.html` and `.tex`. Headings, lists, tables and links are recovered, and so are the images: when they come from a `.docx`, `.odt` or `.epub` they are extracted from the file itself and embedded in the Markdown, so they show up in the preview and travel with you when exporting.
+* **Import**: converts documents in other formats to Markdown using Pandoc: `.docx`, `.odt`, `.epub`, `.html` and `.tex`. Headings, lists, tables and links are recovered, and so are the images: when they come from a `.docx`, `.odt` or `.epub` they are extracted from the file itself and embedded in the Markdown, so they show up in the preview and travel with you when exporting. An `.epub` also brings back the document language, which the book keeps in its wrapper rather than in the text.
 * **Save (`Ctrl+S`)**: saves the current document. In the desktop application it updates the file already open; **Save as… (`Ctrl+Shift+S`)** always lets you choose another name or location.
 * **Copying content**: the left pane has a button to copy the Markdown; in the preview you can choose what gets copied (rendered HTML or LaTeX variants) from the drop-down next to the copy icon.
 * **Changing theme, layout or width**: use **Settings** for the theme, `Ctrl+L` or the pane menu for the layout, and the icon-only width button, to the right of the double arrow, to widen the web workspace.
@@ -218,7 +218,7 @@ The dialog is split into four tabs —**Document**, **Formatting**, **EPUB** and
 
 **EPUB cover**, with three choices. By default EdiMarkWeb **generates one** from the document title and author, because a book with no image shows up as a generic icon on the reader's shelf. You can use **an image of your own** —up to 1 MB, plenty for a cover: it is stored alongside your documents, in the application's own space— or leave the book **with no cover**. It only affects the EPUB.
 
-**Text formatting**: alignment, typeface and size, line spacing, margins, indent and hyphenation, as the starting values for every document. Each document can set its own from the Markdown pane, and whatever it does not set is inherited from here.
+**Text formatting**: alignment, typeface and size, line spacing, margins, indent and hyphenation, as the starting values for every document. The size comes set to twelve points, which is what DOCX and ODT already write, so that the preview always has a concrete body size to show; the rest start out unset. Each document can set its own from the Markdown pane, and whatever it does not set is inherited from here.
 
 **Table of contents**, which adds a list of the sections at the start of the document. In DOCX it is a real Word table of contents and in ODT a native LibreOffice one; the EPUB does not need it, since the reader already provides its navigation index. This is the starting value: each document can ask for it, or turn it down, on its own in the **This document** dialog.
 

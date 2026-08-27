@@ -56,10 +56,10 @@ La capçalera té dues meitats. Al costat del logotip hi ha els tres menús —*
 
 * **Desar (Ctrl+S)**: el primer botó de la dreta. Quan el document obert té canvis pendents, li apareix un punt vermell al cantó, el mateix que marca la pestanya.
 * **Exportar (Ctrl+Alt+E)**: els sis formats —DOCX, ODT, EPUB, HTML, TEX i PDF—, cadascun amb una línia que diu per a què serveix.
-* **Fitxer**: el que no es fa cada dia. `Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)` hi porten contingut; `Desar com a… (Ctrl+Maj+S)` el treu amb un altre nom. Cada opció mostra la seva drecera de teclat. A l'aplicació d'escriptori el menú acaba amb **Surt**, que desa el document en curs i tanca l'aplicació.
+* **Fitxer**: el que no es fa cada dia. `Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)` hi porten contingut; `Desar (Ctrl+S)` i `Desar com a… (Ctrl+Maj+S)` el treuen. Desar és aquí a més de a la seva icona: l'opció duu la drecera escrita, i «Desar com a…» sense «Desar» al costat es llegeix malament. Cada opció mostra la seva drecera de teclat. A l'aplicació d'escriptori el menú acaba amb **Surt**, que desa el document en curs i tanca l'aplicació.
 * **Configuració**: agrupa tots els ajustos de l'aplicació, cadascun amb un submenú que n'indica el valor actiu.
   * **Idioma**: canvia l'idioma de la interfície.
-  * **Mida del text**: petita, normal, gran o molt gran.
+  * **Mida del text**: petita, normal, gran o molt gran. Canvia el plafó Markdown i la vista de l'HTML generat, que són editors; la vista prèvia no la segueix, perquè allà la mida la diu el document —la de *Format del text*— i és la que s'exporta.
   * **Tema**: `Sistema` segueix el de l'equip i canvia amb ell; `Clar` i `Fosc` el fixen. L'elecció es recorda el pròxim cop que obris l'aplicació.
   * **Finestra independent**: obre EdiMarkWeb en una finestra pròpia del navegador, sense pestanyes ni barra d'adreces. Només apareix a la versió web; l'aplicació d'escriptori ja és una finestra pròpia.
   * **Corrector ortogràfic**: subratlla les faltes del plafó Markdown amb els diccionaris instal·lats a l'equip i segueix l'idioma del document. Ve activat; en desmarcar-lo s'apaga i la tria es recorda.
@@ -184,7 +184,7 @@ Quan un document porta imatges en base64 —en importar un DOCX, en enganxar des
 ## Accions principals
 
 * **Obrir (`Ctrl+O`)**: importa fitxers `.md` o `.markdown`.
-* **Importar**: converteix a Markdown documents en altres formats mitjançant Pandoc: `.docx`, `.odt`, `.epub`, `.html` i `.tex`. Es recuperen els encapçalaments, les llistes, les taules i els enllaços, i també les imatges: quan provenen d'un `.docx`, `.odt` o `.epub` s'extreuen del mateix fitxer i queden incrustades al Markdown, de manera que es veuen a la vista prèvia i viatgen amb tu en exportar.
+* **Importar**: converteix a Markdown documents en altres formats mitjançant Pandoc: `.docx`, `.odt`, `.epub`, `.html` i `.tex`. Es recuperen els encapçalaments, les llistes, les taules i els enllaços, i també les imatges: quan provenen d'un `.docx`, `.odt` o `.epub` s'extreuen del mateix fitxer i queden incrustades al Markdown, de manera que es veuen a la vista prèvia i viatgen amb tu en exportar. D'un `.epub` en torna a més l'idioma del document, que el llibre desa a l'embolcall i no al text.
 * **Desar (`Ctrl+S`)**: desa el document actual. A l'aplicació d'escriptori actualitza el fitxer ja obert; **Desar com a… (`Ctrl+Maj+S`)** sempre permet triar un altre nom o ubicació.
 * **Copiar contingut**: el plafó esquerre inclou un botó per copiar el Markdown; a la vista prèvia pots triar què es copiarà (HTML representat o variants LaTeX) des del menú desplegable del costat de la icona de còpia.
 * **Canviar tema, disposició o amplada**: fes servir **Configuració** per al tema, `Ctrl+L` o el menú de plafons per a la disposició i el botó d'amplada (només icona), a la dreta de la doble fletxa, per eixamplar l'espai web.
@@ -218,7 +218,7 @@ El quadre està repartit en quatre pestanyes —**Document**, **Format**, **EPUB
 
 **Portada de l'EPUB**, amb tres possibilitats. D'entrada, EdiMarkWeb **en genera una** amb el títol i l'autor del document, perquè un llibre sense imatge apareix amb la icona genèrica al prestatge del lector. Pots posar-hi **una imatge teva** —fins a 1 MB, que per a una portada ja va sobrat: es desa al costat dels teus documents, a l'espai propi de l'aplicació— o deixar el llibre **sense portada**. Només afecta l'EPUB.
 
-**Format del text**: alineació, tipus i mida de lletra, interlineat, marges, sagnia i partició de mots, amb els valors de partida per a tots els documents. Cada document pot fixar els seus des del plafó Markdown, i el que no fixi ho hereta d'aquí.
+**Format del text**: alineació, tipus i mida de lletra, interlineat, marges, sagnia i partició de mots, amb els valors de partida per a tots els documents. La mida ve posada a dotze punts, que és el que ja escriuen DOCX i ODT, perquè la vista prèvia tingui sempre un cos concret per ensenyar; la resta surten sense fixar. Cada document pot fixar els seus des del plafó Markdown, i el que no fixi ho hereta d'aquí.
 
 **Índex automàtic**, que afegeix al principi del document un índex amb els apartats. En DOCX és un índex del Word de debò i en ODT un de natiu del LibreOffice; l'EPUB no el necessita, perquè el lector ja porta el seu índex de navegació. És el valor de partida: cada document pot demanar-lo o rebutjar-lo pel seu compte al quadre **Aquest document**.
 

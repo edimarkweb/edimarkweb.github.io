@@ -32,6 +32,12 @@ export const MARKDOWN_READER_NO_AUTO_IDS = `${MARKDOWN_READER}-auto_identifiers`
   Pandoc's Markdown writer defaults to space-aligned "simple" tables, which the
   preview (and GitHub-flavoured Markdown in general) renders as plain text.
   Every conversion back to Markdown asks for pipe tables instead.
+
+  `smart` also goes: on the way out it spells typography back as ASCII, so a
+  document that came in with rayas, comillas tipográficas and puntos
+  suspensivos returned full of `---`, `"` and `...`. The characters are what
+  the author wrote and what every one of these formats stores, so they travel
+  as themselves. Reading is untouched: `-t` is the only direction affected.
 */
 export const MARKDOWN_WRITER = [
   MARKDOWN_READER_NO_AUTO_IDS,
@@ -39,6 +45,7 @@ export const MARKDOWN_WRITER = [
   '-multiline_tables',
   '-grid_tables',
   '+pipe_tables',
+  '-smart',
 ].join('');
 
 /*
@@ -157,6 +164,60 @@ export function buildImportArgs(fromFormat) {
   return `-f ${fromFormat} -t ${writer} --wrap=preserve`;
 }
 
+/*
+  Pandoc escribe la línea horizontal como setenta y dos guiones y la fórmula en
+  bloque con los `$$` pegados al contenido. Las dos formas son correctas y las
+  dos se ven igual; el problema es el panel Markdown, que es donde el usuario
+  trabaja: una regla de setenta y dos guiones ocupa una línea entera de ruido y
+  una matriz que empieza en `$$A = \begin{pmatrix}` cuesta de leer y de editar.
+  Se devuelven a la forma en que se escriben a mano, que es como salieron.
+*/
+
+/*
+  Un renglón de guiones detrás de una línea en blanco es una regla; detrás de
+  texto sería el subrayado de un encabezado, y ese no se toca.
+
+  Vuelve como `---`, que es lo que el usuario escribe: al exportar de nuevo,
+  `normalizeThematicBreaks` ya se encarga de pasarlo a `***` para que Pandoc no
+  lo confunda con el principio de un bloque YAML.
+*/
+const LONG_THEMATIC_BREAK_RE = /(^|\n)\n-{3,}(?=\n)/g;
+
+export function collapseThematicBreaks(markdown) {
+  if (typeof markdown !== 'string') return '';
+  return mapOutsideCode(markdown, text => text.replace(LONG_THEMATIC_BREAK_RE, '$1\n---'));
+}
+
+/*
+  Solo el bloque que ocupa su propio párrafo: `$$` a principio de línea y otro
+  al final del bloque. Una fórmula en línea dentro de un texto se queda donde
+  está, y el contenido no se toca —ni siquiera se recorta— para no alterar una
+  fórmula que ya venía repartida en varias líneas.
+*/
+const DISPLAY_MATH_RE = /\$\$(?!\$)([\s\S]*?)\$\$(?=\n|$)/g;
+
+/*
+  El principio de línea se mira sobre el documento entero, no sobre el tramo:
+  partirlo por los códigos deja tramos que empiezan a media línea, y ahí un
+  `^` diría que sí a un `$$` que va pegado a un `código`.
+*/
+export function expandDisplayMath(markdown) {
+  const source = typeof markdown === 'string' ? markdown : '';
+  let offset = 0;
+  return splitCodeSegments(source).map((segment) => {
+    const start = offset;
+    offset += segment.text.length;
+    if (segment.code) return segment.text;
+    return segment.text.replace(DISPLAY_MATH_RE, (match, body, index) => {
+      const at = start + index;
+      if (at !== 0 && source[at - 1] !== '\n') return match;
+      const inner = body.replace(/^\n+/, '').replace(/\n+$/, '');
+      if (!inner.trim()) return match;
+      return `$$\n${inner}\n$$`;
+    });
+  }).join('');
+}
+
 // EPUB internal links carry the source file name (#ch001.xhtml_seccion), which
 // is meaningless outside the book.
 export function stripEpubAnchorPrefixes(markdown) {
@@ -237,12 +298,20 @@ export function normalizeNewlines(str) {
   return typeof str === 'string' ? str.replace(/\r\n?/g, '\n') : '';
 }
 
-// Matches the inline math trim used in MDAITex.
+/*
+  Matches the inline math trim used in MDAITex.
+
+  Fuera del código, como todo lo que busca fórmulas: un `$` escrito dentro de
+  un `código` no abre nada, pero el emparejamiento no lo sabía y acababa
+  uniendo el `$` suelto de un ejemplo con el de la fórmula siguiente. En el
+  manual, que explica los delimitadores escribiéndolos, «los delimitadores
+  propios de LaTeX: $E = mc^2$» perdía el espacio de delante de la fórmula.
+*/
 export function trimInlineMath(content) {
   if (typeof content !== 'string') return '';
-  return content.replace(/\$(\s*)([^$\n]+?)(\s*)\$(?!\$)/g, (_match, _p1, expr) => {
+  return mapOutsideCode(content, text => text.replace(/\$(\s*)([^$\n]+?)(\s*)\$(?!\$)/g, (_match, _p1, expr) => {
     return `$${expr}$`;
-  });
+  }));
 }
 
 export function escapeYamlValue(str) {
@@ -397,6 +466,14 @@ export function normalizeThematicBreaks(markdown) {
     }
     if (fence !== null) continue;
     if (lines[i].trim() !== '---') continue;
+    /*
+      Con cuatro espacios o más ya no es una raya, es código sangrado, y ahí
+      Pandoc tampoco lo confunde con el principio de un bloque YAML: lo lee
+      como lo que es. Importa porque un bloque cercado vuelve sangrado de
+      cualquier conversión, y el manual explica el bloque de ajustes
+      escribiéndolo entero —rayas incluidas—, que salía convertido en `***`.
+    */
+    if (/^ {4,}|^\t/.test(lines[i])) continue;
     // Text immediately above makes it a setext heading, not a break.
     if (i > start && lines[i - 1].trim() !== '') continue;
     lines[i] = lines[i].replace('---', '***');
@@ -723,6 +800,91 @@ export function dropImagesByUrl(markdown, urls) {
       return alt ? alt[1] : '';
     })
     .replace(HTML_IMAGE_RE, (match, _quote, url) => (targets.has(url) ? '' : match)));
+}
+
+/*
+  Lo que el EPUB dice de sí mismo, que Pandoc no devuelve con el texto.
+
+  El idioma vive en `content.opf`, no en el cuerpo del libro, así que un
+  documento exportado con `lang: "ca"` volvía sin él y pasaba a corregirse en
+  el idioma general. Se lee de ahí y se devuelve al documento.
+*/
+const OPF_PATH_RE = /^(?:[^/]+\/)?[^/]*\.opf$/i;
+
+function decodeXmlEntities(value) {
+  return String(value || '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
+function firstOpfValue(opf, tag) {
+  const match = opf.match(new RegExp(`<(?:[a-zA-Z0-9]+:)?${tag}\\b[^>]*>([\\s\\S]*?)</(?:[a-zA-Z0-9]+:)?${tag}>`, 'i'));
+  return match ? decodeXmlEntities(match[1]).replace(/\s+/g, ' ').trim() : '';
+}
+
+export async function readEpubMetadata(archiveBytes) {
+  const empty = { title: '', language: '', creator: '' };
+  if (!archiveBytes || archiveBytes.length === 0) return empty;
+  let entries;
+  try {
+    entries = await readZipEntries(archiveBytes);
+  } catch (error) {
+    console.warn('No se pudieron leer los datos del EPUB:', error);
+    return empty;
+  }
+  const path = [...entries.keys()].find(name => OPF_PATH_RE.test(name));
+  if (!path) return empty;
+  const opf = new TextDecoder().decode(entries.get(path));
+  return {
+    title: firstOpfValue(opf, 'title'),
+    language: firstOpfValue(opf, 'language'),
+    creator: firstOpfValue(opf, 'creator'),
+  };
+}
+
+/*
+  Un EPUB es una sucesión de capítulos y cada capítulo lleva su encabezado. Si
+  el documento tenía algo antes de su primer `# Título` —el logotipo del
+  manual, sin ir más lejos—, ese contenido forma un capítulo suelto al que
+  Pandoc le pone de título el del libro, y al volver aparecen dos `# Título`
+  seguidos. No hay opción de Pandoc que lo evite, así que el que sobra se
+  quita aquí, y solo cuando se cumple todo lo que lo delata: es el primer
+  encabezado del documento, dice exactamente lo que dice el libro, y el
+  siguiente encabezado lo repite sin ninguno de por medio.
+*/
+export function dropDuplicateEpubTitle(markdown, bookTitle) {
+  const source = typeof markdown === 'string' ? markdown : '';
+  const title = String(bookTitle || '').trim();
+  if (!title || !source.includes(title)) return source;
+
+  const { frontMatter, body } = splitFrontMatter(source);
+  const lines = body.split('\n');
+  const headings = [];
+  let fence = null;
+  for (let index = 0; index < lines.length && headings.length < 2; index += 1) {
+    const fenceMatch = lines[index].match(/^\s{0,3}(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      if (!fence) fence = fenceMatch[1];
+      else if (fenceMatch[1][0] === fence[0] && fenceMatch[1].length >= fence.length) fence = null;
+      continue;
+    }
+    if (fence) continue;
+    const heading = lines[index].match(/^(#{1,6})\s+(.*)$/);
+    if (heading) headings.push({ index, level: heading[1].length, text: heading[2].trim().replace(/\s+#+\s*$/, '') });
+  }
+
+  const [first, second] = headings;
+  if (!first || !second) return source;
+  if (first.level !== 1 || second.level !== 1) return source;
+  if (first.text !== title || second.text !== title) return source;
+
+  lines.splice(first.index, 1);
+  while (lines[first.index] === '') lines.splice(first.index, 1);
+  const trimmed = lines.join('\n');
+  return frontMatter ? `${frontMatter}\n\n${trimmed}` : trimmed;
 }
 
 /*

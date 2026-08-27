@@ -27,6 +27,11 @@ import {
   requestDocxFieldUpdate,
   fillOdtTableOfContents,
   stripEpubAnchorPrefixes,
+  readEpubMetadata,
+  dropDuplicateEpubTitle,
+  collapseThematicBreaks,
+  expandDisplayMath,
+  mergeFrontMatter,
   inlineArchiveImages,
   restoreOdtTableHeaders,
   prepareOdtForImport,
@@ -763,4 +768,66 @@ test('el ODT se abre con el índice ya escrito', { timeout: 240000 }, async () =
   assert.match(despues, /EdimarkToc2">Apartado A</);
   assert.match(despues, /<text:p[^>]*>Índice</, 'el rótulo se reutiliza de la plantilla');
   assert.equal([...entries.keys()][0], 'mimetype', 'el ODT exige que mimetype vaya primero');
+});
+
+// Igual que importToMarkdown() para un EPUB, después de Pandoc.
+async function finishEpubImport(bytes, archive) {
+  let markdown = stripEpubAnchorPrefixes(new TextDecoder().decode(bytes));
+  const book = await readEpubMetadata(archive);
+  markdown = dropDuplicateEpubTitle(markdown, book.title);
+  if (book.language) {
+    markdown = mergeFrontMatter(markdown, [{ key: 'lang', lines: [`lang: "${book.language}"`] }]).markdown;
+  }
+  return collapseThematicBreaks(expandDisplayMath(trimInlineMath(normalizeNewlines(markdown))));
+}
+
+/*
+  El documento entero, de ida y vuelta, con el Pandoc de verdad. Lo que se
+  comprueba aquí es lo que el usuario ve al reabrir su manual: que la
+  tipografía siga siendo tipografía, que el título no se haya duplicado y que
+  el idioma haya vuelto con el documento.
+*/
+test('el ciclo completo de EPUB devuelve el documento reconocible', { timeout: 180000 }, async () => {
+  const original = [
+    '![Logotipo](imagen.png)',
+    '',
+    '# Manual de pruebas',
+    '',
+    'Tres opciones —Sistema, Claro y Oscuro— y un ejemplo: “Tema 3 – Ecuaciones”…',
+    '',
+    '---',
+    '',
+    '## Fórmulas',
+    '',
+    'En línea $E = mc^2$ y en bloque:',
+    '',
+    '$$',
+    'x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}',
+    '$$',
+    '',
+  ].join('\n');
+
+  const exported = await exportEpub(original, { fallbackTitle: 'Manual de pruebas', lang: 'ca' });
+  assertValidEpub(exported, 'ciclo completo');
+
+  const imported = await runPandoc(buildImportArgs('epub'), exported.bytes);
+  assert.ok(imported.bytes.length > 0, `importación vacía: ${imported.stderr.join(' | ')}`);
+  const markdown = await finishEpubImport(imported.bytes, exported.bytes);
+
+  // La tipografía es la que escribió el autor, no su transcripción en ASCII.
+  assert.match(markdown, /—Sistema, Claro y Oscuro—/, `rayas perdidas:\n${markdown}`);
+  assert.match(markdown, /“Tema 3 – Ecuaciones”…/, `comillas o puntos perdidos:\n${markdown}`);
+  assert.doesNotMatch(markdown, /---Sistema/, 'la raya volvió como tres guiones');
+
+  // El logotipo va antes del título, así que Pandoc añadía un capítulo suelto
+  // con el título del libro y el documento volvía con dos.
+  assert.equal((markdown.match(/^# Manual de pruebas$/gm) || []).length, 1, `título duplicado:\n${markdown}`);
+
+  // El idioma vive en el envoltorio del libro y vuelve al documento.
+  assert.match(markdown, /^lang: "ca"$/m, `idioma perdido:\n${markdown}`);
+
+  // La raya, sin los setenta y dos guiones; la fórmula, con sus $$ aparte.
+  assert.match(markdown, /\n---\n/, `raya perdida:\n${markdown}`);
+  assert.doesNotMatch(markdown, /-{10,}/, 'la raya volvió como una fila de guiones');
+  assert.match(markdown, /\$\$\n[^$]*\\frac\{-b[^$]*\n\$\$/, `fórmula en bloque aplastada:\n${markdown}`);
 });

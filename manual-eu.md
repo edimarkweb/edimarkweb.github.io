@@ -56,10 +56,10 @@ Goiburuak bi erdi ditu. Logotipoaren ondoan hiru menuak daude —**Fitxategia**,
 
 * **Gorde (Ctrl+S)**: eskuineko lehen botoia. Irekitako dokumentuak aldaketak zain dituenean, puntu gorri bat agertzen zaio izkinan, fitxa markatzen duen bera.
 * **Esportatu (Ctrl+Alt+E)**: sei formatuak —DOCX, ODT, EPUB, HTML, TEX eta PDF—, bakoitza zertarako balio duen esaten duen lerro batekin.
-* **Fitxategia**: egunero egiten ez dena. `Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)` edukia ekartzen dute; `Gorde honela… (Ctrl+Shift+S)` beste izen batekin ateratzen du. Aukera bakoitzak bere teklatu-lasterbidea erakusten du. Mahaigaineko aplikazioan menua **Irten** aukerarekin amaitzen da: uneko dokumentua gorde eta aplikazioa ixten du.
+* **Fitxategia**: egunero egiten ez dena. `Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)` edukia ekartzen dute; `Gorde (Ctrl+S)` eta `Gorde honela… (Ctrl+Shift+S)` ateratzen dute. Gorde hemen dago bere ikonoaz gain: aukerak lasterbidea idatzita darama, eta «Gorde honela…» gaizki irakurtzen da ondoan «Gorde» gabe. Aukera bakoitzak bere teklatu-lasterbidea erakusten du. Mahaigaineko aplikazioan menua **Irten** aukerarekin amaitzen da: uneko dokumentua gorde eta aplikazioa ixten du.
 * **Ezarpenak**: aplikazioaren ezarpen guztiak biltzen ditu, bakoitza uneko balioa adierazten duen azpimenu batekin.
   * **Hizkuntza**: interfazearen hizkuntza aldatzen du.
-  * **Testuaren tamaina**: txikia, normala, handia edo oso handia.
+  * **Testuaren tamaina**: txikia, normala, handia edo oso handia. Markdown panela eta sortutako HTMLaren ikuspegia aldatzen ditu, editoreak baitira; aurrebistak ez dio jarraitzen, han tamaina dokumentuak esaten baitu —*Testuaren formatua* atalekoa— eta hori da esportatzen dena.
   * **Gaia**: `Sistemakoa` aukerak ekipoarena jarraitzen du eta harekin batera aldatzen da; `Argia` eta `Iluna` aukerek finkatu egiten dute. Aukeraketa gogoratu egiten da aplikazioa hurrengoan irekitzean.
   * **Leiho independentea**: EdiMarkWeb nabigatzailearen leiho propio batean irekitzen du, fitxarik eta helbide-barrarik gabe. Web bertsioan bakarrik agertzen da; mahaigaineko aplikazioa dagoeneko leiho propioa da.
   * **Zuzentzaile ortografikoa**: Markdown paneleko akatsak azpimarratzen ditu ordenagailuan instalatutako hiztegiekin, dokumentuaren hizkuntzari jarraituz. Aktibatuta dator; desmarkatuz gero itzali egiten da eta aukera gogoratu egiten da.
@@ -184,7 +184,7 @@ Dokumentu batek base64 irudiak dituenean —DOCX bat inportatzean, beste aplikaz
 ## Ekintza nagusiak
 
 * **Ireki (`Ctrl+O`)**: `.md` edo `.markdown` fitxategiak inportatzen ditu.
-* **Inportatu**: beste formatu batzuetako dokumentuak Markdown-era bihurtzen ditu Pandoc bidez: `.docx`, `.odt`, `.epub`, `.html` eta `.tex`. Izenburuak, zerrendak, taulak eta estekak berreskuratzen dira, eta baita irudiak ere: `.docx`, `.odt` edo `.epub` batetik datozenean, fitxategitik bertatik ateratzen dira eta Markdown-ean kapsulatuta geratzen dira; horrela, aurrebistan ikusten dira eta zurekin bidaiatzen dute esportatzean.
+* **Inportatu**: beste formatu batzuetako dokumentuak Markdown-era bihurtzen ditu Pandoc bidez: `.docx`, `.odt`, `.epub`, `.html` eta `.tex`. Izenburuak, zerrendak, taulak eta estekak berreskuratzen dira, eta baita irudiak ere: `.docx`, `.odt` edo `.epub` batetik datozenean, fitxategitik bertatik ateratzen dira eta Markdown-ean kapsulatuta geratzen dira; horrela, aurrebistan ikusten dira eta zurekin bidaiatzen dute esportatzean. `.epub` batetik dokumentuaren hizkuntza ere itzultzen da: liburuak bere bilgarrian gordetzen du, ez testuan.
 * **Gorde (`Ctrl+S`)**: uneko dokumentua gordetzen du. Mahaigaineko aplikazioan aurretik irekitako fitxategia eguneratzen du; **Gorde honela… (`Ctrl+Shift+S`)** aukerak beti uzten du beste izen edo kokapen bat hautatzen.
 * **Edukia kopiatu**: ezkerreko panelak Markdown-a kopiatzeko botoi bat du; aurrebistan zer kopiatuko den aukera dezakezu (errendatutako HTMLa edo LaTeX aldaerak) kopiatzeko ikonoaren ondoko menu zabalgarritik.
 * **Gaia, antolaketa edo zabalera aldatu**: erabili **Ezarpenak** gaiarentzat, `Ctrl+L` edo panelen menua antolaketarentzat eta gezi bikoitzaren eskuineko zabalera-botoia (ikonoa soilik) webguneko lan-eremua zabaltzeko.
@@ -218,7 +218,7 @@ Koadroa lau fitxatan banatuta dago —**Dokumentua**, **Formatua**, **EPUB** eta
 
 **EPUBaren azala**, hiru aukerarekin. Hasieran, EdiMarkWeb-ek **bat sortzen du** dokumentuaren tituluarekin eta egilearekin, irudirik gabeko liburu bat ikono generikoarekin agertzen baita irakurgailuaren apalean. **Zure irudi bat** jar dezakezu —1 MB arte, azal baterako nahikoa baino gehiago: zure dokumentuen ondoan gordetzen da, aplikazioaren espazio propioan— edo liburua **azalik gabe** utzi. EPUBari baino ez dio eragiten.
 
-**Testuaren formatua**: lerrokatzea, letra-tipoa eta tamaina, lerroartea, marjinak, koska eta hitzen zatiketa, dokumentu guztien abiapuntuko balio gisa. Dokumentu bakoitzak bereak finka ditzake Markdown paneletik, eta finkatzen ez duena hemendik heredatzen du.
+**Testuaren formatua**: lerrokatzea, letra-tipoa eta tamaina, lerroartea, marjinak, koska eta hitzen zatiketa, dokumentu guztien abiapuntuko balio gisa. Tamaina hamabi puntutan dator jarrita, DOCX eta ODT formatuek dagoeneko idazten dutena, aurrebistak beti izan dezan gorputz zehatz bat erakusteko; gainerakoak finkatu gabe ateratzen dira. Dokumentu bakoitzak bereak finka ditzake Markdown paneletik, eta finkatzen ez duena hemendik heredatzen du.
 
 **Aurkibide automatikoa**, dokumentuaren hasieran atalen zerrenda bat gehitzen duena. DOCX formatuan Word-en benetako aurkibide bat da eta ODT formatuan LibreOffice-ren jatorrizko bat; EPUBak ez du behar, irakurgailuak bere nabigazio-aurkibidea baitakar. Hori abiapuntuko balioa da: dokumentu bakoitzak bere kabuz eska dezake edo baztertu, **Dokumentu hau** koadroan.
 

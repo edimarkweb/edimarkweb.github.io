@@ -9,6 +9,10 @@ import {
   buildExportArgs,
   buildImportArgs,
   stripEpubAnchorPrefixes,
+  readEpubMetadata,
+  dropDuplicateEpubTitle,
+  collapseThematicBreaks,
+  expandDisplayMath,
   stripUnsafeMarkup,
   normalizeNewlines,
   normalizeThematicBreaks,
@@ -1060,6 +1064,18 @@ async function importToMarkdown({
     }
     if (sourceFormat === 'epub') {
       markdownResult = stripEpubAnchorPrefixes(markdownResult);
+      const book = await readEpubMetadata(normalizedInput);
+      markdownResult = dropDuplicateEpubTitle(markdownResult, book.title);
+      /*
+        El idioma del libro vuelve al documento, que es donde la aplicación lo
+        busca. Solo si el documento no trae ya el suyo: lo que diga el texto
+        manda sobre lo que diga el envoltorio.
+      */
+      if (book.language) {
+        markdownResult = mergeFrontMatter(markdownResult, [
+          { key: 'lang', lines: [`lang: "${book.language.replace(/"/g, '\\"')}"`] },
+        ]).markdown;
+      }
     }
     if (sourceFormat === 'odt') {
       markdownResult = await restoreOdtTableHeaders(markdownResult, normalizedInput);
@@ -1072,7 +1088,15 @@ async function importToMarkdown({
     // El archivo lo ha traído el usuario, pero no lo ha escrito él.
     markdownResult = stripUnsafeMarkup(markdownResult);
     triggerStatus(onStatus, 'import_file_success', 'Importación completada.');
-    return trimInlineMath(normalizeNewlines(markdownResult));
+    /*
+      Pandoc escribe un Markdown correcto pero incómodo de editar: la regla
+      horizontal como setenta y dos guiones y los `$$` pegados a la fórmula.
+      El panel Markdown es el original del documento, así que se devuelven a
+      la forma en que se escriben a mano. Después de normalizar los saltos de
+      línea, que es lo que estas dos dan por hecho.
+    */
+    const normalized = trimInlineMath(normalizeNewlines(markdownResult));
+    return collapseThematicBreaks(expandDisplayMath(normalized));
   } catch (error) {
     triggerStatus(onStatus, 'import_file_error', 'No se pudo importar el archivo.');
     throw error;

@@ -21,6 +21,9 @@ import {
   resolveOutlineOptions,
   outlineFrontMatterEntries,
   stripEpubAnchorPrefixes,
+  collapseThematicBreaks,
+  expandDisplayMath,
+  dropDuplicateEpubTitle,
   stripUnsafeMarkup,
   collectArchiveImagePaths,
   inlineArchiveImages,
@@ -831,4 +834,92 @@ test('stripUnsafeMarkup tolera entradas que no son texto', () => {
   assert.equal(stripUnsafeMarkup(null), '');
   assert.equal(stripUnsafeMarkup(undefined), '');
   assert.equal(stripUnsafeMarkup(''), '');
+});
+
+/*
+  Lo que vuelve de una conversión es Markdown correcto, pero no el que se
+  escribe a mano, y el panel Markdown es donde el usuario trabaja.
+*/
+test('collapseThematicBreaks devuelve la raya larga de Pandoc a ---', () => {
+  const larga = '-'.repeat(72);
+  assert.equal(
+    collapseThematicBreaks(`Texto.\n\n${larga}\n\nMás.\n`),
+    'Texto.\n\n---\n\nMás.\n',
+  );
+  // Detrás de texto es el subrayado de un encabezado, no una raya.
+  assert.equal(collapseThematicBreaks('Encabezado\n---\n\nTexto\n'), 'Encabezado\n---\n\nTexto\n');
+  // Y dentro del código es contenido que se muestra.
+  assert.equal(
+    collapseThematicBreaks(`\`\`\`\n\n${larga}\n\`\`\`\n`),
+    `\`\`\`\n\n${larga}\n\`\`\`\n`,
+  );
+  // El bloque YAML de cabecera no lleva línea en blanco delante: no se toca.
+  assert.equal(collapseThematicBreaks('---\nlang: "ca"\n---\n\nTexto\n'), '---\nlang: "ca"\n---\n\nTexto\n');
+});
+
+test('expandDisplayMath separa los $$ del contenido de la fórmula', () => {
+  assert.equal(expandDisplayMath('Antes\n\n$$x = 1$$\n\nDespués\n'), 'Antes\n\n$$\nx = 1\n$$\n\nDespués\n');
+  // Una matriz vuelve con la primera línea pegada al delimitador.
+  assert.equal(
+    expandDisplayMath('$$A = \\begin{pmatrix}\na & b\n\\end{pmatrix}$$\n'),
+    '$$\nA = \\begin{pmatrix}\na & b\n\\end{pmatrix}\n$$\n',
+  );
+  // La fórmula en línea es otra cosa y se queda como está.
+  assert.equal(expandDisplayMath('Texto $a$ y $b$ final.\n'), 'Texto $a$ y $b$ final.\n');
+  // Los delimitadores escritos como ejemplo son texto, no fórmulas.
+  assert.equal(expandDisplayMath('`$$a$$` es un delimitador.\n'), '`$$a$$` es un delimitador.\n');
+  // Partir por los códigos deja tramos que empiezan a media línea: ahí no vale.
+  assert.equal(expandDisplayMath('Ver `x`$$y$$ aquí.\n'), 'Ver `x`$$y$$ aquí.\n');
+});
+
+/*
+  El `$` de un ejemplo escrito en código no abre ninguna fórmula. El manual
+  explica los cuatro delimitadores escribiéndolos, y el emparejamiento unía el
+  último `$` del ejemplo con el primero de la fórmula siguiente.
+*/
+test('trimInlineMath no empareja los dólares escritos dentro de código', () => {
+  const linea = 'Delimitadores `$...$` y `$$...$$`, y la fórmula: $E = mc^2$ final.';
+  assert.equal(trimInlineMath(linea), linea);
+});
+
+/*
+  Con algo antes del primer `# Título` —el logotipo del manual—, el EPUB gana
+  un capítulo suelto al que Pandoc pone de título el del libro.
+*/
+test('dropDuplicateEpubTitle quita el encabezado que Pandoc repite', () => {
+  assert.equal(
+    dropDuplicateEpubTitle('# Manual\n\n![Logo](media/file0.png)\n\n# Manual\n\nTexto.\n', 'Manual'),
+    '![Logo](media/file0.png)\n\n# Manual\n\nTexto.\n',
+  );
+  // El front matter se conserva.
+  assert.equal(
+    dropDuplicateEpubTitle('---\nlang: "es"\n---\n\n# Manual\n\n![L](x.png)\n\n# Manual\n', 'Manual'),
+    '---\nlang: "es"\n---\n\n![L](x.png)\n\n# Manual\n',
+  );
+});
+
+test('dropDuplicateEpubTitle no toca lo que no es esa repetición', () => {
+  // Un encabezado por medio: son dos apartados, no un duplicado.
+  const conApartado = '# Manual\n\n## Uno\n\n# Manual\n';
+  assert.equal(dropDuplicateEpubTitle(conApartado, 'Manual'), conApartado);
+  // El segundo dice otra cosa.
+  const distinto = '# Manual\n\nTexto\n\n# Apéndice\n';
+  assert.equal(dropDuplicateEpubTitle(distinto, 'Manual'), distinto);
+  // No coincide con el título del libro.
+  const otroLibro = '# Manual\n\nTexto\n\n# Manual\n';
+  assert.equal(dropDuplicateEpubTitle(otroLibro, 'Otro'), otroLibro);
+  // Un solo encabezado, que es el caso normal.
+  const uno = '# Manual\n\nTexto\n';
+  assert.equal(dropDuplicateEpubTitle(uno, 'Manual'), uno);
+  // Sin título del libro no hay nada que comparar.
+  assert.equal(dropDuplicateEpubTitle(uno, ''), uno);
+});
+
+/*
+  Un bloque cercado vuelve sangrado de cualquier conversión, y el manual
+  explica el bloque de ajustes escribiéndolo entero, rayas incluidas.
+*/
+test('normalizeThematicBreaks respeta el código sangrado', () => {
+  const sangrado = 'Texto.\n\n    ---\n    lang: "ca"\n    ---\n\nMás.\n';
+  assert.equal(normalizeThematicBreaks(sangrado), sangrado);
 });

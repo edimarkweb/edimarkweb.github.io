@@ -56,10 +56,10 @@ La cabecera tiene dos mitades. Junto al logotipo están los tres menús —**Arc
 
 * **Guardar (Ctrl+S)**: el primer botón de la derecha. Cuando el documento abierto tiene cambios pendientes, le aparece un punto rojo en la esquina, el mismo que marca la pestaña.
 * **Exportar (Ctrl+Alt+E)**: los seis formatos —DOCX, ODT, EPUB, HTML, TEX y PDF—, cada uno con una línea que dice para qué sirve.
-* **Archivo**: lo que no se hace a diario. `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` y `Pegar LaTeX (Ctrl+Mayús+V)` traen contenido; `Guardar como… (Ctrl+Mayús+S)` lo saca con otro nombre. Cada opción muestra su atajo de teclado. En la aplicación de escritorio el menú termina con **Salir**, que guarda el documento en curso y cierra la aplicación.
+* **Archivo**: lo que no se hace a diario. `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` y `Pegar LaTeX (Ctrl+Mayús+V)` traen contenido; `Guardar (Ctrl+S)` y `Guardar como… (Ctrl+Mayús+S)` lo sacan. Guardar está aquí además de en su icono: la opción lleva el atajo escrito, y «Guardar como…» sin «Guardar» al lado se lee mal. Cada opción muestra su atajo de teclado. En la aplicación de escritorio el menú termina con **Salir**, que guarda el documento en curso y cierra la aplicación.
 * **Configuración**: agrupa todos los ajustes de la aplicación, cada uno con un submenú que indica el valor activo.
   * **Idioma**: cambia el idioma de la interfaz.
-  * **Tamaño de texto**: pequeño, normal, grande o muy grande.
+  * **Tamaño de texto**: pequeño, normal, grande o muy grande. Cambia el panel Markdown y la vista del HTML generado, que son editores; la vista previa no lo sigue, porque allí el tamaño lo dice el documento —el de *Formato del texto*— y es el que se exporta.
   * **Tema**: `Sistema` sigue el del equipo y cambia con él; `Claro` y `Oscuro` lo fijan. La elección se recuerda la próxima vez que abras la aplicación.
   * **Ventana independiente**: abre EdiMarkWeb en una ventana propia del navegador, sin pestañas ni barra de direcciones. Solo aparece en la versión web; la aplicación de escritorio ya es una ventana propia.
   * **Corrector ortográfico**: subraya las faltas del panel Markdown con los diccionarios instalados en el equipo y sigue el idioma del documento. Viene activado; al desmarcarlo se apaga y la elección se recuerda.
@@ -184,7 +184,7 @@ Cuando un documento lleva imágenes en base64 —al importar un DOCX, al pegar d
 ## Acciones principales
 
 * **Abrir (`Ctrl+O`)**: Importa archivos `.md` o `.markdown`.
-* **Importar**: Convierte a Markdown documentos en otros formatos mediante Pandoc: `.docx`, `.odt`, `.epub`, `.html` y `.tex`. Se recuperan los encabezados, listas, tablas y enlaces, y también las imágenes: al proceder de un `.docx`, `.odt` o `.epub`, se extraen del propio archivo y quedan incrustadas en el Markdown, de modo que se ven en la previsualización y viajan contigo al exportar.
+* **Importar**: Convierte a Markdown documentos en otros formatos mediante Pandoc: `.docx`, `.odt`, `.epub`, `.html` y `.tex`. Se recuperan los encabezados, listas, tablas y enlaces, y también las imágenes: al proceder de un `.docx`, `.odt` o `.epub`, se extraen del propio archivo y quedan incrustadas en el Markdown, de modo que se ven en la previsualización y viajan contigo al exportar. De un `.epub` vuelve además el idioma del documento, que el libro guarda en su envoltorio y no en el texto.
 * **Guardar (`Ctrl+S`)**: guarda el documento actual. En la aplicación de escritorio actualiza el archivo ya abierto; **Guardar como… (`Ctrl+Mayús+S`)** siempre permite elegir otro nombre o ubicación.
 * **Copiar contenido**: El panel izquierdo incluye un botón para copiar el Markdown; en la vista previa puedes elegir qué se copiará (HTML renderizado o variantes LaTeX) desde el menú desplegable junto al icono de copia.
 * **Cambiar tema, diseño o ancho**: usa **Configuración** para el tema, `Ctrl+L` o el menú de paneles para el diseño y el botón de ancho (solo icono), a la derecha de la doble flecha, para ampliar la superficie web.
@@ -218,7 +218,7 @@ El cuadro está repartido en cuatro pestañas —**Documento**, **Formato**, **E
 
 **Portada del EPUB**, con tres posibilidades. De partida, EdiMarkWeb **genera una** con el título y el autor del documento, porque un libro sin imagen aparece con el icono genérico en la estantería del lector. Puedes poner **una imagen tuya** —hasta 1 MB, que para una portada sobra: se guarda junto a tus documentos, en el espacio propio de la aplicación— o dejar el libro **sin portada**. Solo afecta al EPUB.
 
-**Formato del texto**: alineación, tipo y tamaño de letra, interlineado, márgenes, sangría y partición de palabras, con los valores de partida para todos los documentos. Cada documento puede fijar los suyos desde el panel Markdown, y lo que no fije lo hereda de aquí.
+**Formato del texto**: alineación, tipo y tamaño de letra, interlineado, márgenes, sangría y partición de palabras, con los valores de partida para todos los documentos. El tamaño viene puesto en doce puntos, que es lo que ya escriben DOCX y ODT, para que la vista previa tenga siempre un cuerpo concreto que enseñar; los demás salen sin fijar. Cada documento puede fijar los suyos desde el panel Markdown, y lo que no fije lo hereda de aquí.
 
 **Índice automático**, que añade al principio del documento un índice con los apartados. En DOCX es un índice de Word de verdad y en ODT uno nativo de LibreOffice; el EPUB no lo necesita, porque el lector ya trae su índice de navegación. Es el valor de partida: cada documento puede pedirlo o rechazarlo por su cuenta en el cuadro **Este documento**.
 
