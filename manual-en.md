@@ -238,11 +238,14 @@ If the document starts with its own YAML metadata, that wins and none of these s
 
 ## Copying and sharing without downloading
 
-* **Copy Markdown**: a direct button in the left pane sends the source text to the clipboard.
-* **Copy from the preview**: the copy button in the right pane remembers your last choice among:
-  * *Copy HTML* (rendered exactly as you see it).
-  * *Copy LaTeX* (only the current fragment).
-  * *Copy LaTeX – full document* (includes preamble and environment ready to compile, with the same language and title as the TEX export).
+The copy button sits in the header, next to **Export**: both do the same thing with a different destination, one to a file and the other to the clipboard. It copies in four formats:
+
+* *Markdown* (`Ctrl+Alt+C` then `1`): the source text, exactly as it stands in the editor.
+* *HTML* (`Ctrl+Alt+C 2`): the rendered document, just as the preview shows it. This is the option for taking the text **with its formatting** into Word, LibreOffice, Google Docs, an email or any other editor: they all read the HTML from the clipboard and paste headings, bold, lists and tables already laid out, with no file in between. Two caveats: formulas paste as text, not as equations —for that you need the DOCX or ODT export—, and images only travel if they are embedded in the document.
+* *LaTeX* (`Ctrl+Alt+C 3`): the current fragment only.
+* *Full LaTeX* (`Ctrl+Alt+C 4`): includes preamble and environment ready to compile, with the same language and title as the TEX export.
+
+The button remembers the last format you picked and says so in a small label beside it —`Markdown`, `HTML`, `LaTeX`—, so copying again in that format is a single click, or `Ctrl+Alt+C` followed by `Enter`. The arrow next to it opens the list to change it.
 
 Each option shows a success notice and, where appropriate, prepares the LaTeX markup automatically from the rendered preview.
 
@@ -324,6 +327,7 @@ Documents started in the browser and those from the desktop application are ordi
 | Open EdiCuaTeX | `Ctrl` + `Alt` + `M` | `Cmd` + `Alt` + `M` |
 | Paste from clipboard | `Ctrl` + `Alt` + `V` | `Cmd` + `Alt` + `V` |
 | Open Export | `Ctrl` + `Alt` + `E` | `Cmd` + `Alt` + `E` |
+| Copy (`1` Markdown · `2` HTML · `3` LaTeX · `4` full LaTeX) | `Ctrl` + `Alt` + `C` then `1`–`4` | `Cmd` + `Alt` + `C` then `1`–`4` |
 | Open Settings | `Ctrl` + `,` | `Cmd` + `,` |
 | Maximize editing area | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Change layout | `Ctrl` + `L` | `Cmd` + `L` |

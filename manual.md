@@ -238,11 +238,14 @@ Si el documento empieza con sus propios metadatos YAML, mandan ellos y ninguno d
 
 ## Copiar y compartir sin descargar
 
-* **Copiar Markdown**: Botón directo en el panel izquierdo para enviar el texto fuente al portapapeles.
-* **Copiar desde la vista previa**: El botón de copia del panel derecho recuerda tu última elección entre:
-  * *Copiar HTML* (renderizado tal como lo ves).
-  * *Copiar LaTeX* (solo el fragmento actual).
-  * *Copiar LaTeX – documento completo* (incluye cabecera y entorno listos para compilar, con el mismo idioma y título que la exportación a TEX).
+El botón de copiar está en la cabecera, junto a **Exportar**: los dos hacen lo mismo con distinto destino, uno al archivo y otro al portapapeles. Copia en cuatro formatos:
+
+* *Markdown* (`Ctrl+Alt+C` y luego `1`): el texto fuente, tal cual está en el editor.
+* *HTML* (`Ctrl+Alt+C 2`): el documento representado, tal como lo ves en la vista previa. Es la opción para llevar el texto **con su formato** a Word, LibreOffice, Google Docs, el correo o cualquier otro editor: todos leen el HTML del portapapeles y pegan encabezados, negritas, listas y tablas ya compuestos, sin pasar por ningún archivo. Dos avisos: las fórmulas se pegan como texto, no como ecuaciones —para eso hay que exportar a DOCX u ODT—, y las imágenes solo viajan si están incrustadas en el documento.
+* *LaTeX* (`Ctrl+Alt+C 3`): solo el fragmento actual.
+* *LaTeX completo* (`Ctrl+Alt+C 4`): incluye cabecera y entorno listos para compilar, con el mismo idioma y título que la exportación a TEX.
+
+El botón recuerda el último formato que elegiste y lo dice en un rótulo pequeño a su lado —`Markdown`, `HTML`, `LaTeX`—, así que copiar otra vez en ese formato es un solo clic, o `Ctrl+Alt+C` seguido de `Intro`. La flecha de al lado abre la lista para cambiarlo.
 
 Cada opción muestra una notificación de éxito y, cuando corresponde, prepara automáticamente el marcado LaTeX a partir de la vista previa renderizada.
 
@@ -324,6 +327,7 @@ Los documentos que empieces en el navegador y los de la aplicación de escritori
 | Abrir EdiCuaTeX | `Ctrl` + `Alt` + `M` | `Cmd` + `Alt` + `M` |
 | Pegar desde el portapapeles | `Ctrl` + `Alt` + `V` | `Cmd` + `Alt` + `V` |
 | Abrir Exportar | `Ctrl` + `Alt` + `E` | `Cmd` + `Alt` + `E` |
+| Copiar (`1` Markdown · `2` HTML · `3` LaTeX · `4` LaTeX completo) | `Ctrl` + `Alt` + `C` luego `1`–`4` | `Cmd` + `Alt` + `C` luego `1`–`4` |
 | Abrir Configuración | `Ctrl` + `,` | `Cmd` + `,` |
 | Maximizar área de edición | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Cambiar diseño | `Ctrl` + `L` | `Cmd` + `L` |

@@ -252,6 +252,54 @@
                     </button>
                   </div>
                 </div>
+<div id="preview-copy-container" class="relative inline-flex items-center">
+                <button type="button" id="copy-html-btn" class="action-btn gap-1.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="copy_html_btn_title" title="Copiar HTML" aria-keyshortcuts="Control+Alt+C">
+                    <i data-lucide="copy"></i>
+                    <span class="copy-html-btn-label hidden text-xs font-medium text-slate-500 sm:inline dark:text-slate-400">HTML</span>
+                </button>
+                <button type="button" id="copy-html-menu-toggle" class="action-btn px-1 py-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" aria-haspopup="true" aria-expanded="false" data-i18n-key="copy_menu_toggle_title" title="Opciones de copiado" aria-label="Opciones de copiado">
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </button>
+                <div id="preview-copy-menu" class="hidden absolute right-0 top-full mt-2 w-96 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="copy-html-menu-toggle">
+                                <p class="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500" data-i18n-key="copy_menu_heading">Copiar todo el documento como</p>
+                    <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-copy-action="markdown" role="menuitemradio" aria-checked="false">
+                                  <span class="flex w-full items-center gap-2">
+                                    <i data-lucide="file-code-2" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
+                                    <span class="whitespace-nowrap" data-i18n-key="copy_menu_option_markdown">Markdown</span>
+                                    <span class="ml-auto whitespace-nowrap pl-3 text-xs font-normal tabular-nums text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_copy_markdown">Ctrl+Alt+C 1</span>
+                                    <i data-lucide="check" class="copy-check invisible ml-2 w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" data-copy-check></i>
+                                  </span>
+                                  <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="copy_menu_markdown_hint">El texto fuente, tal como está en el editor</span>
+                                </button>
+                                <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-copy-action="html" role="menuitemradio" aria-checked="false">
+                                  <span class="flex w-full items-center gap-2">
+                                    <i data-lucide="copy" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
+                                    <span class="whitespace-nowrap" data-i18n-key="copy_menu_option_html">HTML</span>
+                                    <span class="ml-auto whitespace-nowrap pl-3 text-xs font-normal tabular-nums text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_copy_html">Ctrl+Alt+C 2</span>
+                                    <i data-lucide="check" class="copy-check invisible ml-2 w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" data-copy-check></i>
+                                  </span>
+                                  <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="copy_menu_html_hint">Se pega con formato en procesadores y editores de texto</span>
+                                </button>
+                                <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-copy-action="latex-preview" role="menuitemradio" aria-checked="false">
+                                  <span class="flex w-full items-center gap-2">
+                                    <i data-lucide="sigma" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
+                                    <span class="whitespace-nowrap" data-i18n-key="copy_menu_option_latex_preview">LaTeX</span>
+                                    <span class="ml-auto whitespace-nowrap pl-3 text-xs font-normal tabular-nums text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_copy_latex">Ctrl+Alt+C 3</span>
+                                    <i data-lucide="check" class="copy-check invisible ml-2 w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" data-copy-check></i>
+                                  </span>
+                                  <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="copy_menu_latex_hint">Solo el fragmento, para pegarlo dentro de otro documento</span>
+                                </button>
+                                <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-copy-action="latex-full" role="menuitemradio" aria-checked="false">
+                                  <span class="flex w-full items-center gap-2">
+                                    <i data-lucide="file-text" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
+                                    <span class="whitespace-nowrap" data-i18n-key="copy_menu_option_latex_full">LaTeX completo</span>
+                                    <span class="ml-auto whitespace-nowrap pl-3 text-xs font-normal tabular-nums text-slate-400 dark:text-slate-500" data-shortcut data-i18n-key="shortcut_copy_latex_full">Ctrl+Alt+C 4</span>
+                                    <i data-lucide="check" class="copy-check invisible ml-2 w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" data-copy-check></i>
+                                  </span>
+                                  <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="copy_menu_latex_full_hint">Con cabecera y entorno, listo para compilar</span>
+                                </button>
+                </div>
+                        </div>
                 <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
                 <button id="print-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="print_btn_title" title="Imprimir (Ctrl+P)"><i data-lucide="printer"></i></button>
                 <button id="open-search-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="open_search_btn_title" title="Buscar (Ctrl+F)"><i data-lucide="search"></i></button>
@@ -466,10 +514,7 @@
             <div id="markdown-panel" class="panel w-full md:w-1/2">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-lg font-medium text-slate-700 dark:text-slate-200" data-i18n-key="markdown_panel_title">Markdown</h2>
-                    <div class="flex items-center gap-2">
-                        <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
-                        <button id="copy-md-btn" class="copy-btn flex items-center gap-2 px-3 py-2 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="copy_md_btn_title" title="Copiar Markdown"><i data-lucide="copy"></i><span class="hidden sm:inline" data-i18n-key="copy_md_btn_text">Copiar</span></button>
-                    </div>
+                    <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
                 </div>
                 <textarea id="markdown-input"></textarea>
                 <div id="base64-hidden-container" class="base64-hidden-container hidden" aria-live="polite">
@@ -487,33 +532,7 @@
                     <h2 id="html-panel-title" class="text-lg font-medium text-slate-700 dark:text-slate-200" data-i18n-key="html_panel_title">Previsualización</h2>
                     <div class="flex items-center gap-2">
                         <button id="view-toggle-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="view_toggle_btn_title" title="Cambiar a vista de código"><i data-lucide="code-2"></i></button>
-                        <div id="preview-copy-container" class="relative inline-flex items-center">
-                            <button type="button" id="copy-html-btn" class="copy-btn flex items-center gap-2 px-3 py-2 focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="copy_html_btn_title" title="Copiar HTML">
-                                <i data-lucide="copy"></i>
-                                <span class="copy-html-btn-label hidden sm:inline" data-i18n-key="copy_html_btn_text">Copiar</span>
-                            </button>
-                            <button type="button" id="copy-html-menu-toggle" class="copy-btn p-2 ml-1 focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" aria-haspopup="true" aria-expanded="false" data-i18n-key="copy_menu_toggle_title" title="Opciones de copiado" aria-label="Opciones de copiado">
-                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
-                            </button>
-                            <div id="preview-copy-menu" class="hidden absolute right-0 top-full mt-2 w-80 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800 z-20" role="menu" aria-labelledby="copy-html-menu-toggle">
-                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-copy-action="html" role="menuitemradio" aria-checked="false">
-                                  <i data-lucide="copy" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
-                                  <span data-i18n-key="copy_menu_option_html">Copiar HTML</span>
-                                  <i data-lucide="check" class="copy-check hidden ml-auto w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" data-copy-check></i>
-                                </button>
-                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-copy-action="latex-preview" role="menuitemradio" aria-checked="false">
-                                  <i data-lucide="sigma" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
-                                  <span data-i18n-key="copy_menu_option_latex_preview">Copiar LaTeX</span>
-                                  <i data-lucide="check" class="copy-check hidden ml-auto w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" data-copy-check></i>
-                                </button>
-                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-copy-action="latex-full" role="menuitemradio" aria-checked="false">
-                                  <i data-lucide="file-text" class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
-                                  <span data-i18n-key="copy_menu_option_latex_full">Copiar LaTeX (documento completo)</span>
-                                  <i data-lucide="check" class="copy-check hidden ml-auto w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" data-copy-check></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                                            </div>
                 </div>
                 <div id="missing-assets-notice" class="hidden mb-2 flex flex-wrap items-center gap-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
                     <i data-lucide="image-off" class="w-4 h-4 shrink-0"></i>

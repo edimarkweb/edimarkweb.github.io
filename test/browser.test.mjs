@@ -1867,6 +1867,33 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
 });
 
 /*
+  Copiar moría con un TypeError donde no hay contexto seguro —un http:// que no
+  sea localhost, o el archivo abierto a pelo—, porque ahí navigator.clipboard
+  sencillamente no existe y las dos funciones de copia lo daban por hecho. El
+  respaldo con execCommand ya estaba escrito; solo que nadie lo llamaba.
+*/
+test('copiar funciona sin navigator.clipboard', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+      delete window.ClipboardItem;
+    },
+  });
+  t.after(() => context.close());
+
+  assert.equal(await page.evaluate(() => navigator.clipboard === undefined), true);
+  await page.locator('#markdown-input').fill('# Hola\n\nUn *párrafo*.');
+  await page.waitForFunction(() => document.querySelector('#html-output')?.innerHTML.includes('Hola'));
+
+  const marca = async (selector) => {
+    await page.locator(selector).click();
+    // La confirmación es el icono: la marca verde solo aparece si no hubo error.
+    return page.locator(`${selector} [data-lucide]`).first().getAttribute('data-lucide');
+  };
+  assert.equal(await marca('#copy-html-btn'), 'check');
+});
+
+/*
   La cabecera tenía todo apilado en el borde derecho y el centro desierto, con
   la carpeta de «Archivo» repitiendo el icono de su propia primera opción y dos
   circulitos idénticos —la interrogación y la i— al final. Ahora los menús se
@@ -1909,6 +1936,68 @@ test('la cabecera separa los menús de las acciones del documento', async (t) =>
   assert.equal(await page.locator('#save-dirty-dot').isVisible(), false);
   await page.locator('#markdown-input').fill('# Con cambios');
   await page.waitForFunction(() => !document.getElementById('save-dirty-dot').classList.contains('hidden'));
+});
+
+/*
+  Copiar dejó de ser cosa de cada panel: los dos botones —el del Markdown y el
+  de la previsualización— eran la misma acción con distinto formato, así que se
+  funden en uno junto a Exportar, con su acorde y con un rótulo que dice qué
+  copia el clic.
+*/
+test('un solo botón copia en los cuatro formatos', async (t) => {
+  const { context, page } = await openApp({ permissions: ['clipboard-read', 'clipboard-write'] });
+  t.after(() => context.close());
+
+  // El de cada panel ya no existe: el de la cabecera hace los cuatro formatos.
+  assert.equal(await page.locator('#copy-md-btn').count(), 0);
+  assert.equal(await page.locator('#document-actions-group #copy-html-btn').count(), 1);
+
+  await page.locator('#markdown-input').fill('# Hola\n\nUn *párrafo*.');
+  await page.waitForFunction(() => document.querySelector('#html-output')?.innerHTML.includes('Hola'));
+
+  // El rótulo dice qué copia el clic. Se mira antes de copiar: la marca verde
+  // de «copiado» ocupa el botón entero durante dos segundos.
+  assert.equal(await page.locator('.copy-html-btn-label').innerText(), 'HTML');
+
+  const portapapeles = () => page.evaluate(() => navigator.clipboard.readText());
+  const acorde = async (tecla) => {
+    await page.evaluate(() => navigator.clipboard.writeText(''));
+    await page.locator('#markdown-input').click();
+    await page.keyboard.press('Control+Alt+KeyC');
+    await page.keyboard.press(tecla);
+    await page.waitForFunction(() => navigator.clipboard.readText().then(t => t.length > 0));
+    return portapapeles();
+  };
+
+  assert.match(await acorde('Digit1'), /^# Hola/);
+  assert.match(await acorde('Digit2'), /<h1[^>]*>Hola<\/h1>/);
+
+  // Y sigue al último formato elegido.
+  await page.locator('#copy-html-menu-toggle').click();
+  await page.locator('[data-copy-action="markdown"]').click();
+  await page.waitForFunction(() => document.querySelector('.copy-html-btn-label')?.textContent === 'Markdown');
+
+  // Y el menú enseña los cuatro acordes.
+  await page.locator('#copy-html-menu-toggle').click();
+  const atajos = await page.locator('#preview-copy-menu [data-shortcut]').allTextContents();
+  assert.deepEqual(atajos, ['Ctrl+Alt+C 1', 'Ctrl+Alt+C 2', 'Ctrl+Alt+C 3', 'Ctrl+Alt+C 4']);
+  // Sin la palabra «Copiar» repetida cuatro veces: la dice el encabezado, que
+  // además aclara que va el documento entero y no lo que haya seleccionado.
+  assert.match(await page.locator('[data-i18n-key="copy_menu_heading"]').innerText(), /todo el documento/i);
+  assert.deepEqual(
+    await page.locator('#preview-copy-menu [data-copy-action] > span > span:not([data-shortcut])').allTextContents(),
+    ['Markdown', 'HTML', 'LaTeX', 'LaTeX completo'],
+  );
+  // Cada formato dice para qué sirve, y el HTML dice lo que nadie adivina:
+  // que es el que se pega con formato en un procesador de textos.
+  const descripciones = await page.locator('#preview-copy-menu [data-copy-action] > span:not(:first-child)').allTextContents();
+  assert.equal(descripciones.length, 4);
+  assert.match(descripciones[1], /procesadores y editores/i);
+
+  // Y los atajos quedan alineados: la marca del activo no los desplaza.
+  const izquierdas = await page.locator('#preview-copy-menu [data-shortcut]')
+    .evaluateAll(spans => spans.map(span => Math.round(span.getBoundingClientRect().left)));
+  assert.equal(new Set(izquierdas).size, 1, `los atajos no están alineados: ${izquierdas}`);
 });
 
 /*
@@ -2007,7 +2096,7 @@ test('al imprimir no sale nada de la interfaz, solo el documento', async (t) => 
   await page.locator('#markdown-input').fill('# Para imprimir\n\nUn párrafo.');
   await page.emulateMedia({ media: 'print' });
 
-  for (const selector of ['#markdown-panel', '#markdown-char-counter', '#copy-md-btn', '#toolbar', '#tab-bar', '#desktop-release-banner']) {
+  for (const selector of ['#markdown-panel', '#markdown-char-counter', '#copy-html-btn', '#toolbar', '#tab-bar', '#desktop-release-banner']) {
     assert.equal(await page.locator(selector).isVisible(), false, `${selector} no debe imprimirse`);
   }
   await page.locator('#html-output').waitFor({ state: 'visible' });

@@ -238,11 +238,14 @@ Dokumentua bere YAML metadatuekin hasten bada, haiek agintzen dute eta ezarpen h
 
 ## Kopiatu eta partekatu deskargatu gabe
 
-* **Markdown kopiatu**: ezkerreko panelean botoi zuzena, iturburu-testua arbelera bidaltzeko.
-* **Aurrebistatik kopiatu**: eskuineko panelaren kopiatzeko botoiak zure azken aukeraketa gogoratzen du:
-  * *HTML kopiatu* (ikusten duzun bezala errendatuta).
-  * *LaTeX kopiatu* (uneko zatia soilik).
-  * *LaTeX kopiatu – dokumentu osoa* (goiburua eta ingurunea barne, konpilatzeko prest, TEX esportazioaren hizkuntza eta titulu berberekin).
+Kopiatzeko botoia goiburuan dago, **Esportatu** ondoan: biek gauza bera egiten dute helburu desberdinarekin, batak fitxategira eta besteak arbelera. Lau formatutan kopiatzen du:
+
+* *Markdown* (`Ctrl+Alt+C` eta gero `1`): iturburu-testua, editorean dagoen bezala.
+* *HTML* (`Ctrl+Alt+C 2`): errendatutako dokumentua, aurrebistan ikusten duzun bezala. Testua **bere formatuarekin** Word-era, LibreOffice-ra, Google Docs-era, postara edo beste edozein editoretara eramateko aukera da: guztiek arbeleko HTMLa irakurtzen dute eta izenburuak, lodiak, zerrendak eta taulak konposatuta itsasten dituzte, fitxategirik gabe. Bi ohar: formulak testu gisa itsasten dira, ez ekuazio gisa —horretarako DOCX edo ODT esportatu behar da—, eta irudiak dokumentuan txertatuta badaude bakarrik bidaiatzen dute.
+* *LaTeX* (`Ctrl+Alt+C 3`): uneko zatia soilik.
+* *LaTeX osoa* (`Ctrl+Alt+C 4`): goiburua eta ingurunea barne, konpilatzeko prest, TEX esportazioaren hizkuntza eta titulu berberekin.
+
+Botoiak aukeratu duzun azken formatua gogoratzen du eta ondoko etiketa txiki batean esaten du —`Markdown`, `HTML`, `LaTeX`—, beraz formatu horretan berriro kopiatzea klik bakarra da, edo `Ctrl+Alt+C` eta gero `Sartu`. Alboko geziak zerrenda irekitzen du aldatzeko.
 
 Aukera bakoitzak arrakasta-jakinarazpen bat erakusten du eta, dagokionean, LaTeX markaketa automatikoki prestatzen du errendatutako aurrebistatik abiatuta.
 
@@ -324,6 +327,7 @@ Nabigatzailean hasitako dokumentuak eta mahaigaineko aplikaziokoak Markdown fitx
 | Ireki EdiCuaTeX | `Ctrl` + `Alt` + `M` | `Cmd` + `Alt` + `M` |
 | Arbeletik itsatsi | `Ctrl` + `Alt` + `V` | `Cmd` + `Alt` + `V` |
 | Ireki Esportatu | `Ctrl` + `Alt` + `E` | `Cmd` + `Alt` + `E` |
+| Kopiatu (`1` Markdown · `2` HTML · `3` LaTeX · `4` LaTeX osoa) | `Ctrl` + `Alt` + `C` gero `1`–`4` | `Cmd` + `Alt` + `C` gero `1`–`4` |
 | Ireki Ezarpenak | `Ctrl` + `,` | `Cmd` + `,` |
 | Editatzeko eremua maximizatu | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Antolaketa aldatu | `Ctrl` + `L` | `Cmd` + `L` |

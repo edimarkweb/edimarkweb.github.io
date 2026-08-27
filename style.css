@@ -423,6 +423,20 @@ body.desktop-mode .markdown-textarea {
     overflow: hidden;
 }
 
+/*
+  La cabecera de cada panel llegaba hasta el borde: «Copiar» acababa pegado al
+  divisor central, contra el título del panel de al lado, y el puntero pasaba
+  rozándolo al arrastrar. El editor no lo necesita —ya tiene su propio marco—,
+  así que el aire va solo en la fila del título.
+*/
+#markdown-panel > .flex.justify-between {
+    padding-right: 0.75rem;
+}
+#preview-panel > .flex.justify-between,
+#html-panel > .flex.justify-between {
+    padding-left: 0.75rem;
+}
+
 .CodeMirror, .editor-pane, .markdown-textarea {
     height: calc(100vh - var(--editor-viewport-offset)); /* Ajustado para la zona de pestañas y búsqueda */
     border: 1px solid #e2e8f0;

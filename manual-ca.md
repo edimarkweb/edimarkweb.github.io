@@ -238,11 +238,14 @@ Si el document comença amb metadades YAML pròpies, manen elles i cap d'aquests
 
 ## Copiar i compartir sense baixar
 
-* **Copiar Markdown**: botó directe al plafó esquerre per enviar el text font al porta-retalls.
-* **Copiar des de la vista prèvia**: el botó de còpia del plafó dret recorda la teva última elecció entre:
-  * *Copiar HTML* (representat tal com el veus).
-  * *Copiar LaTeX* (només el fragment actual).
-  * *Copiar LaTeX – document complet* (inclou capçalera i entorn a punt per compilar, amb el mateix idioma i títol que l'exportació a TEX).
+El botó de copiar és a la capçalera, al costat d'**Exportar**: tots dos fan el mateix amb una destinació diferent, un al fitxer i l'altre al porta-retalls. Copia en quatre formats:
+
+* *Markdown* (`Ctrl+Alt+C` i després `1`): el text font, tal com és a l'editor.
+* *HTML* (`Ctrl+Alt+C 2`): el document representat, tal com el veus a la vista prèvia. És l'opció per portar el text **amb el seu format** al Word, al LibreOffice, a Google Docs, al correu o a qualsevol altre editor: tots llegeixen l'HTML del porta-retalls i enganxen encapçalaments, negretes, llistes i taules ja compostos, sense passar per cap fitxer. Dos avisos: les fórmules s'enganxen com a text, no com a equacions —per a això cal exportar a DOCX o ODT—, i les imatges només viatgen si estan incrustades al document.
+* *LaTeX* (`Ctrl+Alt+C 3`): només el fragment actual.
+* *LaTeX complet* (`Ctrl+Alt+C 4`): inclou capçalera i entorn a punt per compilar, amb el mateix idioma i títol que l'exportació a TEX.
+
+El botó recorda l'últim format que vas triar i el diu en una etiqueta petita al seu costat —`Markdown`, `HTML`, `LaTeX`—, de manera que tornar a copiar en aquest format és un sol clic, o `Ctrl+Alt+C` seguit de `Retorn`. La fletxa del costat obre la llista per canviar-lo.
 
 Cada opció mostra una notificació d'èxit i, quan escau, prepara automàticament el marcatge LaTeX a partir de la vista prèvia representada.
 
@@ -324,6 +327,7 @@ Els documents que comencis al navegador i els de l'aplicació d'escriptori són 
 | Obrir EdiCuaTeX | `Ctrl` + `Alt` + `M` | `Cmd` + `Alt` + `M` |
 | Enganxar des del porta-retalls | `Ctrl` + `Alt` + `V` | `Cmd` + `Alt` + `V` |
 | Obrir Exportar | `Ctrl` + `Alt` + `E` | `Cmd` + `Alt` + `E` |
+| Copiar (`1` Markdown · `2` HTML · `3` LaTeX · `4` LaTeX complet) | `Ctrl` + `Alt` + `C` després `1`–`4` | `Cmd` + `Alt` + `C` després `1`–`4` |
 | Obrir Configuració | `Ctrl` + `,` | `Cmd` + `,` |
 | Maximitzar l'àrea d'edició | `Ctrl` + `Maj` + `F` | `Cmd` + `Maj` + `F` |
 | Canviar disposició | `Ctrl` + `L` | `Cmd` + `L` |

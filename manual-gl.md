@@ -238,11 +238,14 @@ Se o documento comeza cos seus propios metadatos YAML, mandan eles e ningún des
 
 ## Copiar e compartir sen descargar
 
-* **Copiar Markdown**: botón directo no panel esquerdo para enviar o texto fonte ao portapapeis.
-* **Copiar desde a vista previa**: o botón de copia do panel dereito lembra a túa última elección entre:
-  * *Copiar HTML* (representado tal como o ves).
-  * *Copiar LaTeX* (só o fragmento actual).
-  * *Copiar LaTeX – documento completo* (inclúe cabeceira e contorno listos para compilar, co mesmo idioma e título ca a exportación a TEX).
+O botón de copiar está na cabeceira, xunto a **Exportar**: os dous fan o mesmo con distinto destino, un ao ficheiro e outro ao portapapeis. Copia en catro formatos:
+
+* *Markdown* (`Ctrl+Alt+C` e logo `1`): o texto fonte, tal cal está no editor.
+* *HTML* (`Ctrl+Alt+C 2`): o documento representado, tal como o ves na vista previa. É a opción para levar o texto **co seu formato** a Word, LibreOffice, Google Docs, o correo ou calquera outro editor: todos len o HTML do portapapeis e pegan encabezamentos, negras, listas e táboas xa compostos, sen pasar por ningún ficheiro. Dous avisos: as fórmulas péganse como texto, non como ecuacións —para iso hai que exportar a DOCX ou ODT—, e as imaxes só viaxan se están incrustadas no documento.
+* *LaTeX* (`Ctrl+Alt+C 3`): só o fragmento actual.
+* *LaTeX completo* (`Ctrl+Alt+C 4`): inclúe cabeceira e contorno listos para compilar, co mesmo idioma e título ca a exportación a TEX.
+
+O botón lembra o último formato que escolliches e dío nunha etiqueta pequena ao seu carón —`Markdown`, `HTML`, `LaTeX`—, así que copiar outra vez nese formato é un só clic, ou `Ctrl+Alt+C` seguido de `Intro`. A frecha do lado abre a lista para cambialo.
 
 Cada opción mostra unha notificación de éxito e, cando corresponde, prepara automaticamente o marcado LaTeX a partir da vista previa representada.
 
@@ -324,6 +327,7 @@ Os documentos que comeces no navegador e os da aplicación de escritorio son fic
 | Abrir EdiCuaTeX | `Ctrl` + `Alt` + `M` | `Cmd` + `Alt` + `M` |
 | Pegar desde o portapapeis | `Ctrl` + `Alt` + `V` | `Cmd` + `Alt` + `V` |
 | Abrir Exportar | `Ctrl` + `Alt` + `E` | `Cmd` + `Alt` + `E` |
+| Copiar (`1` Markdown · `2` HTML · `3` LaTeX · `4` LaTeX completo) | `Ctrl` + `Alt` + `C` logo `1`–`4` | `Cmd` + `Alt` + `C` logo `1`–`4` |
 | Abrir Configuración | `Ctrl` + `,` | `Cmd` + `,` |
 | Maximizar área de edición | `Ctrl` + `Maiús` + `F` | `Cmd` + `Maiús` + `F` |
 | Cambiar disposición | `Ctrl` + `L` | `Cmd` + `L` |

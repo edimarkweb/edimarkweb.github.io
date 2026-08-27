@@ -3910,17 +3910,32 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
 }
 
+/*
+  La marca de «copiado» ocupa el botón entero durante dos segundos, así que
+  mientras dura no se puede fotografiar su contenido: copiar dos veces seguidas
+  guardaba la propia marca como estado de reposo y el botón se quedaba con ella
+  para siempre, sin su icono ni su rótulo.
+*/
 function snapshotDefaultButtonHtml(btn) {
-    if (!btn) return;
+    if (!btn || btn.dataset.copyFeedback === 'true') return;
     btn.dataset.defaultHtml = btn.innerHTML;
+}
+
+function startButtonFeedback(btn, html) {
+    if (!btn) return;
+    btn.dataset.copyFeedback = 'true';
+    btn.innerHTML = html;
 }
 
 function restoreDefaultButtonHtml(btn, fallbackHtml) {
     if (!btn) return;
+    delete btn.dataset.copyFeedback;
     const defaultHtml = typeof btn.dataset.defaultHtml === 'string' ? btn.dataset.defaultHtml : fallbackHtml;
     if (typeof defaultHtml !== 'string') return;
     btn.innerHTML = defaultHtml;
     if (window.lucide) lucide.createIcons();
+    // El formato pudo cambiar mientras se veía la marca: el rótulo se repinta.
+    if (typeof window.__updateCopyButtonLabel === 'function') window.__updateCopyButtonLabel();
 }
 
 async function copyPlain(text, btn) {
@@ -3930,11 +3945,14 @@ async function copyPlain(text, btn) {
         snapshotDefaultButtonHtml(btn);
     }
     try {
-        await navigator.clipboard.writeText(text);
-        btn.innerHTML = '<i data-lucide="check" class="text-green-500"></i>';
+        // Con el respaldo de execCommand: sin contexto seguro —http:// que no
+        // sea localhost, o un archivo abierto directamente— no hay
+        // navigator.clipboard y la copia moría con un TypeError.
+        await writeTextToClipboard(text);
+        startButtonFeedback(btn, '<i data-lucide="check" class="text-green-500"></i>');
     } catch (err) {
         console.error('No se pudo copiar:', err);
-        btn.innerHTML = '<i data-lucide="x" class="text-red-500"></i>';
+        startButtonFeedback(btn, '<i data-lucide="x" class="text-red-500"></i>');
         throw err;
     } finally {
         if (window.lucide) lucide.createIcons();
@@ -3949,20 +3967,27 @@ async function copyRich(html, btn) {
         snapshotDefaultButtonHtml(btn);
     }
     try {
+        let rico = false;
         if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
-            await navigator.clipboard.write([
-                new ClipboardItem({
-                    'text/html': new Blob([html], { type: 'text/html' }),
-                    'text/plain': new Blob([html], { type: 'text/plain' })
-                })
-            ]);
-        } else {
-            await navigator.clipboard.writeText(html);
+            try {
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        'text/html': new Blob([html], { type: 'text/html' }),
+                        'text/plain': new Blob([html], { type: 'text/plain' })
+                    })
+                ]);
+                rico = true;
+            } catch (err) {
+                // El permiso denegado o un tipo que el navegador no acepta no
+                // pueden costar la copia: queda el HTML como texto.
+                console.warn('No se pudo copiar con formato:', err);
+            }
         }
-        btn.innerHTML = '<i data-lucide="check" class="text-green-500"></i>';
+        if (!rico) await writeTextToClipboard(html);
+        startButtonFeedback(btn, '<i data-lucide="check" class="text-green-500"></i>');
     } catch (err) {
         console.error('No se pudo copiar:', err);
-        btn.innerHTML = '<i data-lucide="x" class="text-red-500"></i>';
+        startButtonFeedback(btn, '<i data-lucide="x" class="text-red-500"></i>');
         throw err;
     } finally {
         if (window.lucide) lucide.createIcons();
@@ -3976,9 +4001,9 @@ function showCopyFeedback(btn, success) {
     if (typeof btn.dataset.defaultHtml !== 'string') {
         snapshotDefaultButtonHtml(btn);
     }
-    btn.innerHTML = success
+    startButtonFeedback(btn, success
         ? '<i data-lucide="check" class="text-green-500"></i>'
-        : '<i data-lucide="x" class="text-red-500"></i>';
+        : '<i data-lucide="x" class="text-red-500"></i>');
     if (window.lucide) lucide.createIcons();
     setTimeout(() => restoreDefaultButtonHtml(btn, fallbackHtml), 2000);
 }
@@ -4171,7 +4196,6 @@ window.onload = async () => {
     const spellcheckToggleBtn = document.getElementById('spellcheck-toggle-btn');
     const quitAppBtn = document.getElementById('quit-app-btn');
     const quitAppSeparator = document.getElementById('quit-app-separator');
-    const copyMdBtn = document.getElementById('copy-md-btn');
     const copyHtmlBtn = document.getElementById('copy-html-btn');
     const pasteBtn = document.getElementById('paste-btn');
     base64UiContainer = document.getElementById('base64-hidden-container');
@@ -4203,23 +4227,28 @@ window.onload = async () => {
     base64ModalTextarea = document.getElementById('base64-modal-text');
     base64ModalCopyBtn = document.getElementById('copy-base64-code-btn');
     base64ModalCloseBtn = document.getElementById('close-base64-modal-btn');
-    if (copyMdBtn) snapshotDefaultButtonHtml(copyMdBtn);
     if (copyHtmlBtn) snapshotDefaultButtonHtml(copyHtmlBtn);
-    let copyHtmlBtnLabel = copyHtmlBtn ? copyHtmlBtn.querySelector('.copy-html-btn-label') : null;
     const previewCopyContainer = document.getElementById('preview-copy-container');
     const previewCopyMenu = document.getElementById('preview-copy-menu');
     const previewCopyToggleBtn = document.getElementById('copy-html-menu-toggle');
     const previewCopyOptionButtons = previewCopyMenu ? Array.from(previewCopyMenu.querySelectorAll('[data-copy-action]')) : [];
-    const COPY_ACTIONS = ['html', 'latex-preview', 'latex-full'];
+    /*
+      Copiar dejó de ser cosa de cada panel: el botón de la cabecera copia el
+      documento en el formato elegido, igual que Exportar lo escribe en un
+      archivo, y el Markdown es un formato más de la lista.
+    */
+    const COPY_ACTIONS = ['markdown', 'html', 'latex-preview', 'latex-full'];
     markdownCharCounterEl = document.getElementById('markdown-char-counter');
     let currentCopyAction = safeLocalStorageGet(COPY_ACTION_KEY);
     if (!COPY_ACTIONS.includes(currentCopyAction)) currentCopyAction = 'html';
     const copyActionLabelKeys = {
+        markdown: 'copy_menu_option_markdown',
         html: 'copy_menu_option_html',
         'latex-preview': 'copy_menu_option_latex_preview',
         'latex-full': 'copy_menu_option_latex_full'
     };
     const copyActionFallbackTexts = {
+        markdown: 'Copy Markdown',
         html: 'Copy',
         'latex-preview': 'Copy LaTeX',
         'latex-full': 'Copy LaTeX (full document)'
@@ -4270,19 +4299,34 @@ window.onload = async () => {
         }
         return null;
     }
+    /*
+      El botón copia de un clic el último formato elegido, así que tiene que
+      decir cuál es: un rótulo corto —Markdown, HTML, LaTeX— junto al icono, en
+      gris y pequeño, que informa sin pesar como un botón con nombre.
+    */
+    const copyFormatShortKeys = {
+        markdown: ['copy_format_markdown', 'Markdown'],
+        html: ['copy_format_html', 'HTML'],
+        'latex-preview': ['copy_format_latex', 'LaTeX'],
+        'latex-full': ['copy_format_latex_full', 'LaTeX completo'],
+    };
+
     function updateCopyButtonLabel(action) {
         if (!copyHtmlBtn) return;
-        const labelEl = copyHtmlBtn.querySelector('.copy-html-btn-label');
-        if (!labelEl) return;
-        copyHtmlBtnLabel = labelEl;
-        const labelKey = copyActionLabelKeys[action] || copyActionLabelKeys.html;
-        const fallback = copyActionFallbackTexts[action] || copyActionFallbackTexts.html;
-        const label = getTranslation(labelKey, fallback);
-        copyHtmlBtnLabel.textContent = label;
-        const titleText = getTranslation('copy_html_btn_title', 'Copiar HTML');
+        const [clave, respaldo] = copyFormatShortKeys[action] || copyFormatShortKeys.html;
+        const formato = getTranslation(clave, respaldo);
+        // «Todo el documento» y no solo lo seleccionado: es la duda que tiene
+        // cualquiera ante un botón de copiar con el cursor dentro del texto.
+        const titleText = formatTranslation(
+            'copy_btn_title_format',
+            'Copiar todo el documento como {format}',
+            { format: formato },
+        );
         copyHtmlBtn.setAttribute('title', titleText);
         copyHtmlBtn.setAttribute('aria-label', titleText);
         copyHtmlBtn.setAttribute('data-current-copy-action', action);
+        const labelEl = copyHtmlBtn.querySelector('.copy-html-btn-label');
+        if (labelEl) labelEl.textContent = formato;
         snapshotDefaultButtonHtml(copyHtmlBtn);
     }
 
@@ -4294,7 +4338,9 @@ window.onload = async () => {
             btn.classList.toggle('font-semibold', isActive);
             // Un fondo gris sería idéntico al de hover: la marca es un check.
             const check = btn.querySelector('.copy-check');
-            if (check) check.classList.toggle('hidden', !isActive);
+            // Con «invisible» y no «hidden» sigue ocupando su hueco: los atajos
+            // de las cuatro filas quedan alineados con el de la marcada.
+            if (check) check.classList.toggle('invisible', !isActive);
         });
     }
 
@@ -5590,7 +5636,11 @@ window.onload = async () => {
         if (updateState) {
             applyCopyActionState(usableAction, { persist: false });
         }
-        if (usableAction === 'html') {
+        if (usableAction === 'markdown') {
+            await copyPlain(markdownEditor.getValue(), copyHtmlBtn);
+            const successMessage = getCopySuccessMessage('markdown');
+            if (successMessage) updateExportStatus(successMessage);
+        } else if (usableAction === 'html') {
             await copyPreviewHtml();
             const successMessage = getCopySuccessMessage('html');
             if (successMessage) updateExportStatus(successMessage);
@@ -6303,19 +6353,6 @@ window.onload = async () => {
         });
     }
 
-    copyMdBtn.addEventListener('click', async () => {
-        const startMessage = getCopyStartMessage('markdown');
-        if (startMessage) {
-            updateExportStatus(startMessage);
-        }
-        try {
-            await copyPlain(markdownEditor.getValue(), copyMdBtn);
-            const successMessage = getCopySuccessMessage('markdown');
-            if (successMessage) updateExportStatus(successMessage);
-        } catch (err) {
-            updateExportStatus(getTranslation('copy_error_message', 'No se pudo copiar el contenido.'));
-        }
-    });
     copyHtmlBtn.addEventListener('click', async () => {
         closePreviewCopyMenu();
         const action = currentCopyAction;
@@ -7638,64 +7675,48 @@ window.onload = async () => {
     };
 
     /*
-      Los cuatro delimitadores en un acorde y no en cuatro combinaciones.
+      Acordes: una combinación abre la espera y la siguiente tecla, ya sin
+      modificadores, elige.
 
       Cada combinación nueva es una negociación con el navegador y con el
       escritorio —Ctrl+Mayús+J es la consola del navegador y Ctrl+Mayús+M, la
       lupa del sistema, y ninguno de los dos deja que la página se los quede—,
-      así que solo se expone una: Ctrl+M abre la espera y la segunda tecla, ya
-      sin modificadores, elige el delimitador. Ninguna la reserva nadie, y para
-      añadir un quinto delimitador basta con un 5.
+      así que las listas largas gastan una sola: los delimitadores de fórmula
+      cuelgan de Ctrl+M y los formatos de copia, de Ctrl+Alt+C. Añadir una
+      quinta opción es añadir un 5, no pelearse por otra combinación.
     */
-    const FORMULA_CHORD_FORMATS = {
-        '1': 'latex-inline-dollar',
-        '2': 'latex-block-dollar',
-        '3': 'latex-inline-paren',
-        '4': 'latex-block-bracket',
-    };
-    let formulaChordPending = false;
+    let chordPendiente = null;
 
-    function formulaChordHint() {
-        return getTranslation(
-            'formula_chord_hint',
-            'Fórmula: 1 $…$ · 2 $$…$$ · 3 \\(…\\) · 4 \\[…\\] · Esc cancela',
-        );
+    function startChord(chord) {
+        chordPendiente = chord;
+        reportStatus(chord.hint());
     }
 
-    function startFormulaChord() {
-        formulaChordPending = true;
-        reportStatus(formulaChordHint());
-    }
-
-    function endFormulaChord() {
-        if (!formulaChordPending) return;
-        formulaChordPending = false;
+    function endChord() {
+        if (!chordPendiente) return;
+        chordPendiente = null;
         reportStatus('');
     }
-    window.__formulaChordPending = () => formulaChordPending;
-
-    // Una espera olvidada se comería la siguiente tecla que se pulse: en cuanto
-    // la atención se va a otra parte, se cancela sola.
-    document.addEventListener('mousedown', endFormulaChord);
-    window.addEventListener('blur', endFormulaChord);
+    window.__chordPending = () => Boolean(chordPendiente);
 
     /*
       Devuelve true cuando la pulsación pertenecía al acorde, para que el resto
       de atajos no la vean. Los modificadores sueltos no cuentan: pulsar Mayús
       camino del siguiente carácter no puede cancelar la espera.
     */
-    function handleFormulaChordKey(event) {
-        if (!formulaChordPending) return false;
+    function handleChordKey(event) {
+        if (!chordPendiente) return false;
         if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(event.key)) return true;
 
-        const format = FORMULA_CHORD_FORMATS[event.key];
-        // Enter y una M repetida insertan el de siempre: el caso común se
-        // resuelve con dos pulsaciones cómodas y sin mirar la ayuda.
-        const repeated = event.key === 'Enter' || event.key.toLowerCase() === 'm';
-        endFormulaChord();
-        if (format || repeated) {
+        const chord = chordPendiente;
+        const elegida = chord.options[event.key];
+        // Intro y la propia letra del acorde repiten la opción de siempre: el
+        // caso común se resuelve con dos pulsaciones cómodas y sin leer nada.
+        const repetida = event.key === 'Enter' || event.key.toLowerCase() === chord.repeatKey;
+        endChord();
+        if (elegida || repetida) {
             event.preventDefault();
-            applyFormat(format || 'latex-inline-dollar');
+            (elegida || chord.fallback)();
             return true;
         }
         // Escape solo cancela; cualquier otra tecla cancela y se escribe.
@@ -7706,11 +7727,54 @@ window.onload = async () => {
         return false;
     }
 
+    // Una espera olvidada se comería la siguiente tecla que se pulse: en cuanto
+    // la atención se va a otra parte, se cancela sola.
+    document.addEventListener('mousedown', endChord);
+    window.addEventListener('blur', endChord);
+
+    const FORMULA_CHORD = {
+        repeatKey: 'm',
+        hint: () => getTranslation(
+            'formula_chord_hint',
+            'Fórmula: 1 $…$ · 2 $$…$$ · 3 \\(…\\) · 4 \\[…\\] · Esc cancela',
+        ),
+        options: {
+            '1': () => applyFormat('latex-inline-dollar'),
+            '2': () => applyFormat('latex-block-dollar'),
+            '3': () => applyFormat('latex-inline-paren'),
+            '4': () => applyFormat('latex-block-bracket'),
+        },
+        fallback: () => applyFormat('latex-inline-dollar'),
+    };
+
+    // Copiar no espera a nada: la opción de siempre es la última que se usó,
+    // la misma que el clic en el botón.
+    const copiarComo = (accion) => () => {
+        handlePreviewCopyAction(accion).catch((err) => {
+            console.error('No se pudo copiar el contenido:', err);
+        });
+    };
+
+    const COPY_CHORD = {
+        repeatKey: 'c',
+        hint: () => getTranslation(
+            'copy_chord_hint',
+            'Copiar: 1 Markdown · 2 HTML · 3 LaTeX · 4 LaTeX completo · Esc cancela',
+        ),
+        options: {
+            '1': copiarComo('markdown'),
+            '2': copiarComo('html'),
+            '3': copiarComo('latex-preview'),
+            '4': copiarComo('latex-full'),
+        },
+        fallback: () => copiarComo(currentCopyAction)(),
+    };
+
     document.addEventListener('keydown', e => {
         const accel = isMac ? e.metaKey : e.ctrlKey;
         if (accel) ctrlPressed = true;
 
-        if (handleFormulaChordKey(e)) return;
+        if (handleChordKey(e)) return;
 
         if (e.key === 'F1') {
             e.preventDefault();
@@ -7736,6 +7800,7 @@ window.onload = async () => {
                     case 'e': e.preventDefault(); openExportMenu(); return;
                     case 'm': e.preventDefault(); openEdicuatexBtn?.click(); return;
                     case 'v': e.preventDefault(); pasteBtn?.click(); return;
+                    case 'c': e.preventDefault(); startChord(COPY_CHORD); return;
                 }
             }
             if (e.shiftKey && e.key.toLowerCase() === 's') {
@@ -7760,7 +7825,7 @@ window.onload = async () => {
               ejecutaría las dos acciones a la vez.
             */
             switch (e.shiftKey ? null : e.key.toLowerCase()) {
-                case 'm': e.preventDefault(); startFormulaChord(); break;
+                case 'm': e.preventDefault(); startChord(FORMULA_CHORD); break;
                 case 'o': e.preventDefault(); openFileBtn.click(); break;
                 case 's': e.preventDefault(); saveBtn.click(); break;
                 case 'p': e.preventDefault(); printBtn.click(); break;
