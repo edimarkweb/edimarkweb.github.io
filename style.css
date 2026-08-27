@@ -441,7 +441,18 @@ body.desktop-mode .markdown-textarea {
     height: calc(100vh - var(--editor-viewport-offset)); /* Ajustado para la zona de pestañas y búsqueda */
     border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
-    font-size: var(--fs-base); /* Usa la variable CSS para el tamaño */
+}
+
+/*
+  El tamaño de texto de Configuración es el del código: el panel Markdown y la
+  vista del HTML generado, que son editores. La vista previa no lo sigue,
+  porque ahí el tamaño lo dice el documento —el de *Formato del texto*, en las
+  opciones generales o en las de este documento—, y es lo que se exporta. Dos
+  ajustes que se veían igual y significan cosas distintas: uno es la comodidad
+  de quien escribe y el otro, el aspecto del archivo que entregas.
+*/
+.CodeMirror, .markdown-textarea {
+    font-size: var(--fs-base);
 }
 /*
   El panel de Markdown reparte su alto entre el editor y la lista de imágenes

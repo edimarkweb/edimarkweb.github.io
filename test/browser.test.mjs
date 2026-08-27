@@ -1499,11 +1499,15 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
       documentClass: 'report',
       classOptions: '12pt, a4paper',
       preamble: '\\usepackage{amsthm}',
-      // Sin tocar el formato del texto, sus diez ajustes quedan sin fijar.
+      /*
+        Sin tocar el formato del texto, sus ajustes quedan sin fijar salvo el
+        tamaño, que trae número de partida: la vista previa dejó de seguir al
+        de la interfaz y sin él no tendría ninguno que enseñar.
+      */
       documentFormat: {
         align: '',
         font: '',
-        fontSize: '',
+        fontSize: '12',
         lineHeight: '',
         marginTop: '',
         marginRight: '',
@@ -1919,11 +1923,26 @@ test('la cabecera separa los menús de las acciones del documento', async (t) =>
     ['Archivo', 'Exportar', 'Configuración'],
   );
 
-  // Guardar sí sale a la barra; el resto se queda en el menú.
+  // Guardar sale a la barra como icono, que es la vía rápida, y está además en
+  // el menú: «Guardar como…» sin «Guardar» al lado se lee mal, y en el menú la
+  // opción lleva su atajo escrito, que el icono solo enseña al pasar el ratón.
   const acciones = page.locator('#document-actions-group');
   assert.equal(await acciones.locator('#save-btn').count(), 1);
   assert.equal(await page.locator('#actions-menu #save-btn').count(), 0);
+  assert.equal(await page.locator('#actions-menu #save-menu-btn').count(), 1);
   assert.equal(await page.locator('#actions-menu #save-as-btn').count(), 1);
+
+  // Y en el orden de cualquier menú de archivo: primero lo que trae contenido,
+  // después Guardar y Guardar como…
+  await page.locator('#actions-menu-btn').click();
+  await page.locator('#actions-menu').waitFor({ state: 'visible' });
+  // El nombre vive en la primera fila; debajo va su explicación.
+  assert.deepEqual(
+    await page.locator('#actions-menu [role="menuitem"]:visible > span:first-child > span:not([data-shortcut])').allInnerTexts(),
+    ['Abrir', 'Importar', 'Pegar LaTeX', 'Guardar', 'Guardar como…'],
+  );
+  assert.equal(await page.locator('#actions-menu #save-menu-btn [data-shortcut]').innerText(), 'Ctrl+S');
+  await page.keyboard.press('Escape');
 
   // Exportar ya no es un submenú de Archivo: se abre por su cuenta.
   await page.locator('#export-menu-btn').click();
@@ -2242,4 +2261,115 @@ test('una imagen incrustada se puede quitar del documento desde la lista', async
   assert.match(markdown, /Texto con en medio\./);
   assert.match(markdown, /# Título/);
   assert.equal(await page.locator('#base64-hidden-container').isVisible(), false);
+});
+
+
+/*
+  Dos ajustes que se veían igual y significan cosas distintas: el tamaño de
+  Configuración es la comodidad de quien escribe, y el de Formato del texto es
+  el aspecto del archivo que se entrega. Antes el primero movía los dos
+  paneles, así que la vista previa mentía sobre lo que iba a exportarse.
+*/
+test('el tamaño de texto mueve el editor y deja quieta la vista previa', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').fill('# Hola\n\nUn párrafo de prueba.');
+  await page.waitForFunction(() => document.querySelector('#html-output p'));
+
+  const medir = () => page.evaluate(() => ({
+    editor: getComputedStyle(document.querySelector('.CodeMirror')).fontSize,
+    previa: getComputedStyle(document.querySelector('#html-output')).fontSize,
+  }));
+
+  const antes = await medir();
+  const opciones = await page.evaluate(() => {
+    const select = document.getElementById('font-size-select');
+    const valores = Array.from(select.options).map(option => option.value);
+    select.value = valores[valores.length - 1];
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    return valores;
+  });
+  const despues = await medir();
+
+  assert.ok(opciones.length > 1, 'el selector de tamaño no ofrece opciones');
+  assert.equal(despues.editor, `${opciones[opciones.length - 1]}px`, 'el editor no siguió al ajuste');
+  assert.notEqual(despues.editor, antes.editor, 'el ajuste no cambió nada');
+  assert.equal(despues.previa, antes.previa, 'la vista previa siguió al ajuste de la interfaz');
+});
+
+/*
+  Desde que la vista previa dejó de seguir al tamaño de la interfaz, necesita
+  un número propio: sin él se quedaba en el que le diera la hoja de estilos,
+  que no es el que se exporta y convertía la previsualización en una promesa
+  falsa. Las opciones generales lo traen puesto.
+*/
+test('el formato general trae un tamaño concreto que la vista previa aplica', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').fill('# Hola\n\nUn párrafo.');
+  await page.waitForFunction(() => document.querySelector('#html-output p'));
+
+  // El ajuste general lo declara, no se queda vacío.
+  assert.equal(
+    await page.evaluate(() => (window.__edimarkLatexSettings || {}).documentFormat?.fontSize),
+    '12',
+  );
+  // Y llega a la vista previa como estilo propio, en puntos.
+  assert.equal(
+    await page.evaluate(() => document.getElementById('html-output').style.fontSize),
+    '12pt',
+  );
+});
+
+/*
+  Una sola forma de explicar una opción, y visible.
+
+  Antes convivían dos: unos menús escribían la explicación debajo del nombre y
+  otros la escondían en el `title`, que no existe en una tableta, no sale al
+  enfocar con el teclado y no obedece al tema. Ahora toda la información está
+  escrita; el tooltip se queda para los botones de icono de la barra, donde no
+  hay sitio para texto.
+*/
+test('ninguna opción de menú esconde su explicación en el ratón', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  assert.equal(
+    await page.locator('[role="menu"] [role^="menuitem"][title]').count(),
+    0,
+    'queda alguna opción con la explicación solo en el tooltip',
+  );
+});
+
+test('cada opción de menú lleva su explicación escrita debajo', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const leer = async (boton, menu) => {
+    await page.locator(boton).click();
+    await page.locator(menu).waitFor({ state: 'visible' });
+    const filas = await page.locator(`${menu} > [role^="menuitem"]`).evaluateAll(items => items.map((item) => {
+      const spans = Array.from(item.children).filter(child => child.tagName === 'SPAN');
+      const descripcion = spans[spans.length - 1];
+      return {
+        nombre: item.innerText.split('\n')[0].trim(),
+        descripcion: spans.length > 1 ? descripcion.textContent.trim() : '',
+      };
+    }));
+    await page.keyboard.press('Escape');
+    return filas;
+  };
+
+  for (const [boton, menu] of [
+    ['#actions-menu-btn', '#actions-menu'],
+    ['#export-menu-btn', '#export-menu'],
+    ['#settings-menu-btn', '#settings-menu'],
+    ['#help-menu-btn', '#help-menu'],
+  ]) {
+    for (const fila of await leer(boton, menu)) {
+      assert.ok(fila.descripcion, `«${fila.nombre}» de ${menu} se quedó sin explicación`);
+    }
+  }
 });

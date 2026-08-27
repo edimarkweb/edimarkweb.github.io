@@ -3525,17 +3525,51 @@ const LATEX_SETTINGS_DEFAULTS = {
     documentClass: 'article',
     classOptions: '',
     preamble: '',
-    // Alineación, letra, interlineado, márgenes, sangría y partición: los
-    // valores de partida que hereda cualquier documento que no fije los suyos.
-    documentFormat: {},
+    /*
+      Alineación, letra, interlineado, márgenes, sangría y partición: los
+      valores de partida que hereda cualquier documento que no fije los suyos.
+
+      El tamaño sí trae número desde el principio, y los demás no, porque el
+      tamaño es el único que la vista previa necesita para poder enseñar la
+      verdad: desde que dejó de seguir al de la interfaz, sin un número
+      concreto se quedaba en el que le diera la hoja de estilos, que no es el
+      que se exporta. Doce puntos es lo que ya escriben DOCX y ODT, así que
+      hacerlo explícito no cambia lo que sale por ahí; en LaTeX sustituye a los
+      diez de `article`, y esa es justo la incoherencia que quita: los cinco
+      formatos parten del mismo cuerpo, y quien quiera otro lo escribe.
+    */
+    documentFormat: { fontSize: '12' },
 };
+
+// `documentFormat` es un objeto: sin copiarlo también, los tres retornos
+// compartirían el mismo y una edición se llevaría por delante los valores de
+// partida de toda la sesión.
+function defaultLatexSettings() {
+    return { ...LATEX_SETTINGS_DEFAULTS, documentFormat: { ...LATEX_SETTINGS_DEFAULTS.documentFormat } };
+}
+
+/*
+  Los valores de partida por debajo de lo guardado, campo a campo: quien ya
+  tenía ajustes de antes no fijó ningún tamaño —no existía la opción— y su
+  vista previa se quedaría sin número igual que si fuera nueva. Lo que el
+  usuario haya escrito manda; solo se rellena lo que dejó vacío.
+*/
+function withDefaultDocumentFormat(stored) {
+    const api = window.EdiMarkDocumentFormat;
+    const normalized = api ? api.normalizeDocumentFormat(stored) : {};
+    const format = { ...normalized };
+    Object.entries(LATEX_SETTINGS_DEFAULTS.documentFormat).forEach(([key, value]) => {
+        if (!String(format[key] ?? '').trim()) format[key] = value;
+    });
+    return format;
+}
 
 function readLatexSettings() {
     const raw = safeLocalStorageGet(LATEX_SETTINGS_KEY);
-    if (!raw) return { ...LATEX_SETTINGS_DEFAULTS };
+    if (!raw) return defaultLatexSettings();
     try {
         const parsed = JSON.parse(raw);
-        if (!parsed || typeof parsed !== 'object') return { ...LATEX_SETTINGS_DEFAULTS };
+        if (!parsed || typeof parsed !== 'object') return defaultLatexSettings();
         return {
             documentLanguage: typeof parsed.documentLanguage === 'string' && parsed.documentLanguage.trim()
                 ? parsed.documentLanguage.trim()
@@ -3549,13 +3583,11 @@ function readLatexSettings() {
             documentClass: typeof parsed.documentClass === 'string' ? parsed.documentClass : LATEX_SETTINGS_DEFAULTS.documentClass,
             classOptions: typeof parsed.classOptions === 'string' ? parsed.classOptions : '',
             preamble: typeof parsed.preamble === 'string' ? parsed.preamble : '',
-            documentFormat: window.EdiMarkDocumentFormat
-                ? window.EdiMarkDocumentFormat.normalizeDocumentFormat(parsed.documentFormat)
-                : {},
+            documentFormat: withDefaultDocumentFormat(parsed.documentFormat),
         };
     } catch (error) {
         console.warn('Ajustes del documento ilegibles, se usan los predeterminados:', error);
-        return { ...LATEX_SETTINGS_DEFAULTS };
+        return defaultLatexSettings();
     }
 }
 
@@ -3661,6 +3693,7 @@ async function saveFile(filename, content, type, {
     extensions,
     companionFiles,
     directoryHandle,
+    fileHandle,
 } = {}) {
     const platform = window.EdiMarkPlatform;
     if (platform && typeof platform.saveFile === 'function') {
@@ -3672,6 +3705,7 @@ async function saveFile(filename, content, type, {
             extensions,
             companionFiles,
             directoryHandle,
+            fileHandle,
         });
     }
 
@@ -3745,6 +3779,7 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
             extensions: ['md', 'markdown'],
             companionFiles,
             directoryHandle: saveAs ? null : (assetEntry?.saveDirectoryHandle || null),
+            fileHandle: saveAs ? null : (assetEntry?.saveFileHandle || null),
         };
         let result;
         try {
@@ -3774,6 +3809,13 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
             if (assetEntry && result.directoryHandle) {
                 assetEntry.saveDirectoryHandle = result.directoryHandle;
             }
+            /*
+              El archivo que el usuario eligió en el navegador, para que el
+              siguiente `Ctrl+S` escriba en él sin volver a preguntar. Si esta
+              vez no hubo ninguno —se descargó, o el documento fue a una
+              carpeta con sus imágenes—, el anterior ya no sirve.
+            */
+            if (assetEntry) assetEntry.saveFileHandle = result.fileHandle || null;
         }
         if (result.archiveName) {
             reportStatus(getTranslation(
@@ -4169,6 +4211,9 @@ window.onload = async () => {
     const openFileBtn = document.getElementById('open-file-btn');
     const fileInput = document.getElementById('file-input');
     const saveBtn = document.getElementById('save-btn');
+    // El mismo Guardar en dos sitios: el icono de la cabecera, que es la vía
+    // rápida, y la entrada del menú Archivo, donde se lee su atajo.
+    const saveMenuBtn = document.getElementById('save-menu-btn');
     const saveAsBtn = document.getElementById('save-as-btn');
     const exportMenuContainer = document.getElementById('export-menu-container');
     const exportMenuBtn = document.getElementById('export-menu-btn');
@@ -7436,13 +7481,13 @@ window.onload = async () => {
     cancelTableBtn.addEventListener('click', () => toggleTableModal(false));
     tableModalOverlay.addEventListener('click', (e) => { if (e.target === tableModalOverlay) toggleTableModal(false); });
     
-    if (saveBtn) {
-        saveBtn.addEventListener('click', async () => {
+    [saveBtn, saveMenuBtn].filter(Boolean).forEach((button) => {
+        button.addEventListener('click', async () => {
             closeActionsMenu();
             closeSettingsMenu();
             await saveCurrentDocument();
         });
-    }
+    });
     if (saveAsBtn) {
         saveAsBtn.addEventListener('click', async () => {
             closeActionsMenu();
