@@ -68,7 +68,7 @@ La cabecera tiene dos mitades. Junto al logotipo están los tres menús —**Arc
 * **Buscar (Ctrl+F)**: abre el buscador avanzado.
 * **Ayuda**: el botón de la interrogación reúne el **Manual de uso (F1)**, **Acerca de EdiMarkWeb** —versión instalada, autor, licencia y licencias de las bibliotecas de terceros, con los enlaces a la versión web y a las descargas— y, en la aplicación de escritorio, **Buscar actualizaciones…**.
 
-El diseño de los paneles se cambia con `Ctrl+L` o con el botón de disposición situado junto al botón que maximiza el área de edición. Su menú permite **Maximizar panel Markdown**, **Maximizar Vista previa** o **Dividir paneles**. En pantallas pequeñas, la barra se pliega en dos botones —**Acciones** y **Formato**— que muestran cada grupo cuando lo necesitas.
+El diseño de los paneles se cambia con `Ctrl+L` o con los tres botones de disposición situados junto al botón que maximiza el área de edición: **solo el código fuente**, **los dos paneles a la vez** y **solo el resultado**, en ese orden, con el activo resaltado. En pantallas estrechas los tres se pliegan en un menú con las mismas opciones. En pantallas pequeñas, la barra se pliega en dos botones —**Acciones** y **Formato**— que muestran cada grupo cuando lo necesitas.
 
 ---
 
@@ -108,10 +108,10 @@ La búsqueda funciona tanto en la vista de Markdown como en la vista HTML según
 La zona de trabajo se divide en dos paneles redimensionables:
 
 * **Markdown** (izquierda): editor de texto sencillo con un contador de caracteres, el indicador de idioma del documento y su botón de copia. Todo lo que escribas aquí se refleja de inmediato en el panel derecho.
-* **HTML / Previsualización** (derecha): muestra el resultado final y también permite editar el contenido directamente. Usa el botón con el icono de código para alternar entre la previsualización rica y el código HTML generado.
+* **HTML / Previsualización** (derecha): muestra el resultado final y también permite editar el contenido directamente. Usa el botón con el icono de código para alternar entre la previsualización rica y el código HTML generado. El documento se presenta como una hoja sobre una mesa, y a su izquierda el zoom (`−`, el porcentaje y `+`) la agranda o la reduce en pantalla; el porcentaje devuelve el 100 %. Es una lupa: no cambia el texto ni lo que se exporta —el tamaño del documento está en *Formato del texto*—.
 * **Copiar contenido**: Botones específicos para copiar Markdown o el HTML generado (incluye fórmulas convertidas a LaTeX cuando copias HTML).
 
-Puedes arrastrar la barra central para dar más espacio a cualquiera de los paneles, elegir una de las tres disposiciones en el botón situado a la derecha o usar la doble flecha para **maximizar el área de edición**, que oculta las barras superiores y deja la pantalla para el texto. El botón `+` permanece justo después de la última pestaña.
+Puedes arrastrar la barra central para dar más espacio a cualquiera de los paneles, elegir una de las tres disposiciones en los botones situados a la derecha o usar la doble flecha para **maximizar el área de edición**, que oculta las barras superiores y deja la pantalla para el texto. El botón `+` permanece justo después de la última pestaña.
 
 ### Los ajustes de cada documento
 
@@ -187,7 +187,7 @@ Cuando un documento lleva imágenes en base64 —al importar un DOCX, al pegar d
 * **Importar**: Convierte a Markdown documentos en otros formatos mediante Pandoc: `.docx`, `.odt`, `.epub`, `.html` y `.tex`. Se recuperan los encabezados, listas, tablas y enlaces, y también las imágenes: al proceder de un `.docx`, `.odt` o `.epub`, se extraen del propio archivo y quedan incrustadas en el Markdown, de modo que se ven en la previsualización y viajan contigo al exportar. De un `.epub` vuelve además el idioma del documento, que el libro guarda en su envoltorio y no en el texto.
 * **Guardar (`Ctrl+S`)**: guarda el documento actual. En la aplicación de escritorio actualiza el archivo ya abierto; **Guardar como… (`Ctrl+Mayús+S`)** siempre permite elegir otro nombre o ubicación.
 * **Copiar contenido**: El panel izquierdo incluye un botón para copiar el Markdown; en la vista previa puedes elegir qué se copiará (HTML renderizado o variantes LaTeX) desde el menú desplegable junto al icono de copia.
-* **Cambiar tema, diseño o ancho**: usa **Configuración** para el tema, `Ctrl+L` o el menú de paneles para el diseño y el botón de ancho (solo icono), a la derecha de la doble flecha, para ampliar la superficie web.
+* **Cambiar tema, diseño o ancho**: usa **Configuración** para el tema, `Ctrl+L` o los botones de paneles para el diseño y el botón de ancho (solo icono), a la derecha de la doble flecha, para ampliar la superficie web.
 * **Manual**: Dispones de este documento siempre actualizado con `Ctrl+H`.
 * **La carpeta se recuerda**: en la aplicación de escritorio, el primer cuadro de abrir o guardar sale donde diga el sistema, pero a partir de ahí todos —abrir, guardar como, exportar, elegir una imagen— vuelven a la última carpeta que usaste. Se recuerda solo mientras la aplicación está abierta.
 

@@ -68,7 +68,7 @@ A cabeceira ten dúas metades. Xunto ao logotipo están os tres menús —**Arqu
 * **Buscar (Ctrl+F)**: abre o buscador avanzado.
 * **Axuda**: o botón da interrogación reúne o **Manual de uso (F1)**, **Acerca de EdiMarkWeb** —versión instalada, autor, licenza e licenzas das bibliotecas de terceiros, coas ligazóns á versión web e ás descargas— e, na aplicación de escritorio, **Buscar actualizacións…**.
 
-A disposición dos paneis cámbiase con `Ctrl+L` ou co botón de disposición situado xunto ao botón que maximiza a área de edición. O seu menú permite **Maximizar panel Markdown**, **Maximizar panel de vista previa** ou **Dividir paneis**. En pantallas pequenas, a barra prégase en dous botóns —**Accións** e **Formato**— que mostran cada grupo cando o precisas.
+A disposición dos paneis cámbiase con `Ctrl+L` ou cos tres botóns de disposición situados xunto ao botón que maximiza a área de edición: **só o código fonte**, **os dous paneis á vez** e **só o resultado**, nesa orde, co activo resaltado. En pantallas estreitas os tres prégase nun menú coas mesmas opcións. En pantallas pequenas, a barra prégase en dous botóns —**Accións** e **Formato**— que mostran cada grupo cando o precisas.
 
 ---
 
@@ -108,7 +108,7 @@ A busca funciona tanto na vista de Markdown como na vista HTML, segundo onde te�
 A zona de traballo divídese en dous paneis redimensionables:
 
 * **Markdown** (esquerda): editor de texto sinxelo cun contador de caracteres, o indicador de idioma do documento e o seu botón de copia. Todo o que escribas aquí reflíctese de inmediato no panel dereito.
-* **HTML / Vista previa** (dereita): mostra o resultado final e tamén permite editar o contido directamente. Usa o botón coa icona de código para alternar entre a vista previa rica e o código HTML xerado.
+* **HTML / Vista previa** (dereita): mostra o resultado final e tamén permite editar o contido directamente. Usa o botón coa icona de código para alternar entre a vista previa rica e o código HTML xerado. O documento preséntase como unha folla sobre unha mesa, e á súa esquerda o zoom (`−`, a porcentaxe e `+`) faina máis grande ou máis pequena na pantalla; a porcentaxe volve ao 100 %. É unha lupa: non cambia o texto nin o que se exporta —o tamaño do documento está en *Formato do texto*—.
 * **Copiar contido**: botóns específicos para copiar o Markdown ou o HTML xerado (inclúe fórmulas convertidas a LaTeX cando copias HTML).
 
 Podes arrastrar a barra central para dar máis espazo a calquera dos paneis, escoller unha das tres disposicións no botón da dereita ou usar a frecha dobre para **maximizar a área de edición**, que agocha as barras superiores e deixa a pantalla para o texto. O botón `+` mantense xusto despois da última lapela.
@@ -187,7 +187,7 @@ Cando un documento leva imaxes en base64 —ao importar un DOCX, ao pegar desde 
 * **Importar**: converte a Markdown documentos noutros formatos mediante Pandoc: `.docx`, `.odt`, `.epub`, `.html` e `.tex`. Recupéranse as cabeceiras, as listas, as táboas e as ligazóns, e tamén as imaxes: cando proceden dun `.docx`, `.odt` ou `.epub` extráense do propio ficheiro e quedan incrustadas no Markdown, de xeito que se ven na vista previa e viaxan contigo ao exportar. Dun `.epub` volve ademais o idioma do documento, que o libro garda no seu envoltorio e non no texto.
 * **Gardar (`Ctrl+S`)**: garda o documento actual. Na aplicación de escritorio actualiza o ficheiro xa aberto; **Gardar como… (`Ctrl+Maiús+S`)** sempre permite escoller outro nome ou localización.
 * **Copiar contido**: o panel esquerdo inclúe un botón para copiar o Markdown; na vista previa podes elixir que se copiará (HTML representado ou variantes LaTeX) desde o menú despregable xunto á icona de copia.
-* **Cambiar tema, disposición ou ancho**: usa **Configuración** para o tema, `Ctrl+L` ou o menú de paneis para a disposición e o botón de ancho (só icona), á dereita da frecha dobre, para ampliar o espazo web.
+* **Cambiar tema, disposición ou ancho**: usa **Configuración** para o tema, `Ctrl+L` ou os botóns de paneis para a disposición e o botón de ancho (só icona), á dereita da frecha dobre, para ampliar o espazo web.
 * **Manual**: dispós deste documento sempre actualizado con `Ctrl+H`.
 * **A carpeta lémbrase**: na aplicación de escritorio, o primeiro cadro de abrir ou gardar sae onde diga o sistema, pero a partir de aí todos —abrir, gardar como, exportar, escoller unha imaxe— volven á última carpeta que usaches. Lémbrase só mentres a aplicación está aberta.
 

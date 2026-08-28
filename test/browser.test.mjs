@@ -1065,29 +1065,55 @@ test('los nuevos atajos abren sus acciones y los iconos explican su función', a
   assert.equal(await page.locator('#focus-mode-toggle').getAttribute('aria-pressed'), 'true');
 });
 
-test('el menú único cambia entre las tres disposiciones y respeta el orden de la barra', async (t) => {
+test('los tres botones cambian de disposición y dicen cuál está puesta', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
 
   assert.equal(await page.locator('#new-tab-btn').evaluate(button => button.previousElementSibling?.id), 'tab-bar');
+  assert.equal(await page.locator('#layout-switch').evaluate(group => group.nextElementSibling?.id), 'layout-menu-container');
   assert.equal(await page.locator('#layout-menu-container').evaluate(container => container.nextElementSibling?.id), 'focus-mode-toggle');
   assert.equal(await page.locator('#focus-mode-toggle').evaluate(button => button.nextElementSibling?.id), 'toggle-width-btn');
 
-  await page.locator('#layout-menu-btn').click();
-  await page.locator('[data-layout="md"]').click();
+  // En pantalla ancha manda el grupo de botones; el menú se queda para el móvil.
+  assert.equal(await page.locator('#layout-switch').isVisible(), true);
+  assert.equal(await page.locator('#layout-menu-container').isVisible(), false);
+
+  const boton = valor => page.locator(`#layout-switch [data-layout="${valor}"]`);
+  assert.equal(await boton('dual').getAttribute('aria-pressed'), 'true');
+
+  await boton('md').click();
   assert.equal(await page.locator('#markdown-panel').isVisible(), true);
   assert.equal(await page.locator('#html-panel').isVisible(), false);
-  assert.equal(await page.locator('[data-layout="md"]').getAttribute('aria-checked'), 'true');
+  assert.equal(await boton('md').getAttribute('aria-pressed'), 'true');
+  assert.equal(await boton('dual').getAttribute('aria-pressed'), 'false');
+  // El menú, aunque no se vea, dice lo mismo que los botones.
+  assert.equal(await page.locator('#layout-menu [data-layout="md"]').getAttribute('aria-checked'), 'true');
 
-  await page.locator('#layout-menu-btn').click();
-  await page.locator('[data-layout="html"]').click();
+  await boton('html').click();
   assert.equal(await page.locator('#markdown-panel').isVisible(), false);
   assert.equal(await page.locator('#html-panel').isVisible(), true);
+  assert.equal(await boton('html').getAttribute('aria-pressed'), 'true');
 
-  await page.locator('#layout-menu-btn').click();
-  await page.locator('[data-layout="dual"]').click();
+  // Ctrl+L rota, y el resaltado lo sigue: es lo que hace visible el atajo.
+  await page.keyboard.press('Control+l');
+  assert.equal(await boton('dual').getAttribute('aria-pressed'), 'true');
   assert.equal(await page.locator('#markdown-panel').isVisible(), true);
   assert.equal(await page.locator('#html-panel').isVisible(), true);
+});
+
+test('en pantalla estrecha las disposiciones vuelven al menú', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.setViewportSize({ width: 640, height: 900 });
+  assert.equal(await page.locator('#layout-switch').isVisible(), false);
+  assert.equal(await page.locator('#layout-menu-container').isVisible(), true);
+
+  await page.locator('#layout-menu-btn').click();
+  await page.locator('#layout-menu [data-layout="html"]').click();
+  assert.equal(await page.locator('#markdown-panel').isVisible(), false);
+  assert.equal(await page.locator('#html-panel').isVisible(), true);
+  assert.equal(await page.locator('#layout-menu [data-layout="html"]').getAttribute('aria-checked'), 'true');
 });
 
 test('el selector de imagen escribe la ruta del archivo, que es lo predeterminado', async (t) => {

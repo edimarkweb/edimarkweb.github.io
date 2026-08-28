@@ -418,6 +418,33 @@ body.desktop-mode .markdown-textarea {
 }
 
 .editor-wrapper { display: flex; }
+
+/*
+  Cambiar de disposición era un salto seco: un panel desaparecía y el otro daba
+  un tirón de la mitad al ancho completo. El que aparece entra con un fundido
+  —una animación, porque venía de `display: none` y ahí no hay transición que
+  valga— y el ancho se acompaña con una transición corta. La transición solo
+  está puesta mientras dura el cambio: dejarla siempre haría que arrastrar la
+  barra central del divisor fuera a rastras del puntero.
+*/
+@keyframes panel-appear {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+#editor-container .panel {
+    animation: panel-appear 180ms ease-out;
+}
+#editor-container.layout-changing .panel {
+    transition: width 180ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+    #editor-container .panel {
+        animation: none;
+    }
+    #editor-container.layout-changing .panel {
+        transition: none;
+    }
+}
 .panel {
     min-width: 280px;
     overflow: hidden;
@@ -435,6 +462,40 @@ body.desktop-mode .markdown-textarea {
 #preview-panel > .flex.justify-between,
 #html-panel > .flex.justify-between {
     padding-left: 0.75rem;
+}
+#markdown-panel > .flex.justify-between > *,
+#html-panel > .flex.justify-between > * {
+    flex-shrink: 0;
+}
+#markdown-panel > .flex.justify-between > .panel-title,
+#html-panel > .flex.justify-between > .panel-title {
+    flex-shrink: 1;
+}
+
+/*
+  Cada cabecera medía lo que midiera lo que lleva al lado: la del Markdown, la
+  píldora del contador (20 px); la de la vista previa, el botón de ver el HTML
+  (40 px). Los dos rótulos empiezan a la misma altura, así que uno acababa
+  veinte píxeles por encima del otro y, detrás de ellos, los dos paneles
+  arrancaban a distinta altura. La fila mide ahora lo que el elemento más alto
+  de las dos, y todo vuelve a una sola línea.
+*/
+#markdown-panel > .flex.justify-between,
+#preview-panel > .flex.justify-between,
+#html-panel > .flex.justify-between {
+    min-height: 2.5rem;
+}
+
+/*
+  El panel que se queda solo necesita su propio alto: en columna, el editor de
+  Markdown reparte con `flex` un alto que hasta ahora le prestaba el panel de
+  la vista previa. En el escritorio no hace falta —allí los paneles miden la
+  ventana— y en el móvil tampoco, porque van apilados con su alto en `vh`.
+*/
+@media (min-width: 769px) {
+    body:not(.desktop-mode) #editor-container.single-panel > .panel {
+        min-height: calc(100vh - var(--editor-viewport-offset));
+    }
 }
 
 .CodeMirror, .editor-pane, .markdown-textarea {
@@ -767,6 +828,66 @@ body.desktop-mode .markdown-textarea {
 
 .editor-pane { padding: 1rem; overflow-y: auto; background-color: #ffffff; }
 .dark .editor-pane { background-color: #1e293b; color: #cbd5e1; }
+
+/*
+  La vista previa se presenta como un documento sobre una mesa: `#preview-desk`
+  es la superficie —gris, con el desplazamiento— y `#html-output` es la hoja
+  que va encima, blanca, centrada y con sus márgenes. La hoja se estrecha con
+  el panel en lugar de desaparecer, para que la mesa se vea también con los dos
+  paneles a la vez, que es como se trabaja casi siempre.
+
+  Al meter la mesa en medio, el elemento que se desplaza ya no es el editable:
+  quien lea el `scrollTop` de la vista previa —la sincronía con el Markdown, el
+  clic que salta a una línea, los enlaces internos y la impresión— tiene que
+  pedirlo a `getPreviewScroller()`, en `script.js`.
+*/
+:root {
+    --preview-sheet-width: 46rem;
+    --preview-sheet-margin: 3.5rem;
+    --preview-desk-gutter: 1rem;
+}
+.preview-desk {
+    padding: var(--preview-desk-gutter);
+    background-color: #e2e8f0;
+}
+.dark .preview-desk {
+    background-color: #0f172a;
+}
+.preview-sheet {
+    box-sizing: border-box;
+    /*
+      La lupa de la vista previa. `zoom` agranda la caja de verdad —no la
+      deforma como haría una transformación—, así que la mesa sigue sabiendo
+      cuánto mide lo que lleva dentro y el desplazamiento no se descuadra. Los
+      porcentajes se resuelven antes de aplicarla: el alto mínimo se divide
+      entre el zoom para que la hoja siga midiendo la mesa y no aparezca una
+      barra de desplazamiento con el documento vacío.
+    */
+    zoom: var(--preview-zoom, 1);
+    min-height: calc(100% / var(--preview-zoom, 1));
+    /*
+      El ancho de la página no depende del zoom, y por eso se multiplica por él:
+      dentro de una caja con `zoom`, un `100%` vale el ancho de la mesa dividido
+      entre el zoom, así que sin corregirlo la hoja se encogía en la misma
+      medida en que la lupa la agrandaba y acababa siempre del ancho del panel,
+      con la letra creciendo dentro. Multiplicando se recupera el ancho real de
+      la mesa: la hoja parte del ancho de una página —o del panel, si es más
+      estrecho— y a partir de ahí la lupa la agranda de verdad, comiéndose los
+      márgenes grises y, si se pasa, desplazándose a lo ancho como una hoja
+      grande sobre una mesa pequeña.
+    */
+    width: min(var(--preview-sheet-width), calc(100% * var(--preview-zoom, 1)));
+    margin: 0 auto;
+    padding: var(--preview-sheet-margin) clamp(1.25rem, 6%, 3.5rem);
+    border-radius: 2px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14), 0 10px 28px rgba(15, 23, 42, 0.10);
+}
+.dark .preview-sheet {
+    background-color: #1e293b;
+    color: #cbd5e1;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.35);
+}
 .dark .prose { color: #cbd5e1; }
 .dark .prose h1, .dark .prose h2, .dark .prose h3, .dark .prose strong { color: #f1f5f9; }
 .dark .prose code { color: #e2e8f0; }
@@ -837,6 +958,116 @@ body.desktop-mode .markdown-textarea {
 .action-btn:hover { background-color: #f1f5f9; color: #1e293b; }
 .dark .action-btn { color: #94a3b8; }
 .dark .action-btn:hover { background-color: #1e293b; color: #e2e8f0; }
+
+/*
+  Las tres disposiciones, a la vista y en el orden en que están los paneles:
+  solo el fuente, los dos, solo el resultado. Antes vivían en un desplegable,
+  donde hacían falta dos clics y la disposición activa no se veía sin abrirlo;
+  aquí el resaltado dice en cuál estás, que es lo que hace legible el Ctrl+L.
+  En pantallas estrechas no caben y sigue mandando el menú.
+*/
+.layout-switch {
+    /*
+      El punto de corte es el mismo que usa el resto de la interfaz: por debajo
+      los paneles se apilan y estos tres botones no tienen sitio.
+    */
+    display: none;
+    align-items: center;
+    gap: 0.125rem;
+    padding: 0.125rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+}
+.dark .layout-switch {
+    border-color: #334155;
+}
+.layout-switch-btn {
+    display: flex;
+    align-items: center;
+    padding: 0.375rem;
+    border-radius: 0.375rem;
+    color: #64748b;
+    background-color: transparent;
+    transition: background-color 0.2s, color 0.2s;
+}
+.layout-switch-btn:hover {
+    background-color: #f1f5f9;
+    color: #1e293b;
+}
+.layout-switch-btn[aria-pressed="true"] {
+    background-color: #e0edff;
+    color: #1d4ed8;
+}
+.dark .layout-switch-btn {
+    color: #94a3b8;
+}
+.dark .layout-switch-btn:hover {
+    background-color: #1e293b;
+    color: #e2e8f0;
+}
+.dark .layout-switch-btn[aria-pressed="true"] {
+    background-color: #1e3a8a;
+    color: #bfdbfe;
+}
+@media (min-width: 769px) {
+    .layout-switch {
+        display: flex;
+    }
+    #layout-menu-container {
+        display: none;
+    }
+}
+
+/*
+  El zoom vive en la cabecera de su panel, con el aire justo para que los tres
+  controles se lean como uno solo: menos, cuánto, más.
+*/
+.preview-zoom {
+    gap: 0.125rem;
+}
+.preview-zoom-value {
+    min-width: 3.5rem;
+    padding: 0.25rem 0.25rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: #64748b;
+}
+.preview-zoom-value:hover {
+    background-color: #e2e8f0;
+}
+.dark .preview-zoom-value {
+    color: #94a3b8;
+}
+.dark .preview-zoom-value:hover {
+    background-color: #334155;
+}
+
+/*
+  Los rótulos de los paneles decían de qué es cada mitad con el mismo peso que
+  un título del documento, y en la vista previa competían con el texto que hay
+  debajo. Aquí son lo que son: una etiqueta que se lee cuando se busca, no
+  cuando se escribe.
+*/
+.panel-title {
+    /*
+      En un móvil estrecho el rótulo, el zoom y el botón de código no caben en
+      la misma fila: el que cede es el rótulo, que se recorta, porque los otros
+      dos son controles y tienen que seguir pulsándose enteros.
+    */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+.dark .panel-title {
+    color: #64748b;
+}
 
 .panel-counter {
     font-size: 0.75rem;
@@ -1079,6 +1310,15 @@ body.desktop-mode .markdown-textarea {
 
     .CodeMirror, .editor-pane, .markdown-textarea {
        height: 40vh;
+    }
+
+    /*
+      En el móvil los márgenes de página se comerían el ancho de lectura, y la
+      mesa se queda en un filo: lo justo para que la hoja siga siendo una hoja.
+    */
+    :root {
+        --preview-sheet-margin: 1.25rem;
+        --preview-desk-gutter: 0.5rem;
     }
 
     /*
@@ -1378,12 +1618,21 @@ code {
     #html-output {
         display: block !important;
         height: auto !important;
+        min-height: 0 !important;
         overflow: visible !important;
         border: none !important;
         box-shadow: none !important;
         background: transparent !important;
         color: inherit !important;
         padding: 0 !important;
+    }
+    /*
+      Sobre el papel no hay mesa ni hoja: el ancho lo pone la página impresa,
+      no la caja de la vista previa.
+    */
+    #html-output {
+        max-width: none !important;
+        margin: 0 !important;
     }
     /*
       La ventana independiente y la aplicación de escritorio reparten el alto

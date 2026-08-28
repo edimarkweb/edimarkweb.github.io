@@ -68,7 +68,7 @@ The header has two halves. Next to the logo sit the three menus —**File**, **E
 * **Search (Ctrl+F)**: opens the advanced search panel.
 * **Help**: the question-mark button holds the **User manual (F1)**, **About EdiMarkWeb** —installed version, author, licence and third-party licences, with links to the web version and to the downloads— and, in the desktop application, **Check for updates…**.
 
-The pane layout is changed with `Ctrl+L` or with the layout button next to the editing-area button. Its menu offers **Maximize Markdown panel**, **Maximize preview panel** and **Split panels**. On small screens the bar folds into two buttons — **Actions** and **Format** — that show each group when you need it.
+The pane layout is changed with `Ctrl+L` or with the three layout buttons next to the editing-area button: **source only**, **both panels** and **result only**, in that order, with the active one highlighted. On narrow screens the three fold into a menu with the same options. On small screens the bar folds into two buttons — **Actions** and **Format** — that show each group when you need it.
 
 ---
 
@@ -108,10 +108,10 @@ Search works both in the Markdown view and in the HTML view, depending on where 
 The working area is split into two resizable panes:
 
 * **Markdown** (left): a plain text editor with a character counter, the document language indicator and its copy button. Everything you type here is immediately reflected in the right pane.
-* **HTML / Preview** (right): shows the final result and also lets you edit the content directly. Use the code icon button to switch between the rich preview and the generated HTML.
+* **HTML / Preview** (right): shows the final result and also lets you edit the content directly. Use the code icon button to switch between the rich preview and the generated HTML. The document is shown as a sheet on a desk, and the zoom to its left (`−`, the percentage and `+`) makes it bigger or smaller on screen; clicking the percentage goes back to 100%. It is a magnifier: it changes neither the text nor what you export — the document size lives in *Text format*.
 * **Copying content**: dedicated buttons to copy the Markdown or the generated HTML (including formulas converted to LaTeX when copying HTML).
 
-You can drag the central bar to give more room to either pane, choose one of the three layouts from the button on the right, or use the double arrow to **maximise the editing area**, which hides the top bars and leaves the screen to the text. The `+` button stays immediately after the last tab.
+You can drag the central bar to give more room to either pane, choose one of the three layouts from the buttons on the right, or use the double arrow to **maximise the editing area**, which hides the top bars and leaves the screen to the text. The `+` button stays immediately after the last tab.
 
 ### Each document’s settings
 
@@ -187,7 +187,7 @@ When a document carries base64 images — after importing a DOCX, after pasting 
 * **Import**: converts documents in other formats to Markdown using Pandoc: `.docx`, `.odt`, `.epub`, `.html` and `.tex`. Headings, lists, tables and links are recovered, and so are the images: when they come from a `.docx`, `.odt` or `.epub` they are extracted from the file itself and embedded in the Markdown, so they show up in the preview and travel with you when exporting. An `.epub` also brings back the document language, which the book keeps in its wrapper rather than in the text.
 * **Save (`Ctrl+S`)**: saves the current document. In the desktop application it updates the file already open; **Save as… (`Ctrl+Shift+S`)** always lets you choose another name or location.
 * **Copying content**: the left pane has a button to copy the Markdown; in the preview you can choose what gets copied (rendered HTML or LaTeX variants) from the drop-down next to the copy icon.
-* **Changing theme, layout or width**: use **Settings** for the theme, `Ctrl+L` or the pane menu for the layout, and the icon-only width button, to the right of the double arrow, to widen the web workspace.
+* **Changing theme, layout or width**: use **Settings** for the theme, `Ctrl+L` or the pane buttons for the layout, and the icon-only width button, to the right of the double arrow, to widen the web workspace.
 * **Manual**: this document is always available and up to date with `Ctrl+H`.
 * **The folder is remembered**: in the desktop application the first open or save dialog appears wherever the system decides, but from then on all of them —open, save as, export, pick an image— go back to the last folder you used. It is remembered only while the application stays open.
 

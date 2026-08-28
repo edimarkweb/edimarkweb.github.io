@@ -26,6 +26,7 @@ const LAYOUT_KEY = 'edimarkweb-layout';
 */
 const LAYOUT_ICONS = { md: 'panel-right', html: 'panel-left', dual: 'columns-2' };
 const FS_KEY = 'edimarkweb-fontsize';
+const PREVIEW_ZOOM_KEY = 'edimarkweb-preview-zoom';
 const FOCUS_MODE_KEY = 'edimarkweb-focus-mode';
 const LATEX_SETTINGS_KEY = 'edimarkweb-latex-settings';
 const SPELLCHECK_KEY = 'edimarkweb-spellcheck';
@@ -246,6 +247,7 @@ const PREFERENCE_KEYS = [
     THEME_KEY,
     LAYOUT_KEY,
     FS_KEY,
+    PREVIEW_ZOOM_KEY,
     FOCUS_MODE_KEY,
     BASE64_PANEL_KEY,
     COPY_ACTION_KEY,
@@ -2818,10 +2820,10 @@ function switchTo(id) {
     doc.md = markdownEditor.getValue();
     doc.lastSaved = normalizeNewlines(doc.lastSaved || doc.md);
     updateHtml();
-    const htmlOutputEl = document.getElementById('html-output');
-    if (htmlOutputEl) {
-        htmlOutputEl.scrollTop = 0;
-        htmlOutputEl.scrollLeft = 0;
+    const previewScroller = getPreviewScroller();
+    if (previewScroller) {
+        previewScroller.scrollTop = 0;
+        previewScroller.scrollLeft = 0;
     }
     if (htmlEditor && typeof htmlEditor.scrollTo === 'function') {
         htmlEditor.scrollTo(0, 0);
@@ -4136,6 +4138,67 @@ async function writeTextToClipboard(text) {
   }
 }
 
+/*
+  La vista previa se dibuja como una hoja sobre una mesa, y quien se desplaza
+  es la mesa, no el texto. Todo lo que mide o mueve el scroll de la vista
+  previa pregunta aquí por el elemento correcto; el editable sigue siendo
+  `#html-output`.
+*/
+function getPreviewScroller() {
+  return document.getElementById('preview-desk') || document.getElementById('html-output');
+}
+
+/*
+  Lo que se enseña y se esconde al cambiar entre la vista previa y el código no
+  es el editable, sino la mesa entera: ocultando solo el editable quedaba la
+  mesa vacía —un rectángulo gris— encima del código.
+*/
+function getPreviewShell() {
+  return document.getElementById('preview-desk') || document.getElementById('html-output');
+}
+
+function isPreviewVisible() {
+  const shell = getPreviewShell();
+  return !!shell && shell.style.display !== 'none';
+}
+
+/*
+  El zoom de la vista previa es una lupa, no un formato: agranda la hoja en
+  pantalla y no toca ni el Markdown ni lo que se exporta. El tamaño de letra
+  del documento sigue estando en las opciones de formato, y el de los editores,
+  en Configuración.
+*/
+const PREVIEW_ZOOM_STEPS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
+
+function normalizePreviewZoom(value) {
+  const zoom = Number(value);
+  if (!Number.isFinite(zoom)) return 1;
+  return PREVIEW_ZOOM_STEPS.reduce(
+    (closest, step) => (Math.abs(step - zoom) < Math.abs(closest - zoom) ? step : closest),
+    PREVIEW_ZOOM_STEPS[0],
+  );
+}
+
+function applyPreviewZoom(value, { persist = true } = {}) {
+  const zoom = normalizePreviewZoom(value);
+  document.documentElement.style.setProperty('--preview-zoom', String(zoom));
+  const label = document.getElementById('preview-zoom-value');
+  if (label) label.textContent = `${Math.round(zoom * 100)} %`;
+  if (persist) safeLocalStorageSet(PREVIEW_ZOOM_KEY, zoom);
+  return zoom;
+}
+
+function currentPreviewZoom() {
+  const declared = document.documentElement.style.getPropertyValue('--preview-zoom');
+  return normalizePreviewZoom(declared || 1);
+}
+
+function stepPreviewZoom(direction) {
+  const idx = PREVIEW_ZOOM_STEPS.indexOf(currentPreviewZoom());
+  const next = Math.min(PREVIEW_ZOOM_STEPS.length - 1, Math.max(0, idx + direction));
+  applyPreviewZoom(PREVIEW_ZOOM_STEPS[next]);
+}
+
 function buildHtmlWithTex() {
   const htmlOutput = document.getElementById('html-output');
   if (!htmlOutput) return '';
@@ -4162,6 +4225,8 @@ function buildHtmlWithTex() {
   inlineNodes.forEach(node => replaceNode(node, inlineFallback));
   return clone.innerHTML;
 }
+
+let layoutTransitionTimer = null;
 
 function applyLayout(layout) {
   currentLayout = layout;
@@ -4206,6 +4271,28 @@ function applyLayout(layout) {
     const check = option.querySelector('.layout-check');
     if (check) check.classList.toggle('hidden', !selected);
   });
+  /*
+    Con un solo panel a la vista nadie le da el alto al que queda: en la web el
+    alto sale del panel de la vista previa, que es el único que lo mide, así que
+    al esconderlo el editor de Markdown se quedaba en una rendija de 36 px. La
+    marca deja que el CSS le dé un alto propio solo mientras está solo.
+  */
+  const editorContainer = document.getElementById('editor-container');
+  if (editorContainer) editorContainer.classList.toggle('single-panel', layout !== 'dual');
+
+  // La transición del ancho, solo mientras dura el cambio.
+  if (editorContainer) {
+    editorContainer.classList.add('layout-changing');
+    clearTimeout(layoutTransitionTimer);
+    layoutTransitionTimer = setTimeout(() => {
+      editorContainer.classList.remove('layout-changing');
+    }, 220);
+  }
+
+  // Los tres botones dicen lo mismo que el menú: cuál está puesta.
+  document.querySelectorAll('#layout-switch [data-layout]').forEach((button) => {
+    button.setAttribute('aria-pressed', button.dataset.layout === layout ? 'true' : 'false');
+  });
   // El botón que despliega el menú muestra la disposición activa.
   const layoutIconHost = document.querySelector('#layout-menu-btn .layout-icon');
   if (layoutIconHost) {
@@ -4213,10 +4300,19 @@ function applyLayout(layout) {
   }
   if(window.lucide) lucide.createIcons();
 
+  /*
+    CodeMirror mide su envoltorio al repintarse: hacerlo a los 10 ms lo dejaba
+    midiendo el ancho de partida, a mitad de la transición. Se repinta al
+    empezar, para que no se vea vacío, y otra vez al terminar.
+  */
   setTimeout(() => {
     if (layout !== 'html') markdownEditor.refresh();
     if (layout !== 'md') htmlEditor.refresh();
   }, 10);
+  setTimeout(() => {
+    if (layout !== 'html') markdownEditor.refresh();
+    if (layout !== 'md') htmlEditor.refresh();
+  }, 220);
 }
 
 function cycleLayout(step = 1) {
@@ -4249,11 +4345,16 @@ window.onload = async () => {
     htmlOutputEl = htmlOutput;
     document.addEventListener('selectionchange', captureHtmlSelection);
     const viewToggleBtn = document.getElementById('view-toggle-btn');
+    const previewZoomControls = document.getElementById('preview-zoom');
+    const previewZoomOutBtn = document.getElementById('preview-zoom-out');
+    const previewZoomInBtn = document.getElementById('preview-zoom-in');
+    const previewZoomResetBtn = document.getElementById('preview-zoom-reset');
     const htmlPanelTitle = document.getElementById('html-panel-title');
     const layoutMenuContainer = document.getElementById('layout-menu-container');
     const layoutMenuBtn = document.getElementById('layout-menu-btn');
     const layoutMenu = document.getElementById('layout-menu');
     const layoutOptions = layoutMenu ? Array.from(layoutMenu.querySelectorAll('[data-layout]')) : [];
+    const layoutSwitchButtons = Array.from(document.querySelectorAll('#layout-switch [data-layout]'));
     const toolbar = document.getElementById('toolbar');
     const focusModeToggleBtn = document.getElementById('focus-mode-toggle');
     const toolbarActionsEl = document.getElementById('toolbar-actions');
@@ -5688,8 +5789,7 @@ window.onload = async () => {
         if (!copyHtmlBtn) return;
         // Se copia lo que hay escrito, no lo último repintado.
         flushPendingPreviewRepaint();
-        const isPreviewVisible = htmlOutput && htmlOutput.style.display !== 'none';
-        const html = isPreviewVisible ? buildHtmlWithTex() : (htmlEditor ? htmlEditor.getValue() : '');
+        const html = isPreviewVisible() ? buildHtmlWithTex() : (htmlEditor ? htmlEditor.getValue() : '');
         await copyRich(html, copyHtmlBtn);
     }
 
@@ -6190,6 +6290,12 @@ window.onload = async () => {
     currentLayout = safeLocalStorageGet(LAYOUT_KEY, 'dual');
     applyLayout(currentLayout);
 
+    // --- Zoom de la vista previa ---
+    applyPreviewZoom(safeLocalStorageGet(PREVIEW_ZOOM_KEY, 1), { persist: false });
+    if (previewZoomOutBtn) previewZoomOutBtn.addEventListener('click', () => stepPreviewZoom(-1));
+    if (previewZoomInBtn) previewZoomInBtn.addEventListener('click', () => stepPreviewZoom(1));
+    if (previewZoomResetBtn) previewZoomResetBtn.addEventListener('click', () => applyPreviewZoom(1));
+
     // --- Tamaño de fuente ---
     if (fontSizeSelect) {
         const savedFs = safeLocalStorageGet(FS_KEY, 16);
@@ -6376,6 +6482,10 @@ window.onload = async () => {
         else if (tab) { switchTo(tab.dataset.id); }
     });
 
+    layoutSwitchButtons.forEach((button) => {
+      button.addEventListener('click', () => applyLayout(button.dataset.layout || 'dual'));
+    });
+
     const closeLayoutMenu = () => {
       if (layoutMenu) layoutMenu.classList.add('hidden');
       if (layoutMenuBtn) layoutMenuBtn.setAttribute('aria-expanded', 'false');
@@ -6402,17 +6512,20 @@ window.onload = async () => {
     }
 
     viewToggleBtn.addEventListener('click', () => {
-        const isPreviewVisible = htmlOutput.style.display !== 'none';
-        cmWrapper.style.display = isPreviewVisible ? 'block' : 'none';
-        htmlOutput.style.display = isPreviewVisible ? 'none' : 'block';
-        if (isPreviewVisible) setTimeout(() => htmlEditor.refresh(), 1);
-        const panelTitleKey = isPreviewVisible ? 'html_code_panel_title' : 'html_panel_title';
+        const showingPreview = isPreviewVisible();
+        const previewShell = getPreviewShell();
+        cmWrapper.style.display = showingPreview ? 'block' : 'none';
+        if (previewShell) previewShell.style.display = showingPreview ? 'none' : '';
+        // El zoom es de la hoja: sobre el código HTML no pinta nada.
+        if (previewZoomControls) previewZoomControls.classList.toggle('hidden', showingPreview);
+        if (showingPreview) setTimeout(() => htmlEditor.refresh(), 1);
+        const panelTitleKey = showingPreview ? 'html_code_panel_title' : 'html_panel_title';
         htmlPanelTitle.setAttribute('data-i18n-key', panelTitleKey);
         htmlPanelTitle.textContent = getTranslation(
             panelTitleKey,
-            isPreviewVisible ? 'Código HTML' : 'Previsualización'
+            showingPreview ? 'Código HTML' : 'Previsualización'
         );
-        viewToggleBtn.innerHTML = isPreviewVisible ? '<i data-lucide="eye"></i>' : '<i data-lucide="code-2"></i>';
+        viewToggleBtn.innerHTML = showingPreview ? '<i data-lucide="eye"></i>' : '<i data-lucide="code-2"></i>';
         if (window.lucide) lucide.createIcons();
     });
     
@@ -6487,7 +6600,7 @@ window.onload = async () => {
         closeActionsMenu();
         closeSettingsMenu();
         closeExportMenu();
-        const preview = document.getElementById('html-output');
+        const preview = getPreviewScroller();
         if (preview) {
             preview.scrollTop = 0;
             preview.scrollLeft = 0;
@@ -8009,7 +8122,8 @@ window.onload = async () => {
     function syncFromMarkdown() {
       if (!syncEnabled) return;
       const lineRatio = markdownEditor.getCursor().line / Math.max(1, markdownEditor.lineCount() - 1);
-      htmlOutput.scrollTop = lineRatio * (htmlOutput.scrollHeight - htmlOutput.clientHeight);
+      const previewScroller = getPreviewScroller();
+      previewScroller.scrollTop = lineRatio * (previewScroller.scrollHeight - previewScroller.clientHeight);
     }
     /*
       Repintar la vista previa no es barato: reanaliza el documento entero,
@@ -8107,18 +8221,20 @@ window.onload = async () => {
               let target = htmlOutput.querySelector(`#${selectorSafeId}`);
               if (!target) target = document.getElementById(targetId);
               if (target) {
-                  const containerRect = htmlOutput.getBoundingClientRect();
+                  const scroller = getPreviewScroller();
+                  const containerRect = scroller.getBoundingClientRect();
                   const targetRect = target.getBoundingClientRect();
-                  const offset = targetRect.top - containerRect.top + htmlOutput.scrollTop;
-                  htmlOutput.scrollTo({ top: Math.max(0, offset - 16), behavior: 'smooth' });
+                  const offset = targetRect.top - containerRect.top + scroller.scrollTop;
+                  scroller.scrollTo({ top: Math.max(0, offset - 16), behavior: 'smooth' });
               }
           } else if (linkEl.href) {
               window.open(linkEl.href, '_blank', 'noopener');
           }
           return;
       }
-      const clickY = e.clientY - htmlOutput.getBoundingClientRect().top + htmlOutput.scrollTop;
-      const ratio  = clickY / Math.max(1, htmlOutput.scrollHeight);
+      const scroller = getPreviewScroller();
+      const clickY = e.clientY - scroller.getBoundingClientRect().top + scroller.scrollTop;
+      const ratio  = clickY / Math.max(1, scroller.scrollHeight);
       scrollMarkdownToRatio(ratio);
     });
     htmlEditor.getWrapperElement().addEventListener('mouseup', () => scheduleHtmlEditorSync({ force: true }));

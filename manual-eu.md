@@ -68,7 +68,7 @@ Goiburuak bi erdi ditu. Logotipoaren ondoan hiru menuak daude —**Fitxategia**,
 * **Bilatu (Ctrl+F)**: bilatzaile aurreratua irekitzen du.
 * **Laguntza**: galdera-ikurraren botoiak **Erabiltzailearen eskuliburua (F1)**, **EdiMarkWeb-i buruz** —instalatutako bertsioa, egilea, lizentzia eta hirugarrenen liburutegien lizentziak, web bertsiorako eta deskargetarako estekekin— eta, mahaigaineko aplikazioan, **Bilatu eguneraketak…** biltzen ditu.
 
-Panelen antolaketa `Ctrl+L` teklarekin edo edizio-eremua maximizatzeko botoiaren ondoko antolaketa-botoiarekin aldatzen da. Menuak **Markdown panela maximizatu**, **Aurrebista panela maximizatu** eta **Panelak zatitu** aukerak eskaintzen ditu. Pantaila txikietan, barra bi botoitan tolesten da —**Ekintzak** eta **Formatua**— eta talde bakoitza behar duzunean erakusten dute.
+Panelen antolaketa `Ctrl+L` teklarekin edo edizio-eremua maximizatzeko botoiaren ondoko hiru antolaketa-botoiekin aldatzen da: **iturburu-kodea soilik**, **bi panelak batera** eta **emaitza soilik**, hurrenkera horretan, aktiboa nabarmenduta. Pantaila estuetan hirurak menu batean biltzen dira, aukera berberekin. Pantaila txikietan, barra bi botoitan tolesten da —**Ekintzak** eta **Formatua**— eta talde bakoitza behar duzunean erakusten dute.
 
 ---
 
@@ -108,7 +108,7 @@ Bilaketak Markdown ikuspegian zein HTML ikuspegian funtzionatzen du, fokua non d
 Lan-eremua tamainaz alda daitezkeen bi paneletan banatzen da:
 
 * **Markdown** (ezkerra): testu-editore soila, karaktere-kontagailu batekin, dokumentuaren hizkuntza-adierazlearekin eta kopiatzeko bere botoiarekin. Hemen idazten duzun guztia berehala islatzen da eskuineko panelean.
-* **HTML / Aurrebista** (eskuina): azken emaitza erakusten du eta edukia zuzenean editatzeko aukera ere ematen du. Erabili kode-ikonoa duen botoia aurrebista aberatsaren eta sortutako HTML kodearen artean txandakatzeko.
+* **HTML / Aurrebista** (eskuina): azken emaitza erakusten du eta edukia zuzenean editatzeko aukera ere ematen du. Erabili kode-ikonoa duen botoia aurrebista aberatsaren eta sortutako HTML kodearen artean txandakatzeko. Dokumentua mahai gainean dagoen orri gisa aurkezten da, eta haren ezkerrean zoomak (`−`, ehunekoa eta `+`) handitu edo txikitu egiten du pantailan; ehunekoak % 100era itzultzen du. Lupa bat da: ez du testua aldatzen, ezta esportatzen dena ere —dokumentuaren tamaina *Testuaren formatua* atalean dago—.
 * **Edukia kopiatu**: Markdown-a edo sortutako HTMLa kopiatzeko botoi zehatzak (HTMLa kopiatzean LaTeX-era bihurtutako formulak barne).
 
 Erdiko barra arrasta dezakezu edozein paneli leku gehiago emateko, eskuineko botoian hiru antolaketetako bat aukeratu edo gezi bikoitza erabili **edizio-eremua maximizatzeko**: goiko barrak ezkutatzen ditu eta pantaila testuarentzat uzten du. `+` botoia azken fitxaren ondoren geratzen da.
@@ -187,7 +187,7 @@ Dokumentu batek base64 irudiak dituenean —DOCX bat inportatzean, beste aplikaz
 * **Inportatu**: beste formatu batzuetako dokumentuak Markdown-era bihurtzen ditu Pandoc bidez: `.docx`, `.odt`, `.epub`, `.html` eta `.tex`. Izenburuak, zerrendak, taulak eta estekak berreskuratzen dira, eta baita irudiak ere: `.docx`, `.odt` edo `.epub` batetik datozenean, fitxategitik bertatik ateratzen dira eta Markdown-ean kapsulatuta geratzen dira; horrela, aurrebistan ikusten dira eta zurekin bidaiatzen dute esportatzean. `.epub` batetik dokumentuaren hizkuntza ere itzultzen da: liburuak bere bilgarrian gordetzen du, ez testuan.
 * **Gorde (`Ctrl+S`)**: uneko dokumentua gordetzen du. Mahaigaineko aplikazioan aurretik irekitako fitxategia eguneratzen du; **Gorde honela… (`Ctrl+Shift+S`)** aukerak beti uzten du beste izen edo kokapen bat hautatzen.
 * **Edukia kopiatu**: ezkerreko panelak Markdown-a kopiatzeko botoi bat du; aurrebistan zer kopiatuko den aukera dezakezu (errendatutako HTMLa edo LaTeX aldaerak) kopiatzeko ikonoaren ondoko menu zabalgarritik.
-* **Gaia, antolaketa edo zabalera aldatu**: erabili **Ezarpenak** gaiarentzat, `Ctrl+L` edo panelen menua antolaketarentzat eta gezi bikoitzaren eskuineko zabalera-botoia (ikonoa soilik) webguneko lan-eremua zabaltzeko.
+* **Gaia, antolaketa edo zabalera aldatu**: erabili **Ezarpenak** gaiarentzat, `Ctrl+L` edo panelen botoiak antolaketarentzat eta gezi bikoitzaren eskuineko zabalera-botoia (ikonoa soilik) webguneko lan-eremua zabaltzeko.
 * **Eskuliburua**: dokumentu hau beti eguneratuta duzu `Ctrl+H` bidez.
 * **Karpeta gogoratzen da**: mahaigaineko aplikazioan, irekitzeko edo gordetzeko lehen koadroa sistemak esaten duen lekuan agertzen da, baina hortik aurrera guztiak —ireki, gorde honela, esportatu, irudi bat aukeratu— erabili duzun azken karpetara itzultzen dira. Aplikazioa irekita dagoen bitartean baino ez da gogoratzen.
 

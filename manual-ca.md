@@ -68,7 +68,7 @@ La capçalera té dues meitats. Al costat del logotip hi ha els tres menús —*
 * **Cercar (Ctrl+F)**: obre el cercador avançat.
 * **Ajuda**: el botó de l'interrogant reuneix el **Manual d'ús (F1)**, **Quant a EdiMarkWeb** —versió instal·lada, autor, llicència i llicències de les biblioteques de tercers, amb els enllaços a la versió web i a les baixades— i, a l'aplicació d'escriptori, **Cerca actualitzacions…**.
 
-La disposició dels plafons es canvia amb `Ctrl+L` o amb el botó de disposició situat al costat del botó que maximitza l'àrea d'edició. El menú permet **Maximitzar el plafó Markdown**, **Maximitzar el plafó de vista prèvia** o **Dividir els plafons**. En pantalles petites, la barra es plega en dos botons —**Accions** i **Format**— que mostren cada grup quan el necessites.
+La disposició dels plafons es canvia amb `Ctrl+L` o amb els tres botons de disposició situats al costat del botó que maximitza l'àrea d'edició: **només el codi font**, **els dos plafons alhora** i **només el resultat**, en aquest ordre, amb l'actiu ressaltat. En pantalles estretes els tres es pleguen en un menú amb les mateixes opcions. En pantalles petites, la barra es plega en dos botons —**Accions** i **Format**— que mostren cada grup quan el necessites.
 
 ---
 
@@ -108,7 +108,7 @@ La cerca funciona tant a la vista de Markdown com a la vista HTML, segons on tin
 La zona de treball es divideix en dos plafons redimensionables:
 
 * **Markdown** (esquerra): editor de text senzill amb un comptador de caràcters, l'indicador d'idioma del document i el seu botó de còpia. Tot el que hi escriguis es reflecteix immediatament al plafó dret.
-* **HTML / Vista prèvia** (dreta): mostra el resultat final i també permet editar el contingut directament. Fes servir el botó amb la icona de codi per alternar entre la vista prèvia rica i el codi HTML generat.
+* **HTML / Vista prèvia** (dreta): mostra el resultat final i també permet editar el contingut directament. Fes servir el botó amb la icona de codi per alternar entre la vista prèvia rica i el codi HTML generat. El document es presenta com un full damunt d'una taula, i a la seva esquerra el zoom (`−`, el percentatge i `+`) l'engrandeix o l'empetiteix a la pantalla; el percentatge torna al 100 %. És una lupa: no canvia el text ni el que s'exporta —la mida del document és a *Format del text*—.
 * **Copiar contingut**: botons específics per copiar el Markdown o l'HTML generat (inclou fórmules convertides a LaTeX quan copies HTML).
 
 Pots arrossegar la barra central per donar més espai a qualsevol dels plafons, triar una de les tres disposicions al botó de la dreta o fer servir la doble fletxa per **maximitzar l'àrea d'edició**, que amaga les barres superiors i deixa la pantalla per al text. El botó `+` es manté just després de l'última pestanya.
@@ -187,7 +187,7 @@ Quan un document porta imatges en base64 —en importar un DOCX, en enganxar des
 * **Importar**: converteix a Markdown documents en altres formats mitjançant Pandoc: `.docx`, `.odt`, `.epub`, `.html` i `.tex`. Es recuperen els encapçalaments, les llistes, les taules i els enllaços, i també les imatges: quan provenen d'un `.docx`, `.odt` o `.epub` s'extreuen del mateix fitxer i queden incrustades al Markdown, de manera que es veuen a la vista prèvia i viatgen amb tu en exportar. D'un `.epub` en torna a més l'idioma del document, que el llibre desa a l'embolcall i no al text.
 * **Desar (`Ctrl+S`)**: desa el document actual. A l'aplicació d'escriptori actualitza el fitxer ja obert; **Desar com a… (`Ctrl+Maj+S`)** sempre permet triar un altre nom o ubicació.
 * **Copiar contingut**: el plafó esquerre inclou un botó per copiar el Markdown; a la vista prèvia pots triar què es copiarà (HTML representat o variants LaTeX) des del menú desplegable del costat de la icona de còpia.
-* **Canviar tema, disposició o amplada**: fes servir **Configuració** per al tema, `Ctrl+L` o el menú de plafons per a la disposició i el botó d'amplada (només icona), a la dreta de la doble fletxa, per eixamplar l'espai web.
+* **Canviar tema, disposició o amplada**: fes servir **Configuració** per al tema, `Ctrl+L` o els botons de plafons per a la disposició i el botó d'amplada (només icona), a la dreta de la doble fletxa, per eixamplar l'espai web.
 * **Manual**: disposes d'aquest document sempre actualitzat amb `Ctrl+H`.
 * **La carpeta es recorda**: a l'aplicació d'escriptori, el primer quadre d'obrir o desar surt on digui el sistema, però a partir d'aquí tots —obrir, desar com a, exportar, triar una imatge— tornen a la darrera carpeta que has fet servir. Només es recorda mentre l'aplicació està oberta.
 
