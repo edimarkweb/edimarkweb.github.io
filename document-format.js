@@ -233,7 +233,15 @@
       const stack = FONT_STACKS[resolved.font];
       styles['font-family'] = stack ? stack.css : `"${resolved.font}", serif`;
     }
-    if (resolved.fontSize) styles['font-size'] = `${resolved.fontSize}pt`;
+    /*
+      El tamaño y los márgenes del documento van en puntos y centímetros, que no
+      escalan solos con la lupa de la vista previa como sí lo hace todo lo que
+      está en `em`. Se multiplican aquí por `--preview-zoom`, que vale 1 cuando
+      nadie la ha tocado, para que la hoja crezca entera y no a trozos. Es cosa
+      de la vista previa: `toCssRules` y `toLatex`, que sí salen del programa,
+      siguen escribiendo la medida desnuda.
+    */
+    if (resolved.fontSize) styles['font-size'] = `calc(${resolved.fontSize}pt * var(--preview-zoom, 1))`;
     if (resolved.lineHeight) styles['line-height'] = resolved.lineHeight;
     if (resolved.indent) styles['text-indent'] = resolved.indent === 'yes' ? '1.5em' : '0';
     if (resolved.hyphenate) styles.hyphens = resolved.hyphenate === 'yes' ? 'auto' : 'manual';
@@ -241,7 +249,7 @@
     // columna de texto, no una hoja, y sin esto el ajuste sería invisible.
     MARGIN_SIDES.forEach((side) => {
       const value = resolved[marginKey(side)];
-      if (value) styles[`padding-${side}`] = `${value}cm`;
+      if (value) styles[`padding-${side}`] = `calc(${value}cm * var(--preview-zoom, 1))`;
     });
     return styles;
   }

@@ -856,29 +856,24 @@ body.desktop-mode .markdown-textarea {
 .preview-sheet {
     box-sizing: border-box;
     /*
-      La lupa de la vista previa. `zoom` agranda la caja de verdad —no la
-      deforma como haría una transformación—, así que la mesa sigue sabiendo
-      cuánto mide lo que lleva dentro y el desplazamiento no se descuadra. Los
-      porcentajes se resuelven antes de aplicarla: el alto mínimo se divide
-      entre el zoom para que la hoja siga midiendo la mesa y no aparezca una
-      barra de desplazamiento con el documento vacío.
+      La lupa de la vista previa. No usa `zoom`: WebKitGTK —el motor de la
+      aplicación de escritorio en Linux— lo acepta pero no escala las cajas,
+      así que allí la página se quedaba quieta y solo crecía la letra. Escalar
+      a mano el texto, el ancho y los márgenes de la hoja da el mismo resultado
+      en los cuatro motores, y además con aritmética normal: aquí un `100%`
+      vale lo que mide la mesa, sin correcciones.
+
+      Lo que la hoja lleva dentro está medido en `em` —la plantilla tipográfica,
+      los encabezados, las fórmulas de KaTeX—, así que crece con el tamaño del
+      texto, y las imágenes crecen con el ancho de la hoja. Lo único que no está
+      en `em` es lo que el propio documento fija en puntos y centímetros, y de
+      eso se ocupa `toPreviewStyles`, que lo multiplica por esta misma variable.
     */
-    zoom: var(--preview-zoom, 1);
-    min-height: calc(100% / var(--preview-zoom, 1));
-    /*
-      El ancho de la página no depende del zoom, y por eso se multiplica por él:
-      dentro de una caja con `zoom`, un `100%` vale el ancho de la mesa dividido
-      entre el zoom, así que sin corregirlo la hoja se encogía en la misma
-      medida en que la lupa la agrandaba y acababa siempre del ancho del panel,
-      con la letra creciendo dentro. Multiplicando se recupera el ancho real de
-      la mesa: la hoja parte del ancho de una página —o del panel, si es más
-      estrecho— y a partir de ahí la lupa la agranda de verdad, comiéndose los
-      márgenes grises y, si se pasa, desplazándose a lo ancho como una hoja
-      grande sobre una mesa pequeña.
-    */
-    width: min(var(--preview-sheet-width), calc(100% * var(--preview-zoom, 1)));
+    font-size: calc(1rem * var(--preview-zoom, 1));
+    min-height: 100%;
+    width: calc(min(var(--preview-sheet-width), 100%) * var(--preview-zoom, 1));
     margin: 0 auto;
-    padding: var(--preview-sheet-margin) clamp(1.25rem, 6%, 3.5rem);
+    padding: calc(var(--preview-sheet-margin) * var(--preview-zoom, 1)) calc(clamp(1.25rem, 6%, var(--preview-sheet-margin)) * var(--preview-zoom, 1));
     border-radius: 2px;
     background-color: #ffffff;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14), 0 10px 28px rgba(15, 23, 42, 0.10);

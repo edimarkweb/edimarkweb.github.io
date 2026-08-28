@@ -1896,7 +1896,20 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
     padding: preview.style.paddingLeft,
     hyphens: preview.style.hyphens,
   }));
-  assert.deepEqual(styles, { align: 'justify', size: '13pt', padding: '2.5cm', hyphens: 'auto' });
+  // El tamaño y el margen llevan dentro la lupa de la vista previa, que vale 1
+  // mientras nadie la toque: lo que se comprueba es que llegan los 13 pt.
+  assert.deepEqual(styles, {
+    align: 'justify',
+    size: 'calc(13pt * var(--preview-zoom, 1))',
+    padding: 'calc(2.5cm * var(--preview-zoom, 1))',
+    hyphens: 'auto',
+  });
+  const tamañoUsado = await page.locator('#html-output')
+    .evaluate(preview => parseFloat(getComputedStyle(preview).fontSize));
+  assert.ok(
+    Math.abs(tamañoUsado - (13 * 96) / 72) < 0.01,
+    `13 pt deberían ser 17,33 px y la vista previa usa ${tamañoUsado}`,
+  );
 
   // Al reabrirlo, el cuadro muestra lo que el documento declara.
   await page.locator('#doc-format-toolbar-btn').click();
@@ -2364,10 +2377,15 @@ test('el formato general trae un tamaño concreto que la vista previa aplica', a
     await page.evaluate(() => (window.__edimarkLatexSettings || {}).documentFormat?.fontSize),
     '12',
   );
-  // Y llega a la vista previa como estilo propio, en puntos.
+  // Y llega a la vista previa como estilo propio, en puntos y con la lupa
+  // dentro, que en reposo vale 1: 12 pt son 16 px.
   assert.equal(
     await page.evaluate(() => document.getElementById('html-output').style.fontSize),
-    '12pt',
+    'calc(12pt * var(--preview-zoom, 1))',
+  );
+  assert.equal(
+    await page.evaluate(() => getComputedStyle(document.getElementById('html-output')).fontSize),
+    '16px',
   );
 });
 

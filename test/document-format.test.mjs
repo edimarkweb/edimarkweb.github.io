@@ -123,9 +123,10 @@ test('la vista previa recibe solo las propiedades que se han fijado', () => {
   });
   assert.equal(styles['text-align'], 'justify');
   assert.match(styles['font-family'], /sans-serif$/);
-  assert.equal(styles['font-size'], '14pt');
+  // Con la lupa de la vista previa dentro, para que la hoja crezca entera.
+  assert.equal(styles['font-size'], 'calc(14pt * var(--preview-zoom, 1))');
   assert.equal(styles['line-height'], '1.5');
-  assert.equal(styles['padding-left'], '3cm');
+  assert.equal(styles['padding-left'], 'calc(3cm * var(--preview-zoom, 1))');
   assert.equal(styles.hyphens, 'auto');
   assert.equal(styles['text-indent'], '0');
   assert.equal(styles['padding-right'], undefined);
