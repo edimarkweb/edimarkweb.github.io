@@ -503,6 +503,7 @@
                 <button id="redo-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="redo_btn_title" title="Rehacer (Ctrl+Shift+Z)">
                     <i data-lucide="rotate-cw"></i>
                 </button>
+                <button id="paste-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="paste_btn_title" title="Pegar desde portapapeles (Ctrl+Alt+V)" aria-keyshortcuts="Control+Alt+V"><i data-lucide="clipboard-paste"></i></button>
             </div>
             <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
              <div class="flex items-center gap-1">
@@ -532,7 +533,6 @@
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="link" data-i18n-key="link_btn_title" title="Enlace (Ctrl+K)"><i data-lucide="link"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="image" data-i18n-key="image_btn_title" title="Imagen (Ctrl+Shift+I)"><i data-lucide="image"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="table" data-i18n-key="table_btn_title" title="Tabla (Ctrl+Shift+T)"><i data-lucide="table"></i></button>
-                <button id="paste-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="paste_btn_title" title="Pegar desde portapapeles (Ctrl+Alt+V)" aria-keyshortcuts="Control+Alt+V"><i data-lucide="clipboard-paste"></i></button>
             </div>
             <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
             <div class="flex items-center gap-1">
@@ -576,7 +576,9 @@
                 <button id="open-edicuatex-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="edicuatex_btn_title" title="Editor visual de fórmulas matemáticas (EdiCuaTeX, Ctrl+Alt+M)" aria-keyshortcuts="Control+Alt+M">
                     <i data-lucide="square-radical"></i>
                 </button>
-                <span class="toolbar-divider" role="separator" aria-hidden="true"></span>
+            </div>
+            <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
+            <div class="flex items-center gap-1">
                 <button id="doc-format-toolbar-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="doc_lang_btn_title" title="Idioma, autor, índice y formato de este documento.">
                     <i data-lucide="sliders-horizontal"></i>
                 </button>
