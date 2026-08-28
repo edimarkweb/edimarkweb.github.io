@@ -779,6 +779,19 @@ test('la versión no se desincroniza entre package.json y la aplicación', () =>
   const acercaDe = leer('index.html').match(/<dd data-app-version>([^<]*)<\/dd>/);
   assert.ok(acercaDe, 'no se encuentra la versión del cuadro Acerca de');
   assert.doesNotMatch(acercaDe[1], /\d+\.\d+\.\d+/, 'index.html lleva la versión escrita a mano');
+
+  /*
+    Los archivos propios se piden con `?v=` para que el navegador no sirva una
+    copia vieja junto al HTML nuevo —que es lo que pasaba al desarrollar—. Ese
+    número solo sirve si se sube con los demás: uno rezagado deja la caché
+    igual de pegada que antes.
+  */
+  const indexHtml = leer('index.html');
+  const versionados = [...indexHtml.matchAll(/(?:src|href)="([a-z0-9-]+\.(?:js|css))(\?v=([^"]*))?"/g)];
+  assert.ok(versionados.length, 'no se encuentran los archivos propios en index.html');
+  for (const [, archivo, , version] of versionados) {
+    assert.equal(version, packageVersion, `${archivo} no lleva ?v=${packageVersion} en index.html`);
+  }
 });
 
 /*

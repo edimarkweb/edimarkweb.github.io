@@ -142,11 +142,14 @@ indexHtml = indexHtml
 const analyticsBlock = /\s*<script>\s*\(function \(\) \{\s*var ANALYTICS_FALLBACK_ENDPOINT[\s\S]*?\}\)\(\);\s*<\/script>/;
 if (!analyticsBlock.test(indexHtml)) throw new Error('No se encontró el bloque de analítica');
 indexHtml = indexHtml.replace(analyticsBlock, '');
-const platformScript = '<script src="platform-api.js"></script>';
-if (!indexHtml.includes(platformScript)) throw new Error('No se encontró la API de plataforma');
+// Los archivos propios llevan `?v=` con la versión para que el navegador no
+// sirva una copia vieja, así que la etiqueta no se puede buscar literal.
+const platformScript = /<script src="platform-api\.js(\?[^"]*)?"><\/script>/;
+const platformMatch = indexHtml.match(platformScript);
+if (!platformMatch) throw new Error('No se encontró la API de plataforma');
 indexHtml = indexHtml.replace(
   platformScript,
-  '<script src="platform-tauri.js"></script>\n    <script src="platform-api.js"></script>',
+  `<script src="platform-tauri.js"></script>\n    <script src="platform-api.js${platformMatch[1] || ''}"></script>`,
 );
 await writeFile(join(outputRoot, 'index.html'), indexHtml);
 

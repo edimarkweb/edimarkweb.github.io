@@ -31,7 +31,7 @@ EdiMarkWeb is a vanilla-JS Markdown editor shipped two ways from one frontend: a
 
 ## Versions & releases
 
-The app version lives in five places that must be bumped together: `package.json` (+ `package-lock.json`), `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` (+ `Cargo.lock`), `APP_VERSION` at the top of `script.js`, and the desktop banner string in `index.html`. `tauri.conf.json` is what names the installers, so a stale `Cargo.toml` ships quietly — 2.21.0 went out that way.
+The app version lives in six places that must be bumped together: `package.json` (+ `package-lock.json`), `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` (+ `Cargo.lock`), `APP_VERSION` at the top of `script.js`, the desktop banner string in `index.html`, and the `?v=` on every own script/stylesheet in `index.html` (cache-busting: without it a browser serves a stale `script.js` alongside fresh HTML). `npm run test` fails on a stale `?v=`. `tauri.conf.json` is what names the installers, so a stale `Cargo.toml` ships quietly — 2.21.0 went out that way.
 Pushing a `v*` tag triggers `.github/workflows/desktop.yml`: installers are built and attached to the GitHub Release. Linux deliberately builds on ubuntu-22.04 because the binary links the builder's glibc — a newer runner would break Debian 12/Ubuntu 22.04 users. Do not bump that runner casually.
 
 ## Testing notes
