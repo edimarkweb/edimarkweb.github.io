@@ -2510,3 +2510,62 @@ test('cada opción de menú lleva su explicación escrita debajo', async (t) => 
     }
   }
 });
+
+/*
+  Los dos paneles se seguían por proporción, y en un documento largo esa
+  proporción dejaba la línea del cursor fuera de la pantalla del otro panel.
+  La prueba usa un documento donde la proporción falla —cuarenta apartados con
+  un párrafo largo cada uno— y comprueba lo único que importa: que el trozo
+  correspondiente se vea de verdad, ida y vuelta.
+*/
+test('los dos paneles se siguen por la línea, no por la proporción', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  const apartados = [];
+  for (let i = 1; i <= 40; i += 1) {
+    apartados.push(`## Apartado ${i}`, '', `Texto del apartado ${i}. `.repeat(12), '');
+  }
+  await page.locator('#markdown-input').fill(apartados.join('\n'));
+  await page.waitForFunction(() => document.querySelectorAll('#html-output h2').length === 40);
+
+  // El cursor en un encabezado del final: la vista previa tiene que enseñarlo.
+  await page.evaluate(() => {
+    const textarea = document.getElementById('markdown-input');
+    const posicion = textarea.value.indexOf('## Apartado 33');
+    textarea.focus();
+    textarea.setSelectionRange(posicion, posicion);
+    textarea.click();
+  });
+  // La sincronía se resuelve en el fotograma siguiente.
+  await page.waitForTimeout(200);
+  const visible = await page.evaluate(() => {
+    const scroller = document.getElementById('preview-desk');
+    const encabezado = Array.from(document.querySelectorAll('#html-output h2'))
+      .find(titulo => titulo.textContent.trim() === 'Apartado 33');
+    const caja = encabezado.getBoundingClientRect();
+    const mesa = scroller.getBoundingClientRect();
+    return caja.top >= mesa.top - 2 && caja.bottom <= mesa.bottom + 2;
+  });
+  assert.ok(visible, 'la vista previa no llegó al apartado del cursor');
+
+  // Y al pinchar en la hoja, el Markdown enseña esa misma línea.
+  await page.evaluate(() => {
+    const encabezado = Array.from(document.querySelectorAll('#html-output h2'))
+      .find(titulo => titulo.textContent.trim() === 'Apartado 7');
+    encabezado.scrollIntoView();
+    const caja = encabezado.getBoundingClientRect();
+    encabezado.dispatchEvent(new MouseEvent('click', {
+      bubbles: true, clientX: caja.left + 4, clientY: caja.top + 4,
+    }));
+  });
+  await page.waitForTimeout(200);
+  const lineaVisible = await page.evaluate(() => {
+    const textarea = document.getElementById('markdown-input');
+    const linea = textarea.value.split('\n').indexOf('## Apartado 7');
+    const medida = markdownEditor.lineMetrics(linea);
+    return medida.top >= textarea.scrollTop && medida.top <= textarea.scrollTop + textarea.clientHeight;
+  });
+  assert.ok(lineaVisible, 'el Markdown no llegó a la línea del bloque pinchado');
+});

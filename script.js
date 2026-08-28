@@ -1597,6 +1597,25 @@ function createTextareaEditor(textarea) {
     highlightLayer.appendChild(highlightContent);
     wrapper.insertBefore(highlightLayer, textarea);
 
+    /*
+      Sincronizar de verdad con la vista previa exige saber a qué altura queda
+      una línea concreta, y con el ajuste de línea activo eso solo lo sabe el
+      navegador: una línea lógica puede ocupar cuatro visuales. Esta capa
+      gemela repite la geometría del textarea —mismo ancho, misma tipografía,
+      mismo padding— con cada línea envuelta en su propio span, así que medirla
+      es preguntar por un `offsetTop`. Se mantiene oculta y solo se reescribe
+      cuando cambia el texto; el navegador se encarga de rehacer su reparto al
+      cambiar el ancho o la lupa.
+    */
+    const measureLayer = document.createElement('div');
+    measureLayer.className = 'markdown-textarea-highlights markdown-textarea-measure';
+    measureLayer.setAttribute('aria-hidden', 'true');
+    const measureContent = document.createElement('pre');
+    measureContent.className = 'markdown-textarea-highlights-content';
+    measureLayer.appendChild(measureContent);
+    wrapper.insertBefore(measureLayer, textarea);
+    let measuredText = null;
+
     const changeHandlers = new Set();
     const cursorHandlers = new Set();
     const INDENT = '  ';
@@ -1611,6 +1630,7 @@ function createTextareaEditor(textarea) {
     function syncHighlightMetrics() {
         const scrollbarWidth = Math.max(0, textarea.offsetWidth - textarea.clientWidth);
         highlightLayer.style.right = `${scrollbarWidth}px`;
+        measureLayer.style.right = `${scrollbarWidth}px`;
     }
 
     function normalizeTextareaContent() {
@@ -2123,6 +2143,31 @@ function createTextareaEditor(textarea) {
         };
     }
 
+    /*
+      Cada línea lógica, un span; el salto entre ellos lo pone el `\n` del
+      `pre`, igual que en la capa de resaltado, así que el reparto de líneas es
+      exactamente el del textarea.
+    */
+    function refreshLineMetrics() {
+        const text = textarea.value || '';
+        if (measuredText === text) return;
+        measuredText = text;
+        measureContent.innerHTML = text
+            .split('\n')
+            .map(line => `<span>${line ? escapeHtml(line) : '&#8203;'}</span>`)
+            .join('\n');
+    }
+
+    function lineMetrics(line) {
+        refreshLineMetrics();
+        const spans = measureContent.children;
+        if (!spans.length) return null;
+        const index = Math.max(0, Math.min(Math.round(line) || 0, spans.length - 1));
+        const span = spans[index];
+        if (!span) return null;
+        return { top: span.offsetTop, height: span.offsetHeight || 0 };
+    }
+
     syncHighlightMetrics();
     renderHighlights();
     resetHistoryStack();
@@ -2185,6 +2230,7 @@ function createTextareaEditor(textarea) {
         getScrollerElement() {
             return textarea;
         },
+        lineMetrics,
         scrollTo(left = 0, top = 0) {
             textarea.scrollLeft = Math.max(0, left);
             textarea.scrollTop = Math.max(0, top);
@@ -3332,6 +3378,265 @@ function updateMissingAssetsNotice(container, doc) {
     notice.dataset.docId = doc ? doc.id : '';
 }
 
+/*
+  ---------------------------------------------------------------------------
+  Correspondencia entre las líneas del Markdown y la vista previa
+  ---------------------------------------------------------------------------
+
+  Los dos paneles se seguían por proporción: si el cursor iba por el 30 % de
+  las líneas, la vista previa se ponía al 30 % de su altura. En un documento
+  donde una línea es una tabla, la siguiente una imagen y la de más allá un
+  párrafo suelto, ese 30 % cae donde sea —a menudo fuera de la pantalla—,
+  porque las líneas del Markdown y los milímetros de la hoja no se parecen en
+  nada.
+
+  Lo que se hace aquí es anotar la correspondencia real. Al analizar el
+  Markdown, el lexer de marked entrega los bloques de nivel superior en el
+  mismo orden en que la vista previa los pinta, y cada uno trae su texto
+  original: contando sus saltos de línea se sabe en qué línea empieza cada
+  bloque, y ese número se guarda junto al elemento que le corresponde en la
+  hoja. Las listas y las tablas se desglosan un nivel más, por elemento y por
+  fila, que es donde más se notaba el desajuste.
+
+  La línea se guarda como propiedad del elemento, no como atributo: el HTML de
+  la vista previa se copia, se exporta y se vuelca al editor de código, y no
+  debe llevar marcas nuestras.
+*/
+const PREVIEW_LINE_KEY = '__edimarkLine';
+const PREVIEW_LINE_END_KEY = '__edimarkEndLine';
+let previewLineBlocks = [];
+
+function countNewlines(text) {
+    if (typeof text !== 'string' || !text) return 0;
+    let total = 0;
+    for (let i = 0; i < text.length; i += 1) {
+        if (text.charCodeAt(i) === 10) total += 1;
+    }
+    return total;
+}
+
+/*
+  Las fórmulas viajan al analizador convertidas en un marcador de una sola
+  línea, así que un `$$...$$` de cinco líneas encoge el texto y descoloca la
+  cuenta. Aquí se anota cuántas líneas se comió cada marcador para poder
+  devolver siempre líneas del documento que el usuario está viendo.
+*/
+function buildMathLineShifts(protectedText, segments) {
+    if (!Array.isArray(segments) || !segments.length) return [];
+    const shifts = [];
+    const pattern = new RegExp(`${MATH_PLACEHOLDER_PREFIX}(\\d+)${MATH_PLACEHOLDER_SUFFIX}`, 'g');
+    let match;
+    while ((match = pattern.exec(protectedText)) !== null) {
+        const extra = countNewlines(segments[Number(match[1])] || '');
+        if (!extra) continue;
+        shifts.push({ line: countNewlines(protectedText.slice(0, match.index)), extra });
+    }
+    return shifts;
+}
+
+function mathShiftAt(shifts, line) {
+    let total = 0;
+    for (const shift of shifts) {
+        if (shift.line < line) total += shift.extra;
+    }
+    return total;
+}
+
+/*
+  Casi todos los bloques dan un elemento; el HTML incrustado puede dar varios o
+  ninguno y hay que contarlos para no perder el paso.
+*/
+function elementsProducedBy(token) {
+    if (!token || token.type !== 'html') return 1;
+    const probe = document.createElement('div');
+    probe.innerHTML = token.raw || '';
+    return probe.children.length;
+}
+
+function indexInnerBlocks(token, element, startLine, toSource, register) {
+    if (token.type === 'list' && Array.isArray(token.items)) {
+        const items = Array.from(element.children).filter(child => child.tagName === 'LI');
+        let line = startLine;
+        token.items.forEach((item, index) => {
+            if (items[index]) register(items[index], toSource(line));
+            line += countNewlines(item && item.raw ? item.raw : '');
+        });
+        return;
+    }
+    if (token.type === 'table') {
+        // La primera fila es la cabecera; la línea de guiones que va debajo no
+        // pinta nada, de ahí el salto extra a partir de la segunda.
+        Array.from(element.querySelectorAll('tr')).forEach((row, index) => {
+            register(row, toSource(startLine + (index === 0 ? 0 : index + 1)));
+        });
+    }
+}
+
+function indexPreviewLines(container, protectedText, segments, lineOffset) {
+    previewLineBlocks = [];
+    if (!container || !window.marked || typeof marked.lexer !== 'function') return;
+    let tokens;
+    try {
+        tokens = marked.lexer(protectedText);
+    } catch (error) {
+        console.warn('No se ha podido indexar la vista previa.', error);
+        return;
+    }
+    const shifts = buildMathLineShifts(protectedText, segments);
+    const toSource = line => lineOffset + line + mathShiftAt(shifts, line);
+    const elements = Array.from(container.children);
+    const register = (element, line) => {
+        if (!element || element[PREVIEW_LINE_KEY] !== undefined) return;
+        element[PREVIEW_LINE_KEY] = line;
+        previewLineBlocks.push({ el: element, line });
+    };
+    let elementIndex = 0;
+    let protectedLine = 0;
+    for (const token of tokens) {
+        const startLine = protectedLine;
+        protectedLine += countNewlines(token && token.raw ? token.raw : '');
+        if (!token || token.type === 'space' || token.type === 'def') continue;
+        const element = elements[elementIndex];
+        elementIndex += elementsProducedBy(token);
+        if (!element) continue;
+        register(element, toSource(startLine));
+        indexInnerBlocks(token, element, startLine, toSource, register);
+    }
+    previewLineBlocks.sort((a, b) => a.line - b.line);
+    const lastLine = lineOffset + protectedLine + mathShiftAt(shifts, protectedLine);
+    previewLineBlocks.forEach((block, index) => {
+        const next = previewLineBlocks[index + 1];
+        block.endLine = Math.max(block.line + 1, next ? next.line : lastLine);
+        block.el[PREVIEW_LINE_END_KEY] = block.endLine;
+    });
+}
+
+// El último bloque que empieza en la línea pedida o antes.
+function previewBlockForLine(line) {
+    if (!previewLineBlocks.length) return null;
+    let low = 0;
+    let high = previewLineBlocks.length - 1;
+    let found = null;
+    while (low <= high) {
+        const mid = (low + high) >> 1;
+        if (previewLineBlocks[mid].line <= line) {
+            found = previewLineBlocks[mid];
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+    return found || previewLineBlocks[0];
+}
+
+/*
+  Deja el punto pedido dentro de la zona visible. Si ya se está viendo con
+  holgura no se mueve nada —escribir no debe hacer bailar el otro panel—; si
+  no, se coloca a la altura que ocupa en el panel desde el que se pide, de modo
+  que los dos paneles enseñen lo mismo a la misma altura.
+*/
+function alignScrollerTo(scroller, top, anchor) {
+    if (!scroller) return;
+    const view = scroller.clientHeight;
+    if (!view) return;
+    const margin = Math.min(96, view * 0.15);
+    const current = scroller.scrollTop;
+    if (top >= current + margin && top <= current + view - margin) return;
+    const place = Math.min(0.85, Math.max(0.15, typeof anchor === 'number' ? anchor : 0.35));
+    const limit = Math.max(0, scroller.scrollHeight - view);
+    scroller.scrollTop = Math.max(0, Math.min(top - view * place, limit));
+}
+
+function markdownCursorAnchor(line) {
+    if (!markdownEditor || typeof markdownEditor.lineMetrics !== 'function') return 0.35;
+    const scroller = markdownEditor.getScrollerElement();
+    const metrics = markdownEditor.lineMetrics(line);
+    if (!scroller || !scroller.clientHeight || !metrics) return 0.35;
+    return (metrics.top - scroller.scrollTop) / scroller.clientHeight;
+}
+
+function scrollPreviewToLine(line, anchor) {
+    const block = previewBlockForLine(line);
+    const scroller = getPreviewScroller();
+    if (!block || !scroller || !block.el.isConnected) return false;
+    const span = Math.max(1, block.endLine - block.line);
+    const fraction = Math.min(1, Math.max(0, (line - block.line) / span));
+    const rect = block.el.getBoundingClientRect();
+    const scrollerRect = scroller.getBoundingClientRect();
+    const top = rect.top - scrollerRect.top + scroller.scrollTop + rect.height * fraction;
+    alignScrollerTo(scroller, top, anchor);
+    return true;
+}
+
+function scrollMarkdownToLine(line, fraction = 0, anchor) {
+    if (!markdownEditor || typeof markdownEditor.lineMetrics !== 'function') return false;
+    const scroller = markdownEditor.getScrollerElement();
+    const metrics = markdownEditor.lineMetrics(line);
+    if (!scroller || !metrics) return false;
+    const top = metrics.top + metrics.height * Math.min(1, Math.max(0, fraction));
+    alignScrollerTo(scroller, top, anchor);
+    return true;
+}
+
+/*
+  Un punto de la vista previa se traduce buscando el bloque anotado más
+  cercano —la fila de la tabla antes que la tabla, el elemento de lista antes
+  que la lista— y mirando por dónde se ha pinchado dentro de él.
+*/
+function markdownLineFromPreviewNode(node, clientY) {
+    const container = document.getElementById('html-output');
+    let element = node && node.nodeType === 3 ? node.parentNode : node;
+    while (element && element !== container && element[PREVIEW_LINE_KEY] === undefined) {
+        element = element.parentElement;
+    }
+    if (!element || element === container || element[PREVIEW_LINE_KEY] === undefined) return null;
+    const line = element[PREVIEW_LINE_KEY];
+    const endLine = element[PREVIEW_LINE_END_KEY] || line + 1;
+    const rect = element.getBoundingClientRect();
+    let within = 0;
+    if (typeof clientY === 'number' && rect.height > 0) {
+        within = Math.min(1, Math.max(0, (clientY - rect.top) / rect.height));
+    }
+    const scroller = getPreviewScroller();
+    const anchor = scroller && scroller.clientHeight && typeof clientY === 'number'
+        ? (clientY - scroller.getBoundingClientRect().top) / scroller.clientHeight
+        : undefined;
+    return { line: line + within * (endLine - line - 1), anchor };
+}
+
+/*
+  Al escribir en la vista previa el Markdown se rehace entero, así que las
+  líneas que se anotaron antes ya no valen. Lo que sí se mantiene es el orden:
+  el bloque número N de la hoja sigue siendo el bloque número N del texto, y
+  con eso se recupera su línea sin volver a pintar nada.
+*/
+function markdownLineForBlockIndex(index) {
+    if (index < 0 || !window.marked || typeof marked.lexer !== 'function') return null;
+    const full = markdownEditor.getValue();
+    const body = splitDocumentFrontMatter(full).body;
+    const lineOffset = countNewlines(full.slice(0, Math.max(0, full.length - body.length)));
+    const { text, segments } = protectMathSegments(body);
+    let tokens;
+    try {
+        tokens = marked.lexer(preserveMarkdownEscapes(text));
+    } catch (error) {
+        return null;
+    }
+    const shifts = buildMathLineShifts(text, segments);
+    let blockIndex = 0;
+    let protectedLine = 0;
+    for (const token of tokens) {
+        const startLine = protectedLine;
+        protectedLine += countNewlines(token && token.raw ? token.raw : '');
+        if (!token || token.type === 'space' || token.type === 'def') continue;
+        if (blockIndex === index) {
+            return lineOffset + startLine + mathShiftAt(shifts, startLine);
+        }
+        blockIndex += elementsProducedBy(token);
+    }
+    return null;
+}
+
 // --- Funciones principales ---
 function updateHtml() {
     if (isUpdating) return;
@@ -3358,6 +3663,14 @@ function updateHtml() {
             h.id = h.textContent.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^\w\-áéíóúüñ]/g,'');
           }
         });
+
+        /*
+          El índice se rehace con cada repintado: los elementos son nuevos y la
+          línea en la que empieza cada uno acaba de cambiar. Los metadatos no
+          llegan a la hoja, así que sus líneas se suman aparte.
+        */
+        const bodyLineOffset = countNewlines(fullMarkdown.slice(0, Math.max(0, fullMarkdown.length - markdownText.length)));
+        indexPreviewLines(htmlOutput, sanitizedText, mathSegments, bodyLineOffset);
 
         if (htmlEditor && !htmlEditor.hasFocus()) {
             skipNextHtmlEditorSync = true;
@@ -8118,11 +8431,29 @@ window.onload = async () => {
       const scroller = markdownEditor.getScrollerElement();
       scroller.scrollTop = r * (scroller.scrollHeight - scroller.clientHeight);
     }
+    /*
+      La línea del cursor manda: se busca el bloque de la vista previa que
+      nació de esa línea y se le lleva la vista. La proporción antigua queda de
+      reserva para cuando no hay índice —sin marked, o con el HTML editado a
+      mano en el otro panel—.
+    */
     function syncFromMarkdown() {
       if (!syncEnabled) return;
-      const lineRatio = markdownEditor.getCursor().line / Math.max(1, markdownEditor.lineCount() - 1);
+      const line = markdownEditor.getCursor().line;
+      if (scrollPreviewToLine(line, markdownCursorAnchor(line))) return;
+      const lineRatio = line / Math.max(1, markdownEditor.lineCount() - 1);
       const previewScroller = getPreviewScroller();
       previewScroller.scrollTop = lineRatio * (previewScroller.scrollHeight - previewScroller.clientHeight);
+    }
+    /*
+      Al revés: de un punto de la vista previa al Markdown. Si el bloque no
+      está anotado —texto recién escrito en la hoja— se cae en la proporción.
+    */
+    function syncFromPreviewNode(node, clientY) {
+      if (!syncEnabled) return false;
+      const target = markdownLineFromPreviewNode(node, clientY);
+      if (!target) return false;
+      return scrollMarkdownToLine(target.line, 0, target.anchor);
     }
     /*
       Repintar la vista previa no es barato: reanaliza el documento entero,
@@ -8178,8 +8509,30 @@ window.onload = async () => {
       previewSyncScheduled = true;
       requestAnimationFrame(() => {
         previewSyncScheduled = false;
+        // Dónde está el cursor de la hoja se mira antes de tocar nada: al
+        // rehacer el Markdown la selección puede quedarse por el camino.
+        const editedIndex = topLevelPreviewIndexOfSelection();
         updateMarkdown();
+        if (!syncEnabled || editedIndex < 0) return;
+        const line = markdownLineForBlockIndex(editedIndex);
+        if (typeof line === 'number') scrollMarkdownToLine(line);
       });
+    }
+    /*
+      Posición del bloque que se está editando dentro de la hoja, contada en
+      hijos directos: es lo único que sobrevive a rehacer el Markdown entero.
+    */
+    function topLevelPreviewIndexOfSelection() {
+      const selection = window.getSelection();
+      if (!selection || !selection.rangeCount) return -1;
+      let node = selection.getRangeAt(0).startContainer;
+      if (node && node.nodeType === 3) node = node.parentNode;
+      if (!node || !htmlOutput.contains(node)) return -1;
+      while (node && node.parentElement && node.parentElement !== htmlOutput) {
+        node = node.parentElement;
+      }
+      if (!node || node.parentElement !== htmlOutput) return -1;
+      return Array.prototype.indexOf.call(htmlOutput.children, node);
     }
     htmlOutput.addEventListener('input', schedulePreviewSync);
     htmlOutput.addEventListener('paste', schedulePreviewSync);
@@ -8231,6 +8584,7 @@ window.onload = async () => {
           }
           return;
       }
+      if (syncFromPreviewNode(e.target, e.clientY)) return;
       const scroller = getPreviewScroller();
       const clickY = e.clientY - scroller.getBoundingClientRect().top + scroller.scrollTop;
       const ratio  = clickY / Math.max(1, scroller.scrollHeight);

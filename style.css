@@ -592,6 +592,15 @@ body.desktop-mode .markdown-textarea {
     color: transparent;
     z-index: 0;
 }
+/*
+  La capa gemela que mide dónde cae cada línea: ocupa lo mismo que el textarea
+  pero no se ve ni se toca, y se queda por debajo del resaltado.
+*/
+.markdown-textarea-measure {
+    visibility: hidden;
+    background-color: transparent;
+    z-index: -1;
+}
 .markdown-textarea-highlights-content {
     margin: 0;
     min-height: 100%;
