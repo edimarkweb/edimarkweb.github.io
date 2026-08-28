@@ -9,7 +9,7 @@ Benvingut/uda a EdiMarkWeb, un **editor de textos en Markdown** dissenyat per a 
 - Edició dual: pots treballar tant en Markdown com directament a la vista prèvia HTML, sempre sincronitzades.
 - Menú d'exportació i d'importació compatible amb DOCX, ODT, EPUB, HTML, LaTeX i PDF, amb opcions de còpia directa al porta-retalls.
 - Cercador amb reemplaçament que ressalta les coincidències i accepta termes sense accents ni distinció entre majúscules i minúscules.
-- Menú **Configuració** amb l'idioma, la mida de la lletra, el tema i la finestra independent reunits en un mateix lloc; l'amplada de treball es canvia al costat dels controls dels plafons.
+- Menú **Configuració** amb l'idioma, el tema i la finestra independent reunits en un mateix lloc; cada plafó porta la seva lupa a la capçalera; l'amplada de treball es canvia al costat dels controls dels plafons.
 - Tema de la interfície amb tres opcions —Sistema, Clar i Fosc— que es recorda entre sessions.
 - Menú de fórmules renovat i accés directe a EdiCuaTeX per construir expressions complexes.
 - Obertura de diversos fitxers, o de carpetes senceres, arrossegant-los a l'editor (cada fitxer en la seva pestanya): Markdown i també DOCX, ODT, EPUB, HTML o TEX, que es converteixen al vol amb Pandoc.
@@ -59,7 +59,6 @@ La capçalera té dues meitats. Al costat del logotip hi ha els tres menús —*
 * **Fitxer**: el que no es fa cada dia. `Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)` hi porten contingut; `Desar (Ctrl+S)` i `Desar com a… (Ctrl+Maj+S)` el treuen. Desar és aquí a més de a la seva icona: l'opció duu la drecera escrita, i «Desar com a…» sense «Desar» al costat es llegeix malament. Cada opció mostra la seva drecera de teclat. A l'aplicació d'escriptori el menú acaba amb **Surt**, que desa el document en curs i tanca l'aplicació.
 * **Configuració**: agrupa tots els ajustos de l'aplicació, cadascun amb un submenú que n'indica el valor actiu.
   * **Idioma**: canvia l'idioma de la interfície.
-  * **Mida del text**: petita, normal, gran o molt gran. Canvia el plafó Markdown i la vista de l'HTML generat, que són editors; la vista prèvia no la segueix, perquè allà la mida la diu el document —la de *Format del text*— i és la que s'exporta.
   * **Tema**: `Sistema` segueix el de l'equip i canvia amb ell; `Clar` i `Fosc` el fixen. L'elecció es recorda el pròxim cop que obris l'aplicació.
   * **Finestra independent**: obre EdiMarkWeb en una finestra pròpia del navegador, sense pestanyes ni barra d'adreces. Només apareix a la versió web; l'aplicació d'escriptori ja és una finestra pròpia.
   * **Corrector ortogràfic**: subratlla les faltes del plafó Markdown amb els diccionaris instal·lats a l'equip i segueix l'idioma del document. Ve activat; en desmarcar-lo s'apaga i la tria es recorda.
@@ -107,7 +106,7 @@ La cerca funciona tant a la vista de Markdown com a la vista HTML, segons on tin
 
 La zona de treball es divideix en dos plafons redimensionables:
 
-* **Markdown** (esquerra): editor de text senzill amb un comptador de caràcters, l'indicador d'idioma del document i el seu botó de còpia. Tot el que hi escriguis es reflecteix immediatament al plafó dret.
+* **Markdown** (esquerra): editor de text senzill amb la seva lupa (`−`, el percentatge i `+`, o `Ctrl` + `+` / `Ctrl` + `-`), que engrandeix o empetiteix el text de l'editor sense tocar el document; un comptador de caràcters, l'indicador d'idioma del document i el seu botó de còpia. Tot el que hi escriguis es reflecteix immediatament al plafó dret.
 * **HTML / Vista prèvia** (dreta): mostra el resultat final i també permet editar el contingut directament. Fes servir el botó amb la icona de codi per alternar entre la vista prèvia rica i el codi HTML generat. El document es presenta com un full damunt d'una taula, i a la seva esquerra el zoom (`−`, el percentatge i `+`) l'engrandeix o l'empetiteix a la pantalla; el percentatge torna al 100 %. És una lupa: no canvia el text ni el que s'exporta —la mida del document és a *Format del text*—.
 * **Copiar contingut**: botons específics per copiar el Markdown o l'HTML generat (inclou fórmules convertides a LaTeX quan copies HTML).
 
@@ -332,7 +331,7 @@ Els documents que comencis al navegador i els de l'aplicació d'escriptori són 
 | Maximitzar l'àrea d'edició | `Ctrl` + `Maj` + `F` | `Cmd` + `Maj` + `F` |
 | Canviar disposició | `Ctrl` + `L` | `Cmd` + `L` |
 | Cercar | `Ctrl` + `F` | `Cmd` + `F` |
-| Augmentar / reduir el text | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
+| Ampliar / reduir el plafó on ets | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Manual d'ús | `Ctrl` + `H` o `F1` | `Cmd` + `H` o `F1` |
 | Recarregar el manual | `Ctrl` + `Maj` + `H` | `Cmd` + `Maj` + `H` |
 | Imprimir | `Ctrl` + `P` | `Cmd` + `P` |

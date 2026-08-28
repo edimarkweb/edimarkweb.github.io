@@ -9,7 +9,7 @@ Bienvenido/a a EdiMarkWeb, un **editor de textos en Markdown** diseñado para do
 - Edición dual: puedes trabajar tanto en Markdown como directamente en la vista previa HTML, siempre sincronizadas.
 - Menú de exportación y de importación con soporte para DOCX, ODT, EPUB, HTML, LaTeX y PDF, incluyendo opciones de copia directa al portapapeles.
 - Buscador con reemplazo que resalta las coincidencias y acepta términos sin tildes ni distinción entre mayúsculas y minúsculas.
-- Menú **Configuración** con el idioma, el tamaño de letra, el tema y la ventana independiente reunidos en un mismo sitio; el ancho de trabajo se cambia junto a los controles de paneles.
+- Menú **Configuración** con el idioma, el tema y la ventana independiente reunidos en un mismo sitio; cada panel lleva su propia lupa en la cabecera; el ancho de trabajo se cambia junto a los controles de paneles.
 - Tema de la interfaz con tres opciones —Sistema, Claro y Oscuro— que se recuerda entre sesiones.
 - Menú de fórmulas renovado y acceso directo a EdiCuaTeX para construir expresiones complejas.
 - Apertura de múltiples archivos, o de carpetas enteras, arrastrándolos al editor (cada archivo en su pestaña): Markdown y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo con Pandoc.
@@ -59,7 +59,6 @@ La cabecera tiene dos mitades. Junto al logotipo están los tres menús —**Arc
 * **Archivo**: lo que no se hace a diario. `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` y `Pegar LaTeX (Ctrl+Mayús+V)` traen contenido; `Guardar (Ctrl+S)` y `Guardar como… (Ctrl+Mayús+S)` lo sacan. Guardar está aquí además de en su icono: la opción lleva el atajo escrito, y «Guardar como…» sin «Guardar» al lado se lee mal. Cada opción muestra su atajo de teclado. En la aplicación de escritorio el menú termina con **Salir**, que guarda el documento en curso y cierra la aplicación.
 * **Configuración**: agrupa todos los ajustes de la aplicación, cada uno con un submenú que indica el valor activo.
   * **Idioma**: cambia el idioma de la interfaz.
-  * **Tamaño de texto**: pequeño, normal, grande o muy grande. Cambia el panel Markdown y la vista del HTML generado, que son editores; la vista previa no lo sigue, porque allí el tamaño lo dice el documento —el de *Formato del texto*— y es el que se exporta.
   * **Tema**: `Sistema` sigue el del equipo y cambia con él; `Claro` y `Oscuro` lo fijan. La elección se recuerda la próxima vez que abras la aplicación.
   * **Ventana independiente**: abre EdiMarkWeb en una ventana propia del navegador, sin pestañas ni barra de direcciones. Solo aparece en la versión web; la aplicación de escritorio ya es una ventana propia.
   * **Corrector ortográfico**: subraya las faltas del panel Markdown con los diccionarios instalados en el equipo y sigue el idioma del documento. Viene activado; al desmarcarlo se apaga y la elección se recuerda.
@@ -107,7 +106,7 @@ La búsqueda funciona tanto en la vista de Markdown como en la vista HTML según
 
 La zona de trabajo se divide en dos paneles redimensionables:
 
-* **Markdown** (izquierda): editor de texto sencillo con un contador de caracteres, el indicador de idioma del documento y su botón de copia. Todo lo que escribas aquí se refleja de inmediato en el panel derecho.
+* **Markdown** (izquierda): editor de texto sencillo con su lupa, un contador de caracteres, el indicador de idioma del documento y su botón de copia. La lupa (`−`, el porcentaje y `+`, o `Ctrl` + `+` / `Ctrl` + `-`) agranda o reduce el texto del editor sin tocar el documento; el porcentaje vuelve al 100 %. Todo lo que escribas aquí se refleja de inmediato en el panel derecho.
 * **HTML / Previsualización** (derecha): muestra el resultado final y también permite editar el contenido directamente. Usa el botón con el icono de código para alternar entre la previsualización rica y el código HTML generado. El documento se presenta como una hoja sobre una mesa, y a su izquierda el zoom (`−`, el porcentaje y `+`) la agranda o la reduce en pantalla; el porcentaje devuelve el 100 %. Es una lupa: no cambia el texto ni lo que se exporta —el tamaño del documento está en *Formato del texto*—.
 * **Copiar contenido**: Botones específicos para copiar Markdown o el HTML generado (incluye fórmulas convertidas a LaTeX cuando copias HTML).
 
@@ -332,7 +331,7 @@ Los documentos que empieces en el navegador y los de la aplicación de escritori
 | Maximizar área de edición | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Cambiar diseño | `Ctrl` + `L` | `Cmd` + `L` |
 | Buscar | `Ctrl` + `F` | `Cmd` + `F` |
-| Aumentar / reducir el texto | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
+| Ampliar / reducir el panel en el que estás | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Manual de uso | `Ctrl` + `H` o `F1` | `Cmd` + `H` o `F1` |
 | Recargar el manual | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Imprimir | `Ctrl` + `P` | `Cmd` + `P` |

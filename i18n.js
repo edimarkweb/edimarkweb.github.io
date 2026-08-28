@@ -101,9 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.__updateThemeToggleLabel === 'function') {
       window.__updateThemeToggleLabel();
     }
-    if (typeof window.__updateFontSizeLabel === 'function') {
-      window.__updateFontSizeLabel();
-    }
     if (typeof window.__updateCopyButtonLabel === 'function') {
       window.__updateCopyButtonLabel();
     }

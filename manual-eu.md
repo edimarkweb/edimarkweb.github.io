@@ -9,7 +9,7 @@ Ongi etorri EdiMarkWeb-era, **Markdown testu-editore** bat, azkar lan egin, hain
 - Edizio bikoitza: Markdown-en zein HTML aurrebistan zuzenean lan egin dezakezu, beti sinkronizatuta.
 - Esportatzeko eta inportatzeko menuak, DOCX, ODT, EPUB, HTML, LaTeX eta PDF onartzen dituztenak, arbelera zuzenean kopiatzeko aukerekin.
 - Bilatzailea ordezkapenarekin: bat-etortzeak nabarmentzen ditu eta azenturik gabeko terminoak onartzen ditu, maiuskulak eta minuskulak bereizi gabe.
-- **Ezarpenak** menua, hizkuntza, testuaren tamaina, gaia eta leiho independentea leku berean bilduta; lan-zabalera panelen kontrolen ondoan aldatzen da.
+- **Ezarpenak** menua, hizkuntza, gaia eta leiho independentea leku berean bilduta; panel bakoitzak bere lupa du goiburuan; lan-zabalera panelen kontrolen ondoan aldatzen da.
 - Interfazearen gaia hiru aukerarekin —Sistemakoa, Argia eta Iluna— eta saioen artean gogoratzen da.
 - Formulen menu berritua eta EdiCuaTeX-erako sarbide zuzena adierazpen konplexuak eraikitzeko.
 - Hainbat fitxategi, edo karpeta osoak, ireki editorera arrastatuz (fitxategi bakoitza bere fitxan): Markdown eta baita DOCX, ODT, EPUB, HTML edo TEX ere, Pandoc-ekin bat-batean bihurtzen direnak.
@@ -59,7 +59,6 @@ Goiburuak bi erdi ditu. Logotipoaren ondoan hiru menuak daude —**Fitxategia**,
 * **Fitxategia**: egunero egiten ez dena. `Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)` edukia ekartzen dute; `Gorde (Ctrl+S)` eta `Gorde honela… (Ctrl+Shift+S)` ateratzen dute. Gorde hemen dago bere ikonoaz gain: aukerak lasterbidea idatzita darama, eta «Gorde honela…» gaizki irakurtzen da ondoan «Gorde» gabe. Aukera bakoitzak bere teklatu-lasterbidea erakusten du. Mahaigaineko aplikazioan menua **Irten** aukerarekin amaitzen da: uneko dokumentua gorde eta aplikazioa ixten du.
 * **Ezarpenak**: aplikazioaren ezarpen guztiak biltzen ditu, bakoitza uneko balioa adierazten duen azpimenu batekin.
   * **Hizkuntza**: interfazearen hizkuntza aldatzen du.
-  * **Testuaren tamaina**: txikia, normala, handia edo oso handia. Markdown panela eta sortutako HTMLaren ikuspegia aldatzen ditu, editoreak baitira; aurrebistak ez dio jarraitzen, han tamaina dokumentuak esaten baitu —*Testuaren formatua* atalekoa— eta hori da esportatzen dena.
   * **Gaia**: `Sistemakoa` aukerak ekipoarena jarraitzen du eta harekin batera aldatzen da; `Argia` eta `Iluna` aukerek finkatu egiten dute. Aukeraketa gogoratu egiten da aplikazioa hurrengoan irekitzean.
   * **Leiho independentea**: EdiMarkWeb nabigatzailearen leiho propio batean irekitzen du, fitxarik eta helbide-barrarik gabe. Web bertsioan bakarrik agertzen da; mahaigaineko aplikazioa dagoeneko leiho propioa da.
   * **Zuzentzaile ortografikoa**: Markdown paneleko akatsak azpimarratzen ditu ordenagailuan instalatutako hiztegiekin, dokumentuaren hizkuntzari jarraituz. Aktibatuta dator; desmarkatuz gero itzali egiten da eta aukera gogoratu egiten da.
@@ -107,7 +106,7 @@ Bilaketak Markdown ikuspegian zein HTML ikuspegian funtzionatzen du, fokua non d
 
 Lan-eremua tamainaz alda daitezkeen bi paneletan banatzen da:
 
-* **Markdown** (ezkerra): testu-editore soila, karaktere-kontagailu batekin, dokumentuaren hizkuntza-adierazlearekin eta kopiatzeko bere botoiarekin. Hemen idazten duzun guztia berehala islatzen da eskuineko panelean.
+* **Markdown** (ezkerra): testu-editore soila, bere luparekin (`−`, ehunekoa eta `+`, edo `Ctrl` + `+` / `Ctrl` + `-`), editorearen testua handitu edo txikitzen duena dokumentua ukitu gabe; karaktere-kontagailu batekin, dokumentuaren hizkuntza-adierazlearekin eta kopiatzeko bere botoiarekin. Hemen idazten duzun guztia berehala islatzen da eskuineko panelean.
 * **HTML / Aurrebista** (eskuina): azken emaitza erakusten du eta edukia zuzenean editatzeko aukera ere ematen du. Erabili kode-ikonoa duen botoia aurrebista aberatsaren eta sortutako HTML kodearen artean txandakatzeko. Dokumentua mahai gainean dagoen orri gisa aurkezten da, eta haren ezkerrean zoomak (`−`, ehunekoa eta `+`) handitu edo txikitu egiten du pantailan; ehunekoak % 100era itzultzen du. Lupa bat da: ez du testua aldatzen, ezta esportatzen dena ere —dokumentuaren tamaina *Testuaren formatua* atalean dago—.
 * **Edukia kopiatu**: Markdown-a edo sortutako HTMLa kopiatzeko botoi zehatzak (HTMLa kopiatzean LaTeX-era bihurtutako formulak barne).
 
@@ -332,7 +331,7 @@ Nabigatzailean hasitako dokumentuak eta mahaigaineko aplikaziokoak Markdown fitx
 | Editatzeko eremua maximizatu | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Antolaketa aldatu | `Ctrl` + `L` | `Cmd` + `L` |
 | Bilatu | `Ctrl` + `F` | `Cmd` + `F` |
-| Testua handitu / txikitu | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
+| Zauden panela handitu / txikitu | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Erabiltzailearen eskuliburua | `Ctrl` + `H` edo `F1` | `Cmd` + `H` edo `F1` |
 | Eskuliburua birkargatu | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Inprimatu | `Ctrl` + `P` | `Cmd` + `P` |

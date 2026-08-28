@@ -9,7 +9,7 @@ Welcome to EdiMarkWeb, a **Markdown text editor** designed for teachers and cont
 - Dual editing: work either in Markdown or straight in the HTML preview, always in sync.
 - Export and import menus supporting DOCX, ODT, EPUB, HTML, LaTeX and PDF, including options to copy directly to the clipboard.
 - Search and replace that highlights matches and ignores accents and letter case.
-- A **Settings** menu gathering the language, font size, theme and separate window in one place; the working width is changed beside the pane controls.
+- A **Settings** menu gathering the language, theme and separate window in one place; each pane carries its own zoom in its header; the working width is changed beside the pane controls.
 - Interface theme with three options — System, Light and Dark — remembered between sessions.
 - Redesigned formula menu and direct access to EdiCuaTeX for building complex expressions.
 - Open several files, or whole folders, by dragging them onto the editor (each file in its own tab): Markdown and also DOCX, ODT, EPUB, HTML or TEX, converted on the fly with Pandoc.
@@ -59,7 +59,6 @@ The header has two halves. Next to the logo sit the three menus —**File**, **E
 * **File**: everything that is not everyday work. `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` bring content in; `Save (Ctrl+S)` and `Save as… (Ctrl+Shift+S)` take it out. Save is here as well as on its icon: the menu entry spells out its shortcut, and «Save as…» reads oddly without «Save» beside it. Each option shows its keyboard shortcut. In the desktop application the menu ends with **Quit**, which saves the current document and closes the application.
 * **Settings**: gathers every application setting, each one in a submenu showing the current value.
   * **Language**: changes the interface language.
-  * **Font size**: small, normal, large or very large. It changes the Markdown panel and the generated-HTML view, which are editors; the preview does not follow it, because there the size is the one the document declares —the one under *Text formatting*— and that is what gets exported.
   * **Theme**: `System` follows your computer's setting and changes with it; `Light` and `Dark` fix it. Your choice is remembered next time you open the application.
   * **Separate window**: opens EdiMarkWeb in a browser window of its own, with no tabs or address bar. It only appears in the web version; the desktop application is already a window of its own.
   * **Spell checker**: underlines mistakes in the Markdown pane using the dictionaries installed on the computer, following the document language. It is on by default; unchecking it turns it off and the choice is remembered.
@@ -107,7 +106,7 @@ Search works both in the Markdown view and in the HTML view, depending on where 
 
 The working area is split into two resizable panes:
 
-* **Markdown** (left): a plain text editor with a character counter, the document language indicator and its copy button. Everything you type here is immediately reflected in the right pane.
+* **Markdown** (left): a plain text editor with its own zoom, a character counter, the document language indicator and its copy button. The zoom (`−`, the percentage and `+`, or `Ctrl` + `+` / `Ctrl` + `-`) makes the editor text bigger or smaller without touching the document; the percentage goes back to 100%. Everything you type here is immediately reflected in the right pane.
 * **HTML / Preview** (right): shows the final result and also lets you edit the content directly. Use the code icon button to switch between the rich preview and the generated HTML. The document is shown as a sheet on a desk, and the zoom to its left (`−`, the percentage and `+`) makes it bigger or smaller on screen; clicking the percentage goes back to 100%. It is a magnifier: it changes neither the text nor what you export — the document size lives in *Text format*.
 * **Copying content**: dedicated buttons to copy the Markdown or the generated HTML (including formulas converted to LaTeX when copying HTML).
 
@@ -332,7 +331,7 @@ Documents started in the browser and those from the desktop application are ordi
 | Maximize editing area | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Change layout | `Ctrl` + `L` | `Cmd` + `L` |
 | Search | `Ctrl` + `F` | `Cmd` + `F` |
-| Larger / smaller text | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
+| Zoom the pane you are in, in / out | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Manual | `Ctrl` + `H` or `F1` | `Cmd` + `H` or `F1` |
 | Reload the manual | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Print | `Ctrl` + `P` | `Cmd` + `P` |

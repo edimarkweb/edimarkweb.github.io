@@ -201,9 +201,8 @@
 
 /* Estilos personalizados */
 :root {
-    --fs-base: 16px;
     --editor-viewport-offset: 22rem;
-} /* Valor por defecto para el tamaño de fuente */
+}
 
 #main-container.release-banner-visible {
     --editor-viewport-offset: 26rem;
@@ -505,15 +504,18 @@ body.desktop-mode .markdown-textarea {
 }
 
 /*
-  El tamaño de texto de Configuración es el del código: el panel Markdown y la
-  vista del HTML generado, que son editores. La vista previa no lo sigue,
-  porque ahí el tamaño lo dice el documento —el de *Formato del texto*, en las
-  opciones generales o en las de este documento—, y es lo que se exporta. Dos
-  ajustes que se veían igual y significan cosas distintas: uno es la comodidad
-  de quien escribe y el otro, el aspecto del archivo que entregas.
+  Cada panel tiene su lupa en su cabecera y escala lo que ese panel enseña: la
+  del Markdown, el editor; la de la derecha, la hoja o —cuando se mira el
+  código— el HTML generado. Antes esto era un ajuste de Configuración, «Tamaño
+  de texto», que valía para los dos editores y no para la vista previa: dos
+  cosas que se veían igual y significaban distinto. Lo que no cambia es el
+  tamaño del documento, que lo dice *Formato del texto* y es el que se exporta.
 */
-.CodeMirror, .markdown-textarea {
-    font-size: var(--fs-base);
+#markdown-panel .CodeMirror, .markdown-textarea {
+    font-size: calc(1rem * var(--markdown-zoom, 1));
+}
+#html-panel .CodeMirror {
+    font-size: calc(1rem * var(--preview-zoom, 1));
 }
 /*
   El panel de Markdown reparte su alto entre el editor y la lista de imágenes
@@ -583,7 +585,7 @@ body.desktop-mode .markdown-textarea {
     overflow-wrap: break-word;
     word-break: normal;
     overflow: hidden;
-    font-size: var(--fs-base);
+    font-size: calc(1rem * var(--markdown-zoom, 1));
     font-family: 'Fira Code', 'JetBrains Mono', 'Menlo', monospace;
     line-height: 1.5;
     background-color: #ffffff;
@@ -1027,8 +1029,8 @@ body.desktop-mode .markdown-textarea {
 }
 
 /*
-  El zoom vive en la cabecera de su panel, con el aire justo para que los tres
-  controles se lean como uno solo: menos, cuánto, más.
+  Las dos lupas viven en la cabecera de su panel, con el aire justo para que
+  los tres controles se lean como uno solo: menos, cuánto, más.
 */
 .preview-zoom {
     gap: 0.125rem;

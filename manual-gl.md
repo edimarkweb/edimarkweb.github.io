@@ -9,7 +9,7 @@ Benvido/a a EdiMarkWeb, un **editor de textos en Markdown** deseñado para docen
 - Edición dual: podes traballar tanto en Markdown como directamente na vista previa HTML, sempre sincronizadas.
 - Menú de exportación e de importación compatible con DOCX, ODT, EPUB, HTML, LaTeX e PDF, incluíndo opcións de copia directa ao portapapeis.
 - Buscador con substitución que resalta as coincidencias e acepta termos sen acentos nin distinción entre maiúsculas e minúsculas.
-- Menú **Configuración** co idioma, o tamaño da letra, o tema e a xanela independente reunidos nun mesmo sitio; o ancho de traballo cámbiase xunto aos controis dos paneis.
+- Menú **Configuración** co idioma, o tema e a xanela independente reunidos nun mesmo sitio; cada panel leva a súa lupa na cabeceira; o ancho de traballo cámbiase xunto aos controis dos paneis.
 - Tema da interface con tres opcións —Sistema, Claro e Escuro— que se lembra entre sesións.
 - Menú de fórmulas renovado e acceso directo a EdiCuaTeX para construír expresións complexas.
 - Apertura de varios ficheiros, ou de cartafoles enteiros, arrastrándoos ao editor (cada ficheiro na súa lapela): Markdown e tamén DOCX, ODT, EPUB, HTML ou TEX, que se converten ao voo con Pandoc.
@@ -59,7 +59,6 @@ A cabeceira ten dúas metades. Xunto ao logotipo están os tres menús —**Arqu
 * **Arquivo**: o que non se fai a diario. `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` e `Pegar LaTeX (Ctrl+Maiús+V)` traen contido; `Gardar (Ctrl+S)` e `Gardar como… (Ctrl+Maiús+S)` sácano. Gardar está aquí ademais da súa icona: a opción leva o atallo escrito, e «Gardar como…» sen «Gardar» ao lado lese mal. Cada opción mostra o seu atallo de teclado. Na aplicación de escritorio o menú remata con **Saír**, que garda o documento en curso e pecha a aplicación.
 * **Configuración**: agrupa todos os axustes da aplicación, cada un cun submenú que indica o valor activo.
   * **Idioma**: cambia o idioma da interface.
-  * **Tamaño do texto**: pequeno, normal, grande ou moi grande. Cambia o panel Markdown e a vista do HTML xerado, que son editores; a vista previa non o segue, porque alí o tamaño dío o documento —o de *Formato do texto*— e é o que se exporta.
   * **Tema**: `Sistema` segue o do equipo e cambia con el; `Claro` e `Escuro` fíxano. A elección lémbrase a próxima vez que abras a aplicación.
   * **Xanela independente**: abre EdiMarkWeb nunha xanela propia do navegador, sen lapelas nin barra de enderezos. Só aparece na versión web; a aplicación de escritorio xa é unha xanela propia.
   * **Corrector ortográfico**: subliña as faltas do panel Markdown cos dicionarios instalados no equipo e segue o idioma do documento. Vén activado; ao desmarcalo apágase e a escolla lémbrase.
@@ -107,7 +106,7 @@ A busca funciona tanto na vista de Markdown como na vista HTML, segundo onde te�
 
 A zona de traballo divídese en dous paneis redimensionables:
 
-* **Markdown** (esquerda): editor de texto sinxelo cun contador de caracteres, o indicador de idioma do documento e o seu botón de copia. Todo o que escribas aquí reflíctese de inmediato no panel dereito.
+* **Markdown** (esquerda): editor de texto sinxelo coa súa lupa (`−`, a porcentaxe e `+`, ou `Ctrl` + `+` / `Ctrl` + `-`), que agranda ou reduce o texto do editor sen tocar o documento; un contador de caracteres, o indicador de idioma do documento e o seu botón de copia. Todo o que escribas aquí reflíctese de inmediato no panel dereito.
 * **HTML / Vista previa** (dereita): mostra o resultado final e tamén permite editar o contido directamente. Usa o botón coa icona de código para alternar entre a vista previa rica e o código HTML xerado. O documento preséntase como unha folla sobre unha mesa, e á súa esquerda o zoom (`−`, a porcentaxe e `+`) faina máis grande ou máis pequena na pantalla; a porcentaxe volve ao 100 %. É unha lupa: non cambia o texto nin o que se exporta —o tamaño do documento está en *Formato do texto*—.
 * **Copiar contido**: botóns específicos para copiar o Markdown ou o HTML xerado (inclúe fórmulas convertidas a LaTeX cando copias HTML).
 
@@ -332,7 +331,7 @@ Os documentos que comeces no navegador e os da aplicación de escritorio son fic
 | Maximizar área de edición | `Ctrl` + `Maiús` + `F` | `Cmd` + `Maiús` + `F` |
 | Cambiar disposición | `Ctrl` + `L` | `Cmd` + `L` |
 | Buscar | `Ctrl` + `F` | `Cmd` + `F` |
-| Aumentar / reducir o texto | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
+| Ampliar / reducir o panel no que estás | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Manual de uso | `Ctrl` + `H` ou `F1` | `Cmd` + `H` ou `F1` |
 | Recargar o manual | `Ctrl` + `Maiús` + `H` | `Cmd` + `Maiús` + `H` |
 | Imprimir | `Ctrl` + `P` | `Cmd` + `P` |

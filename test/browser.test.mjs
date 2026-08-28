@@ -265,7 +265,7 @@ test('las preferencias del perfil sobreviven a una instalación con el almacén 
       const archivos = new Map([['preferences.json', JSON.stringify({
         language: 'en',
         'edimarkweb-theme': 'dark',
-        'edimarkweb-fontsize': '20',
+        'edimarkweb-markdown-zoom': '1.5',
       })]]);
       window.__edimarkPreferenceFiles = archivos;
       window.__EDIMARK_TAURI__ = {
@@ -283,8 +283,8 @@ test('las preferencias del perfil sobreviven a una instalación con el almacén 
   await page.waitForFunction(() => document.documentElement.lang === 'en');
   assert.equal(await page.locator('html').evaluate(html => html.classList.contains('dark')), true);
   assert.equal(
-    await page.locator('html').evaluate(html => html.style.getPropertyValue('--fs-base')),
-    '20px',
+    await page.locator('html').evaluate(html => html.style.getPropertyValue('--markdown-zoom')),
+    '1.5',
   );
 
   // Y lo que se cambia ahora vuelve al archivo, no solo al almacén.
@@ -2135,6 +2135,13 @@ test('una tabla ancha se desplaza dentro de la hoja, sin mover la página', asyn
     '',
   ].join('\n'));
   await page.waitForSelector('#html-output table');
+  // El ancho de la tabla depende de la tipografía: medir antes de que cargue
+  // da números de otra fuente y la prueba se vuelve caprichosa.
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(() => {
+    const tabla = document.querySelector('#html-output table');
+    return !!tabla && tabla.scrollWidth > tabla.clientWidth;
+  });
 
   const medidas = await page.evaluate(() => {
     const mesa = document.getElementById('preview-desk');
@@ -2363,12 +2370,11 @@ test('una imagen incrustada se puede quitar del documento desde la lista', async
 
 
 /*
-  Dos ajustes que se veían igual y significan cosas distintas: el tamaño de
-  Configuración es la comodidad de quien escribe, y el de Formato del texto es
-  el aspecto del archivo que se entrega. Antes el primero movía los dos
-  paneles, así que la vista previa mentía sobre lo que iba a exportarse.
+  Cada panel tiene su lupa y escala solo lo suyo: la del Markdown no puede
+  mover la hoja, porque lo que la hoja enseña es lo que va a exportarse y sería
+  una promesa falsa; y la de la hoja no puede mover al editor.
 */
-test('el tamaño de texto mueve el editor y deja quieta la vista previa', async (t) => {
+test('la lupa de cada panel escala su panel y deja quieto al otro', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
 
@@ -2376,24 +2382,52 @@ test('el tamaño de texto mueve el editor y deja quieta la vista previa', async 
   await page.waitForFunction(() => document.querySelector('#html-output p'));
 
   const medir = () => page.evaluate(() => ({
-    editor: getComputedStyle(document.querySelector('.CodeMirror')).fontSize,
-    previa: getComputedStyle(document.querySelector('#html-output')).fontSize,
+    // El editor de Markdown es el textarea; el único CodeMirror es el del código HTML.
+    editor: getComputedStyle(document.getElementById('markdown-input')).fontSize,
+    hoja: getComputedStyle(document.getElementById('html-output')).fontSize,
+    anchoHoja: Math.round(document.getElementById('html-output').getBoundingClientRect().width),
   }));
 
-  const antes = await medir();
-  const opciones = await page.evaluate(() => {
-    const select = document.getElementById('font-size-select');
-    const valores = Array.from(select.options).map(option => option.value);
-    select.value = valores[valores.length - 1];
-    select.dispatchEvent(new Event('change', { bubbles: true }));
-    return valores;
-  });
-  const despues = await medir();
+  const inicio = await medir();
+  assert.equal(await page.locator('#markdown-zoom-value').innerText(), '100 %');
 
-  assert.ok(opciones.length > 1, 'el selector de tamaño no ofrece opciones');
-  assert.equal(despues.editor, `${opciones[opciones.length - 1]}px`, 'el editor no siguió al ajuste');
-  assert.notEqual(despues.editor, antes.editor, 'el ajuste no cambió nada');
-  assert.equal(despues.previa, antes.previa, 'la vista previa siguió al ajuste de la interfaz');
+  await page.locator('#markdown-zoom-in').click();
+  const trasAmpliarElEditor = await medir();
+  assert.notEqual(trasAmpliarElEditor.editor, inicio.editor, 'el editor no siguió a su lupa');
+  assert.equal(trasAmpliarElEditor.hoja, inicio.hoja, 'la hoja siguió a la lupa del editor');
+  assert.equal(await page.locator('#markdown-zoom-value').innerText(), '110 %');
+
+  await page.locator('#preview-zoom-in').click();
+  const trasAmpliarLaHoja = await medir();
+  assert.notEqual(trasAmpliarLaHoja.hoja, inicio.hoja, 'la hoja no siguió a su lupa');
+  assert.equal(trasAmpliarLaHoja.editor, trasAmpliarElEditor.editor, 'el editor siguió a la lupa de la hoja');
+
+  // Y el porcentaje devuelve cada uno a su sitio.
+  await page.locator('#markdown-zoom-reset').click();
+  await page.locator('#preview-zoom-reset').click();
+  assert.deepEqual(await medir(), inicio);
+});
+
+/*
+  Las teclas mueven la lupa del panel en el que se está trabajando: con los dos
+  paneles a la vista, el que tenga el foco.
+*/
+test('Ctrl y las teclas de más y menos mueven la lupa del panel activo', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').click();
+  await page.keyboard.press('Control+Equal');
+  assert.equal(await page.locator('#markdown-zoom-value').innerText(), '110 %');
+  assert.equal(await page.locator('#preview-zoom-value').innerText(), '100 %');
+
+  await page.locator('#html-output').click();
+  await page.keyboard.press('Control+Equal');
+  assert.equal(await page.locator('#preview-zoom-value').innerText(), '110 %');
+  assert.equal(await page.locator('#markdown-zoom-value').innerText(), '110 %');
+
+  await page.keyboard.press('Control+Minus');
+  assert.equal(await page.locator('#preview-zoom-value').innerText(), '100 %');
 });
 
 /*

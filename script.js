@@ -25,8 +25,8 @@ const LAYOUT_KEY = 'edimarkweb-layout';
   que es justo lo que dibuja `panel-right`.
 */
 const LAYOUT_ICONS = { md: 'panel-right', html: 'panel-left', dual: 'columns-2' };
-const FS_KEY = 'edimarkweb-fontsize';
 const PREVIEW_ZOOM_KEY = 'edimarkweb-preview-zoom';
+const MARKDOWN_ZOOM_KEY = 'edimarkweb-markdown-zoom';
 const FOCUS_MODE_KEY = 'edimarkweb-focus-mode';
 const LATEX_SETTINGS_KEY = 'edimarkweb-latex-settings';
 const SPELLCHECK_KEY = 'edimarkweb-spellcheck';
@@ -246,8 +246,8 @@ const PREFERENCE_KEYS = [
     'language',
     THEME_KEY,
     LAYOUT_KEY,
-    FS_KEY,
     PREVIEW_ZOOM_KEY,
+    MARKDOWN_ZOOM_KEY,
     FOCUS_MODE_KEY,
     BASE64_PANEL_KEY,
     COPY_ACTION_KEY,
@@ -4163,40 +4163,73 @@ function isPreviewVisible() {
 }
 
 /*
-  El zoom de la vista previa es una lupa, no un formato: agranda la hoja en
-  pantalla y no toca ni el Markdown ni lo que se exporta. El tamaño de letra
-  del documento sigue estando en las opciones de formato, y el de los editores,
-  en Configuración.
-*/
-const PREVIEW_ZOOM_STEPS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
+  Las lupas de los dos paneles. Son lupas y no formatos: agrandan lo que se ve
+  —el editor a la izquierda, la hoja o el código a la derecha— y no tocan ni el
+  Markdown ni lo que se exporta. El tamaño de letra del documento sigue estando
+  en las opciones de formato, que es lo que viaja al archivo.
 
-function normalizePreviewZoom(value) {
+  Cada panel guarda la suya y la recupera al arrancar, y las dos comparten los
+  mismos pasos para que el 100 % signifique lo mismo en los dos lados.
+*/
+const ZOOM_STEPS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
+
+const PREVIEW_ZOOM = {
+  variable: '--preview-zoom',
+  storageKey: PREVIEW_ZOOM_KEY,
+  labelId: 'preview-zoom-value',
+};
+const MARKDOWN_ZOOM = {
+  variable: '--markdown-zoom',
+  storageKey: MARKDOWN_ZOOM_KEY,
+  labelId: 'markdown-zoom-value',
+};
+
+function normalizeZoom(value) {
   const zoom = Number(value);
   if (!Number.isFinite(zoom)) return 1;
-  return PREVIEW_ZOOM_STEPS.reduce(
+  return ZOOM_STEPS.reduce(
     (closest, step) => (Math.abs(step - zoom) < Math.abs(closest - zoom) ? step : closest),
-    PREVIEW_ZOOM_STEPS[0],
+    ZOOM_STEPS[0],
   );
 }
 
-function applyPreviewZoom(value, { persist = true } = {}) {
-  const zoom = normalizePreviewZoom(value);
-  document.documentElement.style.setProperty('--preview-zoom', String(zoom));
-  const label = document.getElementById('preview-zoom-value');
+function applyZoom(panel, value, { persist = true } = {}) {
+  const zoom = normalizeZoom(value);
+  document.documentElement.style.setProperty(panel.variable, String(zoom));
+  const label = document.getElementById(panel.labelId);
   if (label) label.textContent = `${Math.round(zoom * 100)} %`;
-  if (persist) safeLocalStorageSet(PREVIEW_ZOOM_KEY, zoom);
+  if (persist) safeLocalStorageSet(panel.storageKey, zoom);
+  // CodeMirror mide su tipografía al pintarse: sin esto, el cursor y el
+  // resaltado se quedan en la posición del tamaño anterior.
+  if (panel === MARKDOWN_ZOOM && markdownEditor) markdownEditor.refresh();
+  if (panel === PREVIEW_ZOOM && htmlEditor) htmlEditor.refresh();
   return zoom;
 }
 
-function currentPreviewZoom() {
-  const declared = document.documentElement.style.getPropertyValue('--preview-zoom');
-  return normalizePreviewZoom(declared || 1);
+function currentZoom(panel) {
+  const declared = document.documentElement.style.getPropertyValue(panel.variable);
+  return normalizeZoom(declared || 1);
 }
 
-function stepPreviewZoom(direction) {
-  const idx = PREVIEW_ZOOM_STEPS.indexOf(currentPreviewZoom());
-  const next = Math.min(PREVIEW_ZOOM_STEPS.length - 1, Math.max(0, idx + direction));
-  applyPreviewZoom(PREVIEW_ZOOM_STEPS[next]);
+function stepZoom(panel, direction) {
+  const idx = ZOOM_STEPS.indexOf(currentZoom(panel));
+  const next = Math.min(ZOOM_STEPS.length - 1, Math.max(0, idx + direction));
+  applyZoom(panel, ZOOM_STEPS[next]);
+}
+
+/*
+  Ctrl y las teclas de más y menos mueven la lupa del panel en el que se está
+  trabajando: con un solo panel a la vista, el suyo; con los dos, el que tenga
+  el foco, y el del Markdown mientras no lo tenga ninguno, que es donde se
+  escribe.
+*/
+function zoomDelPanelActivo() {
+  if (currentLayout === 'html') return PREVIEW_ZOOM;
+  if (currentLayout === 'md') return MARKDOWN_ZOOM;
+  const activo = document.activeElement;
+  const panelDerecho = document.getElementById('html-panel');
+  const enLaDerecha = !!activo && !!panelDerecho && panelDerecho.contains(activo);
+  return enLaDerecha ? PREVIEW_ZOOM : MARKDOWN_ZOOM;
 }
 
 function buildHtmlWithTex() {
@@ -4325,14 +4358,6 @@ function cycleLayout(step = 1) {
   applyLayout(layouts[nextIdx]);
 }
 
-function applyFontSize(px) {
-  document.documentElement.style.setProperty('--fs-base', px + 'px');
-  safeLocalStorageSet(FS_KEY, px);
-  if (markdownEditor) markdownEditor.refresh();
-  if (htmlEditor) htmlEditor.refresh();
-}
-
-
 window.onload = async () => {
     // Antes de pintar nada: en el escritorio las preferencias buenas están en
     // el archivo del perfil, no en el almacén del webview.
@@ -4345,10 +4370,12 @@ window.onload = async () => {
     htmlOutputEl = htmlOutput;
     document.addEventListener('selectionchange', captureHtmlSelection);
     const viewToggleBtn = document.getElementById('view-toggle-btn');
-    const previewZoomControls = document.getElementById('preview-zoom');
     const previewZoomOutBtn = document.getElementById('preview-zoom-out');
     const previewZoomInBtn = document.getElementById('preview-zoom-in');
     const previewZoomResetBtn = document.getElementById('preview-zoom-reset');
+    const markdownZoomOutBtn = document.getElementById('markdown-zoom-out');
+    const markdownZoomInBtn = document.getElementById('markdown-zoom-in');
+    const markdownZoomResetBtn = document.getElementById('markdown-zoom-reset');
     const htmlPanelTitle = document.getElementById('html-panel-title');
     const layoutMenuContainer = document.getElementById('layout-menu-container');
     const layoutMenuBtn = document.getElementById('layout-menu-btn');
@@ -4570,9 +4597,6 @@ window.onload = async () => {
     const formulaOptionButtons = formulaOptions ? Array.from(formulaOptions.querySelectorAll('[data-format]')) : [];
     const languageSelectEl = document.getElementById('language-select');
     const languageWrapper = document.getElementById('language-select-wrapper');
-    const fontSizeSelect = document.getElementById('font-size-select');
-    const fontSizeWrapper = document.getElementById('font-size-select-wrapper');
-    const fontSizeLabel = document.getElementById('font-size-select-label');
     const openEdicuatexBtn = document.getElementById('open-edicuatex-btn');
     const edicuatexModalOverlay = document.getElementById('edicuatex-modal-overlay');
     const edicuatexFrame = document.getElementById('edicuatex-frame');
@@ -4704,12 +4728,6 @@ window.onload = async () => {
     const statusToastMessageEl = document.getElementById('status-toast-message');
     let statusToastTimer = null;
 
-    const updateFontSizeLabel = () => {
-        if (!fontSizeSelect || !fontSizeLabel) return;
-        const option = fontSizeSelect.options[fontSizeSelect.selectedIndex];
-        if (option) fontSizeLabel.textContent = option.textContent.trim();
-    };
-    window.__updateFontSizeLabel = updateFontSizeLabel;
 
     /*
       Idioma y tamaño de texto se eligen desde submenús que cuelgan del menú
@@ -4798,10 +4816,6 @@ window.onload = async () => {
         menuId: 'language-menu', selectId: 'language-select', attribute: 'data-lang',
     });
     setupSettingsSubmenu({
-        containerId: 'font-size-menu-container', buttonId: 'font-size-menu-btn',
-        menuId: 'font-size-menu', selectId: 'font-size-select', attribute: 'data-font-size',
-    });
-    setupSettingsSubmenu({
         containerId: 'theme-menu-container', buttonId: 'theme-menu-btn',
         menuId: 'theme-menu', selectId: 'theme-select', attribute: 'data-theme',
     });
@@ -4818,7 +4832,6 @@ window.onload = async () => {
         selectEl.addEventListener('blur', () => wrapper.classList.remove('select-focus'));
     };
     attachSelectFocusHandlers(languageSelectEl, languageWrapper);
-    attachSelectFocusHandlers(fontSizeSelect, fontSizeWrapper);
 
     const closeFormulaOptions = () => {
         if (formulaOptions) formulaOptions.classList.add('hidden');
@@ -6290,23 +6303,16 @@ window.onload = async () => {
     currentLayout = safeLocalStorageGet(LAYOUT_KEY, 'dual');
     applyLayout(currentLayout);
 
-    // --- Zoom de la vista previa ---
-    applyPreviewZoom(safeLocalStorageGet(PREVIEW_ZOOM_KEY, 1), { persist: false });
-    if (previewZoomOutBtn) previewZoomOutBtn.addEventListener('click', () => stepPreviewZoom(-1));
-    if (previewZoomInBtn) previewZoomInBtn.addEventListener('click', () => stepPreviewZoom(1));
-    if (previewZoomResetBtn) previewZoomResetBtn.addEventListener('click', () => applyPreviewZoom(1));
-
-    // --- Tamaño de fuente ---
-    if (fontSizeSelect) {
-        const savedFs = safeLocalStorageGet(FS_KEY, 16);
-        fontSizeSelect.value = savedFs;
-        applyFontSize(savedFs);
-        updateFontSizeLabel();
-        fontSizeSelect.addEventListener('change', e => {
-            applyFontSize(e.target.value);
-            updateFontSizeLabel();
-        });
-    }
+    // --- Las lupas de los dos paneles ---
+    [
+      [PREVIEW_ZOOM, previewZoomOutBtn, previewZoomResetBtn, previewZoomInBtn],
+      [MARKDOWN_ZOOM, markdownZoomOutBtn, markdownZoomResetBtn, markdownZoomInBtn],
+    ].forEach(([panel, menos, cien, mas]) => {
+        applyZoom(panel, safeLocalStorageGet(panel.storageKey, 1), { persist: false });
+        if (menos) menos.addEventListener('click', () => stepZoom(panel, -1));
+        if (cien) cien.addEventListener('click', () => applyZoom(panel, 1));
+        if (mas) mas.addEventListener('click', () => stepZoom(panel, 1));
+    });
 
     // El exportador los consulta al generar LaTeX, no al arrancar, pero
     // publicarlos aquí evita que la primera exportación salga sin ellos.
@@ -6516,8 +6522,6 @@ window.onload = async () => {
         const previewShell = getPreviewShell();
         cmWrapper.style.display = showingPreview ? 'block' : 'none';
         if (previewShell) previewShell.style.display = showingPreview ? 'none' : '';
-        // El zoom es de la hoja: sobre el código HTML no pinta nada.
-        if (previewZoomControls) previewZoomControls.classList.toggle('hidden', showingPreview);
         if (showingPreview) setTimeout(() => htmlEditor.refresh(), 1);
         const panelTitleKey = showingPreview ? 'html_code_panel_title' : 'html_panel_title';
         htmlPanelTitle.setAttribute('data-i18n-key', panelTitleKey);
@@ -8065,14 +8069,9 @@ window.onload = async () => {
                     }
                     break;
             }
-            if (fontSizeSelect && ['=', '+', '-'].includes(e.key)) {
+            if (['=', '+', '-'].includes(e.key)) {
                 e.preventDefault();
-                const sizes = [14, 16, 18, 20];
-                let idx = sizes.indexOf(Number(fontSizeSelect.value));
-                idx = e.key === '-' ? Math.max(0, idx - 1) : Math.min(sizes.length - 1, idx + 1);
-                fontSizeSelect.value = sizes[idx];
-                applyFontSize(sizes[idx]);
-                updateFontSizeLabel();
+                stepZoom(zoomDelPanelActivo(), e.key === '-' ? -1 : 1);
             }
             const key = e.shiftKey ? e.key.toUpperCase() : e.key.toLowerCase();
             if (shortcutMap[key]) { e.preventDefault(); applyFormat(shortcutMap[key]); }
