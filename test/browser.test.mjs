@@ -1039,6 +1039,12 @@ test('Ctrl+O abre el selector de archivos sin pisar Ctrl+Mayús+O', async (t) =>
   const { context, page } = await openApp();
   t.after(() => context.close());
 
+  /*
+    El manual llega a la primera pestaña después de que la aplicación se
+    declare lista, y pulsar mientras tanto perdía la tecla: la prueba se caía
+    de tarde en tarde esperando el selector de archivos.
+  */
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.length > 0);
   const selector = page.waitForEvent('filechooser');
   await page.keyboard.press('Control+o');
   assert.equal(await (await selector).element().getAttribute('id'), 'file-input');
