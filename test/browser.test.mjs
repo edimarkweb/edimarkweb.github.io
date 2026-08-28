@@ -2117,6 +2117,43 @@ test('un solo botón copia en los cuatro formatos', async (t) => {
 });
 
 /*
+  Una tabla más ancha que la hoja se desplaza dentro de su propia caja: si se
+  saliera, arrastraría a la mesa entera y el documento acabaría moviéndose a lo
+  ancho por culpa de una tabla.
+*/
+test('una tabla ancha se desplaza dentro de la hoja, sin mover la página', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const columnas = Array.from({ length: 8 }, (_, i) => `Columna bastante larga ${i + 1}`);
+  await page.locator('#markdown-input').fill([
+    '# Con tabla',
+    '',
+    `| ${columnas.join(' | ')} |`,
+    `| ${columnas.map(() => '---').join(' | ')} |`,
+    `| ${columnas.map((_, i) => `dato ${i + 1}`).join(' | ')} |`,
+    '',
+  ].join('\n'));
+  await page.waitForSelector('#html-output table');
+
+  const medidas = await page.evaluate(() => {
+    const mesa = document.getElementById('preview-desk');
+    const hoja = document.getElementById('html-output');
+    const tabla = hoja.querySelector('table');
+    return {
+      tablaSeDesplaza: tabla.scrollWidth > tabla.clientWidth,
+      tablaCabeEnLaHoja: Math.round(tabla.getBoundingClientRect().width)
+        <= Math.round(hoja.getBoundingClientRect().width),
+      mesaQuieta: mesa.scrollWidth <= mesa.clientWidth,
+    };
+  });
+
+  assert.equal(medidas.tablaSeDesplaza, true, 'la tabla debería poder desplazarse por dentro');
+  assert.equal(medidas.tablaCabeEnLaHoja, true, 'la tabla no debería salirse de la hoja');
+  assert.equal(medidas.mesaQuieta, true, 'la mesa no debería desplazarse a lo ancho');
+});
+
+/*
   Los cuatro delimitadores en un acorde: Ctrl+M abre la espera y la segunda
   tecla elige. Cada combinación nueva chocaba con algo —Ctrl+Mayús+J es la
   consola del navegador y Ctrl+Mayús+M, la lupa del sistema—, así que solo se
