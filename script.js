@@ -3306,6 +3306,126 @@ function registerAssetFolder(files, { docId = null, folderName = '' } = {}) {
     return entries.length;
 }
 
+/*
+  ---------------------------------------------------------------------------
+  Sacar del texto las imágenes incrustadas
+  ---------------------------------------------------------------------------
+
+  Una imagen pegada entra en el documento como `data:image/png;base64,…`: viaja
+  con el texto y no se pierde, pero engorda el `.md` un tercio más que el
+  archivo original y lo vuelve incómodo de leer y de versionar. Este es el
+  camino de vuelta: cada imagen pasa a ser un archivo en `imagenes/` y en el
+  texto queda su ruta, que es como guarda las imágenes cualquier `.md`.
+
+  Los archivos no se escriben aquí, sino al guardar el documento, por el mismo
+  camino que ya usan las imágenes de ruta relativa —el escritorio las escribe
+  junto al `.md`, el navegador en la carpeta que se elija y, donde no hay
+  selector de carpeta, dentro del ZIP—. Mientras tanto quedan registradas en
+  memoria para que la vista previa las siga enseñando.
+*/
+const EXTRACTED_ASSETS_FOLDER = 'imagenes';
+const EXTRACTED_IMAGE_EXTENSIONS = new Map([
+    ['jpeg', 'jpg'],
+    ['svg+xml', 'svg'],
+]);
+
+function extensionForImageMime(mime) {
+    const clean = String(mime || '').toLowerCase().replace(/[^a-z0-9.+-]/g, '');
+    if (!clean) return 'png';
+    return EXTRACTED_IMAGE_EXTENSIONS.get(clean) || clean;
+}
+
+function base64ToBytes(data) {
+    const binary = atob(String(data || '').replace(/\s+/g, ''));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+}
+
+// Las rutas que el documento ya usa, para no escribir encima de ninguna.
+function relativeImagePathsInMarkdown(markdown) {
+    const paths = new Set();
+    if (!assetPathUtils) return paths;
+    const pattern = /!\[[^\]]*?\]\(\s*([^)\s]+)/g;
+    let match;
+    while ((match = pattern.exec(markdown)) !== null) {
+        const candidate = match[1];
+        if (!assetPathUtils.isRelativeAssetPath(candidate)) continue;
+        const normalized = assetPathUtils.normalizeRelativePath(candidate);
+        if (normalized) paths.add(normalized);
+    }
+    return paths;
+}
+
+/*
+  El índice de imágenes del documento se amplía, no se sustituye: quien tenga
+  una carpeta vinculada no debe perderla por sacar una imagen del texto.
+*/
+function registerExtractedAssets(doc, files) {
+    if (!assetPathUtils || !doc || !files.length) return;
+    const entry = documentAssetEntry(doc.id);
+    const added = assetPathUtils.buildAssetIndex(files.map(file => ({ path: file.relativePath, file: file.blob })));
+    if (!entry.assetIndex) {
+        entry.assetIndex = added;
+    } else {
+        added.index.forEach((value, key) => entry.assetIndex.index.set(key, value));
+        added.ambiguous.forEach(key => entry.assetIndex.ambiguous.add(key));
+    }
+    forgetMissingAssets(doc.id);
+}
+
+async function extractBase64Images() {
+    const doc = docs.find(d => d.id === currentId);
+    if (!doc || !markdownEditor) return 0;
+    const markdown = markdownEditor.getValue();
+    if (!BASE64_TEST_REGEX.test(markdown)) {
+        reportStatus(getTranslation('base64_extract_empty', 'No hay imágenes incrustadas en este documento.'));
+        return 0;
+    }
+    const used = relativeImagePathsInMarkdown(markdown);
+    const extracted = [];
+    let counter = 0;
+    const rewritten = markdown.replace(BASE64_IMAGE_REGEX, (match, alt, prefix, mime, data, tail) => {
+        let bytes;
+        try {
+            bytes = base64ToBytes(data);
+        } catch (error) {
+            // Un base64 que no se entiende se queda como está, sin tocar nada.
+            console.warn('No se pudo leer una imagen incrustada:', error);
+            return match;
+        }
+        const extension = extensionForImageMime(mime);
+        let relativePath = '';
+        do {
+            counter += 1;
+            relativePath = `${EXTRACTED_ASSETS_FOLDER}/${String(counter).padStart(2, '0')}.${extension}`;
+        } while (used.has(relativePath));
+        used.add(relativePath);
+        extracted.push({
+            relativePath,
+            blob: new File([bytes], relativePath.split('/').pop(), { type: `image/${mime}` }),
+        });
+        return `![${alt}](${relativePath}${tail || ''})`;
+    });
+
+    if (!extracted.length) {
+        reportStatus(getTranslation('base64_extract_empty', 'No hay imágenes incrustadas en este documento.'));
+        return 0;
+    }
+
+    registerExtractedAssets(doc, extracted);
+    markdownEditor.setValue(rewritten);
+    doc.md = rewritten;
+    updateHtml();
+    await persistLinkedDocumentAssets(doc, rewritten);
+    reportStatus(formatTranslation(
+        extracted.length === 1 ? 'base64_extract_done_one' : 'base64_extract_done_many',
+        '{count} imágenes pasadas a «{folder}». Se escribirán al guardar el documento.',
+        { count: extracted.length, folder: `${EXTRACTED_ASSETS_FOLDER}/` },
+    ));
+    return extracted.length;
+}
+
 async function persistLinkedDocumentAssets(doc, content) {
     const platform = window.EdiMarkPlatform;
     if (platform?.isDesktop || !doc) return false;
@@ -5442,6 +5562,21 @@ window.onload = async () => {
         base64UiToggle.addEventListener('click', () => {
             safeLocalStorageSet(BASE64_PANEL_KEY, base64PanelExpanded() ? '0' : '1', { notify: false });
             updateBase64Ui(currentBase64State);
+        });
+    }
+    const base64ExtractBtn = document.getElementById('base64-extract-btn');
+    if (base64ExtractBtn) {
+        base64ExtractBtn.addEventListener('click', async () => {
+            // Un documento con muchas imágenes tarda un momento en pasarlas.
+            base64ExtractBtn.disabled = true;
+            try {
+                await extractBase64Images();
+            } catch (error) {
+                console.error('No se pudieron pasar las imágenes a la carpeta:', error);
+                notifyUser(getTranslation('base64_extract_error', 'No se pudieron pasar las imágenes a la carpeta.'));
+            } finally {
+                base64ExtractBtn.disabled = false;
+            }
         });
     }
     const base64PreviewCloseBtn = document.getElementById('base64-preview-close-btn');

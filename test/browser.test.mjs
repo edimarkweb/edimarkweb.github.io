@@ -3169,3 +3169,84 @@ test('en la aplicación de escritorio no se ofrece la ventana independiente', as
     assert.equal(await page.locator(selector).isVisible(), false, `${selector} no debería verse en el escritorio`);
   }
 });
+
+/*
+  Una imagen pegada entra como `data:image/png;base64,…`: viaja con el texto,
+  pero engorda el `.md` y lo vuelve incómodo de leer. El camino de vuelta la
+  saca a un archivo en `imagenes/` y deja su ruta en el texto; los archivos se
+  escriben al guardar, por donde ya pasan las imágenes de ruta relativa.
+*/
+const PNG_BASE64 = PNG_PIXEL.toString('base64');
+
+async function documentoConImagenIncrustada(page, extra = '') {
+  await page.evaluate(([datos, cola]) => {
+    markdownEditor.setValue(`# Con una imagen\n\n![Un gráfico](data:image/png;base64,${datos})\n${cola}`);
+  }, [PNG_BASE64, extra]);
+  await page.locator('#base64-hidden-container').waitFor({ state: 'visible' });
+}
+
+test('las imágenes incrustadas se pueden pasar a la carpeta del documento', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  // La segunda imagen comprueba que no se pisa una ruta ya usada.
+  await documentoConImagenIncrustada(page, '\n![Ya suelta](imagenes/01.png)\n');
+  await page.locator('#base64-extract-btn').click();
+
+  await page.waitForFunction(() => !document.getElementById('markdown-input').value.includes('base64,'));
+  const markdown = await page.locator('#markdown-input').inputValue();
+  assert.match(markdown, /!\[Un gráfico\]\(imagenes\/02\.png\)/);
+  assert.match(markdown, /!\[Ya suelta\]\(imagenes\/01\.png\)/);
+
+  // El panel de incrustadas se vacía y la vista previa las sigue enseñando.
+  await page.locator('#base64-hidden-container').waitFor({ state: 'hidden' });
+  const imagenes = await page.locator('#html-output img').evaluateAll(nodes => nodes.map(img => ({
+    src: img.getAttribute('src'),
+    original: img.dataset.edimarkSrc || '',
+  })));
+  const extraida = imagenes.find(imagen => imagen.original === 'imagenes/02.png');
+  assert.ok(extraida, 'la imagen extraída debería seguir en la vista previa');
+  assert.match(extraida.src, /^blob:/);
+});
+
+test('las imágenes pasadas a la carpeta se escriben al guardar', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__webSaveCalls = [];
+      const makeDirectory = (prefix = '') => ({
+        getDirectoryHandle: async name => makeDirectory(`${prefix}${name}/`),
+        getFileHandle: async name => ({
+          createWritable: async () => ({
+            write: async (contents) => {
+              const value = contents instanceof Blob
+                ? [...new Uint8Array(await contents.arrayBuffer())]
+                : String(contents);
+              window.__webSaveCalls.push(['write', `${prefix}${name}`, value]);
+            },
+            close: async () => {},
+          }),
+        }),
+      });
+      Object.defineProperty(window, 'showDirectoryPicker', {
+        configurable: true,
+        value: async () => makeDirectory(),
+      });
+    },
+  });
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await documentoConImagenIncrustada(page);
+  await page.locator('#base64-extract-btn').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('imagenes/01.png'));
+
+  await page.keyboard.press('Control+s');
+  await page.waitForFunction(() => window.__webSaveCalls.some(call => call[1] === 'imagenes/01.png'));
+
+  const llamadas = await page.evaluate(() => window.__webSaveCalls);
+  const markdown = llamadas.find(call => String(call[1]).endsWith('.md'));
+  assert.ok(!markdown[2].includes('base64,'), 'el Markdown guardado no debe llevar la imagen dentro');
+  const imagen = llamadas.find(call => call[1] === 'imagenes/01.png');
+  assert.deepEqual(imagen[2], [...PNG_PIXEL], 'la imagen escrita debe ser la original, byte a byte');
+});

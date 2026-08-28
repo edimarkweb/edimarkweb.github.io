@@ -637,6 +637,17 @@
                         <span id="base64-hidden-count" class="base64-hidden-count-text">0 encontradas</span>
                         <span class="base64-hidden-hint" data-i18n-key="base64_hidden_hint">Se oculta el código para facilitar la edición.</span>
                     </button>
+                    <!--
+                      Sacar las imágenes del texto: la vuelta a lo que hace
+                      insertarlas incrustadas. Va aquí, junto al recuento, que
+                      es donde se ve cuántas hay y cuánto ocupan.
+                    -->
+                    <div class="base64-hidden-actions">
+                        <button type="button" id="base64-extract-btn" class="base64-hidden-action-btn" data-i18n-key="base64_extract_btn_title" title="Escribe cada imagen como archivo en la carpeta del documento y deja su ruta en el texto">
+                            <i data-lucide="folder-down" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
+                            <span data-i18n-key="base64_extract_btn">Pasar las imágenes a la carpeta</span>
+                        </button>
+                    </div>
                     <div id="base64-hidden-list" class="base64-hidden-list hidden" role="list"></div>
                 </div>
             </div>
