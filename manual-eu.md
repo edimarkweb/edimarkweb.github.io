@@ -60,7 +60,7 @@ Goiburuak bi erdi ditu. Logotipoaren ondoan hiru menuak daude —**Fitxategia**,
 * **Ezarpenak**: aplikazioaren ezarpen guztiak biltzen ditu, bakoitza uneko balioa adierazten duen azpimenu batekin.
   * **Hizkuntza**: interfazearen hizkuntza aldatzen du.
   * **Gaia**: `Sistemakoa` aukerak ekipoarena jarraitzen du eta harekin batera aldatzen da; `Argia` eta `Iluna` aukerek finkatu egiten dute. Aukeraketa gogoratu egiten da aplikazioa hurrengoan irekitzean.
-  * **Leiho independentea**: EdiMarkWeb nabigatzailearen leiho propio batean irekitzen du, fitxarik eta helbide-barrarik gabe. Web bertsioan bakarrik agertzen da; mahaigaineko aplikazioa dagoeneko leiho propioa da.
+  * **Leiho independentea**: EdiMarkWeb nabigatzailearen leiho propio batean irekitzen du, fitxarik eta helbide-barrarik gabe. Bistaren ilararen amaieran ere baduzu botoi gisa, panelen kontrolen eskuinean. Web bertsioan bakarrik agertzen da; mahaigaineko aplikazioa dagoeneko leiho propioa da.
   * **Zuzentzaile ortografikoa**: Markdown paneleko akatsak azpimarratzen ditu ordenagailuan instalatutako hiztegiekin, dokumentuaren hizkuntzari jarraituz. Aktibatuta dator; desmarkatuz gero itzali egiten da eta aukera gogoratu egiten da.
   * **Esportazio-aukerak…**: aplikazioak sortzen dituen fitxategien ezarpenak irekitzen ditu (hizkuntza eta, LaTeX-erako, klasea eta atarikoa), behean azalduta.
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia sortzen du uneko estiloekin.

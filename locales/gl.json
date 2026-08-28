@@ -8,6 +8,7 @@
   "theme_option_light": "Claro",
   "theme_option_dark": "Escuro",
   "desktop_window_btn_text": "Xanela independente",
+  "desktop_window_btn_title": "Abrir nunha xanela independente, sen lapelas nin barra de enderezos",
   "spellcheck_toggle_text": "Corrector ortográfico",
   "doc_lang_btn_title": "Idioma, autor, índice e formato deste documento.",
   "doc_settings_btn_text": "Opcións de exportación…",

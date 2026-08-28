@@ -8,6 +8,7 @@
   "theme_option_light": "Claro",
   "theme_option_dark": "Oscuro",
   "desktop_window_btn_text": "Ventana independiente",
+  "desktop_window_btn_title": "Abrir en una ventana independiente, sin pestañas ni barra de direcciones",
   "spellcheck_toggle_text": "Corrector ortográfico",
   "doc_lang_btn_title": "Idioma, autor, índice y formato de este documento.",
   "doc_settings_btn_text": "Opciones de exportación…",

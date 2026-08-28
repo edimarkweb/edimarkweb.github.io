@@ -5368,6 +5368,11 @@ window.onload = async () => {
     const mainContainer = document.getElementById('main-container');
     const toggleWidthBtn = document.getElementById('toggle-width-btn');
     const desktopWindowBtn = document.getElementById('desktop-window-btn');
+    // El mismo «Ventana independiente» en dos sitios: el botón de la fila de
+    // la vista, que es la vía rápida, y la entrada de Configuración, donde se
+    // lee lo que hace.
+    const desktopWindowToolbarBtn = document.getElementById('desktop-window-toolbar-btn');
+    const desktopWindowSeparator = document.getElementById('desktop-window-separator');
     const htmlOutput = document.getElementById('html-output');
     htmlOutputEl = htmlOutput;
     document.addEventListener('selectionchange', captureHtmlSelection);
@@ -6266,14 +6271,19 @@ window.onload = async () => {
     if (desktopMode) {
         document.body.classList.add('desktop-mode');
         if (toggleWidthBtn) toggleWidthBtn.classList.add('hidden');
-        if (desktopWindowBtn) desktopWindowBtn.classList.add('hidden');
+        const hideDesktopWindowControls = (hidden) => {
+            [desktopWindowBtn, desktopWindowToolbarBtn, desktopWindowSeparator].forEach((element) => {
+                if (element) element.classList.toggle('hidden', hidden);
+            });
+        };
+        hideDesktopWindowControls(true);
         if (browserDesktopMode && !nativeMode && !desktopSpawned && (!window.opener || window.opener.closed)) {
             const spawned = openDesktopWindow(true);
             if (spawned) {
                 try { window.close(); } catch (_) {}
                 return;
             }
-            if (desktopWindowBtn) desktopWindowBtn.classList.remove('hidden');
+            hideDesktopWindowControls(false);
         }
     }
 
@@ -7101,6 +7111,9 @@ window.onload = async () => {
         // Sin envolver, el MouseEvent llegaría como `autoLaunch` y silenciaría
         // el aviso de ventana emergente bloqueada.
         desktopWindowBtn.addEventListener('click', () => openDesktopWindow());
+    }
+    if (desktopWindowToolbarBtn) {
+        desktopWindowToolbarBtn.addEventListener('click', () => openDesktopWindow());
     }
 
     window.addEventListener('beforeunload', () => {

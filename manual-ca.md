@@ -60,7 +60,7 @@ La capçalera té dues meitats. Al costat del logotip hi ha els tres menús —*
 * **Configuració**: agrupa tots els ajustos de l'aplicació, cadascun amb un submenú que n'indica el valor actiu.
   * **Idioma**: canvia l'idioma de la interfície.
   * **Tema**: `Sistema` segueix el de l'equip i canvia amb ell; `Clar` i `Fosc` el fixen. L'elecció es recorda el pròxim cop que obris l'aplicació.
-  * **Finestra independent**: obre EdiMarkWeb en una finestra pròpia del navegador, sense pestanyes ni barra d'adreces. Només apareix a la versió web; l'aplicació d'escriptori ja és una finestra pròpia.
+  * **Finestra independent**: obre EdiMarkWeb en una finestra pròpia del navegador, sense pestanyes ni barra d'adreces. També la tens com a botó al final de la fila de la vista, a la dreta dels controls dels plafons. Només apareix a la versió web; l'aplicació d'escriptori ja és una finestra pròpia.
   * **Corrector ortogràfic**: subratlla les faltes del plafó Markdown amb els diccionaris instal·lats a l'equip i segueix l'idioma del document. Ve activat; en desmarcar-lo s'apaga i la tria es recorda.
   * **Opcions d'exportació…**: obre els ajustos dels fitxers que genera l'aplicació (idioma i, per al LaTeX, classe i preàmbul), explicats més avall.
 * **Imprimir (Ctrl+P)**: genera una vista preparada per a paper o PDF amb els estils actuals.

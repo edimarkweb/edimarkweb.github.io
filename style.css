@@ -252,7 +252,17 @@ body.desktop-mode {
     padding: 0 !important;
 }
 
-body.desktop-mode #toggle-width-btn {
+/*
+  `display: flex` de `.action-btn` gana a la clase `hidden` de Tailwind, que
+  llega antes en la hoja, así que esconder estos botones pide decirlo aquí:
+  con el id, para que valga tanto en la aplicación de escritorio como cuando
+  lo apaga el propio programa.
+*/
+body.desktop-mode #toggle-width-btn,
+body.desktop-mode #desktop-window-toolbar-btn,
+body.desktop-mode #desktop-window-separator,
+#desktop-window-toolbar-btn.hidden,
+#desktop-window-separator.hidden {
     display: none;
 }
 .dark body.desktop-mode {
@@ -1527,6 +1537,25 @@ body.desktop-mode .markdown-textarea {
 #drop-backdrop {
     /* No bloquea clics ni selección */
     pointer-events: none;
+}
+
+/*
+  La raya que separa los botones que cambian la disposición —que se quedan
+  puestos— de abrir la aplicación en su propia ventana, que ocurre una vez.
+  Va en la hoja de estilos y no en clases sueltas porque el CSS de Tailwind se
+  genera con lo que hay escrito: una clase nueva en el HTML no aparece en él
+  hasta regenerarlo.
+*/
+.view-controls-separator {
+    display: block;
+    flex: 0 0 auto;
+    width: 1px;
+    height: 1.25rem;
+    margin: 0 0.25rem;
+    background-color: #e2e8f0;
+}
+.dark .view-controls-separator {
+    background-color: #334155;
 }
 
 /* Controles de búsqueda y modales: respetan el tema de la app */

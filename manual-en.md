@@ -60,7 +60,7 @@ The header has two halves. Next to the logo sit the three menus —**File**, **E
 * **Settings**: gathers every application setting, each one in a submenu showing the current value.
   * **Language**: changes the interface language.
   * **Theme**: `System` follows your computer's setting and changes with it; `Light` and `Dark` fix it. Your choice is remembered next time you open the application.
-  * **Separate window**: opens EdiMarkWeb in a browser window of its own, with no tabs or address bar. It only appears in the web version; the desktop application is already a window of its own.
+  * **Separate window**: opens EdiMarkWeb in a browser window of its own, with no tabs or address bar. It is also a button at the end of the view row, to the right of the panel controls. It only appears in the web version; the desktop application is already a window of its own.
   * **Spell checker**: underlines mistakes in the Markdown pane using the dictionaries installed on the computer, following the document language. It is on by default; unchecking it turns it off and the choice is remembered.
   * **Export options…**: opens the settings for the files the application generates (language, plus class and preamble for LaTeX), explained below.
 * **Print (Ctrl+P)**: produces a view ready for paper or PDF using the current styles.

@@ -8,6 +8,7 @@
   "theme_option_light": "Clar",
   "theme_option_dark": "Fosc",
   "desktop_window_btn_text": "Finestra independent",
+  "desktop_window_btn_title": "Obre en una finestra independent, sense pestanyes ni barra d'adreces",
   "spellcheck_toggle_text": "Corrector ortogràfic",
   "doc_lang_btn_title": "Idioma, autor, índex i format d'aquest document.",
   "doc_settings_btn_text": "Opcions d'exportació…",

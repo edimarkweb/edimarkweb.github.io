@@ -8,6 +8,7 @@
   "theme_option_light": "Light",
   "theme_option_dark": "Dark",
   "desktop_window_btn_text": "Separate window",
+  "desktop_window_btn_title": "Open in a standalone window, with no tabs or address bar",
   "spellcheck_toggle_text": "Spell checker",
   "doc_lang_btn_title": "Language, author, contents and formatting of this document.",
   "doc_settings_btn_text": "Export options…",

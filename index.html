@@ -603,6 +603,17 @@
             <button type="button" id="toggle-width-btn" class="action-btn flex items-center gap-2 p-2 text-sm" data-i18n-key="toggle_width_btn_title" title="Expandir / Contraer ancho">
                 <span class="width-icon flex"><i data-lucide="maximize" class="w-4 h-4 shrink-0"></i></span>
             </button>
+            <!--
+              Abrir la aplicación en su propia ventana también es cosa de cómo
+              se ve, así que va con los demás; pero no es un modo que se quede
+              puesto, sino algo que ocurre una vez, y por eso queda al final y
+              detrás de una raya. En la aplicación de escritorio no pinta nada
+              y se esconde, como el de ancho.
+            -->
+            <span class="view-controls-separator" id="desktop-window-separator" aria-hidden="true"></span>
+            <button type="button" id="desktop-window-toolbar-btn" class="action-btn p-2" data-i18n-key="desktop_window_btn_title" title="Abrir en una ventana independiente, sin pestañas ni barra de direcciones">
+                <i data-lucide="app-window" class="w-4 h-4 shrink-0"></i>
+            </button>
         </div>
 
         <div id="editor-container" class="editor-wrapper pt-3">

@@ -3129,3 +3129,43 @@ test('un punto vacío de una lista anidada sube de nivel', async (t) => {
   await page.waitForFunction(() => document.querySelectorAll('#html-output ul ul li').length === 1);
   assert.equal(await page.locator('#html-output > ul > li').count(), 2);
 });
+
+/*
+  Abrir la aplicación en su propia ventana es cosa de cómo se ve, así que está
+  con los botones de la vista y no solo enterrado en Configuración. No es un
+  modo que se quede puesto, sino algo que pasa una vez: va al final y detrás de
+  una raya. En la aplicación de escritorio no pinta nada.
+*/
+test('la ventana independiente se pide desde la fila de la vista', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const boton = page.locator('#desktop-window-toolbar-btn');
+  await boton.waitFor();
+  assert.equal(await page.locator('#desktop-window-separator').isVisible(), true);
+
+  // Al final de la fila, detrás de los que cambian la disposición.
+  const disposicion = await page.locator('#layout-switch').boundingBox();
+  const ventana = await boton.boundingBox();
+  assert.ok(ventana.x > disposicion.x + disposicion.width, 'debería quedar a la derecha de todo');
+
+  // Y hace lo mismo que la opción de Configuración.
+  const emergente = page.waitForEvent('popup');
+  await boton.click();
+  const nueva = await emergente;
+  assert.match(nueva.url(), /desktop=1/);
+});
+
+test('en la aplicación de escritorio no se ofrece la ventana independiente', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__EDIMARK_TAURI__ = { dialog: {}, fs: {}, opener: { openUrl: async () => {} } };
+    },
+  });
+  t.after(() => context.close());
+
+  await page.waitForFunction(() => document.body.classList.contains('desktop-mode'));
+  for (const selector of ['#desktop-window-toolbar-btn', '#desktop-window-separator', '#desktop-window-btn']) {
+    assert.equal(await page.locator(selector).isVisible(), false, `${selector} no debería verse en el escritorio`);
+  }
+});

@@ -60,7 +60,7 @@ La cabecera tiene dos mitades. Junto al logotipo están los tres menús —**Arc
 * **Configuración**: agrupa todos los ajustes de la aplicación, cada uno con un submenú que indica el valor activo.
   * **Idioma**: cambia el idioma de la interfaz.
   * **Tema**: `Sistema` sigue el del equipo y cambia con él; `Claro` y `Oscuro` lo fijan. La elección se recuerda la próxima vez que abras la aplicación.
-  * **Ventana independiente**: abre EdiMarkWeb en una ventana propia del navegador, sin pestañas ni barra de direcciones. Solo aparece en la versión web; la aplicación de escritorio ya es una ventana propia.
+  * **Ventana independiente**: abre EdiMarkWeb en una ventana propia del navegador, sin pestañas ni barra de direcciones. La tienes también como botón al final de la fila de la vista, a la derecha de los controles de paneles. Solo aparece en la versión web; la aplicación de escritorio ya es una ventana propia.
   * **Corrector ortográfico**: subraya las faltas del panel Markdown con los diccionarios instalados en el equipo y sigue el idioma del documento. Viene activado; al desmarcarlo se apaga y la elección se recuerda.
   * **Opciones de exportación…**: abre los ajustes de los archivos que genera la aplicación (idioma y, para LaTeX, clase y preámbulo), explicados más abajo.
 * **Imprimir (Ctrl+P)**: genera una vista preparada para papel o PDF con los estilos actuales.

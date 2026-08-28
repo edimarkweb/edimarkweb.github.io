@@ -60,7 +60,7 @@ A cabeceira ten dúas metades. Xunto ao logotipo están os tres menús —**Arqu
 * **Configuración**: agrupa todos os axustes da aplicación, cada un cun submenú que indica o valor activo.
   * **Idioma**: cambia o idioma da interface.
   * **Tema**: `Sistema` segue o do equipo e cambia con el; `Claro` e `Escuro` fíxano. A elección lémbrase a próxima vez que abras a aplicación.
-  * **Xanela independente**: abre EdiMarkWeb nunha xanela propia do navegador, sen lapelas nin barra de enderezos. Só aparece na versión web; a aplicación de escritorio xa é unha xanela propia.
+  * **Xanela independente**: abre EdiMarkWeb nunha xanela propia do navegador, sen lapelas nin barra de enderezos. Tamén a tes como botón ao final da fila da vista, á dereita dos controis dos paneis. Só aparece na versión web; a aplicación de escritorio xa é unha xanela propia.
   * **Corrector ortográfico**: subliña as faltas do panel Markdown cos dicionarios instalados no equipo e segue o idioma do documento. Vén activado; ao desmarcalo apágase e a escolla lémbrase.
   * **Opcións de exportación…**: abre os axustes dos ficheiros que xera a aplicación (idioma e, para LaTeX, clase e preámbulo), explicados máis abaixo.
 * **Imprimir (Ctrl+P)**: xera unha vista preparada para papel ou PDF cos estilos actuais.
