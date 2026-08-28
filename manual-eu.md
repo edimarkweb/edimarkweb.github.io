@@ -174,8 +174,10 @@ Dokumentu batek base64 irudiak dituenean —DOCX bat inportatzean, beste aplikaz
 ## Aurrebista interaktiboa
 
 * Egin klik eskuineko panelean emaitzaren gainean zuzenean editatzeko: aldaketak Markdown-arekin sinkronizatzen dira, formatua mantenduz edizioa bateragarria den bitartean.
-* Aurrebistak hautaketak, kopiatu eta itsatsi, eta oinarrizko lasterbideak (Ctrl+B/I, izenburuak, etab.) onartzen ditu, Markdown editoreak bezalaxe.
+* Aurrebistak hautaketak, kopiatu eta itsatsi onartzen ditu.
+* **Formatu-barrak hemen ere lan egiten du.** Kurtsorea orrian dagoela, lodia, etzana, kodea, izenburuak, aipua, zerrendak, estekak, irudiak, taulak eta formulak ikusten ari zarenaren gainean aplikatzen dira, eta Markdown-a bere kabuz berridazten da: formatudun testu-editore bat da, Markdown-era itzultzen duena. Botoi berak jarritakoa kentzen du —*Lodia* sakatzea dagoeneko lodi dagoen zerbaiten gainean kendu egiten dio— eta lasterbideek (`Ctrl`+`B`, `Ctrl`+`I`, `Ctrl`+`Maius`+`L`, etab.) botoiek adina egiten dute. `Ctrl`+`Z`-k desegin egiten du orrian egon arren: historia beti dokumentuarena da.
 * Eutsi `Ctrl` teklari (edo `Cmd` macOS-en) eta egin klik estekak irekitzeko; mahaigaineko aplikazioan zure ohiko nabigatzailean irekitzen dira.
+* **Formulak beren leihoan idazten dira.** Orriaren gainean ez dago `$…$` huts baten barruan idazteko lekurik, KaTeX-ek formula bihurtzen baitu birmargotu bezain laster; horregatik, kurtsorea aurrebistan dagoela, `{}` botoiak zuzenean leiho bat irekitzen du LaTeX kodearekin, idatzi ahala emaitza ikusgai eta errorearen abisua halakorik badago. Hautatuta zenuena idatzita iristen da. Barruan aukeratzen da formula **lerroan ala blokean** joango den eta zein **mugatzailerekin**, `\(...\)` ala `$...$`; hasieran lerroan eta `\(...\)` datoz. Markdown paneletik ez da ezer aldatzen: botoi berak lau bikoteak zabaltzen ditu eta mugatzaileak testuan idazten dira, beti bezala.
 * LaTeX formulak automatikoki errendatzen dira KaTeX-ekin; editatzean beren jatorrizko sintaxira itzultzen dira.
 
 ---

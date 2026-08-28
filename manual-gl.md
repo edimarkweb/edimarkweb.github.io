@@ -174,8 +174,10 @@ Cando un documento leva imaxes en base64 —ao importar un DOCX, ao pegar desde 
 ## Vista previa interactiva
 
 * Fai clic no panel dereito para editar directamente sobre o resultado: os cambios sincronízanse co Markdown mantendo o formato sempre que a edición sexa compatible.
-* A vista previa admite seleccións, copiar e pegar, así como atallos básicos (Ctrl+B/I, cabeceiras, etc.) igual que o editor de Markdown.
+* A vista previa admite seleccións, copiar e pegar.
+* **A barra de formato tamén traballa aquí.** Co cursor na folla, a negra, a cursiva, o código, os títulos, a cita, as listas, as ligazóns, as imaxes, as táboas e as fórmulas aplícanse sobre o que estás a ver, e o Markdown reescríbese só: é un editor de texto con formato que vai traducindo a Markdown. O mesmo botón quita o que puxo —premer *Negra* sobre algo xa en negra quítaa— e os atallos (`Ctrl`+`B`, `Ctrl`+`I`, `Ctrl`+`Maiús`+`L`, etc.) fan o mesmo que os botóns. `Ctrl`+`Z` desfai aínda que esteas na folla: o historial é sempre o do documento.
 * Mantén premido `Ctrl` (ou `Cmd` en macOS) e fai clic para abrir ligazóns; na aplicación de escritorio ábrense no teu navegador habitual.
+* **As fórmulas escríbense na súa propia xanela.** Sobre a folla non hai onde escribir dentro dun `$…$` baleiro, porque KaTeX convérteo en fórmula en canto se repinta; por iso, co cursor na vista previa, o botón `{}` abre directamente unha xanela co código LaTeX, o resultado á vista mentres escribes e o aviso do erro se o hai. O que tiveses seleccionado chega xa escrito. Dentro escóllese se a fórmula vai **en liña ou en bloque** e con que **delimitadores**, `\(...\)` ou `$...$`, que é o que vén posto de partida: en liña e `\(...\)`. Desde o panel Markdown non cambia nada: o mesmo botón desprega os catro pares e os delimitadores escríbense no texto, como sempre.
 * As fórmulas LaTeX represéntanse automaticamente con KaTeX; ao editalas volven á súa sintaxe orixinal.
 
 ---

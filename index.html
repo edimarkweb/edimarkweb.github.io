@@ -503,7 +503,12 @@
                 <div class="relative" id="formula-dropdown-container">
                     <button id="formula-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" title="Insertar fórmula manualmente (Ctrl+M)" data-i18n-key="formula_menu_btn_title" aria-haspopup="true" aria-expanded="false">
                         <i data-lucide="braces"></i>
-                        <i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i>
+                        <!--
+                          La flecha anuncia que hay un menú detrás, y sobre la
+                          vista previa no lo hay: el botón abre la ventana de la
+                          fórmula. Se esconde con el panel, no con el tema.
+                        -->
+                        <span id="formula-btn-caret" class="flex"><i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i></span>
                     </button>
                     <div id="formula-options" class="hidden absolute z-20 -left-2 mt-2 w-72 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
                         <button class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-format="latex-inline-dollar" role="menuitem" aria-keyshortcuts="Control+M 1">
@@ -733,7 +738,7 @@
                 <p class="text-sm text-slate-700 dark:text-slate-300" data-i18n-key="latex_import_modal_description">Pega un documento LaTeX completo. Se convertirá a Markdown y reemplazará el contenido actual.</p>
                 <div>
                     <label for="latex-import-input" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="latex_import_textarea_label">Código LaTeX</label>
-                    <textarea id="latex-import-input" class="mt-1 block w-full h-64 rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Pega aquí tu documento LaTeX…" data-i18n-key="latex_import_placeholder"></textarea>
+                    <textarea id="latex-import-input" class="mt-1 block w-full h-64 rounded-md border border-slate-300 p-3 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Pega aquí tu documento LaTeX…" data-i18n-key="latex_import_placeholder"></textarea>
                 </div>
                 <p id="latex-import-status" class="text-sm text-slate-600 dark:text-slate-300 min-h-[1.5rem]" role="status" aria-live="polite"></p>
             </div>
@@ -972,6 +977,60 @@
             </div>
         </div>
     </div>
+    <!--
+      Fórmula escrita a mano desde la vista previa. En el panel Markdown los
+      delimitadores se escriben en el texto y se ven; sobre la hoja no hay
+      dónde escribir dentro de ellos —KaTeX pinta la fórmula en cuanto se
+      repinta—, así que el código se escribe aquí, con su resultado a la vista.
+    -->
+    <div id="math-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="math-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg dark:bg-slate-800">
+            <h3 id="math-modal-title" class="text-lg font-bold mb-4 text-slate-800 dark:text-slate-100" data-i18n-key="math_modal_title">Escribir una fórmula</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="math-code" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="math_code_label">Código LaTeX</label>
+                    <textarea id="math-code" rows="3" spellcheck="false" class="mt-1 block w-full rounded-md border border-slate-300 p-3 font-mono shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"></textarea>
+                </div>
+                <fieldset>
+                    <legend class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="math_placement_label">Presentación</legend>
+                    <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                        <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                            <input type="radio" name="math-placement" value="inline" checked>
+                            <span data-i18n-key="math_placement_inline">En línea, dentro del texto</span>
+                        </label>
+                        <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                            <input type="radio" name="math-placement" value="block">
+                            <span data-i18n-key="math_placement_block">En bloque, aparte</span>
+                        </label>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="math_delimiter_label">Delimitadores</legend>
+                    <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                        <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                            <input type="radio" name="math-delimiter" value="bracket" checked>
+                            <!-- El par cambia con la presentación: \(…\) en línea, \[…\] en bloque. -->
+                            <span id="math-delimiter-bracket-label" class="font-mono">\(...\)</span>
+                        </label>
+                        <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                            <input type="radio" name="math-delimiter" value="dollar">
+                            <span id="math-delimiter-dollar-label" class="font-mono">$...$</span>
+                        </label>
+                    </div>
+                </fieldset>
+                <div>
+                    <span class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="math_preview_label">Cómo va a quedar</span>
+                    <div id="math-preview" class="mt-1 min-h-14 overflow-x-auto rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"></div>
+                    <p id="math-error" class="mt-2 hidden text-xs text-red-600 dark:text-red-400"></p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="cancel-math-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
+                <button id="insert-math-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="insert_btn">Insertar</button>
+            </div>
+        </div>
+    </div>
+
     <div id="link-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="link-modal-title">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm dark:bg-slate-800">
             <h3 id="link-modal-title" class="text-lg font-bold mb-4 text-slate-800 dark:text-slate-100" data-i18n-key="insert_link_modal_title">Insertar enlace</h3>

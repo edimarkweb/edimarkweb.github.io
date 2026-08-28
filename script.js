@@ -1478,10 +1478,6 @@ let skipNextCursorSync = false;
 let htmlEditorSyncScheduled = false;
 let markdownCharCounterEl = null;
 let skipNextHtmlEditorSync = false;
-let markdownControlsDisabled = false;
-let markdownControlButtons = [];
-let headingOptionsEl = null;
-let formulaOptionsEl = null;
 let latexImportInProgress = false;
 let latexImportModalOverlay = null;
 let latexImportTextarea = null;
@@ -2494,64 +2490,6 @@ window.__updateCharCounterLabel = () => {
     const currentValue = markdownEditor ? markdownEditor.getValue() : '';
     updateMarkdownCharCounter(currentValue);
 };
-
-function setMarkdownControlsDisabled(disabled) {
-    if (markdownControlsDisabled === disabled) return;
-    markdownControlsDisabled = disabled;
-    const disabledHint = getTranslation(
-        'markdown_controls_disabled_hint',
-        'Edita el texto en el panel Markdown para modificar el formato.'
-    );
-    markdownControlButtons.forEach(btn => {
-        if (!btn) return;
-        if (disabled) {
-            btn.setAttribute('data-controls-disabled', 'true');
-        } else {
-            btn.removeAttribute('data-controls-disabled');
-        }
-        if (disabled) {
-            btn.setAttribute('aria-disabled', 'true');
-        } else {
-            btn.removeAttribute('aria-disabled');
-        }
-        if (disabled) {
-            if (typeof btn.dataset.disabledHintOriginalTitle === 'undefined') {
-                const originalTitle = btn.getAttribute('title');
-                btn.dataset.disabledHintOriginalTitle = originalTitle !== null ? originalTitle : '';
-            }
-            if (typeof btn.dataset.disabledHintOriginalAria === 'undefined') {
-                const originalAria = btn.getAttribute('aria-label');
-                btn.dataset.disabledHintOriginalAria = originalAria !== null ? originalAria : '';
-            }
-            btn.setAttribute('title', disabledHint);
-            btn.setAttribute('aria-label', disabledHint);
-        } else {
-            if (typeof btn.dataset.disabledHintOriginalTitle !== 'undefined') {
-                const originalTitle = btn.dataset.disabledHintOriginalTitle;
-                if (originalTitle) {
-                    btn.setAttribute('title', originalTitle);
-                } else {
-                    btn.removeAttribute('title');
-                }
-                delete btn.dataset.disabledHintOriginalTitle;
-            }
-            if (typeof btn.dataset.disabledHintOriginalAria !== 'undefined') {
-                const originalAria = btn.dataset.disabledHintOriginalAria;
-                if (originalAria) {
-                    btn.setAttribute('aria-label', originalAria);
-                } else {
-                    btn.removeAttribute('aria-label');
-                }
-                delete btn.dataset.disabledHintOriginalAria;
-            }
-        }
-    });
-    if (disabled) {
-        if (headingOptionsEl) headingOptionsEl.classList.add('hidden');
-        if (formulaOptionsEl) formulaOptionsEl.classList.add('hidden');
-    }
-    updateUndoRedoButtons();
-}
 
 function updateUndoRedoButtons() {
     const undoAvailable = Boolean(markdownEditor && typeof markdownEditor.canUndo === 'function' && markdownEditor.canUndo());
@@ -3766,7 +3704,349 @@ function updateMarkdown() {
     forceMarkdownUpdate = false;
 }
 
+/*
+  ---------------------------------------------------------------------------
+  Formato desde la vista previa
+  ---------------------------------------------------------------------------
+
+  La barra de formato escribía siempre en el Markdown, así que con el cursor
+  en la hoja no había nada que hacer: los botones se apagaban y había que
+  volver al panel izquierdo para poner una negrita.
+
+  No hace falta traducir nada a mano. La hoja es editable y lo que se toque en
+  ella ya vuelve al Markdown por el mismo camino que usa escribir en el panel
+  derecho: Turndown lee el HTML y devuelve el texto. Basta, pues, con que los
+  botones cambien el HTML en vez del texto —envolver en `<strong>`, convertir
+  el párrafo en `<h2>`, agrupar en `<ul>`— y el Markdown se escribe solo.
+
+  Los formatos de letra y de bloque se dejan en manos del propio navegador
+  (`execCommand`): resuelve por su cuenta la selección partida entre varios
+  nodos, quitar lo ya puesto y rehacer las listas, y con `styleWithCSS`
+  apagado escribe etiquetas —`<b>`, `<i>`— y no estilos, que es lo único que
+  Turndown sabe traducir. Está marcado como obsoleto desde hace años pero
+  sigue siendo lo que sostiene la edición enriquecida en los tres motores, y
+  aquí su resultado dura poco: el siguiente repintado lo rehace desde el
+  Markdown, con `<strong>` y `<em>` como manda marked.
+
+  Lo que no tiene `execCommand` —código en línea, fórmulas, tablas, enlaces e
+  imágenes— se inserta como nodos, generando el HTML del fragmento con el
+  mismo marked que pinta la vista previa.
+*/
+const PREVIEW_BLOCK_SELECTOR = 'p,h1,h2,h3,h4,h5,h6,blockquote,li,pre,td,th';
+let previewFormatRange = null;
+let formatTarget = 'markdown';
+
+function setFormatTarget(target) {
+    formatTarget = target === 'preview' ? 'preview' : 'markdown';
+    refreshFormulaButtonAffordance();
+}
+
+/*
+  El botón de fórmulas hace dos cosas distintas según dónde se esté
+  trabajando: en el Markdown despliega los cuatro pares de delimitadores, y
+  sobre la hoja abre la ventana donde se escribe la fórmula. La flecha y el
+  `aria-haspopup` cuentan cuál de las dos toca.
+*/
+function refreshFormulaButtonAffordance() {
+    const button = document.getElementById('formula-btn');
+    const caret = document.getElementById('formula-btn-caret');
+    if (!button) return;
+    const dialog = isPreviewFormatTarget();
+    if (caret) caret.classList.toggle('hidden', dialog);
+    button.setAttribute('aria-haspopup', dialog ? 'dialog' : 'true');
+    if (dialog) button.setAttribute('aria-expanded', 'false');
+}
+
+// La hoja manda solo si además se está viendo: en modo código o con el panel
+// escondido, el formato vuelve al Markdown aunque el último foco fuera suyo.
+function isPreviewFormatTarget() {
+    return formatTarget === 'preview' && isPreviewVisible();
+}
+
+/*
+  Pulsar un botón de la barra le lleva el foco, y con él se va la selección de
+  la hoja. Por eso se guarda cada vez que cambia, igual que se hace con la del
+  textarea del Markdown.
+*/
+function capturePreviewSelection() {
+    const container = document.getElementById('html-output');
+    const selection = window.getSelection();
+    if (!container || !selection || !selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    if (!container.contains(range.commonAncestorContainer)) return;
+    previewFormatRange = range.cloneRange();
+}
+
+function restorePreviewSelection() {
+    const container = document.getElementById('html-output');
+    const selection = window.getSelection();
+    if (!container || !selection) return false;
+    if (selection.rangeCount) {
+        const current = selection.getRangeAt(0);
+        if (container.contains(current.commonAncestorContainer)) {
+            container.focus();
+            return true;
+        }
+    }
+    if (!previewFormatRange || !container.contains(previewFormatRange.commonAncestorContainer)) return false;
+    container.focus();
+    selection.removeAllRanges();
+    selection.addRange(previewFormatRange);
+    return true;
+}
+
+function previewSelectedText() {
+    const container = document.getElementById('html-output');
+    const selection = window.getSelection();
+    if (!container || !selection || !selection.rangeCount) return '';
+    if (!container.contains(selection.getRangeAt(0).commonAncestorContainer)) return '';
+    return selection.toString().trim();
+}
+
+function previewBlockOfSelection() {
+    const container = document.getElementById('html-output');
+    const selection = window.getSelection();
+    if (!container || !selection || !selection.rangeCount) return null;
+    let node = selection.getRangeAt(0).startContainer;
+    if (node && node.nodeType === 3) node = node.parentNode;
+    const block = node && node.closest ? node.closest(PREVIEW_BLOCK_SELECTOR) : null;
+    return block && container.contains(block) ? block : null;
+}
+
+function topLevelPreviewBlock(node) {
+    const container = document.getElementById('html-output');
+    let element = node && node.nodeType === 3 ? node.parentElement : node;
+    while (element && element.parentElement && element.parentElement !== container) {
+        element = element.parentElement;
+    }
+    return element && element.parentElement === container ? element : null;
+}
+
+/*
+  Avisar de que la hoja ha cambiado. Lo normal es dejar que siga el mismo
+  camino que escribir a mano —el evento `input`, que rehace el Markdown sin
+  tocar la hoja—; `repaint` es para lo que necesita volver a pintarse para
+  verse bien, como una fórmula, que sale del Markdown convertida en KaTeX.
+*/
+function notifyPreviewEdited({ repaint = false } = {}) {
+    const container = document.getElementById('html-output');
+    if (!container) return;
+    if (!repaint) {
+        container.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+    }
+    updateMarkdown();
+    updateHtml();
+}
+
+function fragmentFromHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html || '';
+    return template.content;
+}
+
+function unwrapElement(element) {
+    const parent = element.parentNode;
+    if (!parent) return;
+    while (element.firstChild) parent.insertBefore(element.firstChild, element);
+    parent.removeChild(element);
+}
+
+function applyInlineCodeToPreview() {
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return false;
+    if (selection.isCollapsed) {
+        return insertMarkdownIntoPreview('```\n\n```', { repaint: true });
+    }
+    const range = selection.getRangeAt(0);
+    let node = range.startContainer;
+    if (node && node.nodeType === 3) node = node.parentNode;
+    const existing = node && node.closest ? node.closest('code') : null;
+    if (existing && !existing.closest('pre')) {
+        unwrapElement(existing);
+        return true;
+    }
+    const code = document.createElement('code');
+    try {
+        range.surroundContents(code);
+    } catch (_) {
+        // La selección cruza varios nodos: se extrae y se vuelve a meter.
+        code.appendChild(range.extractContents());
+        range.insertNode(code);
+    }
+    const after = document.createRange();
+    after.selectNodeContents(code);
+    selection.removeAllRanges();
+    selection.addRange(after);
+    return true;
+}
+
+/*
+  Las dos familias de delimitadores del menú, cada una con su forma en línea y
+  su forma en bloque: cambiar de presentación dentro de la ventana no cambia de
+  familia, que es lo que el usuario eligió al abrirla.
+*/
+function mathDelimiters(family, block) {
+    if (family === 'bracket') {
+        return block ? { open: '\\[', close: '\\]' } : { open: '\\(', close: '\\)' };
+    }
+    return block ? { open: '$$', close: '$$' } : { open: '$', close: '$' };
+}
+
+function mathDelimitersForFormat(format) {
+    switch (format) {
+        case 'latex-inline':
+        case 'latex-inline-dollar': return { family: 'dollar', block: false };
+        case 'latex-block-dollar': return { family: 'dollar', block: true };
+        case 'latex-inline-paren': return { family: 'bracket', block: false };
+        case 'latex-block':
+        case 'latex-block-bracket': return { family: 'bracket', block: true };
+        default: return null;
+    }
+}
+
+/*
+  Una fórmula entra en la hoja como lo que es en el Markdown: texto entre
+  delimitadores, tal cual, sin pasar por marked —que leería `\(` como un
+  paréntesis escapado y se comería las barras—. Quien la convierte en fórmula
+  es el repintado, con KaTeX, así que se escribe y se vuelve a pintar.
+*/
+function insertPlainTextIntoPreview(text, { block = false } = {}) {
+    const container = document.getElementById('html-output');
+    if (!container) return false;
+    if (!restorePreviewSelection()) return false;
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return false;
+    const range = selection.getRangeAt(0);
+    if (block) {
+        const anchor = topLevelPreviewBlock(range.startContainer);
+        const paragraph = document.createElement('p');
+        paragraph.textContent = text;
+        range.deleteContents();
+        if (anchor) anchor.after(paragraph);
+        else container.appendChild(paragraph);
+    } else {
+        range.deleteContents();
+        range.insertNode(document.createTextNode(text));
+    }
+    notifyPreviewEdited({ repaint: true });
+    return true;
+}
+
+/*
+  Lo que ya viene escrito en Markdown —una fórmula de EdiCuaTeX— se inserta
+  como texto en la hoja y como texto en el editor: nadie lo reinterpreta.
+*/
+function insertRawContent(text, { block = false } = {}) {
+    if (isPreviewFormatTarget() && insertPlainTextIntoPreview(text, { block })) return;
+    markdownEditor.replaceSelection(block ? `\n${text}\n` : text);
+    markdownEditor.focus();
+}
+
+/*
+  Enlaces, imágenes y tablas llegan aquí en Markdown, que es como los escriben
+  sus ventanas: se convierten con marked —el mismo que pinta la hoja— y se
+  meten como nodos. En línea, dentro del texto; en bloque, detrás del bloque
+  donde esté el cursor.
+*/
+function insertMarkdownIntoPreview(markdown, { inline = false, repaint = false } = {}) {
+    const container = document.getElementById('html-output');
+    if (!container || !window.marked) return false;
+    if (!restorePreviewSelection()) return false;
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return false;
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+    if (inline) {
+        const parseInline = typeof marked.parseInline === 'function' ? marked.parseInline : marked.parse;
+        const fragment = fragmentFromHtml(parseInline.call(marked, markdown));
+        const last = fragment.lastChild;
+        range.insertNode(fragment);
+        if (last) {
+            const after = document.createRange();
+            after.setStartAfter(last);
+            after.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(after);
+        }
+    } else {
+        const fragment = fragmentFromHtml(marked.parse(markdown));
+        const anchor = topLevelPreviewBlock(range.startContainer);
+        if (anchor) anchor.after(fragment);
+        else container.appendChild(fragment);
+    }
+    applyRelativeImageSources(container, docs.find(d => d.id === currentId));
+    notifyPreviewEdited({ repaint: repaint || !inline });
+    return true;
+}
+
+/*
+  Punto único de inserción: lo que antes escribía siempre en el Markdown ahora
+  pregunta primero dónde está trabajando el usuario.
+*/
+function insertMarkdownContent(markdown, { inline = false, repaint = false } = {}) {
+    if (isPreviewFormatTarget() && insertMarkdownIntoPreview(markdown, { inline, repaint })) return;
+    markdownEditor.replaceSelection(markdown);
+    markdownEditor.focus();
+}
+
+function applyFormatToPreview(format) {
+    if (!isPreviewFormatTarget()) return false;
+    if (!restorePreviewSelection()) return false;
+    try { document.execCommand('styleWithCSS', false, false); } catch (_) { /* da igual si no está */ }
+    const run = (command, value) => {
+        try { return document.execCommand(command, false, value); } catch (_) { return false; }
+    };
+    switch (format) {
+        case 'bold': run('bold'); break;
+        case 'italic': run('italic'); break;
+        case 'code':
+            if (!applyInlineCodeToPreview()) return false;
+            break;
+        case 'quote': {
+            const block = previewBlockOfSelection();
+            if (block && block.closest('blockquote')) run('outdent');
+            else run('formatBlock', 'blockquote');
+            break;
+        }
+        case 'list-ul': run('insertUnorderedList'); break;
+        case 'list-ol': run('insertOrderedList'); break;
+        /*
+          Sus ventanas piden los datos y vuelven por insertMarkdownContent. El
+          texto seleccionado en la hoja se lleva ya escrito, igual que cuando
+          se pide desde el Markdown: así solo queda poner la dirección.
+        */
+        case 'link':
+            toggleLinkModal(true, previewSelectedText());
+            return true;
+        case 'image':
+            toggleImageModal(true, previewSelectedText());
+            return true;
+        // La tabla no se hace con lo que haya seleccionado.
+        case 'table': return false;
+        default: {
+            const heading = /^heading-([1-6])$/.exec(format);
+            if (heading) {
+                const block = previewBlockOfSelection();
+                const already = block && block.tagName === `H${heading[1]}`;
+                run('formatBlock', already ? 'p' : `h${heading[1]}`);
+                break;
+            }
+            const math = mathDelimitersForFormat(format);
+            if (math) {
+                toggleMathModal(true, { ...math, tex: previewSelectedText() });
+                return true;
+            }
+            return false;
+        }
+    }
+    notifyPreviewEdited();
+    capturePreviewSelection();
+    return true;
+}
+
 function applyFormat(format) {
+    if (applyFormatToPreview(format)) return;
     const cursor = markdownEditor.getCursor();
     const selectedText = markdownEditor.getSelection();
     const hadSelection = !!selectedText;
@@ -3847,15 +4127,147 @@ function applyFormat(format) {
     markdownEditor.focus();
 }
 
-function toggleTableModal(show) { document.getElementById('table-modal-overlay').style.display = show ? 'flex' : 'none'; }
+/*
+  El cursor de escritura en el campo de una ventana. Enfocar y ya está no
+  basta cuando se viene de la vista previa: el editable se queda con la
+  selección del documento y el navegador no pinta el caret del campo, que
+  aparece enmarcado pero muerto. Se le quita la selección al editable —el
+  punto donde insertar está guardado aparte, así que no se pierde nada—, se
+  espera al dibujado y se enfoca; seleccionar el contenido de paso deja listo
+  para escribir encima lo que llegara escrito.
+*/
+function focusModalField(field, { select = false } = {}) {
+    if (!field) return;
+    const preview = document.getElementById('html-output');
+    const active = document.activeElement;
+    if (preview && active && (active === preview || preview.contains(active))) {
+        preview.blur();
+    }
+    const selection = window.getSelection();
+    if (preview && selection && selection.rangeCount
+        && preview.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+        selection.removeAllRanges();
+    }
+    /*
+      Enfocar en el acto, no en el fotograma siguiente: quien escribe nada más
+      abrir la ventana perdía la primera letra, y encima iba a parar al
+      documento. La segunda pasada es por si algo se lleva el foco al cerrar el
+      menú de donde vino, y respeta lo que ya se haya escrito.
+    */
+    field.focus();
+    if (select && typeof field.select === 'function') field.select();
+    const reintentar = () => {
+        if (document.activeElement !== field) field.focus();
+    };
+    if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(reintentar);
+    else setTimeout(reintentar, 0);
+}
+
+function toggleTableModal(show) {
+    document.getElementById('table-modal-overlay').style.display = show ? 'flex' : 'none';
+    if (show) focusModalField(document.getElementById('table-cols'), { select: true });
+}
 
 function toggleLinkModal(show, presetText = '') {
     document.getElementById('link-modal-overlay').style.display = show ? 'flex' : 'none';
     if (show) {
         document.getElementById('link-text').value = presetText;
         document.getElementById('link-url').value  = '';
-        setTimeout(() => document.getElementById(presetText ? 'link-url' : 'link-text').focus(), 0);
+        focusModalField(document.getElementById(presetText ? 'link-url' : 'link-text'), { select: true });
     }
+}
+
+/*
+  La ventana de fórmula. En el panel Markdown los delimitadores se escriben en
+  el texto y quedan a la vista para escribir dentro; sobre la hoja no hay
+  dónde: en cuanto se repinta, KaTeX convierte el hueco en fórmula. Así que el
+  código se escribe aquí, se ve el resultado antes de aceptar, y lo que entra
+  en el documento es la fórmula ya montada.
+*/
+let mathModalContext = null;
+
+function mathModalPlacement() {
+    const checked = document.querySelector('input[name="math-placement"]:checked');
+    return checked ? checked.value === 'block' : false;
+}
+
+function mathModalFamily() {
+    const checked = document.querySelector('input[name="math-delimiter"]:checked');
+    return checked ? checked.value : 'bracket';
+}
+
+// Los pares que se ofrecen son los de la presentación elegida.
+function refreshMathDelimiterLabels() {
+    const block = mathModalPlacement();
+    const bracket = document.getElementById('math-delimiter-bracket-label');
+    const dollar = document.getElementById('math-delimiter-dollar-label');
+    if (bracket) bracket.textContent = block ? '\\[...\\]' : '\\(...\\)';
+    if (dollar) dollar.textContent = block ? '$$...$$' : '$...$';
+}
+
+function renderMathModalPreview() {
+    const codeEl = document.getElementById('math-code');
+    const previewEl = document.getElementById('math-preview');
+    const errorEl = document.getElementById('math-error');
+    if (!codeEl || !previewEl) return;
+    const tex = codeEl.value.trim();
+    const displayMode = mathModalPlacement();
+    refreshMathDelimiterLabels();
+    if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.add('hidden');
+    }
+    if (!tex) {
+        previewEl.textContent = getTranslation('math_preview_empty', 'Escribe la fórmula para verla aquí.');
+        return;
+    }
+    if (!window.katex || typeof window.katex.render !== 'function') {
+        previewEl.textContent = tex;
+        return;
+    }
+    try {
+        window.katex.render(tex, previewEl, { displayMode, throwOnError: true });
+    } catch (error) {
+        // KaTeX sabe señalar en rojo lo que no entiende; el motivo va debajo.
+        try {
+            window.katex.render(tex, previewEl, { displayMode, throwOnError: false });
+        } catch (_) {
+            previewEl.textContent = tex;
+        }
+        if (errorEl) {
+            errorEl.textContent = error && error.message ? error.message : String(error);
+            errorEl.classList.remove('hidden');
+        }
+    }
+}
+
+function toggleMathModal(show, context = null) {
+    const overlay = document.getElementById('math-modal-overlay');
+    if (!overlay) return;
+    overlay.style.display = show ? 'flex' : 'none';
+    if (!show) {
+        mathModalContext = null;
+        return;
+    }
+    mathModalContext = context || { family: 'bracket', block: false };
+    const codeEl = document.getElementById('math-code');
+    if (codeEl) codeEl.value = (context && context.tex) || '';
+    const placement = document.querySelector(`input[name="math-placement"][value="${mathModalContext.block ? 'block' : 'inline'}"]`);
+    if (placement) placement.checked = true;
+    const delimiter = document.querySelector(`input[name="math-delimiter"][value="${mathModalContext.family === 'dollar' ? 'dollar' : 'bracket'}"]`);
+    if (delimiter) delimiter.checked = true;
+    renderMathModalPreview();
+    focusModalField(codeEl, { select: true });
+}
+
+function insertMathFromModal() {
+    const codeEl = document.getElementById('math-code');
+    const tex = codeEl ? codeEl.value.trim() : '';
+    if (!tex) return;
+    const block = mathModalPlacement();
+    const { open, close } = mathDelimiters(mathModalFamily(), block);
+    toggleMathModal(false);
+    insertRawContent(`${open}${tex}${close}`, { block });
 }
 
 function toggleImageModal(show, presetText = '') {
@@ -3867,7 +4279,7 @@ function toggleImageModal(show, presetText = '') {
         const defaultMode = document.querySelector('input[name="image-insert-mode"][value="relative"]');
         if (defaultMode) defaultMode.checked = true;
         if (typeof window.__edimarkResetImageSource === 'function') window.__edimarkResetImageSource();
-        setTimeout(() => document.getElementById(presetText ? 'image-file-input' : 'image-alt-text').focus(), 0);
+        focusModalField(document.getElementById(presetText ? 'image-file-input' : 'image-alt-text'), { select: true });
     }
 }
 
@@ -4014,7 +4426,7 @@ function toggleLatexImportModal(show) {
     if (show) {
         if (latexImportTextarea) {
             latexImportTextarea.value = '';
-            setTimeout(() => latexImportTextarea.focus(), 0);
+            focusModalField(latexImportTextarea);
         }
         setLatexImportStatus('');
     } else if (!latexImportInProgress) {
@@ -4577,6 +4989,8 @@ let layoutTransitionTimer = null;
 function applyLayout(layout) {
   currentLayout = layout;
   syncEnabled = (layout === 'dual');
+  // Esconder la vista previa devuelve el formato al Markdown, y con él el menú.
+  refreshFormulaButtonAffordance();
   safeLocalStorageSet(LAYOUT_KEY, layout);
 
   const mdPanel = document.getElementById('markdown-panel');
@@ -4925,18 +5339,6 @@ window.onload = async () => {
     const newTabBtn = document.getElementById('new-tab-btn');
     const tabBar = document.getElementById('tab-bar');
     initializeTabDragAndDrop(tabBar);
-    headingOptionsEl = headingOptions;
-    formulaOptionsEl = formulaOptions;
-    markdownControlButtons = (() => {
-        if (!toolbar) return [];
-        const buttons = new Set(Array.from(toolbar.querySelectorAll('button[data-format]')));
-        if (headingBtn) buttons.add(headingBtn);
-        // Fórmulas y EdiCuaTeX también escriben en el Markdown: sus manejadores
-        // ya consultan data-controls-disabled, pero nadie se lo ponía.
-        if (formulaBtn) buttons.add(formulaBtn);
-        if (openEdicuatexBtn) buttons.add(openEdicuatexBtn);
-        return Array.from(buttons);
-    })();
     if (undoButtonEl) {
         undoButtonEl.addEventListener('click', () => {
             if (markdownEditor && typeof markdownEditor.undo === 'function') {
@@ -4955,7 +5357,6 @@ window.onload = async () => {
             }
         });
     }
-    setMarkdownControlsDisabled(false);
 
     const readFocusModePreference = () => {
         return safeLocalStorageGet(FOCUS_MODE_KEY) === '1';
@@ -5162,12 +5563,18 @@ window.onload = async () => {
     if (formulaBtn) {
         formulaBtn.setAttribute('aria-expanded', 'false');
         formulaBtn.addEventListener('click', (event) => {
-            if (formulaBtn.dataset.controlsDisabled === 'true') {
-                event.preventDefault();
-                return;
-            }
             event.preventDefault();
             event.stopPropagation();
+            /*
+              Sobre la hoja no hay nada que elegir antes de escribir: la
+              ventana trae los delimitadores como una opción más, en línea y
+              con `\(...\)` de partida.
+            */
+            if (isPreviewFormatTarget()) {
+                closeFormulaOptions();
+                toggleMathModal(true, { family: 'bracket', block: false, tex: previewSelectedText() });
+                return;
+            }
             if (!formulaOptions) return;
             if (formulaOptions.classList.contains('hidden')) {
                 openFormulaOptions();
@@ -5658,13 +6065,7 @@ window.onload = async () => {
     }
 
     if (openEdicuatexBtn) {
-        openEdicuatexBtn.addEventListener('click', (event) => {
-            if (openEdicuatexBtn.dataset.controlsDisabled === 'true') {
-                event.preventDefault();
-                return;
-            }
-            openEdicuatex(event);
-        });
+        openEdicuatexBtn.addEventListener('click', (event) => openEdicuatex(event));
     }
 
     edicuatexCloseBtn?.addEventListener('click', () => closeEmbeddedEdicuatex());
@@ -6445,11 +6846,15 @@ window.onload = async () => {
         if (edicuatexModalOverlay?.style.display === 'flex'
             && edicuatexFrame?.contentWindow
             && event.source !== edicuatexFrame.contentWindow) return;
-        const insertion = event.data.wrapped || event.data.latex || '';
+        /*
+          EdiCuaTeX manda la fórmula ya envuelta cuando allí se ha elegido un
+          delimitador; si no, llega el LaTeX pelado y hay que ponerle uno o
+          entraría en el documento como texto corriente.
+        */
+        const insertion = event.data.wrapped || (event.data.latex ? `\\(${event.data.latex}\\)` : '');
         if (!insertion) return;
         requestAnimationFrame(() => {
-            markdownEditor.replaceSelection(insertion);
-            markdownEditor.focus();
+            insertRawContent(insertion);
             if (edicuatexWindow && !edicuatexWindow.closed) {
                 try { edicuatexWindow.close(); } catch (_) {}
             }
@@ -6464,7 +6869,18 @@ window.onload = async () => {
 
     // --- Inicialización de librerías ---
     if (window.TurndownService) {
-        turndownService = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+        /*
+          Los delimitadores son los mismos que escribe la barra en el panel
+          Markdown: sin esto, tocar una palabra en la hoja reescribía de paso
+          todas las listas del documento con `*` y la cursiva con `_`, y el
+          archivo cambiaba entero por poner una negrita.
+        */
+        turndownService = new TurndownService({
+            headingStyle: 'atx',
+            codeBlockStyle: 'fenced',
+            bulletListMarker: '-',
+            emDelimiter: '*',
+        });
         if (window.turndownPluginGfm) {
             if (typeof window.turndownPluginGfm.gfm === 'function') {
                 turndownService.use(window.turndownPluginGfm.gfm);
@@ -6477,7 +6893,49 @@ window.onload = async () => {
                     }
                 });
             }
+            /*
+              La casilla de una tarea solo la reconocía Turndown colgando
+              directamente del elemento de lista, y en una lista con línea en
+              blanco entre puntos marked la mete dentro de un párrafo: la
+              casilla se perdía y `- [ ] tarea` volvía convertida en `- tarea`.
+              Antes hacía falta escribir en la hoja para toparse con ello;
+              ahora basta con poner una negrita desde allí.
+            */
+            turndownService.addRule('edimarkTaskCheckbox', {
+                filter: node => node.nodeName === 'INPUT'
+                    && node.type === 'checkbox'
+                    && typeof node.closest === 'function'
+                    && !!node.closest('li'),
+                replacement: (content, node) => (node.checked ? '[x] ' : '[ ] '),
+            });
         }
+        /*
+          Y la sangría: Turndown separa el guion del texto con tres espacios,
+          mientras que la barra escribe `- uno`. La continuación se sangra con
+          lo que ocupe el prefijo, que es lo que mantiene anidado lo que iba
+          anidado.
+        */
+        turndownService.addRule('edimarkListItem', {
+            filter: 'li',
+            replacement: (content, node, options) => {
+                const parent = node.parentNode;
+                let prefix = `${options.bulletListMarker} `;
+                if (parent && parent.nodeName === 'OL') {
+                    const start = parent.getAttribute('start');
+                    const index = Array.prototype.indexOf.call(parent.children, node);
+                    prefix = `${start ? Number(start) + index : index + 1}. `;
+                }
+                const cuerpo = content
+                    .replace(/^\n+/, '')
+                    .replace(/\n+$/, '\n')
+                    .replace(/\n/gm, `\n${' '.repeat(prefix.length)}`)
+                    // Una línea con solo sangría es una línea en blanco.
+                    .replace(/\n[ \t]+(?=\n)/g, '\n')
+                    // La casilla ya trae su espacio; el texto, el suyo.
+                    .replace(/^(\[[ x]\])\s+/, '$1 ');
+                return prefix + cuerpo + (node.nextSibling && !/\n$/.test(cuerpo) ? '\n' : '');
+            },
+        });
     }
 
     const markdownTextarea = document.getElementById('markdown-input');
@@ -6486,7 +6944,7 @@ window.onload = async () => {
     markdownEditor = baseMarkdownEditor ? createBase64AwareEditor(baseMarkdownEditor, markdownTextarea) : null;
     if (markdownTextarea) {
         markdownTextarea.focus();
-        markdownTextarea.addEventListener('focusin', () => setMarkdownControlsDisabled(false));
+        markdownTextarea.addEventListener('focusin', () => setFormatTarget('markdown'));
         markdownTextarea.addEventListener('paste', (event) => {
             let pastedText = '';
             if (event && event.clipboardData && typeof event.clipboardData.getData === 'function') {
@@ -6732,11 +7190,6 @@ window.onload = async () => {
     // --- Eventos de la barra de herramientas ---
     toolbar.addEventListener('click', (e) => {
         const button = e.target.closest('button');
-        if (button && button.dataset.controlsDisabled === 'true') {
-            e.preventDefault();
-            e.stopPropagation();
-            return;
-        }
         if (button && button.dataset.format) {
             applyFormat(button.dataset.format);
             if (button.dataset.format.startsWith('heading-')) {
@@ -6749,10 +7202,6 @@ window.onload = async () => {
     });
     
     headingBtn.addEventListener('click', (e) => {
-        if (headingBtn.dataset.controlsDisabled === 'true') {
-            e.preventDefault();
-            return;
-        }
         e.stopPropagation();
         headingOptions.classList.toggle('hidden');
         fitMenuInViewport(headingOptions);
@@ -6934,7 +7383,13 @@ window.onload = async () => {
     }
     printBtn.addEventListener('click', printPreview);
     if (htmlOutput) {
-        htmlOutput.addEventListener('focusin', () => setMarkdownControlsDisabled(true));
+        htmlOutput.addEventListener('focusin', () => setFormatTarget('preview'));
+        /*
+          La selección de la hoja se guarda mientras se tiene: al pulsar un
+          botón de la barra el foco se va con él y ya no habría nada que
+          formatear.
+        */
+        document.addEventListener('selectionchange', capturePreviewSelection);
         htmlOutput.addEventListener('keydown', (event) => {
             if (!markdownEditor) return;
             const accel = event.ctrlKey || event.metaKey;
@@ -7965,9 +8420,8 @@ window.onload = async () => {
             for (let c = 0; c < cols; c++) tableMd += ` ${cellLabel}      |`;
             tableMd += '\n';
         }
-        markdownEditor.replaceSelection(tableMd);
+        insertMarkdownContent(tableMd);
         toggleTableModal(false);
-        markdownEditor.focus();
     });
     cancelTableBtn.addEventListener('click', () => toggleTableModal(false));
     tableModalOverlay.addEventListener('click', (e) => { if (e.target === tableModalOverlay) toggleTableModal(false); });
@@ -7990,12 +8444,37 @@ window.onload = async () => {
     insertLinkBtn.addEventListener('click', () => {
       const text = document.getElementById('link-text').value.trim() || 'enlace';
       const url  = document.getElementById('link-url').value.trim()  || '#';
-      markdownEditor.replaceSelection(`[${text}](${url})`);
+      insertMarkdownContent(`[${text}](${url})`, { inline: true });
       toggleLinkModal(false);
-      markdownEditor.focus();
     });
     cancelLinkBtn.addEventListener('click', () => toggleLinkModal(false));
     linkModalOverlay.addEventListener('click', e => { if (e.target === linkModalOverlay) toggleLinkModal(false); });
+
+    const mathModalOverlay = document.getElementById('math-modal-overlay');
+    const mathCodeInput = document.getElementById('math-code');
+    const insertMathBtn = document.getElementById('insert-math-btn');
+    const cancelMathBtn = document.getElementById('cancel-math-btn');
+    if (mathModalOverlay) {
+        mathCodeInput?.addEventListener('input', renderMathModalPreview);
+        document.querySelectorAll('input[name="math-placement"], input[name="math-delimiter"]').forEach((radio) => {
+            radio.addEventListener('change', renderMathModalPreview);
+        });
+        // Escribir y aceptar sin soltar el teclado.
+        mathCodeInput?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                insertMathFromModal();
+            }
+        });
+        insertMathBtn?.addEventListener('click', insertMathFromModal);
+        cancelMathBtn?.addEventListener('click', () => toggleMathModal(false));
+        mathModalOverlay.addEventListener('click', (event) => {
+            if (event.target === mathModalOverlay) toggleMathModal(false);
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && mathModalOverlay.style.display === 'flex') toggleMathModal(false);
+        });
+    }
     
     /*
       Vincular a mano la carpeta del documento. Es el único camino en el
@@ -8173,11 +8652,10 @@ window.onload = async () => {
 
       const defaultAlt = pickedImage?.name || getTranslation('base64_image_default_alt', 'imagen');
       const alt = document.getElementById('image-alt-text').value.trim() || defaultAlt;
-      markdownEditor.replaceSelection(`![${alt}](${reference || '#'})`);
+      insertMarkdownContent(`![${alt}](${reference || '#'})`, { inline: true });
       if (imageFileInput) imageFileInput.value = '';
       resetImageSource();
       toggleImageModal(false);
-      markdownEditor.focus();
     });
     cancelImageBtn.addEventListener('click', () => toggleImageModal(false));
     imageModalOverlay.addEventListener('click', e => { if (e.target === imageModalOverlay) toggleImageModal(false); });

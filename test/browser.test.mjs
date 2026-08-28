@@ -212,19 +212,13 @@ test('la aplicación nativa aprovecha toda la ventana y comparte el cuadro Acerc
   await page.locator('#about-close-btn').click();
   await page.locator('#about-modal-overlay').waitFor({ state: 'hidden' });
 
-  // Con el foco en la previsualización no se escribe en el Markdown: los
-  // botones de fórmulas quedan apagados como el resto del formato.
+  // El formato se aplica también con el foco en la previsualización: los
+  // botones ya no se apagan al pasar a la hoja.
   await page.locator('#html-output').focus();
-  assert.equal(await page.locator('#formula-btn').getAttribute('data-controls-disabled'), 'true');
-  assert.equal(await page.locator('#open-edicuatex-btn').getAttribute('data-controls-disabled'), 'true');
-  // El botón sigue recibiendo el clic —así avisa de por qué no hace nada—,
-  // pero Playwright lo ve deshabilitado por aria-disabled: hay que forzarlo.
-  await page.locator('#open-edicuatex-btn').click({ force: true });
-  assert.equal(await page.locator('#edicuatex-modal-overlay').isVisible(), false);
-
-  await page.locator('#markdown-input').focus();
   assert.equal(await page.locator('#formula-btn').getAttribute('data-controls-disabled'), null);
   assert.equal(await page.locator('#open-edicuatex-btn').getAttribute('data-controls-disabled'), null);
+
+  await page.locator('#markdown-input').focus();
   await page.locator('#open-edicuatex-btn').click();
   await page.locator('#edicuatex-modal-overlay').waitFor({ state: 'visible' });
   const edicuatexUrl = new URL(await page.locator('#edicuatex-frame').getAttribute('src'));
@@ -2568,4 +2562,341 @@ test('los dos paneles se siguen por la línea, no por la proporción', async (t)
     return medida.top >= textarea.scrollTop && medida.top <= textarea.scrollTop + textarea.clientHeight;
   });
   assert.ok(lineaVisible, 'el Markdown no llegó a la línea del bloque pinchado');
+});
+
+/*
+  La barra de formato escribía siempre en el Markdown y se apagaba al pasar a
+  la hoja. Ahora trabaja en los dos lados: en la hoja cambia el HTML y el
+  Markdown se escribe solo por el camino de siempre. Lo que se comprueba es el
+  Markdown resultante, que es lo que se guarda y se exporta.
+*/
+async function seleccionarEnLaHoja(page, texto) {
+  await page.evaluate((buscado) => {
+    const salida = document.getElementById('html-output');
+    salida.focus();
+    const buscar = (nodo) => {
+      for (const hijo of nodo.childNodes) {
+        if (hijo.nodeType === 3 && hijo.data.includes(buscado)) return hijo;
+        if (hijo.nodeType === 1) {
+          const encontrado = buscar(hijo);
+          if (encontrado) return encontrado;
+        }
+      }
+      return null;
+    };
+    const nodo = buscar(salida);
+    if (!nodo) throw new Error(`No se encontró «${buscado}» en la vista previa`);
+    const inicio = nodo.data.indexOf(buscado);
+    const rango = document.createRange();
+    rango.setStart(nodo, inicio);
+    rango.setEnd(nodo, inicio + buscado.length);
+    const seleccion = window.getSelection();
+    seleccion.removeAllRanges();
+    seleccion.addRange(rango);
+    // El guardado de la selección escucha este evento, que no se dispara solo
+    // cuando la selección se pone desde un script.
+    document.dispatchEvent(new Event('selectionchange'));
+  }, texto);
+}
+
+/*
+  La vista previa se repinta agrupando las pulsaciones, así que un documento
+  nuevo con el mismo texto que el anterior no se distingue del que ya estaba en
+  pantalla: hay que escribir algo distinto cada vez y esperar a verlo.
+*/
+async function documentoDePrueba(page, palabra) {
+  await page.locator('#markdown-input').fill(`Un párrafo de prueba para ${palabra}.\n`);
+  await page.locator('#html-output p').getByText(palabra).waitFor();
+}
+
+test('el formato de la barra se aplica también sobre la vista previa', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+
+  for (const [formato, palabra, esperado] of [
+    ['bold', 'negrita', 'Un párrafo de prueba para **negrita**.'],
+    ['italic', 'cursiva', 'Un párrafo de prueba para *cursiva*.'],
+    ['code', 'código', 'Un párrafo de prueba para `código`.'],
+    ['quote', 'cita', '> Un párrafo de prueba para cita.'],
+    ['list-ul', 'lista', '- Un párrafo de prueba para lista.'],
+    ['list-ol', 'numerada', '1. Un párrafo de prueba para numerada.'],
+  ]) {
+    await documentoDePrueba(page, palabra);
+    await seleccionarEnLaHoja(page, palabra);
+    await page.locator(`[data-format="${formato}"]`).click();
+    await page.waitForFunction(
+      (texto) => document.getElementById('markdown-input').value.trim() === texto,
+      esperado,
+    );
+    assert.equal(
+      (await page.locator('#markdown-input').inputValue()).trim(),
+      esperado,
+      `«${formato}» desde la vista previa`,
+    );
+  }
+
+  // El mismo botón quita lo que puso.
+  await documentoDePrueba(page, 'alternancia');
+  await seleccionarEnLaHoja(page, 'alternancia');
+  await page.locator('[data-format="bold"]').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('**'));
+  await seleccionarEnLaHoja(page, 'alternancia');
+  await page.locator('[data-format="bold"]').click();
+  await page.waitForFunction(() => !document.getElementById('markdown-input').value.includes('**'));
+
+  // Y el atajo hace lo mismo que el botón.
+  await documentoDePrueba(page, 'atajo');
+  await seleccionarEnLaHoja(page, 'atajo');
+  await page.keyboard.press('Control+b');
+  await page.waitForFunction(
+    () => document.getElementById('markdown-input').value.trim() === 'Un párrafo de prueba para **atajo**.',
+  );
+});
+
+test('desde la vista previa se insertan títulos, enlaces, imágenes y tablas', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+
+  // Título: el desplegable lo pone y, repetido, lo quita.
+  await documentoDePrueba(page, 'encabezado');
+  await seleccionarEnLaHoja(page, 'encabezado');
+  await page.locator('#heading-btn').click();
+  await page.locator('[data-format="heading-2"]').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.startsWith('## '));
+  await seleccionarEnLaHoja(page, 'encabezado');
+  await page.locator('#heading-btn').click();
+  await page.locator('[data-format="heading-2"]').click();
+  await page.waitForFunction(() => !document.getElementById('markdown-input').value.startsWith('## '));
+
+  /*
+    Enlace: la ventana de siempre, con el texto seleccionado ya escrito —solo
+    queda poner la dirección, igual que pidiéndolo desde el Markdown— y puesto
+    donde estaba la selección.
+  */
+  await documentoDePrueba(page, 'enlace');
+  await seleccionarEnLaHoja(page, 'enlace');
+  await page.locator('[data-format="link"]').click();
+  await page.locator('#link-modal-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#link-text').inputValue(), 'enlace');
+  await page.locator('#link-url').fill('https://ejemplo.org');
+  await page.locator('#insert-link-btn').click();
+  await page.waitForFunction(
+    () => document.getElementById('markdown-input').value.includes('[enlace](https://ejemplo.org)'),
+  );
+
+  // La imagen hace lo mismo con el texto alternativo.
+  await documentoDePrueba(page, 'ilustración');
+  await seleccionarEnLaHoja(page, 'ilustración');
+  await page.locator('[data-format="image"]').click();
+  await page.locator('#image-modal-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#image-alt-text').inputValue(), 'ilustración');
+  await page.locator('#cancel-image-btn').click();
+
+  // Tabla: bloque nuevo detrás del párrafo, no dentro de él.
+  await documentoDePrueba(page, 'tabla');
+  await seleccionarEnLaHoja(page, 'tabla');
+  await page.locator('[data-format="table"]').click();
+  await page.locator('#table-modal-overlay').waitFor({ state: 'visible' });
+  await page.locator('#create-table-btn').click();
+  await page.waitForFunction(() => /\n\|.+\|\n/.test(document.getElementById('markdown-input').value));
+  assert.equal(await page.locator('#html-output table').count(), 1);
+
+});
+
+/*
+  Sobre la hoja no hay dónde escribir dentro de un par de delimitadores: en
+  cuanto se repinta, KaTeX convierte el hueco en fórmula. Por eso el menú de
+  fórmulas abre una ventana donde se escribe el código con el resultado
+  delante, y solo entra en el documento lo que ya está montado. En el panel
+  Markdown no cambia nada: allí los delimitadores se escriben en el texto.
+*/
+test('sobre la vista previa las fórmulas se escriben en su propia ventana', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await documentoDePrueba(page, 'x^2');
+  await seleccionarEnLaHoja(page, 'x^2');
+
+  // Sobre la hoja el botón abre la ventana de una vez: no hay menú detrás, y
+  // la flecha que lo anunciaba se retira.
+  assert.equal(await page.locator('#formula-btn-caret').isVisible(), false);
+  assert.equal(await page.locator('#formula-btn').getAttribute('aria-haspopup'), 'dialog');
+  await page.locator('#formula-btn').click();
+  await page.locator('#math-modal-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#formula-options').isVisible(), false);
+
+  // De partida, en línea y con \(...\).
+  assert.equal(await page.locator('input[name="math-placement"]:checked').inputValue(), 'inline');
+  assert.equal(await page.locator('input[name="math-delimiter"]:checked').inputValue(), 'bracket');
+
+  // Lo seleccionado llega escrito y se ve renderizado antes de aceptar.
+  assert.equal(await page.locator('#math-code').inputValue(), 'x^2');
+  await page.locator('#math-preview .katex').waitFor();
+
+  // Un error se explica en vez de colarse en el documento.
+  await page.locator('#math-code').fill('\\frac{a}');
+  await page.locator('#math-error').waitFor({ state: 'visible' });
+
+  await page.locator('#math-code').fill('\\frac{a}{b}');
+  await page.locator('#math-error').waitFor({ state: 'hidden' });
+  await page.locator('#insert-math-btn').click();
+  await page.waitForFunction(
+    () => /\\\(\\frac\{a\}\{b\}\\\)/.test(document.getElementById('markdown-input').value),
+  );
+  await page.locator('#html-output .katex').first().waitFor();
+
+  /*
+    Los dos ejes se eligen en la ventana, y el par ofrecido es el de la
+    presentación puesta: en bloque, `\[...\]` y `$$...$$`.
+  */
+  await documentoDePrueba(page, 'aparte');
+  await seleccionarEnLaHoja(page, 'aparte');
+  await page.locator('#formula-btn').click();
+  await page.locator('#math-modal-overlay').waitFor({ state: 'visible' });
+  await page.locator('#math-code').fill('\\frac{a}{b}');
+  await page.locator('input[name="math-placement"][value="block"]').check();
+  assert.equal(await page.locator('#math-delimiter-bracket-label').textContent(), '\\[...\\]');
+  assert.equal(await page.locator('#math-delimiter-dollar-label').textContent(), '$$...$$');
+  await page.locator('input[name="math-delimiter"][value="dollar"]').check();
+  await page.locator('#math-preview .katex-display').waitFor();
+  await page.locator('#insert-math-btn').click();
+  await page.waitForFunction(
+    () => document.getElementById('markdown-input').value.includes('$$\\frac{a}{b}$$'),
+  );
+  await page.locator('#html-output .katex-display').waitFor();
+
+  // Desde el panel Markdown, el menú de siempre y sin ventana.
+  await page.locator('#markdown-input').fill('Texto.\n');
+  await page.locator('#markdown-input').focus();
+  assert.equal(await page.locator('#formula-btn-caret').isVisible(), true);
+  await page.locator('#formula-btn').click();
+  await page.locator('#formula-options').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#math-modal-overlay').isVisible(), false);
+  await page.locator('[data-format="latex-inline-dollar"]').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('$$'));
+});
+
+/*
+  Quien abre una ventana suele escribir a continuación sin tocar el ratón. Con
+  el foco puesto un fotograma más tarde, la primera letra se perdía —y se
+  colaba en el documento—, así que se comprueba escribiendo a ciegas.
+*/
+test('las ventanas de la barra reciben el cursor en su primer campo', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await documentoDePrueba(page, 'ventanas');
+  await seleccionarEnLaHoja(page, 'ventanas');
+  await page.locator('#formula-btn').click();
+  await page.locator('#math-modal-overlay').waitFor({ state: 'visible' });
+  await page.keyboard.type('x^2');
+  assert.equal(await page.locator('#math-code').inputValue(), 'x^2');
+  await page.locator('#cancel-math-btn').click();
+
+  /*
+    Y el cursor tiene que verse, que es otra cosa: el reset de Tailwind deja
+    los `textarea` sin relleno, así que el caret se dibujaba en la posición
+    cero, tapado por el borde del campo. Con el campo vacío no se veía nada y
+    parecía que la ventana no daba el foco.
+  */
+  for (const campo of ['#math-code', '#latex-import-input']) {
+    const relleno = await page.locator(campo).evaluate((el) => {
+      const estilo = window.getComputedStyle(el);
+      return { izquierda: parseFloat(estilo.paddingLeft), arriba: parseFloat(estilo.paddingTop) };
+    });
+    assert.ok(relleno.izquierda > 0, `${campo} pega el cursor al borde izquierdo`);
+    assert.ok(relleno.arriba > 0, `${campo} pega el cursor al borde superior`);
+  }
+
+  for (const [boton, ventana, campo] of [
+    // Con texto seleccionado, el enlace da por sabido el texto y pide la
+    // dirección; sin él, empieza por el texto.
+    ['[data-format="link"]', '#link-modal-overlay', 'link-url'],
+    ['[data-format="image"]', '#image-modal-overlay', 'image-file-input'],
+    ['[data-format="table"]', '#table-modal-overlay', 'table-cols'],
+  ]) {
+    await documentoDePrueba(page, `campo ${campo}`);
+    await seleccionarEnLaHoja(page, 'campo');
+    await page.locator(boton).click();
+    await page.locator(ventana).waitFor({ state: 'visible' });
+    assert.equal(
+      await page.evaluate(() => document.activeElement.id),
+      campo,
+      `la ventana de ${boton} no dio el cursor a ${campo}`,
+    );
+    await page.evaluate((selector) => { document.querySelector(selector).style.display = 'none'; }, ventana);
+  }
+});
+
+/*
+  EdiCuaTeX devuelve la fórmula ya escrita en Markdown, y eso no se puede
+  volver a interpretar: `\(` es un paréntesis escapado, así que pasarla por el
+  conversor le comía las barras y la fórmula llegaba como texto suelto.
+*/
+test('la fórmula de EdiCuaTeX entra intacta en la vista previa', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await documentoDePrueba(page, 'hueco');
+  await seleccionarEnLaHoja(page, 'hueco');
+  await page.evaluate(() => window.postMessage({
+    type: 'edicuatex:result',
+    latex: 'x^2',
+    delimiter: 'parentheses',
+    wrapped: '\\(x^2\\)',
+  }, '*'));
+  await page.waitForFunction(
+    () => document.getElementById('markdown-input').value.includes('\\(x^2\\)'),
+  );
+  await page.locator('#html-output .katex').first().waitFor();
+});
+
+/*
+  Tocar la hoja rehace el Markdown entero, así que lo que no se ha tocado tiene
+  que volver tal cual: es la diferencia entre una ayuda y un editor en el que
+  se pueda confiar.
+*/
+test('formatear en la vista previa no reescribe el resto del documento', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  const documento = [
+    '# Título',
+    '',
+    'Un párrafo con **negrita**, *cursiva*, `código` y un [enlace](https://ejemplo.org).',
+    '',
+    '- uno',
+    '  - anidado',
+    '- dos',
+    '',
+    '1. primero',
+    '2. segundo',
+    '',
+    '- [ ] tarea',
+    '- [x] hecha',
+    '',
+    '> una cita',
+    '',
+    'Fórmula $E=mc^2$ en línea.',
+    '',
+    'Final.',
+    '',
+  ].join('\n');
+  await page.locator('#markdown-input').fill(documento);
+  await page.locator('#html-output blockquote').waitFor();
+
+  await seleccionarEnLaHoja(page, 'Final');
+  await page.locator('[data-format="bold"]').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('**Final**'));
+
+  const resultado = await page.locator('#markdown-input').inputValue();
+  assert.equal(resultado.trim(), documento.replace('Final.', '**Final**.').trim());
 });

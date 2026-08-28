@@ -174,8 +174,10 @@ When a document carries base64 images — after importing a DOCX, after pasting 
 ## Interactive preview
 
 * Click the right pane to edit the result directly: changes are synced back to the Markdown, keeping the formatting whenever the edit allows it.
-* The preview supports selections, copy and paste, and basic shortcuts (Ctrl+B/I, headings, etc.) just like the Markdown editor.
+* The preview supports selections, copy and paste.
+* **The formatting toolbar works here too.** With the cursor on the sheet, bold, italic, code, headings, quotes, lists, links, images, tables and formulas are applied to what you are looking at, and the Markdown rewrites itself: it is a rich text editor that translates to Markdown as you go. The same button removes what it added —pressing *Bold* on text that is already bold removes it— and the shortcuts (`Ctrl`+`B`, `Ctrl`+`I`, `Ctrl`+`Shift`+`L`, etc.) do the same as the buttons. `Ctrl`+`Z` undoes even when you are on the sheet: the history is always the document's.
 * Hold `Ctrl` (or `Cmd` on macOS) and click to open links; in the desktop application they open in your usual browser.
+* **Formulas are written in their own window.** On the sheet there is nowhere to type inside an empty `$…$`, because KaTeX turns it into a formula as soon as it repaints; so, with the cursor in the preview, the `{}` button opens a window straight away with the LaTeX code, the result in view as you type and the error message if there is one. Whatever was selected arrives already written. Inside you choose whether the formula goes **inline or as a block** and with which **delimiters**, `\(...\)` or `$...$` —inline and `\(...\)` are what you get to begin with. From the Markdown pane nothing changes: the same button opens the four pairs and the delimiters are written into the text, as always.
 * LaTeX formulas are rendered automatically with KaTeX; when you edit them they return to their original syntax.
 
 ---

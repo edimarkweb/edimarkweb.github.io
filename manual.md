@@ -174,8 +174,10 @@ Cuando un documento lleva imágenes en base64 —al importar un DOCX, al pegar d
 ## Previsualización interactiva
 
 * Haz clic en el panel derecho para editar directamente sobre el resultado: los cambios se sincronizan con el Markdown manteniendo el formato siempre que la edición sea compatible.
-* La vista previa admite selecciones, copiar y pegar, así como el uso de atajos básicos (Ctrl+B/I, encabezados, etc.) igual que el editor de Markdown.
+* La vista previa admite selecciones, copiar y pegar.
+* **La barra de formato trabaja también aquí.** Con el cursor en la hoja, la negrita, la cursiva, el código, los títulos, la cita, las listas, los enlaces, las imágenes, las tablas y las fórmulas se aplican sobre lo que estás viendo, y el Markdown se reescribe solo: es un editor de texto con formato que va traduciendo a Markdown. El mismo botón quita lo que puso —pulsar *Negrita* sobre algo ya en negrita se la quita— y los atajos (`Ctrl`+`B`, `Ctrl`+`I`, `Ctrl`+`Mayús`+`L`, etc.) hacen lo mismo que los botones. `Ctrl`+`Z` deshace, aunque estés en la hoja: el historial es siempre el del documento.
 * Mantén pulsado `Ctrl` (o `Cmd` en macOS) y haz clic para abrir enlaces; en la aplicación de escritorio se abren en tu navegador habitual.
+* **Las fórmulas se escriben en su propia ventana.** Sobre la hoja no hay dónde escribir dentro de un `$…$` vacío, porque KaTeX lo convierte en fórmula en cuanto se repinta; por eso, con el cursor en la previsualización, el botón `{}` abre directamente una ventana con el código LaTeX, el resultado a la vista mientras escribes y el aviso del error si lo hay. Lo que hubiera seleccionado llega ya escrito. Dentro se elige si la fórmula va **en línea o en bloque** y con qué **delimitadores**, `\(...\)` o `$...$`, que es lo que viene puesto de partida: en línea y `\(...\)`. Desde el panel Markdown no cambia nada: el mismo botón despliega los cuatro pares y los delimitadores se escriben en el texto, como siempre.
 * Las fórmulas LaTeX se renderizan automáticamente con KaTeX; al editar vuelven a su sintaxis original.
 
 ---

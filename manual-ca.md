@@ -174,8 +174,10 @@ Quan un document porta imatges en base64 —en importar un DOCX, en enganxar des
 ## Vista prèvia interactiva
 
 * Fes clic al plafó dret per editar directament sobre el resultat: els canvis se sincronitzen amb el Markdown mantenint el format sempre que l'edició sigui compatible.
-* La vista prèvia admet seleccions, copiar i enganxar, així com dreceres bàsiques (Ctrl+B/I, encapçalaments, etc.) igual que l'editor de Markdown.
+* La vista prèvia admet seleccions, copiar i enganxar.
+* **La barra de format també hi treballa.** Amb el cursor al full, la negreta, la cursiva, el codi, els títols, la citació, les llistes, els enllaços, les imatges, les taules i les fórmules s'apliquen sobre allò que estàs veient, i el Markdown es reescriu tot sol: és un editor de text amb format que va traduint a Markdown. El mateix botó treu el que ha posat —prémer *Negreta* sobre una cosa ja en negreta l'hi treu— i les dreceres (`Ctrl`+`B`, `Ctrl`+`I`, `Ctrl`+`Maj`+`L`, etc.) fan el mateix que els botons. `Ctrl`+`Z` desfà encara que siguis al full: l'historial sempre és el del document.
 * Mantén premuda la tecla `Ctrl` (o `Cmd` a macOS) i fes clic per obrir enllaços; a l'aplicació d'escriptori s'obren al teu navegador habitual.
+* **Les fórmules s'escriuen a la seva pròpia finestra.** Sobre el full no hi ha on escriure dins d'un `$…$` buit, perquè KaTeX el converteix en fórmula tan bon punt es repinta; per això, amb el cursor a la vista prèvia, el botó `{}` obre directament una finestra amb el codi LaTeX, el resultat a la vista mentre escrius i l'avís de l'error si n'hi ha. Allò que tinguessis seleccionat hi arriba ja escrit. A dins es tria si la fórmula va **en línia o en bloc** i amb quins **delimitadors**, `\(...\)` o `$...$`, que és el que ve posat de partida: en línia i `\(...\)`. Des del plafó Markdown no canvia res: el mateix botó desplega els quatre parells i els delimitadors s'escriuen al text, com sempre.
 * Les fórmules LaTeX es representen automàticament amb KaTeX; en editar-les tornen a la seva sintaxi original.
 
 ---
