@@ -9,7 +9,7 @@ Welcome to EdiMarkWeb, a **Markdown text editor** designed for teachers and cont
 - Dual editing: work either in Markdown or straight in the HTML preview, always in sync.
 - Export and import menus supporting DOCX, ODT, EPUB, HTML, LaTeX and PDF, including options to copy directly to the clipboard.
 - Search and replace that highlights matches and ignores accents and letter case.
-- A **Settings** menu gathering the language, theme and separate window in one place; each pane carries its own zoom in its header; the working width is changed beside the pane controls.
+- A **Settings** menu gathering the language, theme and separate window in one place; each pane carries its own zoom, shown in the **status bar** while you work in it; the working width is changed in the tab row and the pane split in the status bar.
 - Interface theme with three options — System, Light and Dark — remembered between sessions.
 - Redesigned formula menu and direct access to EdiCuaTeX for building complex expressions.
 - Open several files, or whole folders, by dragging them onto the editor (each file in its own tab): Markdown and also DOCX, ODT, EPUB, HTML or TEX, converted on the fly with Pandoc.
@@ -106,8 +106,9 @@ Search works both in the Markdown view and in the HTML view, depending on where 
 
 The working area is split into two resizable panes:
 
-* **Markdown** (left): a plain text editor with its own zoom, a character counter, the document language indicator and its copy button. The zoom (`−`, the percentage and `+`, or `Ctrl` + `+` / `Ctrl` + `-`) makes the editor text bigger or smaller without touching the document; the percentage goes back to 100%. Everything you type here is immediately reflected in the right pane.
-* **HTML / Preview** (right): shows the final result and also lets you edit the content directly. Use the code icon button to switch between the rich preview and the generated HTML. The document is shown as a sheet on a desk, and the zoom to its left (`−`, the percentage and `+`) makes it bigger or smaller on screen; clicking the percentage goes back to 100%. It is a magnifier: it changes neither the text nor what you export — the document size lives in *Text format*.
+* **Markdown** (left): a plain text editor. Its zoom and the character counter live in the status bar, below both panes. The zoom (`−`, the percentage and `+`, or `Ctrl` + `+` / `Ctrl` + `-`) makes the editor text bigger or smaller without touching the document; the percentage goes back to 100%. Everything you type here is immediately reflected in the right pane.
+* **HTML / Preview** (right): shows the final result and also lets you edit the content directly. Use the code icon button to switch between the rich preview and the generated HTML. The document is shown as a sheet on a desk, and its zoom —in the status bar, while you are in this pane— (`−`, the percentage and `+`) makes it bigger or smaller on screen; clicking the percentage goes back to 100%. It is a magnifier: it changes neither the text nor what you export — the document size lives in *Text format*.
+* **Active pane**: with both panes on screen, one of them is in charge —the one the toolbar buttons act on and the one the zoom follows—. You can tell it by the pane's coloured edge and by the status bar label, which names only the active pane, and it stays marked even when you press a button and the caret stops blinking there.
 * **Copying content**: dedicated buttons to copy the Markdown or the generated HTML (including formulas converted to LaTeX when copying HTML).
 
 You can drag the central bar to give more room to either pane, choose one of the three layouts from the buttons on the right, or use the double arrow to **maximise the editing area**, which hides the top bars and leaves the screen to the text. The `+` button stays immediately after the last tab.

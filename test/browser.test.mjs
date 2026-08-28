@@ -190,10 +190,15 @@ test('la aplicación nativa aprovecha toda la ventana y comparte el cuadro Acerc
   assert.equal(await page.locator('#desktop-download-link').count(), 0);
   assert.equal(await page.locator('#desktop-release-banner').isVisible(), false);
   assert.equal(await page.locator('#toggle-width-btn').isVisible(), false);
-  const bottomGap = await page.locator('#markdown-input').evaluate((editor) => (
-    window.innerHeight - editor.getBoundingClientRect().bottom
+  /*
+    Lo último de la ventana ya no es el editor, sino la barra de estado: es ella
+    la que tiene que quedar pegada al borde de abajo para que la aplicación
+    aproveche la ventana entera.
+  */
+  const bottomGap = await page.locator('#status-bar').evaluate((barra) => (
+    window.innerHeight - barra.getBoundingClientRect().bottom
   ));
-  assert.ok(bottomGap >= 15 && bottomGap <= 17, `margen inferior inesperado: ${bottomGap}px`);
+  assert.ok(bottomGap >= 10 && bottomGap <= 17, `margen inferior inesperado: ${bottomGap}px`);
 
   const packageVersion = JSON.parse(await readFile(resolve(repoRoot, 'package.json'), 'utf8')).version;
   await page.locator('#help-menu-btn').click();
@@ -407,7 +412,9 @@ test('en diseño dual se busca en el panel que se estaba editando', async (t) =>
   await page.locator('#markdown-input').fill('# Solo en Markdown\n');
   await page.locator('#html-output h1').getByText('Solo en Markdown', { exact: true }).waitFor();
 
-  // El panel derecho pasa a mostrar el código HTML y se edita allí.
+  // El panel derecho pasa a mostrar el código HTML y se edita allí. El botón que
+  // lo alterna es suyo, así que hay que estar en ese panel para llegar a él.
+  await page.locator('#html-output').click();
   await page.locator('#view-toggle-btn').click();
   await page.waitForFunction(() => htmlEditor.getValue().includes('<h1'));
   await page.evaluate(() => htmlEditor.focus());
@@ -1087,8 +1094,10 @@ test('los tres botones cambian de disposición y dicen cuál está puesta', asyn
   t.after(() => context.close());
 
   assert.equal(await page.locator('#new-tab-btn').evaluate(button => button.previousElementSibling?.id), 'tab-bar');
+  // Las disposiciones viven en la barra de estado, con las lupas; en la fila de
+  // las pestañas se quedan los botones que gobiernan la ventana.
+  assert.equal(await page.locator('#layout-switch').evaluate(group => group.closest('#status-bar')?.id), 'status-bar');
   assert.equal(await page.locator('#layout-switch').evaluate(group => group.nextElementSibling?.id), 'layout-menu-container');
-  assert.equal(await page.locator('#layout-menu-container').evaluate(container => container.nextElementSibling?.id), 'focus-mode-toggle');
   assert.equal(await page.locator('#focus-mode-toggle').evaluate(button => button.nextElementSibling?.id), 'toggle-width-btn');
 
   // En pantalla ancha manda el grupo de botones; el menú se queda para el móvil.
@@ -2397,15 +2406,105 @@ test('la lupa de cada panel escala su panel y deja quieto al otro', async (t) =>
   assert.equal(trasAmpliarElEditor.hoja, inicio.hoja, 'la hoja siguió a la lupa del editor');
   assert.equal(await page.locator('#markdown-zoom-value').innerText(), '110 %');
 
+  // Las dos lupas comparten sitio en la barra de estado: se enseña la del panel
+  // en el que se trabaja, así que hay que ir a la hoja para llegar a la suya.
+  await page.locator('#html-output').click();
   await page.locator('#preview-zoom-in').click();
   const trasAmpliarLaHoja = await medir();
   assert.notEqual(trasAmpliarLaHoja.hoja, inicio.hoja, 'la hoja no siguió a su lupa');
   assert.equal(trasAmpliarLaHoja.editor, trasAmpliarElEditor.editor, 'el editor siguió a la lupa de la hoja');
 
   // Y el porcentaje devuelve cada uno a su sitio.
-  await page.locator('#markdown-zoom-reset').click();
   await page.locator('#preview-zoom-reset').click();
+  await page.locator('#markdown-input').click();
+  await page.locator('#markdown-zoom-reset').click();
   assert.deepEqual(await medir(), inicio);
+});
+
+/*
+  Con los dos paneles a la vista, el activo se ve marcado aunque el foco se haya
+  ido a un botón: es el panel sobre el que trabajan las herramientas, y sin
+  marca no había manera de saber cuál era.
+*/
+test('el panel activo queda marcado aunque el foco salga de él', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const activo = () => page.locator('#editor-container').getAttribute('data-panel-activo');
+  const filoDeLaHoja = () => page.locator('#preview-desk').evaluate(desk => getComputedStyle(desk).borderColor);
+
+  await page.locator('#markdown-input').click();
+  assert.equal(await activo(), 'markdown');
+
+  await page.locator('#html-output').click();
+  assert.equal(await activo(), 'preview');
+  const marcado = await filoDeLaHoja();
+
+  // El foco se va a un botón de fuera y el panel activo se queda donde estaba.
+  await page.locator('#help-menu-btn').focus();
+  assert.equal(await activo(), 'preview');
+  assert.equal(await filoDeLaHoja(), marcado, 'la hoja perdió la marca al salir el foco');
+
+  await page.locator('#markdown-input').click();
+  assert.equal(await activo(), 'markdown');
+  assert.notEqual(await filoDeLaHoja(), marcado, 'la hoja se quedó marcada sin ser el panel activo');
+});
+
+/*
+  La misma marca, dicha con palabras: la barra de estado lleva el nombre del
+  panel activo, y solo ese. El botón que alterna la hoja y su código es cosa del
+  panel derecho, así que solo sale cuando ese es el activo.
+*/
+test('la barra de estado nombra el panel activo', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').click();
+  assert.equal(await page.locator('#markdown-panel-title').isVisible(), true);
+  assert.equal(await page.locator('#html-panel-title').isVisible(), false);
+  assert.equal(await page.locator('#view-toggle-btn').isVisible(), false);
+
+  await page.locator('#html-output').click();
+  assert.equal(await page.locator('#html-panel-title').isVisible(), true);
+  assert.equal(await page.locator('#markdown-panel-title').isVisible(), false);
+  assert.equal(await page.locator('#view-toggle-btn').isVisible(), true);
+
+  // Y ese rótulo nombra lo que se está mirando en el panel.
+  assert.equal(await page.locator('#html-panel-title').innerText(), 'PREVISUALIZACIÓN');
+  await page.locator('#view-toggle-btn').click();
+  assert.equal(await page.locator('#html-panel-title').innerText(), 'CÓDIGO HTML');
+});
+
+/*
+  Las dos lupas comparten sitio en la barra de estado y solo se enseña la del
+  panel en el que se trabaja: cada una escala una cosa distinta —el texto que se
+  escribe o la hoja que se verá— y juntas invitaban a confundirlas.
+*/
+test('la barra de estado enseña la lupa del panel activo', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').click();
+  assert.equal(await page.locator('#markdown-zoom').isVisible(), true);
+  assert.equal(await page.locator('#preview-zoom').isVisible(), false);
+
+  await page.locator('#html-output').click();
+  assert.equal(await page.locator('#preview-zoom').isVisible(), true);
+  assert.equal(await page.locator('#markdown-zoom').isVisible(), false);
+
+  /*
+    Pulsar la lupa lleva el foco al botón, que está fuera de los dos paneles: si
+    eso contara como cambio de panel, la lupa se cambiaría sola a mitad de la
+    faena.
+  */
+  await page.locator('#preview-zoom-in').click();
+  assert.equal(await page.locator('#preview-zoom').isVisible(), true);
+  assert.equal(await page.locator('#preview-zoom-value').innerText(), '110 %');
+
+  // Con un solo panel a la vista, la lupa que se enseña es la suya.
+  await page.locator('#layout-switch [data-layout="md"]').click();
+  assert.equal(await page.locator('#markdown-zoom').isVisible(), true);
+  assert.equal(await page.locator('#preview-zoom').isVisible(), false);
 });
 
 /*
@@ -3144,10 +3243,10 @@ test('la ventana independiente se pide desde la fila de la vista', async (t) => 
   await boton.waitFor();
   assert.equal(await page.locator('#desktop-window-separator').isVisible(), true);
 
-  // Al final de la fila, detrás de los que cambian la disposición.
-  const disposicion = await page.locator('#layout-switch').boundingBox();
+  // Al final de la fila, detrás del que cambia el ancho de trabajo.
+  const ancho = await page.locator('#toggle-width-btn').boundingBox();
   const ventana = await boton.boundingBox();
-  assert.ok(ventana.x > disposicion.x + disposicion.width, 'debería quedar a la derecha de todo');
+  assert.ok(ventana.x > ancho.x + ancho.width, 'debería quedar a la derecha de todo');
 
   // Y hace lo mismo que la opción de Configuración.
   const emergente = page.waitForEvent('popup');

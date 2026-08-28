@@ -201,29 +201,29 @@
 
 /* Estilos personalizados */
 :root {
-    --editor-viewport-offset: 22rem;
+    --editor-viewport-offset: 19.75rem;
 }
 
 #main-container.release-banner-visible {
-    --editor-viewport-offset: 26rem;
+    --editor-viewport-offset: 23.75rem;
 }
 
 #main-container.focus-mode {
-    --editor-viewport-offset: 13rem;
+    --editor-viewport-offset: 12rem;
     min-height: calc(100vh - 2rem); /* body p-4 => 1rem arriba + 1rem abajo */
 }
 
 #main-container.focus-mode.release-banner-visible {
-    --editor-viewport-offset: 13rem;
+    --editor-viewport-offset: 12rem;
 }
 
 @media (max-width: 640px) {
     #main-container.release-banner-visible {
-        --editor-viewport-offset: 29rem;
+        --editor-viewport-offset: 26rem;
     }
 
     #main-container.focus-mode.release-banner-visible {
-        --editor-viewport-offset: 13rem;
+        --editor-viewport-offset: 12rem;
     }
 }
 
@@ -457,42 +457,6 @@ body.desktop-mode .markdown-textarea {
 .panel {
     min-width: 280px;
     overflow: hidden;
-}
-
-/*
-  La cabecera de cada panel llegaba hasta el borde: «Copiar» acababa pegado al
-  divisor central, contra el título del panel de al lado, y el puntero pasaba
-  rozándolo al arrastrar. El editor no lo necesita —ya tiene su propio marco—,
-  así que el aire va solo en la fila del título.
-*/
-#markdown-panel > .flex.justify-between {
-    padding-right: 0.75rem;
-}
-#preview-panel > .flex.justify-between,
-#html-panel > .flex.justify-between {
-    padding-left: 0.75rem;
-}
-#markdown-panel > .flex.justify-between > *,
-#html-panel > .flex.justify-between > * {
-    flex-shrink: 0;
-}
-#markdown-panel > .flex.justify-between > .panel-title,
-#html-panel > .flex.justify-between > .panel-title {
-    flex-shrink: 1;
-}
-
-/*
-  Cada cabecera medía lo que midiera lo que lleva al lado: la del Markdown, la
-  píldora del contador (20 px); la de la vista previa, el botón de ver el HTML
-  (40 px). Los dos rótulos empiezan a la misma altura, así que uno acababa
-  veinte píxeles por encima del otro y, detrás de ellos, los dos paneles
-  arrancaban a distinta altura. La fila mide ahora lo que el elemento más alto
-  de las dos, y todo vuelve a una sola línea.
-*/
-#markdown-panel > .flex.justify-between,
-#preview-panel > .flex.justify-between,
-#html-panel > .flex.justify-between {
-    min-height: 2.5rem;
 }
 
 /*
@@ -1084,8 +1048,107 @@ body.desktop-mode .markdown-textarea {
 }
 
 /*
-  Las dos lupas viven en la cabecera de su panel, con el aire justo para que
-  los tres controles se lean como uno solo: menos, cuánto, más.
+  Con los dos paneles a la vista, uno de ellos es el que manda: es el que
+  reciben los botones de la barra de herramientas y el que gobierna la lupa de
+  la barra de estado. El foco no basta para decirlo —se apaga en cuanto se
+  pulsa un botón, que es justo cuando importa saberlo—, así que el panel activo
+  queda marcado con un filo de color mientras lo sea.
+*/
+#editor-container:not(.single-panel)[data-panel-activo="markdown"] #markdown-panel .markdown-textarea,
+#editor-container:not(.single-panel)[data-panel-activo="markdown"] #markdown-panel .CodeMirror,
+#editor-container:not(.single-panel)[data-panel-activo="preview"] #preview-desk,
+#editor-container:not(.single-panel)[data-panel-activo="preview"] #html-panel .CodeMirror {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+.dark #editor-container:not(.single-panel)[data-panel-activo="markdown"] #markdown-panel .markdown-textarea,
+.dark #editor-container:not(.single-panel)[data-panel-activo="markdown"] #markdown-panel .CodeMirror,
+.dark #editor-container:not(.single-panel)[data-panel-activo="preview"] #preview-desk,
+.dark #editor-container:not(.single-panel)[data-panel-activo="preview"] #html-panel .CodeMirror {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.3);
+}
+
+/*
+  La barra de estado: una sola fila fina bajo los dos paneles, con el contador
+  a la izquierda y a la derecha lo que gobierna cómo se ve el documento —qué
+  enseña el panel derecho, el aumento y el reparto de paneles—, separado en
+  grupos por las mismas rayas que ya usaba la fila de la vista.
+*/
+.status-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+    padding: 0.25rem 0.25rem 0;
+    border-top: 1px solid #e2e8f0;
+}
+.dark .status-bar {
+    border-top-color: #334155;
+}
+.status-bar-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+/*
+  El hueco que separa el contador de los controles no puede pedir sitio propio:
+  con `basis: auto` se quedaba el espacio libre de la fila y, en el móvil,
+  empujaba las lupas y las disposiciones a una segunda línea que sí cabía.
+*/
+.status-bar-spacer {
+    flex: 1 1 0;
+}
+/*
+  En la barra de estado se lee el nombre del panel activo, y solo ese: es la
+  misma marca que lleva el filo del panel, dicha con palabras. Los dos rótulos
+  están puestos y se enseña el que toca, que además es lo que nombra al botón de
+  al lado —la hoja o su código—.
+*/
+.status-bar-panel-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+.dark .status-bar-panel-name {
+    color: #64748b;
+}
+#status-bar[data-panel-activo="markdown"] #html-panel-title,
+#status-bar[data-panel-activo="preview"] #markdown-panel-title {
+    display: none;
+}
+#status-bar[data-panel-activo="markdown"] #markdown-panel-title,
+#status-bar[data-panel-activo="preview"] #html-panel-title {
+    color: #2563eb;
+}
+.dark #status-bar[data-panel-activo="markdown"] #markdown-panel-title,
+.dark #status-bar[data-panel-activo="preview"] #html-panel-title {
+    color: #60a5fa;
+}
+/*
+  El botón que alterna entre la hoja y su código es cosa del panel derecho: solo
+  aparece cuando ese panel es el activo. Así nadie cambia lo que enseña un panel
+  en el que no está trabajando.
+*/
+#status-bar:not([data-panel-activo="preview"]) #view-toggle-btn {
+    display: none;
+}
+/*
+  De las dos lupas se ve la del panel en el que se trabaja; `data-zoom-panel`
+  lo pone el programa al cambiar el foco o la disposición.
+*/
+#status-bar-zoom[data-zoom-panel="markdown"] #preview-zoom,
+#status-bar-zoom[data-zoom-panel="preview"] #markdown-zoom {
+    display: none;
+}
+
+/*
+  Las dos lupas comparten sitio en la barra de estado, con el aire justo para
+  que los tres controles se lean como uno solo: menos, cuánto, más.
 */
 .preview-zoom {
     gap: 0.125rem;
@@ -1499,14 +1562,19 @@ body.desktop-mode .markdown-textarea {
         display: none !important;
     }
 
+    /*
+      Desplegados, los dos paneles se leen como una rejilla de iconos: con el
+      aire de la versión de escritorio quedaban unos botones enormes y sueltos
+      en la pantalla del móvil, que es donde menos sitio hay.
+    */
     .toolbar-actions.is-open,
     #toolbar.is-open {
         display: grid !important;
-        padding: 0.65rem 0.5rem;
+        padding: 0.4rem;
         border: 1px solid rgba(15, 23, 42, 0.08);
         border-radius: 0.75rem;
         background-color: rgba(248, 250, 252, 0.95);
-        gap: 0.4rem;
+        gap: 0.2rem;
     }
 
     .dark .toolbar-actions.is-open,
@@ -1515,8 +1583,14 @@ body.desktop-mode .markdown-textarea {
         background-color: rgba(15, 23, 42, 0.9);
     }
 
+    /*
+      Desplegado, el panel de acciones es un ítem más de la cabecera y medía lo
+      que midiera su contenido: una caja estrecha y descentrada bajo los dos
+      botones que la abren. Ocupa la fila entera, como los menús.
+    */
     .toolbar-actions.is-open {
         grid-template-columns: repeat(4, minmax(0, 1fr));
+        width: 100%;
     }
 
     .toolbar-actions .toolbar-group {
@@ -1533,8 +1607,14 @@ body.desktop-mode .markdown-textarea {
     .toolbar-actions button,
     .toolbar-actions .select-trigger {
         justify-content: center;
-        padding: 0.45rem;
+        padding: 0.3rem;
         width: 100%;
+    }
+
+    .toolbar-actions button i,
+    .toolbar-actions .select-trigger i {
+        width: 1.05rem;
+        height: 1.05rem;
     }
 
     .toolbar-actions #preview-copy-container {
@@ -1549,12 +1629,17 @@ body.desktop-mode .markdown-textarea {
 
     .action-btn,
     .toolbar-btn {
-        min-width: 2.4rem;
-        min-height: 2.4rem;
+        min-width: 2.1rem;
+        min-height: 2.1rem;
     }
 
+    /*
+      Los dieciséis botones del formato en cuatro columnas dejaban cada icono
+      flotando en el centro de una celda de ochenta píxeles: en seis se leen
+      como una rejilla, en tres filas y con el ancho ajustado al icono.
+    */
     #toolbar.is-open {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
     }
 
     #toolbar > div {
@@ -1565,7 +1650,7 @@ body.desktop-mode .markdown-textarea {
     #toolbar .action-btn {
         width: 100%;
         justify-content: center;
-        padding: 0.35rem;
+        padding: 0.25rem;
     }
 
     #toolbar .border-l {
@@ -1580,6 +1665,47 @@ body.desktop-mode .markdown-textarea {
     .panel-counter {
         font-size: 0.7rem;
         padding: 0.15rem 0.5rem;
+    }
+
+    /*
+      La barra de estado tiene que caber en una sola fila, y en el móvil hay
+      324 px para 360: se cae el rótulo del panel activo —que allí no cabe—, se
+      van las rayas de separación y los
+      botones pierden el aire que aquí sobra.
+    */
+    .status-bar {
+        gap: 0.125rem;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .status-bar-panel-name {
+        display: none;
+    }
+
+    .status-bar .toolbar-btn,
+    .status-bar .action-btn {
+        padding: 0.2rem;
+    }
+
+    .status-bar .preview-zoom-value {
+        min-width: 2.75rem;
+        padding: 0.15rem 0.25rem;
+        font-size: 0.7rem;
+    }
+
+    .status-bar .panel-counter {
+        font-size: 0.65rem;
+        padding: 0.1rem 0.35rem;
+    }
+
+    /*
+      Con el ancho del móvil la fila se pasaba por siete píxeles: las rayas de
+      separación son lo primero que sobra, porque los grupos ya se distinguen
+      por el hueco que los separa.
+    */
+    .status-bar .view-controls-separator {
+        display: none;
     }
 }
 /* --- FIN DE LAS CORRECCIONES PARA MÓVIL --- */

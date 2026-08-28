@@ -9,7 +9,7 @@ Benvingut/uda a EdiMarkWeb, un **editor de textos en Markdown** dissenyat per a 
 - Edició dual: pots treballar tant en Markdown com directament a la vista prèvia HTML, sempre sincronitzades.
 - Menú d'exportació i d'importació compatible amb DOCX, ODT, EPUB, HTML, LaTeX i PDF, amb opcions de còpia directa al porta-retalls.
 - Cercador amb reemplaçament que ressalta les coincidències i accepta termes sense accents ni distinció entre majúscules i minúscules.
-- Menú **Configuració** amb l'idioma, el tema i la finestra independent reunits en un mateix lloc; cada plafó porta la seva lupa a la capçalera; l'amplada de treball es canvia al costat dels controls dels plafons.
+- Menú **Configuració** amb l'idioma, el tema i la finestra independent reunits en un mateix lloc; cada plafó porta la seva lupa, que apareix a la **barra d'estat** mentre hi treballes; l'amplada de treball es canvia a la fila de les pestanyes i el repartiment de plafons, a la barra d'estat.
 - Tema de la interfície amb tres opcions —Sistema, Clar i Fosc— que es recorda entre sessions.
 - Menú de fórmules renovat i accés directe a EdiCuaTeX per construir expressions complexes.
 - Obertura de diversos fitxers, o de carpetes senceres, arrossegant-los a l'editor (cada fitxer en la seva pestanya): Markdown i també DOCX, ODT, EPUB, HTML o TEX, que es converteixen al vol amb Pandoc.
@@ -106,8 +106,9 @@ La cerca funciona tant a la vista de Markdown com a la vista HTML, segons on tin
 
 La zona de treball es divideix en dos plafons redimensionables:
 
-* **Markdown** (esquerra): editor de text senzill amb la seva lupa (`−`, el percentatge i `+`, o `Ctrl` + `+` / `Ctrl` + `-`), que engrandeix o empetiteix el text de l'editor sense tocar el document; un comptador de caràcters, l'indicador d'idioma del document i el seu botó de còpia. Tot el que hi escriguis es reflecteix immediatament al plafó dret.
-* **HTML / Vista prèvia** (dreta): mostra el resultat final i també permet editar el contingut directament. Fes servir el botó amb la icona de codi per alternar entre la vista prèvia rica i el codi HTML generat. El document es presenta com un full damunt d'una taula, i a la seva esquerra el zoom (`−`, el percentatge i `+`) l'engrandeix o l'empetiteix a la pantalla; el percentatge torna al 100 %. És una lupa: no canvia el text ni el que s'exporta —la mida del document és a *Format del text*—.
+* **Markdown** (esquerra): editor de text senzill. La seva lupa i el comptador de caràcters són a la barra d'estat, sota els dos plafons. La lupa (`−`, el percentatge i `+`, o `Ctrl` + `+` / `Ctrl` + `-`) engrandeix o empetiteix el text de l'editor sense tocar el document. Tot el que hi escriguis es reflecteix immediatament al plafó dret.
+* **HTML / Vista prèvia** (dreta): mostra el resultat final i també permet editar el contingut directament. Fes servir el botó amb la icona de codi per alternar entre la vista prèvia rica i el codi HTML generat. El document es presenta com un full damunt d'una taula, i el seu zoom —a la barra d'estat, mentre ets en aquest plafó— (`−`, el percentatge i `+`) l'engrandeix o l'empetiteix a la pantalla; el percentatge torna al 100 %. És una lupa: no canvia el text ni el que s'exporta —la mida del document és a *Format del text*—.
+* **Plafó actiu**: amb els dos plafons a la vista, un és el que mana —el que reben els botons de la barra d'eines i el que governa la lupa—. Es reconeix pel filet de color del plafó i pel rètol de la barra d'estat, que només anomena el plafó actiu, i continua marcat encara que premis un botó i el cursor deixi de parpellejar-hi.
 * **Copiar contingut**: botons específics per copiar el Markdown o l'HTML generat (inclou fórmules convertides a LaTeX quan copies HTML).
 
 Pots arrossegar la barra central per donar més espai a qualsevol dels plafons, triar una de les tres disposicions al botó de la dreta o fer servir la doble fletxa per **maximitzar l'àrea d'edició**, que amaga les barres superiors i deixa la pantalla per al text. El botó `+` es manté just després de l'última pestanya.

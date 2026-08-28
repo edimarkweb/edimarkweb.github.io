@@ -9,7 +9,7 @@ Benvido/a a EdiMarkWeb, un **editor de textos en Markdown** deseñado para docen
 - Edición dual: podes traballar tanto en Markdown como directamente na vista previa HTML, sempre sincronizadas.
 - Menú de exportación e de importación compatible con DOCX, ODT, EPUB, HTML, LaTeX e PDF, incluíndo opcións de copia directa ao portapapeis.
 - Buscador con substitución que resalta as coincidencias e acepta termos sen acentos nin distinción entre maiúsculas e minúsculas.
-- Menú **Configuración** co idioma, o tema e a xanela independente reunidos nun mesmo sitio; cada panel leva a súa lupa na cabeceira; o ancho de traballo cámbiase xunto aos controis dos paneis.
+- Menú **Configuración** co idioma, o tema e a xanela independente reunidos nun mesmo sitio; cada panel leva a súa lupa, que aparece na **barra de estado** mentres traballas nel; o ancho de traballo cámbiase na fila das lapelas e o reparto de paneis, na barra de estado.
 - Tema da interface con tres opcións —Sistema, Claro e Escuro— que se lembra entre sesións.
 - Menú de fórmulas renovado e acceso directo a EdiCuaTeX para construír expresións complexas.
 - Apertura de varios ficheiros, ou de cartafoles enteiros, arrastrándoos ao editor (cada ficheiro na súa lapela): Markdown e tamén DOCX, ODT, EPUB, HTML ou TEX, que se converten ao voo con Pandoc.
@@ -106,8 +106,9 @@ A busca funciona tanto na vista de Markdown como na vista HTML, segundo onde te�
 
 A zona de traballo divídese en dous paneis redimensionables:
 
-* **Markdown** (esquerda): editor de texto sinxelo coa súa lupa (`−`, a porcentaxe e `+`, ou `Ctrl` + `+` / `Ctrl` + `-`), que agranda ou reduce o texto do editor sen tocar o documento; un contador de caracteres, o indicador de idioma do documento e o seu botón de copia. Todo o que escribas aquí reflíctese de inmediato no panel dereito.
-* **HTML / Vista previa** (dereita): mostra o resultado final e tamén permite editar o contido directamente. Usa o botón coa icona de código para alternar entre a vista previa rica e o código HTML xerado. O documento preséntase como unha folla sobre unha mesa, e á súa esquerda o zoom (`−`, a porcentaxe e `+`) faina máis grande ou máis pequena na pantalla; a porcentaxe volve ao 100 %. É unha lupa: non cambia o texto nin o que se exporta —o tamaño do documento está en *Formato do texto*—.
+* **Markdown** (esquerda): editor de texto sinxelo. A súa lupa e o contador de caracteres están na barra de estado, baixo os dous paneis. A lupa (`−`, a porcentaxe e `+`, ou `Ctrl` + `+` / `Ctrl` + `-`) agranda ou reduce o texto do editor sen tocar o documento. Todo o que escribas aquí reflíctese de inmediato no panel dereito.
+* **HTML / Vista previa** (dereita): mostra o resultado final e tamén permite editar o contido directamente. Usa o botón coa icona de código para alternar entre a vista previa rica e o código HTML xerado. O documento preséntase como unha folla sobre unha mesa, e o seu zoom —na barra de estado, mentres estás neste panel— (`−`, a porcentaxe e `+`) faina máis grande ou máis pequena na pantalla; a porcentaxe volve ao 100 %. É unha lupa: non cambia o texto nin o que se exporta —o tamaño do documento está en *Formato do texto*—.
+* **Panel activo**: cos dous paneis á vista, un deles é o que manda —o que reciben os botóns da barra de ferramentas e o que goberna a lupa—. Recoñécese polo fío de cor do panel e polo rótulo da barra de estado, que só nomea o panel activo, e segue marcado aínda que premas un botón e o cursor deixe de pestanexar aí.
 * **Copiar contido**: botóns específicos para copiar o Markdown ou o HTML xerado (inclúe fórmulas convertidas a LaTeX cando copias HTML).
 
 Podes arrastrar a barra central para dar máis espazo a calquera dos paneis, escoller unha das tres disposicións no botón da dereita ou usar a frecha dobre para **maximizar a área de edición**, que agocha as barras superiores e deixa a pantalla para o texto. O botón `+` mantense xusto despois da última lapela.

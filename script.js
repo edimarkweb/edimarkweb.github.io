@@ -5338,19 +5338,76 @@ function stepZoom(panel, direction) {
 }
 
 /*
-  Ctrl y las teclas de más y menos mueven la lupa del panel en el que se está
-  trabajando: con un solo panel a la vista, el suyo; con los dos, el que tenga
-  el foco, y el del Markdown mientras no lo tenga ninguno, que es donde se
-  escribe.
+  Cuál es el panel en el que se trabaja no lo puede decir el foco a secas: los
+  controles que gobiernan un panel viven ahora en la barra de estado, fuera de
+  los dos, y al pulsar una lupa el foco se iba al botón y el panel activo daba
+  un salto al del Markdown en mitad de la faena. Se recuerda el último panel que
+  tuvo el foco de verdad; el del Markdown mientras no lo tenga ninguno, que es
+  donde se escribe.
 */
-function zoomDelPanelActivo() {
-  if (currentLayout === 'html') return PREVIEW_ZOOM;
-  if (currentLayout === 'md') return MARKDOWN_ZOOM;
-  const activo = document.activeElement;
+let panelDeTrabajo = 'markdown';
+
+function recordarPanelDeTrabajo(destino) {
+  if (!destino) return false;
   const panelDerecho = document.getElementById('html-panel');
-  const enLaDerecha = !!activo && !!panelDerecho && panelDerecho.contains(activo);
-  return enLaDerecha ? PREVIEW_ZOOM : MARKDOWN_ZOOM;
+  const panelIzquierdo = document.getElementById('markdown-panel');
+  if (panelDerecho && panelDerecho.contains(destino)) panelDeTrabajo = 'preview';
+  else if (panelIzquierdo && panelIzquierdo.contains(destino)) panelDeTrabajo = 'markdown';
+  else return false;
+  return true;
 }
+
+/*
+  Ctrl y las teclas de más y menos mueven la lupa del panel en el que se está
+  trabajando: con un solo panel a la vista, el suyo; con los dos, el último que
+  tuvo el foco.
+*/
+function panelDeZoomActivo() {
+  if (currentLayout === 'html') return 'preview';
+  if (currentLayout === 'md') return 'markdown';
+  return panelDeTrabajo;
+}
+
+function zoomDelPanelActivo() {
+  return panelDeZoomActivo() === 'preview' ? PREVIEW_ZOOM : MARKDOWN_ZOOM;
+}
+
+/*
+  En la barra de estado las dos lupas comparten sitio y solo se enseña la del
+  panel activo: cada una escala una cosa distinta —el texto que se escribe o la
+  hoja que se verá— y juntas invitaban a confundirlas.
+
+  Y el panel activo se marca en el propio panel, no solo por el foco: un clic en
+  cualquier sitio de fuera —un botón de la barra, el menú— apaga el foco, pero
+  la barra de herramientas sigue trabajando sobre el último panel, y sin marca
+  no había manera de saber sobre cuál.
+*/
+function refrescarPanelActivo() {
+  const activo = panelDeZoomActivo();
+  const host = document.getElementById('status-bar-zoom');
+  if (host) host.dataset.zoomPanel = activo;
+  const editorContainer = document.getElementById('editor-container');
+  if (editorContainer) editorContainer.dataset.panelActivo = activo;
+  // La barra de estado enciende el rótulo del panel activo y esconde lo que
+  // sea del panel que no está a la vista.
+  const statusBar = document.getElementById('status-bar');
+  if (statusBar) {
+    statusBar.dataset.panelActivo = activo;
+    statusBar.dataset.layout = currentLayout || 'dual';
+  }
+}
+
+document.addEventListener('focusin', (event) => {
+  if (recordarPanelDeTrabajo(event.target)) refrescarPanelActivo();
+});
+
+/*
+  Pulsar en la mesa que rodea la hoja, o en el hueco bajo el texto, no da el
+  foco a nada; pero para quien mira es entrar en ese panel, y así se cuenta.
+*/
+document.addEventListener('pointerdown', (event) => {
+  if (recordarPanelDeTrabajo(event.target)) refrescarPanelActivo();
+});
 
 function buildHtmlWithTex() {
   const htmlOutput = document.getElementById('html-output');
@@ -5434,6 +5491,7 @@ function applyLayout(layout) {
   */
   const editorContainer = document.getElementById('editor-container');
   if (editorContainer) editorContainer.classList.toggle('single-panel', layout !== 'dual');
+  refrescarPanelActivo();
 
   // La transición del ancho, solo mientras dura el cambio.
   if (editorContainer) {
@@ -5503,7 +5561,6 @@ window.onload = async () => {
     const markdownZoomOutBtn = document.getElementById('markdown-zoom-out');
     const markdownZoomInBtn = document.getElementById('markdown-zoom-in');
     const markdownZoomResetBtn = document.getElementById('markdown-zoom-reset');
-    const htmlPanelTitle = document.getElementById('html-panel-title');
     const layoutMenuContainer = document.getElementById('layout-menu-container');
     const layoutMenuBtn = document.getElementById('layout-menu-btn');
     const layoutMenu = document.getElementById('layout-menu');
@@ -7708,12 +7765,16 @@ window.onload = async () => {
         cmWrapper.style.display = showingPreview ? 'block' : 'none';
         if (previewShell) previewShell.style.display = showingPreview ? 'none' : '';
         if (showingPreview) setTimeout(() => htmlEditor.refresh(), 1);
+        // El rótulo del panel derecho dice lo que se está mirando.
         const panelTitleKey = showingPreview ? 'html_code_panel_title' : 'html_panel_title';
-        htmlPanelTitle.setAttribute('data-i18n-key', panelTitleKey);
-        htmlPanelTitle.textContent = getTranslation(
-            panelTitleKey,
-            showingPreview ? 'Código HTML' : 'Previsualización'
-        );
+        const htmlPanelTitle = document.getElementById('html-panel-title');
+        if (htmlPanelTitle) {
+            htmlPanelTitle.setAttribute('data-i18n-key', panelTitleKey);
+            htmlPanelTitle.textContent = getTranslation(
+                panelTitleKey,
+                showingPreview ? 'Código HTML' : 'Previsualización'
+            );
+        }
         viewToggleBtn.innerHTML = showingPreview ? '<i data-lucide="eye"></i>' : '<i data-lucide="code-2"></i>';
         if (window.lucide) lucide.createIcons();
     });

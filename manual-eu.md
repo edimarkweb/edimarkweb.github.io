@@ -9,7 +9,7 @@ Ongi etorri EdiMarkWeb-era, **Markdown testu-editore** bat, azkar lan egin, hain
 - Edizio bikoitza: Markdown-en zein HTML aurrebistan zuzenean lan egin dezakezu, beti sinkronizatuta.
 - Esportatzeko eta inportatzeko menuak, DOCX, ODT, EPUB, HTML, LaTeX eta PDF onartzen dituztenak, arbelera zuzenean kopiatzeko aukerekin.
 - Bilatzailea ordezkapenarekin: bat-etortzeak nabarmentzen ditu eta azenturik gabeko terminoak onartzen ditu, maiuskulak eta minuskulak bereizi gabe.
-- **Ezarpenak** menua, hizkuntza, gaia eta leiho independentea leku berean bilduta; panel bakoitzak bere lupa du goiburuan; lan-zabalera panelen kontrolen ondoan aldatzen da.
+- **Ezarpenak** menua, hizkuntza, gaia eta leiho independentea leku berean bilduta; panel bakoitzak bere lupa du, **egoera-barran** agertzen dena bertan lan egiten duzun bitartean; lan-zabalera fitxen errenkadan aldatzen da eta panelen banaketa, egoera-barran.
 - Interfazearen gaia hiru aukerarekin —Sistemakoa, Argia eta Iluna— eta saioen artean gogoratzen da.
 - Formulen menu berritua eta EdiCuaTeX-erako sarbide zuzena adierazpen konplexuak eraikitzeko.
 - Hainbat fitxategi, edo karpeta osoak, ireki editorera arrastatuz (fitxategi bakoitza bere fitxan): Markdown eta baita DOCX, ODT, EPUB, HTML edo TEX ere, Pandoc-ekin bat-batean bihurtzen direnak.
@@ -106,8 +106,9 @@ Bilaketak Markdown ikuspegian zein HTML ikuspegian funtzionatzen du, fokua non d
 
 Lan-eremua tamainaz alda daitezkeen bi paneletan banatzen da:
 
-* **Markdown** (ezkerra): testu-editore soila, bere luparekin (`−`, ehunekoa eta `+`, edo `Ctrl` + `+` / `Ctrl` + `-`), editorearen testua handitu edo txikitzen duena dokumentua ukitu gabe; karaktere-kontagailu batekin, dokumentuaren hizkuntza-adierazlearekin eta kopiatzeko bere botoiarekin. Hemen idazten duzun guztia berehala islatzen da eskuineko panelean.
-* **HTML / Aurrebista** (eskuina): azken emaitza erakusten du eta edukia zuzenean editatzeko aukera ere ematen du. Erabili kode-ikonoa duen botoia aurrebista aberatsaren eta sortutako HTML kodearen artean txandakatzeko. Dokumentua mahai gainean dagoen orri gisa aurkezten da, eta haren ezkerrean zoomak (`−`, ehunekoa eta `+`) handitu edo txikitu egiten du pantailan; ehunekoak % 100era itzultzen du. Lupa bat da: ez du testua aldatzen, ezta esportatzen dena ere —dokumentuaren tamaina *Testuaren formatua* atalean dago—.
+* **Markdown** (ezkerra): testu-editore soila. Bere lupa eta karaktere-kontagailua egoera-barran daude, bi panelen azpian. Lupak (`−`, ehunekoa eta `+`, edo `Ctrl` + `+` / `Ctrl` + `-`) editorearen testua handitu edo txikitzen du dokumentua ukitu gabe. Hemen idazten duzun guztia berehala islatzen da eskuineko panelean.
+* **HTML / Aurrebista** (eskuina): azken emaitza erakusten du eta edukia zuzenean editatzeko aukera ere ematen du. Erabili kode-ikonoa duen botoia aurrebista aberatsaren eta sortutako HTML kodearen artean txandakatzeko. Dokumentua mahai gainean dagoen orri gisa aurkezten da, eta haren zoomak —egoera-barran, panel honetan zaudenean— (`−`, ehunekoa eta `+`) handitu edo txikitu egiten du pantailan; ehunekoak % 100era itzultzen du. Lupa bat da: ez du testua aldatzen, ezta esportatzen dena ere —dokumentuaren tamaina *Testuaren formatua* atalean dago—.
+* **Panel aktiboa**: bi panelak ikusgai daudenean, bat da agintzen duena —tresna-barrako botoiek jasotzen dutena eta lupa gobernatzen duena—. Panelaren ertz koloreduneko ezaugarriaz eta egoera-barrako errotuluak panel aktiboa baino izendatzen ez duenez ezagutzen da, eta markatuta jarraitzen du botoi bat sakatuta kurtsoreak han keinu egiteari uzten dionean ere.
 * **Edukia kopiatu**: Markdown-a edo sortutako HTMLa kopiatzeko botoi zehatzak (HTMLa kopiatzean LaTeX-era bihurtutako formulak barne).
 
 Erdiko barra arrasta dezakezu edozein paneli leku gehiago emateko, eskuineko botoian hiru antolaketetako bat aukeratu edo gezi bikoitza erabili **edizio-eremua maximizatzeko**: goiko barrak ezkutatzen ditu eta pantaila testuarentzat uzten du. `+` botoia azken fitxaren ondoren geratzen da.
