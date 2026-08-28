@@ -42,7 +42,7 @@ En la aplicación de escritorio la ruta se calcula sola desde la carpeta del doc
 Trabaja con varios documentos a la vez, cada uno en su propia pestaña.
 
 * **Crear pestañas**: Pulsa el botón `+` (o `Ctrl+T`) para abrir un nuevo documento en blanco.
-* **Cambiar de pestaña**: Haz clic en el nombre para mostrar su contenido, o pasa de una a otra con `Ctrl+Tab`.
+* **Cambiar de pestaña**: Haz clic en el nombre para mostrar su contenido, o pasa de una a otra con `Ctrl+Tab`. Cada pestaña recuerda dónde la dejaste: al volver, el cursor y las dos vistas están donde estaban.
 * **Renombrar**: Haz doble clic sobre el título para poner un nombre más descriptivo (ej. “Tema 3 – Ecuaciones”).
 * **Cerrar pestañas**: Pulsa la `X`. Si hay cambios sin guardar, la aplicación mostrará un aviso.
 * **Cambios sin guardar**: Un punto rojo (`●`) indica que hay modificaciones pendientes.
@@ -306,6 +306,8 @@ Los documentos que empieces en el navegador y los de la aplicación de escritori
 | Lista con viñetas | `Ctrl` + `Shift` + `L` | `Cmd` + `Shift` + `L` |
 | Lista numerada | `Ctrl` + `Shift` + `O` | `Cmd` + `Shift` + `O` |
 | Cita | `Ctrl` + `Shift` + `Q` | `Cmd` + `Shift` + `Q` |
+| Anidar / desanidar un punto de lista | `Tab` / `Mayús` + `Tab` | `Tab` / `Mayús` + `Tab` |
+| Subir un nivel (en un punto vacío) | `Intro` | `Intro` |
 | Código | `Ctrl` + `` ` `` | `Cmd` + `` ` `` |
 | Enlace | `Ctrl` + `K` | `Cmd` + `K` |
 | Imagen | `Ctrl` + `Shift` + `I` | `Cmd` + `Shift` + `I` |

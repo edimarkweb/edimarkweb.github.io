@@ -42,7 +42,7 @@ Na aplicación de escritorio a ruta calcúlase soa desde o cartafol do documento
 Traballa con varios documentos á vez, cada un na súa propia lapela.
 
 * **Crear lapelas**: preme o botón `+` (ou `Ctrl+T`) para abrir un documento en branco.
-* **Cambiar de lapela**: fai clic no nome para mostrar o seu contido, ou pasa dunha a outra con `Ctrl+Tab`.
+* **Cambiar de lapela**: fai clic no nome para mostrar o seu contido, ou pasa dunha a outra con `Ctrl+Tab`. Cada lapela lembra onde a deixaches: ao volver, o cursor e as dúas vistas están onde estaban.
 * **Renomear**: fai dobre clic sobre o título para poñer un nome máis descritivo (p. ex. «Tema 3 – Ecuacións»).
 * **Pechar lapelas**: preme o `X`. Se hai cambios sen gardar, a aplicación amosará un aviso.
 * **Cambios sen gardar**: un punto vermello (`●`) indica que hai modificacións pendentes.
@@ -306,6 +306,8 @@ Os documentos que comeces no navegador e os da aplicación de escritorio son fic
 | Lista con viñetas | `Ctrl` + `Maiús` + `L` | `Cmd` + `Maiús` + `L` |
 | Lista numerada | `Ctrl` + `Maiús` + `O` | `Cmd` + `Maiús` + `O` |
 | Cita | `Ctrl` + `Maiús` + `Q` | `Cmd` + `Maiús` + `Q` |
+| Aniñar / desaniñar un punto de lista | `Tab` / `Maiús` + `Tab` | `Tab` / `Maiús` + `Tab` |
+| Subir un nivel (nun punto baleiro) | `Intro` | `Intro` |
 | Código | `Ctrl` + `` ` `` | `Cmd` + `` ` `` |
 | Ligazón | `Ctrl` + `K` | `Cmd` + `K` |
 | Imaxe | `Ctrl` + `Maiús` + `I` | `Cmd` + `Maiús` + `I` |

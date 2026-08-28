@@ -42,7 +42,7 @@ A l'aplicació d'escriptori la ruta es calcula sola des de la carpeta del docume
 Treballa amb diversos documents alhora, cadascun a la seva pestanya.
 
 * **Crear pestanyes**: prem el botó `+` (o `Ctrl+T`) per obrir un document en blanc.
-* **Canviar de pestanya**: fes clic al nom per mostrar-ne el contingut, o passa d'una a l'altra amb `Ctrl+Tab`.
+* **Canviar de pestanya**: fes clic al nom per mostrar-ne el contingut, o passa d'una a l'altra amb `Ctrl+Tab`. Cada pestanya recorda on la vas deixar: en tornar-hi, el cursor i les dues vistes són on eren.
 * **Reanomenar**: fes doble clic al títol per posar-hi un nom més descriptiu (p. ex. «Tema 3 – Equacions»).
 * **Tancar pestanyes**: prem la `X`. Si hi ha canvis sense desar, l'aplicació t'ho advertirà.
 * **Canvis sense desar**: un punt vermell (`●`) indica que hi ha modificacions pendents.
@@ -306,6 +306,8 @@ Els documents que comencis al navegador i els de l'aplicació d'escriptori són 
 | Llista amb pics | `Ctrl` + `Maj` + `L` | `Cmd` + `Maj` + `L` |
 | Llista numerada | `Ctrl` + `Maj` + `O` | `Cmd` + `Maj` + `O` |
 | Cita | `Ctrl` + `Maj` + `Q` | `Cmd` + `Maj` + `Q` |
+| Imbricar / desimbricar un punt de llista | `Tab` / `Maj` + `Tab` | `Tab` / `Maj` + `Tab` |
+| Pujar un nivell (en un punt buit) | `Retorn` | `Retorn` |
 | Codi | `Ctrl` + `` ` `` | `Cmd` + `` ` `` |
 | Enllaç | `Ctrl` + `K` | `Cmd` + `K` |
 | Imatge | `Ctrl` + `Maj` + `I` | `Cmd` + `Maj` + `I` |

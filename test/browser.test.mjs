@@ -2900,3 +2900,226 @@ test('formatear en la vista previa no reescribe el resto del documento', async (
   const resultado = await page.locator('#markdown-input').inputValue();
   assert.equal(resultado.trim(), documento.replace('Final.', '**Final**.').trim());
 });
+
+/*
+  Cambiar de pestaña devolvía las dos vistas al principio del documento, así
+  que volver a un texto largo obligaba a buscar otra vez por dónde se iba.
+*/
+test('cada pestaña vuelve por donde se quedó', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  const documento = Array.from({ length: 60 }, (_, i) => `Línea ${i + 1} de un documento largo de prueba.`).join('\n\n');
+  await page.locator('#markdown-input').fill(documento);
+  await page.locator('#html-output p').getByText('Línea 60', { exact: false }).waitFor();
+
+  // El cursor, bien entrado el documento.
+  await page.evaluate(() => {
+    const editor = document.getElementById('markdown-input');
+    const posicion = editor.value.indexOf('Línea 40');
+    editor.focus();
+    editor.setSelectionRange(posicion + 4, posicion + 4);
+    editor.dispatchEvent(new Event('select'));
+  });
+  /*
+    La hoja sigue moviéndose un poco mientras se renderizan las fórmulas y las
+    imágenes; se mide cuando se ha quedado quieta, que es lo que guarda la
+    pestaña al salir.
+  */
+  await page.waitForFunction(() => {
+    const mesa = document.getElementById('preview-desk');
+    if (!mesa.scrollTop) return false;
+    const anterior = window.__ultimoScroll;
+    window.__ultimoScroll = mesa.scrollTop;
+    return anterior === mesa.scrollTop;
+  }, null, { polling: 250 });
+  const antes = await page.evaluate(() => ({
+    cursor: document.getElementById('markdown-input').selectionStart,
+    markdown: Math.round(document.getElementById('markdown-input').scrollTop),
+    vista: Math.round(document.getElementById('preview-desk').scrollTop),
+  }));
+  assert.ok(antes.markdown > 0, 'la prueba necesita el editor desplazado');
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('.tab').nth(1).click();
+  await page.waitForFunction(
+    (esperado) => document.getElementById('markdown-input').selectionStart === esperado,
+    antes.cursor,
+  );
+  const despues = await page.evaluate(() => ({
+    cursor: document.getElementById('markdown-input').selectionStart,
+    markdown: Math.round(document.getElementById('markdown-input').scrollTop),
+    vista: Math.round(document.getElementById('preview-desk').scrollTop),
+  }));
+  assert.equal(despues.cursor, antes.cursor);
+  assert.ok(Math.abs(despues.markdown - antes.markdown) <= 4, `el editor volvió a ${despues.markdown} en vez de ${antes.markdown}`);
+  assert.ok(Math.abs(despues.vista - antes.vista) <= 4, `la hoja volvió a ${despues.vista} en vez de ${antes.vista}`);
+});
+
+/*
+  Listas de varios niveles con el tabulador, en los dos paneles. En la hoja se
+  mueve el elemento a mano: el `outdent` de `execCommand` deshacía el punto en
+  Firefox en vez de subirlo de nivel.
+*/
+test('el tabulador anida y desanida los puntos de una lista', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+
+  // En el panel Markdown, sobre la línea del punto y no donde esté el cursor.
+  await page.locator('#markdown-input').fill('- uno\n- dos\n- tres\n');
+  await page.locator('#html-output li').getByText('dos', { exact: true }).waitFor();
+  await page.evaluate(() => {
+    const editor = document.getElementById('markdown-input');
+    const posicion = editor.value.indexOf('dos') + 3;
+    editor.focus();
+    editor.setSelectionRange(posicion, posicion);
+  });
+  await page.keyboard.press('Tab');
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.startsWith('- uno\n  - dos'));
+  await page.keyboard.press('Shift+Tab');
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.startsWith('- uno\n- dos'));
+
+  // Y en la hoja, con el cursor dentro del punto.
+  const caretEnElPunto = async (texto) => {
+    await page.evaluate((buscado) => {
+      const salida = document.getElementById('html-output');
+      salida.focus();
+      const punto = Array.from(salida.querySelectorAll('li'))
+        .find(li => li.firstChild && li.firstChild.nodeType === 3 && li.firstChild.data.trim() === buscado);
+      const rango = document.createRange();
+      rango.setStart(punto.firstChild, punto.firstChild.data.length);
+      rango.collapse(true);
+      const seleccion = window.getSelection();
+      seleccion.removeAllRanges();
+      seleccion.addRange(rango);
+      document.dispatchEvent(new Event('selectionchange'));
+    }, texto);
+  };
+
+  await page.locator('#markdown-input').fill('- alfa\n- beta\n- gamma\n');
+  await page.locator('#html-output li').getByText('beta', { exact: true }).waitFor();
+  await caretEnElPunto('beta');
+  await page.keyboard.press('Tab');
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('\n  - beta'));
+  assert.equal(await page.locator('#html-output ul ul li').count(), 1);
+
+  // El cursor se queda donde se estaba escribiendo, no salta al punto siguiente.
+  assert.equal(
+    await page.evaluate(() => {
+      const nodo = window.getSelection().anchorNode;
+      return nodo && nodo.nodeType === 3 ? nodo.data.trim() : '';
+    }),
+    'beta',
+  );
+
+  await page.keyboard.press('Shift+Tab');
+  await page.waitForFunction(
+    () => document.getElementById('markdown-input').value.trim() === '- alfa\n- beta\n- gamma',
+  );
+
+  // El primer punto no tiene bajo qué anidarse y se queda como está.
+  await page.locator('#markdown-input').fill('- uno\n- dos\n');
+  await page.locator('#html-output li').getByText('uno', { exact: true }).waitFor();
+  await caretEnElPunto('uno');
+  await page.keyboard.press('Tab');
+  await page.waitForTimeout(300);
+  assert.equal((await page.locator('#markdown-input').inputValue()).trim(), '- uno\n- dos');
+});
+
+/*
+  Una lista numerada sangra tres espacios, que es lo que ocupa `1. `; con los
+  dos de las viñetas el punto se quedaba en el mismo nivel, solo que con otro
+  número, y en la hoja no aparecía anidado.
+*/
+test('las listas numeradas se anidan como las de viñetas', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('1. uno\n2. dos\n3. tres\n');
+  await page.locator('#html-output li').getByText('dos', { exact: true }).waitFor();
+  await page.evaluate(() => {
+    const editor = document.getElementById('markdown-input');
+    const posicion = editor.value.indexOf('2. dos') + 6;
+    editor.focus();
+    editor.setSelectionRange(posicion, posicion);
+  });
+  await page.keyboard.press('Tab');
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('\n   1. dos'));
+  await page.locator('#html-output ol ol li').waitFor();
+
+  // Y vuelve a su nivel con la numeración que le toca allí.
+  await page.keyboard.press('Shift+Tab');
+  await page.waitForFunction(
+    () => document.getElementById('markdown-input').value.startsWith('1. uno\n2. dos'),
+  );
+  // La hoja se repinta un poco después: se espera a que la anidada desaparezca.
+  await page.waitForFunction(() => document.querySelectorAll('#html-output ol ol li').length === 0);
+});
+
+/*
+  Un punto vacío cierra la lista, pero solo la del primer nivel: dentro de una
+  anidada, dos intros seguidos acababan con todo en vez de sacar el punto al
+  nivel de arriba, que es donde se seguía escribiendo.
+*/
+test('un punto vacío de una lista anidada sube de nivel', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+
+  // En el panel Markdown, con tres niveles: se sube de uno en uno.
+  await page.locator('#markdown-input').fill('- uno\n  - dos\n    - tres\n');
+  await page.locator('#html-output ul ul ul li').waitFor();
+  await page.evaluate(() => {
+    const editor = document.getElementById('markdown-input');
+    const posicion = editor.value.indexOf('- tres') + 6;
+    editor.focus();
+    editor.setSelectionRange(posicion, posicion);
+  });
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.endsWith('  - \n'));
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.endsWith('\n- \n'));
+  // Ya en el primer nivel, el siguiente intro sí cierra la lista.
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => !document.getElementById('markdown-input').value.endsWith('- \n'));
+
+  // Y una numerada recupera el número que le toca en el nivel de arriba.
+  await page.locator('#markdown-input').fill('1. uno\n   1. dos\n');
+  await page.locator('#html-output ol ol li').waitFor();
+  await page.evaluate(() => {
+    const editor = document.getElementById('markdown-input');
+    const posicion = editor.value.indexOf('1. dos') + 6;
+    editor.focus();
+    editor.setSelectionRange(posicion, posicion);
+  });
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('\n2. '));
+
+  // En la hoja, lo mismo.
+  await page.locator('#markdown-input').fill('- alfa\n  - beta\n');
+  await page.locator('#html-output ul ul li').waitFor();
+  await page.evaluate(() => {
+    const salida = document.getElementById('html-output');
+    salida.focus();
+    const punto = Array.from(salida.querySelectorAll('li')).find(li => li.textContent.trim() === 'beta');
+    const rango = document.createRange();
+    rango.setStart(punto.firstChild, punto.firstChild.data.length);
+    rango.collapse(true);
+    const seleccion = window.getSelection();
+    seleccion.removeAllRanges();
+    seleccion.addRange(rango);
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelectorAll('#html-output ul ul li').length === 2);
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelectorAll('#html-output ul ul li').length === 1);
+  assert.equal(await page.locator('#html-output > ul > li').count(), 2);
+});

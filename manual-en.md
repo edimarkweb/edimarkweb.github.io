@@ -42,7 +42,7 @@ In the desktop application the path is worked out from the document folder. In t
 Work on several documents at once, each in its own tab.
 
 * **New tabs**: press the `+` button (or `Ctrl+T`) to open a blank document.
-* **Switching tabs**: click the name to show its contents, or move from one to the next with `Ctrl+Tab`.
+* **Switching tabs**: click the name to show its contents, or move from one to the next with `Ctrl+Tab`. Each tab remembers where you left it: when you come back, the cursor and both panes are where they were.
 * **Renaming**: double-click the title to give it a more descriptive name (e.g. “Unit 3 – Equations”).
 * **Closing tabs**: press the `X`. If there are unsaved changes, the application will warn you.
 * **Unsaved changes**: a red dot (`●`) marks pending modifications.
@@ -306,6 +306,8 @@ Documents started in the browser and those from the desktop application are ordi
 | Bulleted list | `Ctrl` + `Shift` + `L` | `Cmd` + `Shift` + `L` |
 | Numbered list | `Ctrl` + `Shift` + `O` | `Cmd` + `Shift` + `O` |
 | Quote | `Ctrl` + `Shift` + `Q` | `Cmd` + `Shift` + `Q` |
+| Nest / unnest a list item | `Tab` / `Shift` + `Tab` | `Tab` / `Shift` + `Tab` |
+| Move up one level (on an empty item) | `Enter` | `Enter` |
 | Code | `Ctrl` + `` ` `` | `Cmd` + `` ` `` |
 | Link | `Ctrl` + `K` | `Cmd` + `K` |
 | Image | `Ctrl` + `Shift` + `I` | `Cmd` + `Shift` + `I` |

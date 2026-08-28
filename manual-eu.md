@@ -42,7 +42,7 @@ Mahaigaineko aplikazioan bidea dokumentuaren karpetatik kalkulatzen da. Nabigatz
 Egin lan hainbat dokumenturekin aldi berean, bakoitza bere fitxan.
 
 * **Fitxak sortu**: sakatu `+` botoia (edo `Ctrl+T`) dokumentu huts bat irekitzeko.
-* **Fitxaz aldatu**: egin klik izenean bere edukia erakusteko, edo pasa batetik bestera `Ctrl+Tab` erabiliz.
+* **Fitxaz aldatu**: egin klik izenean bere edukia erakusteko, edo pasa batetik bestera `Ctrl+Tab` erabiliz. Fitxa bakoitzak non utzi zenuen gogoratzen du: itzultzean, kurtsorea eta bi bistak zeuden lekuan daude.
 * **Berrizendatu**: egin klik bikoitza izenburuan izen deskribatzaileago bat jartzeko (adib. «3. gaia – Ekuazioak»).
 * **Fitxak itxi**: sakatu `X`. Gorde gabeko aldaketarik badago, aplikazioak abisu bat erakutsiko du.
 * **Gorde gabeko aldaketak**: puntu gorri batek (`●`) adierazten du aldaketak zain daudela.
@@ -306,6 +306,8 @@ Nabigatzailean hasitako dokumentuak eta mahaigaineko aplikaziokoak Markdown fitx
 | Buletadun zerrenda | `Ctrl` + `Shift` + `L` | `Cmd` + `Shift` + `L` |
 | Zenbakidun zerrenda | `Ctrl` + `Shift` + `O` | `Cmd` + `Shift` + `O` |
 | Aipua | `Ctrl` + `Shift` + `Q` | `Cmd` + `Shift` + `Q` |
+| Zerrenda-puntu bat habiaratu / atera | `Tab` / `Maius` + `Tab` | `Tab` / `Maius` + `Tab` |
+| Maila bat igo (puntu huts batean) | `Sartu` | `Sartu` |
 | Kodea | `Ctrl` + `` ` `` | `Cmd` + `` ` `` |
 | Esteka | `Ctrl` + `K` | `Cmd` + `K` |
 | Irudia | `Ctrl` + `Shift` + `I` | `Cmd` + `Shift` + `I` |

@@ -1962,20 +1962,131 @@ function createTextareaEditor(textarea) {
         triggerChange();
     }
 
+    /*
+      La línea de lista donde está el cursor, con sus piezas: sangría,
+      marcador, separación y texto.
+    */
+    function currentListLine() {
+        const text = getValue();
+        const cursor = textarea.selectionStart;
+        const lineStart = text.lastIndexOf('\n', Math.max(0, cursor - 1)) + 1;
+        let lineEnd = text.indexOf('\n', cursor);
+        if (lineEnd === -1) lineEnd = text.length;
+        const line = text.slice(lineStart, lineEnd);
+        const match = line.match(/^(\s*)([*+-]|\d+\.)(\s+)(.*)$/);
+        if (!match) return null;
+        return { text, lineStart, lineEnd, line, indent: match[1], marker: match[2], gap: match[3], rest: match[4] };
+    }
+
+    /*
+      El punto anterior del mismo nivel, que es bajo el que se anida. Si no
+      hay ninguno —se está en el primero— no hay dónde anidar, ni en Markdown.
+    */
+    function previousSiblingListLine(lineStart, indentLength) {
+        const text = getValue();
+        const lines = text.slice(0, Math.max(0, lineStart - 1)).split('\n');
+        for (let i = lines.length - 1; i >= 0; i -= 1) {
+            const match = lines[i].match(/^(\s*)([*+-]|\d+\.)\s+/);
+            if (!match) {
+                // Una línea en blanco entre puntos no rompe la lista.
+                if (lines[i].trim() === '') continue;
+                return null;
+            }
+            const indent = match[1];
+            if (indent.length < indentLength) return null;
+            if (indent.length === indentLength) return { indent, marker: match[2] };
+        }
+        return null;
+    }
+
+    /*
+      Reescribe la línea con otra sangría y otro marcador, dejando el cursor
+      donde estaba dentro del texto del punto.
+    */
+    function rewriteListLine(info, indent, marker) {
+        const offsetInLine = textarea.selectionStart - info.lineStart;
+        const rewritten = `${indent}${marker}${info.gap}${info.rest}`;
+        textarea.value = info.text.slice(0, info.lineStart) + rewritten + info.text.slice(info.lineEnd);
+        const delta = rewritten.length - info.line.length;
+        const caret = Math.max(info.lineStart, info.lineStart + offsetInLine + delta);
+        setSelectionRange(caret, caret);
+        triggerChange();
+    }
+
+    function lineAtCursorIsListItem() {
+        const text = getValue();
+        const cursor = textarea.selectionStart;
+        const lineStart = text.lastIndexOf('\n', Math.max(0, cursor - 1)) + 1;
+        let lineEnd = text.indexOf('\n', cursor);
+        if (lineEnd === -1) lineEnd = text.length;
+        return /^\s*([*+-]|\d+\.)\s+/.test(text.slice(lineStart, lineEnd));
+    }
+
     function handleTab(e) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const listLine = start === end ? currentListLine() : null;
+
         if (e.shiftKey) {
+            if (listLine) {
+                /*
+                  Sacar el punto un nivel es devolverlo a la sangría de aquel
+                  bajo el que colgaba, con el marcador que le toque allí.
+                */
+                const parent = listLine.indent ? parentListLine(listLine.lineStart, listLine.indent.length) : null;
+                if (parent) rewriteListLine(listLine, parent.indent, parent.marker);
+                return;
+            }
             handleIndent(true);
             return;
         }
 
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
         if (start !== end) {
             handleIndent(false);
             return;
         }
 
+        /*
+          Dentro de una lista el tabulador anida el punto —que es para lo que
+          se pulsa ahí— en lugar de meter dos espacios donde esté el cursor,
+          que dejaba el guion donde estaba y partía el texto.
+
+          La sangría no son dos espacios fijos: es lo que ocupa el marcador de
+          arriba, y `1. ` ocupa tres. Con dos, una lista numerada no anidaba
+          nada; se quedaba en el mismo nivel con el número cambiado.
+        */
+        if (listLine) {
+            const sibling = previousSiblingListLine(listLine.lineStart, listLine.indent.length);
+            if (!sibling) return;
+            const indent = ' '.repeat(sibling.indent.length + sibling.marker.length + 1);
+            // Al anidarse estrena lista, así que la numeración empieza de nuevo.
+            const marker = /^\d+\.$/.test(listLine.marker) ? '1.' : listLine.marker;
+            rewriteListLine(listLine, indent, marker);
+            return;
+        }
+
         replaceOffsets(start, end, INDENT);
+    }
+
+    /*
+      El punto de lista que contiene a este: se busca hacia atrás el primero
+      con menos sangría. De él salen la sangría y la clase de marcador con los
+      que continuar, que no tienen por qué ser los de aquí —una lista numerada
+      sangra tres espacios y una de viñetas, dos—.
+    */
+    function parentListLine(lineStart, indentLength) {
+        const text = getValue();
+        const before = text.slice(0, Math.max(0, lineStart - 1));
+        const lines = before.split('\n');
+        for (let i = lines.length - 1; i >= 0; i -= 1) {
+            const match = lines[i].match(/^(\s*)([*+-]|\d+\.)\s+/);
+            if (!match) continue;
+            const [, indent, marker] = match;
+            if (indent.length >= indentLength) continue;
+            const next = /^\d+\.$/.test(marker) ? `${parseInt(marker, 10) + 1}.` : marker;
+            return { indent, marker: next };
+        }
+        return null;
     }
 
     function handleEnter() {
@@ -1992,6 +2103,22 @@ function createTextareaEditor(textarea) {
             const [, indent, marker, rest] = listMatch;
             const cursorAtEnd = cursor === lineStart + line.length;
             if (rest.trim().length === 0 && cursorAtEnd) {
+                /*
+                  Un punto vacío cierra la lista, pero solo la del primer
+                  nivel: estando dentro de una anidada, lo que se espera es
+                  salir un nivel y seguir escribiendo ahí, no acabar con todo.
+                */
+                const parent = indent ? parentListLine(lineStart, indent.length) : null;
+                if (parent) {
+                    const before = text.slice(0, lineStart);
+                    const after = text.slice(lineEnd);
+                    const replacement = `${parent.indent}${parent.marker} `;
+                    textarea.value = before + replacement + after;
+                    const caret = lineStart + replacement.length;
+                    setSelectionRange(caret, caret);
+                    triggerChange();
+                    return true;
+                }
                 const before = text.slice(0, lineStart);
                 const after = text.slice(lineEnd);
                 textarea.value = before + after;
@@ -2759,11 +2886,67 @@ function addTabElement({ id, name }) {
     if(window.lucide) lucide.createIcons();
 }
 
+/*
+  Dónde se había quedado cada pestaña. Cambiar de documento devolvía las dos
+  vistas al principio, así que volver a un texto largo obligaba a buscar otra
+  vez por dónde se iba; se guarda al salir y se repone al entrar, como haría
+  cualquier editor con pestañas.
+*/
+function captureDocView() {
+    if (!markdownEditor) return null;
+    const scroller = typeof markdownEditor.getScrollerElement === 'function'
+        ? markdownEditor.getScrollerElement()
+        : null;
+    const preview = getPreviewScroller();
+    return {
+        cursor: typeof markdownEditor.getCursor === 'function' ? markdownEditor.getCursor() : null,
+        markdown: scroller ? { top: scroller.scrollTop, left: scroller.scrollLeft } : null,
+        preview: preview ? { top: preview.scrollTop, left: preview.scrollLeft } : null,
+    };
+}
+
+function applyScroll(element, position) {
+    if (!element) return;
+    element.scrollTop = position ? position.top : 0;
+    element.scrollLeft = position ? position.left : 0;
+}
+
+function restoreDocView(view) {
+    if (!markdownEditor) return;
+    /*
+      El orden importa: enfocar lleva la vista al cursor, así que el
+      desplazamiento se repone después. Y se repite en el fotograma siguiente
+      porque la hoja crece al renderizarse las fórmulas y las imágenes.
+    */
+    if (view && view.cursor && typeof markdownEditor.setCursor === 'function') {
+        skipNextCursorSync = true;
+        markdownEditor.setCursor(view.cursor);
+        const liberar = () => { skipNextCursorSync = false; };
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(liberar);
+        else setTimeout(liberar, 0);
+    } else if (typeof markdownEditor.setCursor === 'function') {
+        markdownEditor.setCursor({ line: 0, ch: 0 });
+    }
+    const scroller = typeof markdownEditor.getScrollerElement === 'function'
+        ? markdownEditor.getScrollerElement()
+        : null;
+    const preview = getPreviewScroller();
+    const reponer = () => {
+        applyScroll(scroller, view && view.markdown);
+        applyScroll(preview, view && view.preview);
+        if (htmlEditor && typeof htmlEditor.scrollTo === 'function') htmlEditor.scrollTo(0, 0);
+    };
+    reponer();
+    if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(reponer);
+    else setTimeout(reponer, 0);
+}
+
 function switchTo(id) {
     if (currentId && currentId !== id) {
         const previousDoc = docs.find(d => d.id === currentId);
         if (previousDoc) {
             previousDoc.md = markdownEditor.getValue();
+            previousDoc.view = captureDocView();
             // El temporizador ya no volverá a este documento: se guarda aquí.
             autosaveDoc(previousDoc.id, previousDoc.md);
             updateDirtyIndicator(previousDoc.id, previousDoc.md !== previousDoc.lastSaved);
@@ -2784,19 +2967,14 @@ function switchTo(id) {
         t.classList.toggle('border-transparent', !isActive);
     });
 
+    /*
+      El texto del documento entra de una vez: repintar la hoja poco a poco,
+      como si se estuviera escribiendo, movería las dos vistas antes de haber
+      repuesto dónde estaban.
+    */
+    skipNextMarkdownSync = true;
     markdownEditor.setValue(doc.md);
-    if (typeof markdownEditor.setCursor === 'function') {
-        markdownEditor.setCursor({ line: 0, ch: 0 });
-    }
-    if (typeof markdownEditor.scrollTo === 'function') {
-        markdownEditor.scrollTo(0, 0);
-    } else if (typeof markdownEditor.getScrollerElement === 'function') {
-        const scroller = markdownEditor.getScrollerElement();
-        if (scroller) {
-            scroller.scrollTop = 0;
-            scroller.scrollLeft = 0;
-        }
-    }
+    skipNextMarkdownSync = false;
     if (typeof markdownEditor.clearHistory === 'function') {
         markdownEditor.clearHistory();
     }
@@ -2804,15 +2982,8 @@ function switchTo(id) {
     doc.md = markdownEditor.getValue();
     doc.lastSaved = normalizeNewlines(doc.lastSaved || doc.md);
     updateHtml();
-    const previewScroller = getPreviewScroller();
-    if (previewScroller) {
-        previewScroller.scrollTop = 0;
-        previewScroller.scrollLeft = 0;
-    }
-    if (htmlEditor && typeof htmlEditor.scrollTo === 'function') {
-        htmlEditor.scrollTo(0, 0);
-    }
     markdownEditor.focus();
+    restoreDocView(doc.view);
     updateDirtyIndicator(id, doc.md !== doc.lastSaved);
 }
 
@@ -3852,6 +4023,105 @@ function unwrapElement(element) {
     parent.removeChild(element);
 }
 
+/*
+  Anidar una lista en el navegador deja el `<ul>` colgando de otro `<ul>`, que
+  ni es HTML válido ni Turndown sabe leer: el punto anidado volvía al Markdown
+  como una lista suelta. Su sitio es dentro del elemento anterior.
+*/
+function normalizeNestedLists(container) {
+    if (!container) return;
+    container.querySelectorAll('ul > ul, ul > ol, ol > ul, ol > ol').forEach((list) => {
+        const previous = list.previousElementSibling;
+        if (previous && previous.tagName === 'LI') previous.appendChild(list);
+    });
+}
+
+/*
+  Anidar y desanidar a mano. `execCommand` los tiene, pero cada motor entiende
+  una cosa: el `outdent` de Firefox deshacía el punto en vez de subirlo de
+  nivel. Mover el elemento es media docena de líneas y hace lo mismo en los
+  tres.
+*/
+function indentPreviewListItem(item) {
+    const previous = item.previousElementSibling;
+    // El primero de una lista no tiene bajo qué anidarse, ni en Markdown.
+    if (!previous || previous.tagName !== 'LI') return false;
+    let sublist = previous.querySelector(':scope > ul, :scope > ol');
+    if (!sublist) {
+        sublist = document.createElement(item.parentElement.tagName);
+        previous.appendChild(sublist);
+    }
+    sublist.appendChild(item);
+    return true;
+}
+
+function outdentPreviewListItem(item) {
+    const list = item.parentElement;
+    const parentItem = list && list.parentElement;
+    // Solo sube lo que está anidado; un punto de primer nivel se queda.
+    if (!parentItem || parentItem.tagName !== 'LI') return false;
+    const outerList = parentItem.parentElement;
+    if (!outerList) return false;
+    // Lo que venía detrás sigue colgando de él, un nivel más adentro.
+    const following = [];
+    let sibling = item.nextElementSibling;
+    while (sibling) { following.push(sibling); sibling = sibling.nextElementSibling; }
+    if (following.length) {
+        const sublist = document.createElement(list.tagName);
+        following.forEach(node => sublist.appendChild(node));
+        item.appendChild(sublist);
+    }
+    outerList.insertBefore(item, parentItem.nextSibling);
+    if (!list.children.length) list.remove();
+    return true;
+}
+
+// El punto acaba de quedarse vacío: el cursor va dentro, listo para escribir.
+function placeCaretInPreviewItem(item) {
+    const selection = window.getSelection();
+    if (!item || !selection) return;
+    const range = document.createRange();
+    range.setStart(item, 0);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+/*
+  Anidar o desanidar deja el cursor a la deriva: el navegador lo suelta en el
+  `<ul>` y de ahí saltaba al punto siguiente. Como el texto donde se estaba
+  escribiendo es el mismo nodo —solo ha cambiado de padre—, basta con apuntarlo
+  antes y volver a él después.
+*/
+function preservePreviewCaret(action) {
+    const container = document.getElementById('html-output');
+    const selection = window.getSelection();
+    const before = selection ? selection.anchorNode : null;
+    const offset = selection ? selection.anchorOffset : 0;
+    const text = before && before.nodeType === 3 ? before.data : null;
+    action();
+    if (!selection || !container) return;
+    let node = before && container.contains(before) ? before : null;
+    /*
+      Anidar puede rehacer el elemento en vez de moverlo, y entonces el nodo de
+      antes ya no está en la hoja: se busca el texto donde se estaba
+      escribiendo, que es lo que el usuario reconoce como «donde iba».
+    */
+    if (!node && text) {
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+            if (walker.currentNode.data === text) { node = walker.currentNode; break; }
+        }
+    }
+    if (!node) return;
+    const limit = node.nodeType === 3 ? node.data.length : node.childNodes.length;
+    const range = document.createRange();
+    range.setStart(node, Math.min(offset, limit));
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
 function applyInlineCodeToPreview() {
     const selection = window.getSelection();
     if (!selection || !selection.rangeCount) return false;
@@ -4009,8 +4279,13 @@ function applyFormatToPreview(format) {
             else run('formatBlock', 'blockquote');
             break;
         }
-        case 'list-ul': run('insertUnorderedList'); break;
-        case 'list-ol': run('insertOrderedList'); break;
+        case 'list-ul':
+        case 'list-ol':
+            preservePreviewCaret(() => {
+                run(format === 'list-ul' ? 'insertUnorderedList' : 'insertOrderedList');
+                normalizeNestedLists(document.getElementById('html-output'));
+            });
+            break;
         /*
           Sus ventanas piden los datos y vuelven por insertMarkdownContent. El
           texto seleccionado en la hoja se lleva ya escrito, igual que cuando
@@ -7390,6 +7665,43 @@ window.onload = async () => {
           formatear.
         */
         document.addEventListener('selectionchange', capturePreviewSelection);
+        /*
+          Y sobre la hoja, lo mismo: dentro de un elemento de lista el
+          tabulador lo mete un nivel y `Mayús`+`Tab` lo saca. Fuera de una
+          lista se deja pasar, que es como se salta al siguiente control.
+        */
+        /*
+          Y el punto vacío de una lista anidada sube un nivel en vez de acabar
+          con la lista entera, igual que en el panel Markdown. En el primer
+          nivel se deja al navegador, que cierra la lista, que es lo suyo.
+        */
+        htmlOutput.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+            const block = previewBlockOfSelection();
+            const item = block && block.closest('li');
+            if (!item || item.textContent.trim() !== '') return;
+            const list = item.parentElement;
+            if (!list || !list.parentElement || list.parentElement.tagName !== 'LI') return;
+            event.preventDefault();
+            preservePreviewCaret(() => { outdentPreviewListItem(item); });
+            placeCaretInPreviewItem(item);
+            notifyPreviewEdited();
+            capturePreviewSelection();
+        });
+        htmlOutput.addEventListener('keydown', (event) => {
+            if (event.key !== 'Tab' || event.ctrlKey || event.metaKey || event.altKey) return;
+            const block = previewBlockOfSelection();
+            const item = block && block.closest('li');
+            if (!item) return;
+            event.preventDefault();
+            let moved = false;
+            preservePreviewCaret(() => {
+                moved = event.shiftKey ? outdentPreviewListItem(item) : indentPreviewListItem(item);
+            });
+            if (!moved) return;
+            notifyPreviewEdited();
+            capturePreviewSelection();
+        });
         htmlOutput.addEventListener('keydown', (event) => {
             if (!markdownEditor) return;
             const accel = event.ctrlKey || event.metaKey;
