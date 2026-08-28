@@ -119,6 +119,8 @@ Next to the character counter there is a short button with the document language
 
 Pick a specific language and the application stores it **inside the document itself**, so it travels with the file: save it and open it tomorrow, here or on another computer, or hand it to someone else, and it stays. To go back, choose *General language*. And with *Other language…* you can type the code of any language (`fr`, `de`, `pt-BR`). In that same menu, *This document's author…* does the same for the author.
 
+In the status bar, next to the character counter, a pill sums up how the document will come out: typeface and font size, line spacing or alignment — the first three that are actually decided — with the inheritance already resolved — what the document says and, where it says nothing, the general option. The rest — margins, indentation and hyphenation included — is there when you hover over it, and clicking it opens this same dialog. On narrow screens only the first one is left.
+
 The **This document** dialog also holds the **table of contents** and the **section numbering**, with the same three choices: *Inherited*, *Yes* and *No*. They are the same settings as in *Export options*, but stated by this document, which is where they are usually decided: a manual wants a numbered table of contents and a two-paragraph note does not. Under each field you can read what it inherits right now, and an explicit *No* takes the table of contents away from this document even when the general option asks for one.
 
 If you ever open your `.md` in a plain text editor, you will see that preference at the very top, in a few lines between dashes:

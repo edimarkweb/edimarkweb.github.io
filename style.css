@@ -1214,6 +1214,44 @@ body.desktop-mode .markdown-textarea {
     border-color: rgba(148, 163, 184, 0.25);
     background: rgba(30, 41, 59, 0.7);
 }
+
+/*
+  El resumen del formato toma la misma píldora que el contador —es información
+  del documento, no un mando de panel—, pero se pulsa: de ahí el realce al
+  pasar por encima. Lo secundario se corta antes que empujar la fila.
+*/
+.doc-format-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    max-width: 15rem;
+    cursor: pointer;
+}
+.doc-format-status i,
+.doc-format-status svg {
+    width: 0.85rem;
+    height: 0.85rem;
+    flex-shrink: 0;
+}
+.doc-format-status:hover {
+    background: rgba(148, 163, 184, 0.28);
+}
+.dark .doc-format-status:hover {
+    background: rgba(51, 65, 85, 0.9);
+}
+.doc-format-status-rest {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/*
+  El `display` de aquí arriba le gana en especificidad al `hidden` de Tailwind,
+  y sin esto un documento sin ningún valor fijado deja en la fila una píldora
+  vacía con el icono suelto dentro.
+*/
+.doc-format-status.hidden {
+    display: none;
+}
 .dark select.action-btn { background-color: #0f172a; }
 
 .select-trigger {
@@ -1697,6 +1735,14 @@ body.desktop-mode .markdown-textarea {
     .status-bar .panel-counter {
         font-size: 0.65rem;
         padding: 0.1rem 0.35rem;
+    }
+
+    /*
+      Del resumen del formato solo queda el tamaño: en el móvil no se imprime,
+      y la fila no da para tres datos y una tipografía escrita a mano.
+    */
+    .doc-format-status-rest {
+        display: none;
     }
 
     /*

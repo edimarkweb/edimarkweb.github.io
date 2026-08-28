@@ -119,6 +119,8 @@ Karaktere-kontagailuaren ondoan botoi labur bat dago, dokumentuaren hizkuntzarek
 
 Hizkuntza jakin bat aukeratzean, aplikazioak **dokumentuaren barruan bertan** gordetzen du, eta, beraz, fitxategiarekin batera bidaiatzen du: gorde eta bihar irekitzen baduzu, hemen edo beste ordenagailu batean, edo norbaiti pasatzen badiozu, hura izaten jarraituko du. Atzera egiteko, aukeratu *Hizkuntza orokorra*. Eta *Beste hizkuntza bat…* aukerarekin edozein hizkuntzaren kodea idatz dezakezu (`fr`, `de`, `pt-BR`). Menu horretan bertan, *Dokumentu honen egilea…* aukerak gauza bera egiten du egilearekin.
 
+Egoera-barran, karaktere-kontagailuaren ondoan, pilula batek dokumentua nola aterako den laburbiltzen du: letra-tipoa eta letra-tamaina, lerroartea edo lerrokatzea —erabakita dauden lehen hirurak—, herentzia ebatzita —dokumentuak dioena eta, isilik dagoenean, aukera orokorra—. Gainerakoa —marjinak, koska eta hitz-zatiketa barne— sagua gainetik pasatzean irakurtzen da, eta sakatuz gero koadro bera irekitzen da. Pantaila estuetan lehena bakarrik gelditzen da.
+
 **Dokumentu hau** koadroan **aurkibide automatikoa** eta **atalen zenbakitzea** ere badaude, hiru aukera berberekin: *Heredatua*, *Bai* eta *Ez*. *Esportazio-aukerak* ataleko ezarpen berberak dira, baina dokumentu honek esanda, hor erabakitzen baitira normalean: eskuliburu batek aurkibide zenbakitua nahi du eta bi paragrafoko ohar batek ez. Eremu bakoitzaren azpian orain zer heredatzen duen irakur daiteke, eta *Ez* esplizitu batek aurkibidea kentzen dio dokumentu honi, aukera orokorrak eskatuta ere.
 
 Inoiz zure `.md` fitxategia testu-editore soil batekin irekitzen baduzu, hobespen hori goian ikusiko duzu, marren arteko lerro batzuetan:

@@ -627,6 +627,19 @@
         -->
         <footer id="status-bar" class="status-bar">
             <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
+            <!--
+              Cómo va a salir el documento al imprimirlo, resuelto: lo que dice
+              el propio documento y, donde calla, lo que ponen las opciones
+              generales. Sin esto no hay manera de saber de dónde sale un 12 pt
+              sin abrir el cuadro de diálogo. Caben tres datos —los que más
+              cambian la página—; el resto se lee en el título, y pulsando se
+              abre el cuadro donde se cambian.
+            -->
+            <button id="doc-format-status" class="panel-counter doc-format-status hidden" type="button">
+                <i data-lucide="type" aria-hidden="true"></i>
+                <span id="doc-format-status-main"></span>
+                <span id="doc-format-status-rest" class="doc-format-status-rest"></span>
+            </button>
             <span class="status-bar-spacer"></span>
             <!--
               Los rótulos de los dos paneles dicen, encendiendo el suyo, cuál es

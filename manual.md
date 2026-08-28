@@ -119,6 +119,8 @@ Junto al contador de caracteres hay un botón corto con el idioma del documento:
 
 Al elegir un idioma concreto, la aplicación lo guarda **dentro del propio documento**, de modo que viaja con el archivo: si lo guardas y lo abres mañana, aquí o en otro equipo, o se lo pasas a alguien, seguirá siendo ese. Para volver a lo anterior, elige *Heredado*. Y con *Otro…* puedes escribir el código de cualquier lengua (`fr`, `de`, `pt-BR`). El **autor** funciona igual, en el campo de al lado.
 
+En la barra de estado, junto al contador de caracteres, una pastilla resume cómo va a salir el documento: el tipo y el tamaño de letra, el interlineado o la alineación —los tres primeros que estén decididos—, ya con la herencia resuelta —lo que dice el documento y, donde calla, la opción general—. El resto —y los márgenes, la sangría y la partición— se lee al pasar el ratón por encima, y al pulsarla se abre este mismo cuadro. En pantallas estrechas se queda solo con el primero.
+
 En la misma pestaña están el **índice automático** y la **numeración de los apartados**, con las mismas tres posibilidades: *Heredado*, *Sí* y *No*. Son los mismos ajustes de *Opciones de exportación*, pero dichos por este documento, que es donde suelen decidirse: un manual quiere índice numerado y una nota de dos párrafos no. Debajo de cada campo se lee lo que hereda ahora mismo, y un *No* explícito le quita el índice a este documento aunque la opción general lo pida.
 
 Si alguna vez abres tu `.md` con un editor de texto plano, verás esa preferencia arriba del todo, en unas líneas entre rayas:

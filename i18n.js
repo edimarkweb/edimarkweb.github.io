@@ -119,6 +119,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.__refreshInheritedDocumentHints === 'function') {
       window.__refreshInheritedDocumentHints();
     }
+    // El resumen del formato en la barra de estado se compone a mano, con
+    // etiquetas y decimales del idioma: data-i18n-key no lo alcanza.
+    if (typeof window.__updateDocumentFormatStatus === 'function') {
+      window.__updateDocumentFormatStatus();
+    }
   };
 
   /*

@@ -119,6 +119,8 @@ Al costat del comptador de caràcters hi ha un botó curt amb l'idioma del docum
 
 En triar un idioma concret, l'aplicació el desa **dins del document mateix**, de manera que viatja amb el fitxer: si el deses i l'obres demà, aquí o en un altre equip, o l'hi passes a algú, continuarà sent aquell. Per tornar enrere, tria *Idioma general*. I amb *Un altre idioma…* pots escriure el codi de qualsevol llengua (`fr`, `de`, `pt-BR`). En aquest mateix menú, *Autor d'aquest document…* fa el mateix amb l'autor.
 
+A la barra d'estat, al costat del comptador de caràcters, una pastilla resumeix com sortirà el document: el tipus i la mida de lletra, l'interlineat o l'alineació —els tres primers que estiguin decidits—, ja amb l'herència resolta —el que diu el document i, on calla, l'opció general—. La resta —i els marges, la sagnia i la partició— es llegeix passant-hi el ratolí per sobre, i en prémer-la s'obre aquest mateix quadre. A les pantalles estretes es queda només amb el primer.
+
 Al quadre **Aquest document** hi ha també l'**índex automàtic** i la **numeració dels apartats**, amb les mateixes tres possibilitats: *Heretat*, *Sí* i *No*. Són els mateixos ajustos d'*Opcions d'exportació*, però dits per aquest document, que és on solen decidir-se: un manual vol índex numerat i una nota de dos paràgrafs no. Sota cada camp es llegeix què hereta ara mateix, i un *No* explícit li treu l'índex a aquest document encara que l'opció general el demani.
 
 Si algun dia obres el teu `.md` amb un editor de text pla, veuràs aquesta preferència a dalt de tot, en unes línies entre ratlles:

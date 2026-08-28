@@ -8640,6 +8640,111 @@ window.onload = async () => {
     }
 
     /*
+      El resumen de la barra de estado. Enseña el formato ya resuelto —el que
+      va a salir impreso—, no lo que guarda el documento: quien lo mira quiere
+      saber cómo queda la página, y de dónde viene cada valor ya lo cuenta el
+      cuadro de diálogo. Caben tres datos y el resto se va al título, que sí
+      puede ser una lista.
+    */
+    const DOC_FORMAT_STATUS_LABELS = {
+        align: {
+            left: ['doc_format_status_align_left', 'Izq.'],
+            justify: ['doc_format_status_align_justify', 'Just.'],
+            right: ['doc_format_status_align_right', 'Der.'],
+        },
+        font: {
+            serif: ['doc_format_status_font_serif', 'Serif'],
+            sans: ['doc_format_status_font_sans', 'Sans'],
+            mono: ['doc_format_status_font_mono', 'Mono'],
+        },
+        indent: {
+            yes: ['doc_format_status_indent_yes', 'Sangría'],
+            no: ['doc_format_status_indent_no', 'Sin sangría'],
+        },
+        hyphenate: {
+            yes: ['doc_format_status_hyphenate_yes', 'Guiones'],
+            no: ['doc_format_status_hyphenate_no', 'Sin guiones'],
+        },
+    };
+
+    /*
+      Por orden de mano —el de cualquier procesador de textos: tipo de letra y
+      tamaño primero—, y se enseñan los tres primeros que este documento tenga
+      decididos. Con una lista corta y fija, un documento que solo fija la
+      tipografía y los guiones —que los hay— se quedaba sin nada que enseñar.
+      Los márgenes no entran: un «2 cm» al lado de un «12 pt» se lee como otro
+      tamaño, y en el título caben de sobra.
+    */
+    const DOC_FORMAT_STATUS_ORDER = ['font', 'fontSize', 'lineHeight', 'align', 'indent', 'hyphenate'];
+
+    /* El nombre de una tipografía escrita a mano se enseña tal cual. */
+    function documentFormatStatusPart(field, value) {
+        if (!value) return '';
+        if (field === 'fontSize') return `${documentFormatStatusNumber(value)} pt`;
+        if (field === 'lineHeight') return documentFormatStatusNumber(value);
+        const entry = (DOC_FORMAT_STATUS_LABELS[field] || {})[value];
+        return entry ? getTranslation(entry[0], entry[1]) : String(value);
+    }
+
+    /* Los decimales se escriben como los escribe el idioma de la interfaz. */
+    function documentFormatStatusNumber(value) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return String(value);
+        return number.toLocaleString(window.__edimarkLang || 'es');
+    }
+
+    function documentFormatStatusTitle(format) {
+        const lines = [];
+        const add = (labelKey, labelText, value) => {
+            if (value) lines.push(`${getTranslation(labelKey, labelText)}: ${value}`);
+        };
+        add('doc_format_field_align', 'Alineación', inheritedValueLabel('align', format.align));
+        add('doc_format_field_font', 'Tipo de letra', inheritedValueLabel('font', format.font));
+        add('doc_format_field_fontsize', 'Tamaño (pt)', format.fontSize
+            ? documentFormatStatusNumber(format.fontSize)
+            : '');
+        add('doc_format_field_lineheight', 'Interlineado', format.lineHeight
+            ? documentFormatStatusNumber(format.lineHeight)
+            : '');
+        // Los cuatro juntos y en el orden del cuadro de diálogo; el que no
+        // está fijado deja su hueco marcado, que decir tres márgenes de cuatro
+        // sin avisar se lee mal.
+        const sides = ['marginTop', 'marginRight', 'marginBottom', 'marginLeft'];
+        if (sides.some(side => format[side])) {
+            add('doc_format_field_margins', 'Márgenes de página (cm)', sides
+                .map(side => (format[side] ? documentFormatStatusNumber(format[side]) : '—'))
+                .join(' / '));
+        }
+        add('doc_format_field_indent', 'Sangría de primera línea', inheritedValueLabel('indent', format.indent));
+        add('doc_format_field_hyphenate', 'Partir palabras con guion', inheritedValueLabel('hyphenate', format.hyphenate));
+        lines.push(getTranslation(
+            'doc_format_status_hint',
+            'Así saldrá al exportar o imprimir. Pulsa para cambiarlo.',
+        ));
+        return lines.join('\n');
+    }
+
+    function updateDocumentFormatStatus() {
+        const button = document.getElementById('doc-format-status');
+        const main = document.getElementById('doc-format-status-main');
+        const rest = document.getElementById('doc-format-status-rest');
+        if (!button || !main || !rest) return;
+        const format = effectiveDocumentFormat();
+        const parts = DOC_FORMAT_STATUS_ORDER
+            .map(field => documentFormatStatusPart(field, format[field]))
+            .filter(Boolean)
+            .slice(0, 3);
+        // Sin un solo valor fijado no hay nada que contar, y una píldora vacía
+        // solo gasta el sitio que le hace falta a la fila.
+        button.classList.toggle('hidden', parts.length === 0);
+        if (parts.length === 0) return;
+        main.textContent = parts[0];
+        rest.textContent = parts.length > 1 ? `· ${parts.slice(1).join(' · ')}` : '';
+        button.title = documentFormatStatusTitle(format);
+    }
+    window.__updateDocumentFormatStatus = updateDocumentFormatStatus;
+
+    /*
       La vista previa es donde se comprueba el ajuste antes de exportar. Los
       encabezados no se tocan: la hoja de estilos ya los mide en `em` y siguen
       al cuerpo solos.
@@ -8647,6 +8752,8 @@ window.onload = async () => {
     function applyDocumentFormatToPreview() {
         const api = documentFormatApi();
         const preview = document.getElementById('html-output');
+        // El resumen de la barra no depende de que haya vista previa montada.
+        updateDocumentFormatStatus();
         if (!api || !preview) return;
         const styles = api.toPreviewStyles(effectiveDocumentFormat());
         Object.keys(api.toPreviewStyles({
@@ -8814,6 +8921,12 @@ window.onload = async () => {
     }
     if (docFormatToolbarBtn) {
         docFormatToolbarBtn.addEventListener('click', () => toggleDocFormatModal(true));
+    }
+    // El resumen de la barra de estado lleva al mismo sitio: enseña el formato
+    // y de paso es el camino más corto para cambiarlo.
+    const docFormatStatusBtn = document.getElementById('doc-format-status');
+    if (docFormatStatusBtn) {
+        docFormatStatusBtn.addEventListener('click', () => toggleDocFormatModal(true));
     }
     if (docFormatCancelBtn) {
         docFormatCancelBtn.addEventListener('click', () => toggleDocFormatModal(false));
