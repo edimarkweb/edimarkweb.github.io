@@ -73,8 +73,25 @@ function startStaticServer() {
   });
 }
 
+/*
+  Firefox no conoce los permisos del portapapeles y `newContext` aborta con
+  «Unknown permission» si se le pasan, así que allí se piden solo los que
+  entiende. Lo que de verdad necesite leer o escribir el portapapeles lo decide
+  después cada prueba, con `HAY_PORTAPAPELES`.
+*/
+const PERMISOS_SIN_FIREFOX = new Set(['clipboard-read', 'clipboard-write']);
+const HAY_PORTAPAPELES = process.env.BROWSER !== 'firefox';
+
+function permisosDelNavegador(permissions) {
+  if (!permissions) return null;
+  if (HAY_PORTAPAPELES) return permissions;
+  const admitidos = permissions.filter(permiso => !PERMISOS_SIN_FIREFOX.has(permiso));
+  return admitidos.length ? admitidos : null;
+}
+
 async function openApp({ locale = 'es-ES', initStorage, permissions } = {}) {
-  const context = await browser.newContext({ locale, ...(permissions ? { permissions } : {}) });
+  const permisos = permisosDelNavegador(permissions);
+  const context = await browser.newContext({ locale, ...(permisos ? { permissions: permisos } : {}) });
   if (initStorage) {
     await context.addInitScript(initStorage);
   }
@@ -2050,8 +2067,13 @@ test('un solo botón copia en los cuatro formatos', async (t) => {
     return portapapeles();
   };
 
-  assert.match(await acorde('Digit1'), /^# Hola/);
-  assert.match(await acorde('Digit2'), /<h1[^>]*>Hola<\/h1>/);
+  // Lo que sale al portapapeles solo se puede leer donde hay permiso para
+  // leerlo; el resto de la prueba —los rótulos, los acordes y su alineación—
+  // no lo necesita y se comprueba en los dos navegadores.
+  if (HAY_PORTAPAPELES) {
+    assert.match(await acorde('Digit1'), /^# Hola/);
+    assert.match(await acorde('Digit2'), /<h1[^>]*>Hola<\/h1>/);
+  }
 
   // Y sigue al último formato elegido.
   await page.locator('#copy-html-menu-toggle').click();
