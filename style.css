@@ -1312,8 +1312,8 @@ body.desktop-mode .markdown-textarea {
 .tab {
     border: 1px solid transparent;
     border-bottom: 1px solid #e2e8f0;
-    background-color: #f1f5f9;
-    color: #475569;
+    background-color: #e2e8f0;
+    color: #64748b;
     cursor: pointer;
     user-select: none;
     touch-action: pan-y;
@@ -1323,17 +1323,34 @@ body.desktop-mode .markdown-textarea {
     background-color: #1e293b;
     color: #94a3b8;
 }
+.tab:not([aria-selected="true"]):hover {
+    background-color: #cbd5e1;
+    color: #334155;
+}
+.dark .tab:not([aria-selected="true"]):hover {
+    background-color: #334155;
+    color: #e2e8f0;
+}
+/*
+  La pestaña activa se distinguía solo por un fondo blanco casi igual al de las
+  inactivas: con dos documentos abiertos no se veía en cuál se estaba
+  escribiendo. Ahora lleva además una banda de color arriba y el título en
+  negrita, que se leen de un vistazo y también sin distinguir bien los grises.
+*/
 .tab[aria-selected="true"] {
     background-color: white;
     border-color: #e2e8f0;
     border-bottom-color: transparent;
-    color: #1e293b;
+    color: #0f172a;
+    font-weight: 600;
+    box-shadow: inset 0 3px 0 0 #2563eb;
 }
 .dark .tab[aria-selected="true"] {
     background-color: #0f172a;
     border-color: #334155;
     border-bottom-color: transparent;
-    color: #f1f5f9;
+    color: #f8fafc;
+    box-shadow: inset 0 3px 0 0 #60a5fa;
 }
 .tab-close {
     opacity: 0.5;
