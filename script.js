@@ -3323,7 +3323,31 @@ function registerAssetFolder(files, { docId = null, folderName = '' } = {}) {
   selector de carpeta, dentro del ZIP—. Mientras tanto quedan registradas en
   memoria para que la vista previa las siga enseñando.
 */
-const EXTRACTED_ASSETS_FOLDER = 'imagenes';
+/*
+  La carpeta se llama como el documento: `mi-archivo.md` saca sus imágenes a
+  `mi-archivo/`. Antes todos los documentos usaban la misma `imagenes/`, y dos
+  `.md` guardados uno al lado del otro se pisaban las imágenes sin avisar: los
+  archivos se numeran desde `01` en cada documento, así que el segundo escribía
+  su `01.png` encima del primero. Con el nombre delante también se sabe de quién
+  es cada carpeta al mirar el disco.
+
+  El nombre se recorta a lo que un sistema de archivos acepta, y los espacios se
+  vuelven guiones: la ruta va dentro de un `![](...)` de Markdown, donde un
+  espacio cortaría el enlace. Un documento sin nombre utilizable se queda con la
+  carpeta de siempre.
+*/
+const EXTRACTED_ASSETS_FALLBACK_FOLDER = 'imagenes';
+
+function extractedAssetsFolder(doc) {
+    const rawName = doc && typeof doc.name === 'string' ? doc.name.trim() : '';
+    const folder = rawName
+        .replace(/\.md$/i, '')
+        .replace(/[\\/:*?"<>|]+/g, '-')
+        .replace(/\s+/g, '-')
+        .replace(/-{2,}/g, '-')
+        .replace(/^[.\-]+|[.\-]+$/g, '');
+    return folder || EXTRACTED_ASSETS_FALLBACK_FOLDER;
+}
 const EXTRACTED_IMAGE_EXTENSIONS = new Map([
     ['jpeg', 'jpg'],
     ['svg+xml', 'svg'],
@@ -3383,6 +3407,7 @@ async function extractBase64Images() {
         return 0;
     }
     const used = relativeImagePathsInMarkdown(markdown);
+    const folder = extractedAssetsFolder(doc);
     const extracted = [];
     let counter = 0;
     const rewritten = markdown.replace(BASE64_IMAGE_REGEX, (match, alt, prefix, mime, data, tail) => {
@@ -3398,7 +3423,7 @@ async function extractBase64Images() {
         let relativePath = '';
         do {
             counter += 1;
-            relativePath = `${EXTRACTED_ASSETS_FOLDER}/${String(counter).padStart(2, '0')}.${extension}`;
+            relativePath = `${folder}/${String(counter).padStart(2, '0')}.${extension}`;
         } while (used.has(relativePath));
         used.add(relativePath);
         extracted.push({
@@ -3421,7 +3446,7 @@ async function extractBase64Images() {
     reportStatus(formatTranslation(
         extracted.length === 1 ? 'base64_extract_done_one' : 'base64_extract_done_many',
         '{count} imágenes pasadas a «{folder}». Se escribirán al guardar el documento.',
-        { count: extracted.length, folder: `${EXTRACTED_ASSETS_FOLDER}/` },
+        { count: extracted.length, folder: `${folder}/` },
     ));
     return extracted.length;
 }
