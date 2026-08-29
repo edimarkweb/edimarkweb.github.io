@@ -110,6 +110,19 @@ async function openApp({ locale = 'es-ES', initStorage, permissions } = {}) {
   return { context, page, requests };
 }
 
+/*
+  Deja la hoja a tamaño real y quieta. Con el panel atado a la lupa la hoja
+  llena el ancho que tenga el panel —que es lo que se quiere al escribir—, así
+  que comprobar que un 13 pt mide 17,33 px o que la hoja mide una A4 pide fijar
+  antes el 100 %, que es cuando la pantalla y el papel miden lo mismo.
+*/
+async function conLaHojaATamanoReal(page) {
+  await page.evaluate(() => {
+    atarPanelALaLupa(false);
+    applyZoom(PREVIEW_ZOOM, 1);
+  });
+}
+
 before(async () => {
   server = await startStaticServer();
   const address = server.address();
@@ -2086,6 +2099,7 @@ test('el aviso de escritorio reaparece con cada versión y no acumula claves', a
 test('el formato del documento se escribe en el archivo y se ve en la vista previa', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
+  await conLaHojaATamanoReal(page);
 
   await page.locator('#markdown-input').fill('# Prueba\n\nUn párrafo cualquiera.');
 
@@ -2608,6 +2622,7 @@ test('una imagen incrustada se puede quitar del documento desde la lista', async
 test('la lupa de cada panel escala su panel y deja quieto al otro', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
+  await conLaHojaATamanoReal(page);
 
   await page.locator('#markdown-input').fill('# Hola\n\nUn párrafo de prueba.');
   await page.waitForFunction(() => document.querySelector('#html-output p'));
@@ -2630,12 +2645,9 @@ test('la lupa de cada panel escala su panel y deja quieto al otro', async (t) =>
 
   /*
     Las dos lupas comparten sitio en la barra de estado: se enseña la del panel
-    en el que se trabaja, así que hay que ir a la hoja para llegar a la suya. Y
-    se suelta el interruptor, que con el panel atado la hoja ya llena el ancho
-    y la lupa no sube de ahí.
+    en el que se trabaja, así que hay que ir a la hoja para llegar a la suya.
   */
   await page.locator('#html-output').click();
-  await page.locator('#preview-link-toggle').click();
   await page.locator('#preview-zoom-in').click();
   const trasAmpliarLaHoja = await medir();
   assert.notEqual(trasAmpliarLaHoja.hoja, inicio.hoja, 'la hoja no siguió a su lupa');
@@ -2805,6 +2817,7 @@ test('el cuadro del documento lleva a las opciones generales por su misma pesta�
 test('el editor visual reparte el documento en páginas del tamaño del papel', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
+  await conLaHojaATamanoReal(page);
 
   /*
     El reparto se rehace cada vez que la hoja o la mesa cambian de tamaño, así
@@ -3039,22 +3052,12 @@ test('el reparto en páginas se retira cuando la hoja no cabe entera', async (t)
   await page.locator('#layout-switch [data-layout="html"]').click();
   await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length > 1);
 
+  /*
+    En una pantalla de móvil los paneles se apilan y la atadura no rige, así que
+    la hoja se estrecha para caber en la ventana: el texto ya no rompe donde
+    rompería en el papel y el reparto se retira.
+  */
   await page.setViewportSize({ width: 700, height: 900 });
-  await page.waitForFunction(() => (
-    (Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1) < 1
-  ));
-  assert.ok(
-    await page.locator('.page-sheet').count() > 1,
-    'ajustada al ancho la hoja cabe entera, y el reparto se conserva',
-  );
-
-  // Al tamaño real ya no cabe en la ventana, y entonces sí se retira. Con el
-  // panel atado la lupa no llega ahí: se suelta primero, que es lo que haría
-  // quien quiere ampliar más de lo que cabe.
-  await page.evaluate(() => {
-    atarPanelALaLupa(false);
-    applyZoom(PREVIEW_ZOOM, 1);
-  });
   await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length === 0);
   assert.equal(
     await page.locator('#html-output > [data-page-start]').count(),
@@ -3245,14 +3248,12 @@ test('Ctrl y las teclas de más y menos mueven la lupa del panel activo', async 
   const { context, page } = await openApp();
   t.after(() => context.close());
 
+  await conLaHojaATamanoReal(page);
   await page.locator('#markdown-input').click();
   await page.keyboard.press('Control+Equal');
   assert.equal(await page.locator('#markdown-zoom-value').innerText(), '110 %');
   assert.equal(await page.locator('#preview-zoom-value').innerText(), '100 %');
 
-  await page.locator('#html-output').click();
-  // Con el panel atado la hoja ya llena el ancho: para ampliarla se suelta.
-  await page.locator('#preview-link-toggle').click();
   await page.locator('#html-output').click();
   await page.keyboard.press('Control+Equal');
   assert.equal(await page.locator('#preview-zoom-value').innerText(), '110 %');
@@ -3271,6 +3272,7 @@ test('Ctrl y las teclas de más y menos mueven la lupa del panel activo', async 
 test('el formato general trae un tamaño concreto que la vista previa aplica', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
+  await conLaHojaATamanoReal(page);
 
   await page.locator('#markdown-input').fill('# Hola\n\nUn párrafo.');
   await page.waitForFunction(() => document.querySelector('#html-output p'));
@@ -4191,19 +4193,23 @@ test('la vista previa se ajusta al ancho del panel y no deja barra horizontal', 
   assert.equal((await medir()).barraHorizontal, false);
   assert.equal(await page.locator('#preview-zoom-reset').getAttribute('data-ajuste'), 'true');
 
-  // Con la vista previa sola le sobra ancho, así que la hoja pasa del tamaño
-  // real; al volver a los dos paneles se encoge otra vez.
+  /*
+    Con la vista previa sola no hay nada que atar —ningún panel le disputa el
+    ancho—, así que el interruptor se retira y la lupa se queda donde estaba;
+    al volver a los dos paneles vuelve a mandar el ajuste.
+  */
+  const antesDeAislarla = (await medir()).zoom;
   await page.locator('#layout-switch [data-layout="html"]').click();
-  await page.waitForFunction(() => (
-    (Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1) >= 1
-  ));
-  assert.equal((await medir()).barraHorizontal, false);
+  await page.waitForTimeout(600);
+  const aislada = await medir();
+  assert.equal(aislada.zoom, antesDeAislarla, 'la lupa se movió sin que nadie se lo pidiera');
+  assert.equal(aislada.barraHorizontal, false);
+  assert.equal(await page.locator('#preview-link-toggle').isVisible(), false);
 
   await page.locator('#layout-switch [data-layout="dual"]').click();
-  await page.waitForFunction(() => (
-    (Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1) < 1
-  ));
+  await page.waitForTimeout(600);
   assert.equal((await medir()).barraHorizontal, false);
+  assert.equal(await page.locator('#preview-link-toggle').isVisible(), true);
 });
 
 /*
@@ -4301,4 +4307,43 @@ test('la lupa y el separador van atados en los dos sentidos', async (t) => {
   assert.equal(estrechado.barraHorizontal, false);
   assert.ok(estrechado.paginas > 0, 'encogerla entera conserva el reparto en páginas');
   assert.equal(await page.locator('#preview-zoom-reset').getAttribute('data-ajuste'), 'true');
+});
+
+/*
+  La atadura es cosa de los dos paneles uno al lado del otro, que es donde el
+  ancho de uno se lo quita al otro. Con un solo panel a la vista nadie le
+  disputa el ancho a la hoja, y en una pantalla estrecha los paneles van uno
+  encima del otro y no hay separador que mover: en los dos casos el interruptor
+  se retira y la lupa vuelve a ser libre.
+*/
+test('la atadura solo existe con los dos paneles uno al lado del otro', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.setViewportSize({ width: 1500, height: 900 });
+  await page.evaluate(() => window.__applyDocumentFormatToPreview());
+  const interruptor = page.locator('#preview-link-toggle');
+  assert.equal(await interruptor.isVisible(), true);
+
+  // Con la vista previa sola: sin interruptor, y la lupa se mueve y se queda.
+  await page.locator('#layout-switch [data-layout="html"]').click();
+  await page.waitForTimeout(500);
+  assert.equal(await interruptor.isVisible(), false);
+
+  await page.locator('#preview-zoom-out').click();
+  const bajado = await page.locator('#preview-zoom-value').innerText();
+  await page.waitForTimeout(500);
+  assert.equal(
+    await page.locator('#preview-zoom-value').innerText(),
+    bajado,
+    'la lupa volvió sola a llenar el panel sin nadie con quien repartirlo',
+  );
+
+  // Y en una pantalla de móvil, donde los paneles se apilan, tampoco está.
+  await page.locator('#layout-switch [data-layout="dual"]').click();
+  await page.waitForTimeout(500);
+  assert.equal(await interruptor.isVisible(), true);
+  await page.setViewportSize({ width: 420, height: 800 });
+  await page.waitForTimeout(600);
+  assert.equal(await interruptor.isVisible(), false);
 });

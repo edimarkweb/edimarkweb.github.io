@@ -29,7 +29,9 @@ Lan-eremua bi panel neurri-aldakorretan banatzen da. **Biek dokumentu bera edita
 
 Jarrita dator. Markdown editoreak bere gutxieneko zabalera galduko lukeen tokian gelditzen da: hara iristean `+` botoia itzali egiten da eta arratoia gainetik pasatzean esaten du. Harago handitzeko, askatu etengailua —katea ireki eta anbar kolorekoa jartzen da— edo utzi editore bisuala bakarrik (`Ctrl` + `L`), zabalera osoa ematen baitio.
 
-% 100 paperaren benetako tamaina da, eta hortaraino iristen da doikuntza bere kabuz: ikusten duzunak inprimatuta neurtuko duena neurtzen du. Luparekin gehiago eskatuz gero, hortik aurrera zure handipena gordetzen du: estutu panela eta orria txikitu egiten da kabitzeko, itzuli lekua eta orriak berreskuratu egiten du.
+Orriak panela betetzen du, ez da bertan sartu besterik egiten: editore bisualari lekua egiten badiozu, orrialdea handiago ikusten da eta handipena % 100etik gora pasatzen da —% 200era arte, luparen mugaraino—. % 100 paperaren benetako tamaina da, inprimatuta aterako dena, eta erdiko ehunekoan klik bakarrera duzu; finko gera dadin, askatu etengailua.
+
+Hau guztia bi panelak batera daudenean gertatzen da, batak bestearen zabalera hartzen duenean. Panel bakarra ikusgai dagoenean, edo bata bestearen gainean jartzen diren pantaila estuetan, etengailua kendu egiten da eta lupa librea da.
 
 **Orriak**: orriak paperak duen neurria du —A4 edo Letter, dokumentuak dioena— eta editore bisualak testua orrialdetan banatzen du, batetik besterako tarte eta guzti. Mozketa beti bi bloqueren artean gertatzen da, inoiz ez lerro erdian: orrialde baten amaieran sartzen ez dena osorik pasatzen da hurrengora, testu-prozesadore batean bezala. PDFarekiko eta inprimaketarekiko fidela da, orri beretik ateratzen baitira eta hark mozten duen tokian mozten baitute; Word edo LaTeXerako orientagarria da, bakoitzak bere erara banatzen baititu lerroak. Panela lupari lotuta dagoenean banaketa beti mantentzen da; etengailua askatu eta orria panelean sartzen ez den handipen bat jarrita bakarrik kentzen da.
 

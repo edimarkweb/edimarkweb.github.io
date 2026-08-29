@@ -29,7 +29,9 @@ La zona de treball es divideix en dos plafons redimensionables. **Tots dos edite
 
 Ve posat. S'atura on l'editor Markdown es quedaria sense la seva amplada mínima: en arribar-hi el `+` s'apaga i ho diu en passar-hi el ratolí. Per ampliar més enllà, deslliga l'interruptor —la cadena s'obre i es torna ambre— o deixa l'editor visual sol (`Ctrl` + `L`), que li dona tota l'amplada.
 
-El 100 % és la mida real del paper i és fins on arriba l'ajust pel seu compte: així el que veus amida el que amidarà imprès. Si li'n demanes més amb la lupa, a partir d'aquí conserva el teu augment: estreny el plafó i el full s'encongeix per cabre-hi, torna-li el lloc i el full el recupera.
+El full omple el plafó, no només hi cap: si fas lloc a l'editor visual, la pàgina es veu més gran i l'augment passa del 100 % —fins al 200 %, que és on arriba la lupa—. El 100 % és la mida real del paper, la que sortirà impresa, i el tens a un clic al percentatge del centre; perquè es quedi fix, deslliga l'interruptor.
+
+Tot això és cosa dels dos plafons alhora, que és on l'amplada d'un se la pren de l'altre. Amb un sol plafó a la vista, o en una pantalla estreta on van l'un damunt de l'altre, l'interruptor es retira i la lupa és lliure.
 
 **Les pàgines**: el full amida el que amida el paper —A4 o Carta, el que digui el document— i l'editor visual reparteix el text en pàgines, amb el seu buit entre una i l'altra. El tall cau sempre entre dos blocs, mai a mitja línia: el que no cap al final d'una pàgina passa sencer a la següent, com en un processador de textos. És fidel al PDF i a la impressió, que surten d'aquest mateix full i tallen per on talla ell; per al Word o el LaTeX és orientatiu, perquè cadascun reparteix les línies a la seva manera. Amb el plafó lligat a la lupa el repartiment es conserva sempre; només es retira si deslligues l'interruptor i poses un augment amb què el full no càpiga al plafó.
 

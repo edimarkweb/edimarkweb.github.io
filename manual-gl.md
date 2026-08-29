@@ -29,7 +29,9 @@ A zona de traballo divídese en dous paneis redimensionables. **Os dous editan o
 
 Vén posto. Párase onde o editor Markdown quedaría sen a súa largura mínima: ao chegar aí o `+` apágase e dío ao pasar o rato por riba. Para ampliar máis alá, solta o interruptor —a cadea ábrese e vólvese ámbar— ou deixa o editor visual só (`Ctrl` + `L`), que lle dá toda a largura.
 
-O 100 % é o tamaño real do papel e é ata onde chega o axuste pola súa conta: así o que ves mide o que vai medir impreso. Se lle pides máis coa lupa, a partir de aí conserva o teu aumento: estreita o panel e a folla encóllese para caber, devólvelle o sitio e a folla recupérao.
+A folla enche o panel, non só colle nel: se lle fas sitio ao editor visual, a páxina vese máis grande e o aumento pasa do 100 % —ata o 200 %, que é onde chega a lupa—. O 100 % é o tamaño real do papel, o que vai saír impreso, e telo a un clic na porcentaxe do centro; para que quede fixo, solta o interruptor.
+
+Todo isto é cousa dos dous paneis á vez, que é onde a largura dun lla quita ao outro. Cun só panel á vista, ou nunha pantalla estreita onde van un enriba do outro, o interruptor retírase e a lupa é libre.
 
 **As páxinas**: a folla mide o que mide o papel —A4 ou Carta, o que diga o documento— e o editor visual reparte o texto en páxinas, co seu oco entre unha e outra. O corte cae sempre entre dous bloques, nunca a media liña: o que non colle ao final dunha páxina pasa enteiro á seguinte, como nun procesador de textos. É fiel ao PDF e á impresión, que saen desta mesma folla e cortan por onde corta ela; para Word ou LaTeX é orientativo, porque cada un reparte as liñas á súa maneira. Co panel atado á lupa o reparto consérvase sempre; só se retira se soltas o interruptor e pos un aumento co que a folla non colla no panel.
 

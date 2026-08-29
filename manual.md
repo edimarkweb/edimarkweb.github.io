@@ -29,7 +29,9 @@ La zona de trabajo se divide en dos paneles redimensionables. **Los dos editan e
 
 Viene puesto. Se para donde el editor Markdown se quedaría sin su ancho mínimo: al llegar ahí el `+` se apaga y lo dice al pasar el ratón por encima. Para ampliar más allá, suelta el interruptor —la cadena se abre y se vuelve ámbar— o deja el editor visual solo (`Ctrl` + `L`), que da todo el ancho.
 
-El 100 % es el tamaño real del papel y es hasta donde llega el ajuste por su cuenta: así lo que ves mide lo que va a medir impreso. Si le pides más con la lupa, a partir de ahí conserva tu aumento: estrecha el panel y la hoja se encoge para caber, devuélvele el sitio y la hoja lo recupera.
+La hoja llena el panel, no solo cabe en él: si le haces sitio al editor visual, la página se ve más grande y el aumento pasa del 100 % —hasta el 200 %, que es donde llega la lupa—. El 100 % es el tamaño real del papel, el que va a salir impreso, y lo tienes a un clic en el porcentaje del centro; para que se quede fijo, suelta el interruptor.
+
+Todo esto es cosa de los dos paneles a la vez, que es donde el ancho de uno se lo quita al otro. Con un solo panel a la vista, o en una pantalla estrecha donde van uno encima del otro, el interruptor se retira y la lupa es libre.
 
 **Las páginas**: la hoja mide lo que mide el papel —A4 o Carta, lo que diga el documento— y el editor visual reparte el texto en páginas, con su hueco entre una y otra. El corte cae siempre entre dos bloques, nunca a media línea: lo que no cabe al final de una página pasa entera a la siguiente, como en un procesador de textos. Es fiel al PDF y a la impresión, que salen de esta misma hoja y cortan por donde corta ella; para Word o LaTeX es orientativo, porque cada uno reparte las líneas a su manera. Con el panel atado a la lupa el reparto se conserva siempre; solo se retira si sueltas el interruptor y pones un aumento con el que la hoja no quepa en el panel.
 
