@@ -89,9 +89,15 @@ function permisosDelNavegador(permissions) {
   return admitidos.length ? admitidos : null;
 }
 
-async function openApp({ locale = 'es-ES', initStorage, permissions } = {}) {
+async function openApp({ locale = 'es-ES', initStorage, permissions, userAgent } = {}) {
   const permisos = permisosDelNavegador(permissions);
-  const context = await browser.newContext({ locale, ...(permisos ? { permissions: permisos } : {}) });
+  const context = await browser.newContext({
+    locale,
+    ...(permisos ? { permissions: permisos } : {}),
+    // Para hacerse pasar por el motor de la aplicación de escritorio, que en
+    // Linux es WebKitGTK y no imprime como Chromium.
+    ...(userAgent ? { userAgent } : {}),
+  });
   if (initStorage) {
     await context.addInitScript(initStorage);
   }
@@ -2730,16 +2736,22 @@ test('los márgenes del documento se escriben para el papel', async (t) => {
   const regla = () => page.evaluate(
     () => document.getElementById('doc-print-page-style')?.textContent ?? '',
   );
-  // Sin márgenes propios manda el de partida del CSS de impresión.
-  assert.equal(await regla(), '');
+  /*
+    El papel va siempre, tenga el documento márgenes propios o no: sin él, un
+    documento en Carta se imprimía en el papel que tuviera puesto la impresora
+    y el reparto en páginas de la pantalla dejaba de valer. De los márgenes,
+    mientras no se fijen, se ocupa el de partida del CSS de impresión.
+  */
+  assert.equal(await regla(), '@media print { @page { size: A4; } }');
 
   await page.locator('#new-tab-btn').click();
-  await page.locator('#markdown-input').fill('---\nmargin-left: "3"\nmargin-right: "2.5"\n---\n\nTexto\n');
+  await page.locator('#markdown-input').fill('---\npapersize: "letter"\nmargin-left: "3"\nmargin-right: "2.5"\n---\n\nTexto\n');
   await page.waitForFunction(
     () => (document.getElementById('doc-print-page-style')?.textContent || '').includes('margin-left'),
   );
   const escrita = await regla();
   assert.match(escrita, /@media print \{ @page \{/);
+  assert.match(escrita, /size: Letter;/);
   assert.match(escrita, /margin-left: 3cm;/);
   assert.match(escrita, /margin-right: 2\.5cm;/);
 });
@@ -4346,4 +4358,38 @@ test('la atadura solo existe con los dos paneles uno al lado del otro', async (t
   await page.setViewportSize({ width: 420, height: 800 });
   await page.waitForTimeout(600);
   assert.equal(await interruptor.isVisible(), false);
+});
+
+/*
+  El motor de la aplicación de escritorio en Linux es WebKitGTK, que imprime
+  con los márgenes de su cuadro del sistema —0,25 pulgadas, y ese cuadro no
+  deja cambiarlos— y no con los de `@page`: un documento de 4 cm salía con
+  0,63. Allí los márgenes se dan como relleno del texto, descontando los que
+  pone el cuadro para que la suma sea la pedida.
+*/
+test('en el escritorio con WebKitGTK los márgenes van como relleno', async (t) => {
+  const { context, page } = await openApp({
+    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15',
+  });
+  t.after(() => context.close());
+
+  await page.evaluate(() => document.body.classList.add('desktop-mode'));
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('---\nmargin-top: "4"\nmargin-left: "4"\n---\n\nTexto\n');
+  await page.waitForFunction(
+    () => (document.getElementById('doc-print-page-style')?.textContent || '').includes('padding-left'),
+  );
+
+  const regla = await page.evaluate(() => document.getElementById('doc-print-page-style').textContent);
+  // 4 cm menos los 0,635 que pone el cuadro: la suma vuelve a ser 4.
+  assert.match(regla, /padding-left: 3\.365cm !important;/);
+  assert.match(regla, /padding-top: 3\.365cm !important;/);
+  assert.match(regla, /@page \{ size: A4; margin: 0; \}/);
+  assert.ok(!/margin-left: 4cm/.test(regla), 'el margen de @page no debe seguir puesto: allí no llega');
+
+  // Un margen más pequeño que el del cuadro no puede quedar en negativo.
+  await page.locator('#markdown-input').fill('---\nmargin-left: "0.2"\n---\n\nTexto\n');
+  await page.waitForFunction(
+    () => (document.getElementById('doc-print-page-style')?.textContent || '').includes('padding-left: 0.000cm'),
+  );
 });
