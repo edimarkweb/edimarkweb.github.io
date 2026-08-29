@@ -355,10 +355,15 @@
         Impresión, que es también la vía al PDF. En el escritorio la pide Rust
         al motor del webview: `window.print()` no hace nada en macOS y así los
         tres sistemas se comportan igual.
+
+        La página del documento —sus márgenes y su papel— viaja con la orden
+        porque en Linux hace falta: allí el motor es WebKitGTK, que no hace
+        caso a `@page` e imprime con los márgenes de su cuadro, así que se los
+        pone Rust antes de abrirlo.
       */
-      async print() {
+      async print(page = null) {
         if (desktop && app && typeof app.printDocument === 'function') {
-          await app.printDocument();
+          await app.printDocument(page);
           return;
         }
         if (typeof root.print === 'function') root.print();

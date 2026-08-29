@@ -4361,35 +4361,27 @@ test('la atadura solo existe con los dos paneles uno al lado del otro', async (t
 });
 
 /*
-  El motor de la aplicación de escritorio en Linux es WebKitGTK, que imprime
-  con los márgenes de su cuadro del sistema —0,25 pulgadas, y ese cuadro no
-  deja cambiarlos— y no con los de `@page`: un documento de 4 cm salía con
-  0,63. Allí los márgenes se dan como relleno del texto, descontando los que
-  pone el cuadro para que la suma sea la pedida.
+  Lo que se le manda al cuadro de impresión del sistema: los márgenes y el
+  papel ya resueltos. En Linux es la única vía —allí el motor no hace caso a
+  `@page`— y Rust se los pone al cuadro antes de abrirlo.
 */
-test('en el escritorio con WebKitGTK los márgenes van como relleno', async (t) => {
-  const { context, page } = await openApp({
-    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15',
-  });
+test('la impresión lleva consigo los márgenes y el papel del documento', async (t) => {
+  const { context, page } = await openApp();
   t.after(() => context.close());
 
-  await page.evaluate(() => document.body.classList.add('desktop-mode'));
   await page.locator('#new-tab-btn').click();
-  await page.locator('#markdown-input').fill('---\nmargin-top: "4"\nmargin-left: "4"\n---\n\nTexto\n');
+  await page.locator('#markdown-input').fill('---\npapersize: "letter"\nmargin-top: "4"\nmargin-left: "3.5"\n---\n\nTexto\n');
   await page.waitForFunction(
-    () => (document.getElementById('doc-print-page-style')?.textContent || '').includes('padding-left'),
+    () => (window.__paginaParaImprimir?.().marginTop ?? null) === 4,
   );
 
-  const regla = await page.evaluate(() => document.getElementById('doc-print-page-style').textContent);
-  // 4 cm menos los 0,635 que pone el cuadro: la suma vuelve a ser 4.
-  assert.match(regla, /padding-left: 3\.365cm !important;/);
-  assert.match(regla, /padding-top: 3\.365cm !important;/);
-  assert.match(regla, /@page \{ size: A4; margin: 0; \}/);
-  assert.ok(!/margin-left: 4cm/.test(regla), 'el margen de @page no debe seguir puesto: allí no llega');
-
-  // Un margen más pequeño que el del cuadro no puede quedar en negativo.
-  await page.locator('#markdown-input').fill('---\nmargin-left: "0.2"\n---\n\nTexto\n');
-  await page.waitForFunction(
-    () => (document.getElementById('doc-print-page-style')?.textContent || '').includes('padding-left: 0.000cm'),
-  );
+  // Los lados que el documento no fija llevan los 18 mm de la hoja de
+  // impresión, para que el papel salga igual en los tres sistemas.
+  assert.deepEqual(await page.evaluate(() => window.__paginaParaImprimir()), {
+    marginTop: 4,
+    marginRight: 1.8,
+    marginBottom: 1.8,
+    marginLeft: 3.5,
+    paperSize: 'letter',
+  });
 });

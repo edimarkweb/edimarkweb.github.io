@@ -15,6 +15,9 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
+# Para leer lo que manda el editor en los comandos: la página del documento
+# llega como objeto y se deserializa aquí.
+serde = { version = "1", features = ["derive"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-opener = "2"
@@ -28,3 +31,6 @@ tauri-plugin-single-instance = "2"
 # hay que hablar con él en la misma versión que usa wry.
 [target.'cfg(target_os = "linux")'.dependencies]
 webkit2gtk = { version = "=2.0.2", features = ["v2_38"] }
+# El cuadro de impresión es de GTK, y los márgenes se le dan con su `PageSetup`.
+# La versión es la que trae `webkit2gtk`: con otra, los tipos no son los mismos.
+gtk = "=0.18.2"

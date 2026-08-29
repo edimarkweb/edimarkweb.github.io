@@ -8647,7 +8647,7 @@ window.onload = async () => {
         window.setTimeout(() => {
             const platform = window.EdiMarkPlatform;
             if (platform && typeof platform.print === 'function') {
-                platform.print().catch(error => console.warn('No se pudo imprimir:', error));
+                platform.print(paginaParaImprimir()).catch(error => console.warn('No se pudo imprimir:', error));
                 return;
             }
             if (typeof window.print === 'function') window.print();
@@ -9568,36 +9568,42 @@ window.onload = async () => {
       impresión, que va antes que esta.
     */
     /*
-      El motor de la aplicación de escritorio en Linux es WebKitGTK, y ese no
-      aplica los márgenes de `@page`: imprime siempre con los del cuadro del
-      sistema, que son 0,25 pulgadas y que ese cuadro ni siquiera deja cambiar
-      —su pestaña «Configuración de página» tiene papel y orientación, y nada
-      de márgenes—. Un documento con 4 cm salía con 0,63.
-
-      Ahí los márgenes se dan como relleno del texto, descontando los que el
-      cuadro pone por su cuenta, para que la suma sea la pedida. Es una medida
-      fija porque no hay manera de preguntársela al sistema; el día que
-      WebKitGTK haga caso a `@page`, estos documentos saldrán con esos 6 mm de
-      menos y habrá que quitar la resta.
-
-      En el navegador y en Windows —donde el motor es Chromium— manda `@page` y
-      todo esto se queda quieto.
+      Lo que hay que decirle al cuadro de impresión del sistema: los márgenes
+      del documento y su papel, ya resueltos —lo que dice el documento y, donde
+      calla, las opciones generales—. En Linux es la única vía, porque allí
+      `@page` no llega; en los demás sistemas viaja igual y no estorba.
     */
-    const MARGEN_DEL_CUADRO_DE_IMPRESION_CM = 0.635;
+    // Los mismos 18 mm que pone la hoja de impresión donde el documento calla:
+    // sin esto, el lado sin fijar se quedaba con el del cuadro del sistema y el
+    // papel salía distinto según dónde se imprimiera.
+    const MARGEN_DE_PARTIDA_CM = 1.8;
 
-    function imprimePorWebKitGtk() {
-        const ua = navigator.userAgent || '';
-        return document.body.classList.contains('desktop-mode')
-            && /AppleWebKit/.test(ua)
-            && !/Chrome|Chromium|Edg\//.test(ua)
-            && /Linux/.test(ua);
+    function paginaParaImprimir() {
+        const format = effectiveDocumentFormat();
+        const numero = (valor) => {
+            if (valor === '' || valor === null || valor === undefined) return MARGEN_DE_PARTIDA_CM;
+            const n = Number(valor);
+            return Number.isFinite(n) ? n : MARGEN_DE_PARTIDA_CM;
+        };
+        return {
+            marginTop: numero(format.marginTop),
+            marginRight: numero(format.marginRight),
+            marginBottom: numero(format.marginBottom),
+            marginLeft: numero(format.marginLeft),
+            paperSize: format.paperSize || null,
+        };
     }
+    window.__paginaParaImprimir = paginaParaImprimir;
 
     /*
       La página impresa, dicha en `@page`: el papel del documento y sus
       márgenes. El papel faltaba, así que un documento en Carta salía en A4 —o
       al revés— según lo que tuviera puesto la impresora, y el reparto en
       páginas que se ve en pantalla no era el del papel.
+
+      Esto es lo que entienden el navegador y el webview de Windows y macOS. El
+      de Linux no hace caso a `@page`, y allí los márgenes se los pone Rust al
+      cuadro del sistema antes de abrirlo.
     */
     function applyDocumentMarginsToPrint(format) {
         let sheet = document.getElementById('doc-print-page-style');
@@ -9618,21 +9624,7 @@ window.onload = async () => {
         const pagina = lados.map(([side, key]) => `margin-${side}: ${format[key]}cm;`);
         if (paper) pagina.unshift(`size: ${paper.css};`);
 
-        const reglas = [];
-        if (imprimePorWebKitGtk()) {
-            // El relleno se le pone a la hoja, que es lo único que se imprime, y
-            // con `!important` porque la hoja de impresión se lo quita para
-            // dejar mandar a `@page`.
-            const relleno = lados.map(([side, key]) => {
-                const cm = Math.max(0, Number(format[key]) - MARGEN_DEL_CUADRO_DE_IMPRESION_CM);
-                return `padding-${side}: ${cm.toFixed(3)}cm !important;`;
-            });
-            if (paper) reglas.push(`@page { size: ${paper.css}; margin: 0; }`);
-            if (relleno.length) reglas.push(`#html-output { ${relleno.join(' ')} }`);
-        } else if (pagina.length) {
-            reglas.push(`@page { ${pagina.join(' ')} }`);
-        }
-        sheet.textContent = reglas.length ? `@media print { ${reglas.join(' ')} }` : '';
+        sheet.textContent = pagina.length ? `@media print { @page { ${pagina.join(' ')} } }` : '';
     }
 
     /*

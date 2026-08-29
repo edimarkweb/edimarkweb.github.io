@@ -182,14 +182,106 @@ fn write_markdown_document(path: String, contents: String) -> Result<(), String>
     std::fs::write(target, contents).map_err(|error| error.to_string())
 }
 
+/// La página del documento, tal y como la declara su formato: los cuatro
+/// márgenes en centímetros y el papel. Viaja desde el editor porque es allí
+/// donde se resuelve lo que dice el documento y lo que ponen las opciones
+/// generales.
+#[derive(Debug, Default, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PrintPage {
+    margin_top: Option<f64>,
+    margin_right: Option<f64>,
+    margin_bottom: Option<f64>,
+    margin_left: Option<f64>,
+    /// `a4` o `letter`, los dos que entiende el editor.
+    paper_size: Option<String>,
+}
+
 /// Manda la vista previa a la impresora, que es de donde sale el PDF.
 ///
 /// En el escritorio no basta con `window.print()` de la página: en macOS el
 /// webview no lo implementa y la orden se pierde. Desde aquí se llama al motor
 /// del propio webview, que abre el diálogo del sistema en los tres sistemas.
 #[tauri::command]
-fn print_document(window: tauri::WebviewWindow) -> Result<(), String> {
+fn print_document(window: tauri::WebviewWindow, page: Option<PrintPage>) -> Result<(), String> {
+    #[cfg(target_os = "linux")]
+    if let Some(page) = page {
+        if print_with_page_setup(&window, page) {
+            return Ok(());
+        }
+    }
+    #[cfg(not(target_os = "linux"))]
+    let _ = page;
     window.print().map_err(|error| error.to_string())
+}
+
+/*
+  En Linux el motor es WebKitGTK, y ese no hace caso a los márgenes de `@page`:
+  imprime con los del cuadro del sistema, que son los suyos de fábrica y que el
+  cuadro ni siquiera deja cambiar. Un documento con márgenes de 4 cm salía con
+  0,63 por los cuatro lados.
+
+  Así que los márgenes se le dan al cuadro, que es quien manda: se abre la
+  impresión desde aquí con un `PageSetup` que lleva los del documento y su
+  papel. Valen para todas las páginas —cosa que el relleno del texto no puede
+  hacer, porque solo separa al principio del bloque— y no hay que adivinar
+  cuánto pone cada sistema.
+
+  Si algo de esto no sale, se devuelve `false` y la impresión sigue por el
+  camino de siempre: más vale un documento con los márgenes del sistema que
+  ninguno.
+*/
+#[cfg(target_os = "linux")]
+fn print_with_page_setup(window: &tauri::WebviewWindow, page: PrintPage) -> bool {
+    use std::sync::{Arc, Mutex};
+    use webkit2gtk::{PrintOperation, PrintOperationExt};
+
+    let lanzada = Arc::new(Mutex::new(false));
+    let aviso = Arc::clone(&lanzada);
+    let resultado = window.with_webview(move |webview| {
+        let setup = gtk::PageSetup::new();
+        if let Some(name) = paper_size_name(page.paper_size.as_deref()) {
+            setup.set_paper_size(&gtk::PaperSize::new(Some(name)));
+        }
+        let unidad = gtk::Unit::Mm;
+        // Del centímetro del documento al milímetro que entiende GTK.
+        if let Some(cm) = page.margin_top {
+            setup.set_top_margin(cm * 10.0, unidad);
+        }
+        if let Some(cm) = page.margin_right {
+            setup.set_right_margin(cm * 10.0, unidad);
+        }
+        if let Some(cm) = page.margin_bottom {
+            setup.set_bottom_margin(cm * 10.0, unidad);
+        }
+        if let Some(cm) = page.margin_left {
+            setup.set_left_margin(cm * 10.0, unidad);
+        }
+        let operacion = PrintOperation::new(&webview.inner());
+        operacion.set_page_setup(&setup);
+        // Sin ventana madre: la de la aplicación no es una `gtk::Window` a
+        // mano desde aquí, y el cuadro se abre igual.
+        operacion.run_dialog(None::<&gtk::Window>);
+        if let Ok(mut marca) = aviso.lock() {
+            *marca = true;
+        }
+    });
+    if resultado.is_err() {
+        return false;
+    }
+    // `with_webview` corre en el hilo de la interfaz y devuelve al terminar,
+    // así que a estas alturas la marca ya dice si el cuadro llegó a abrirse.
+    lanzada.lock().map(|marca| *marca).unwrap_or(false)
+}
+
+/// Los nombres PWG que usa GTK para los dos papeles del editor.
+#[cfg(target_os = "linux")]
+fn paper_size_name(paper: Option<&str>) -> Option<&'static str> {
+    match paper {
+        Some("a4") => Some("iso_a4"),
+        Some("letter") => Some("na_letter"),
+        _ => None,
+    }
 }
 
 const IMAGE_EXTENSIONS: [&str; 9] = [

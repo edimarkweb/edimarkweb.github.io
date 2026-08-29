@@ -103,7 +103,7 @@ if (window.__TAURI_INTERNALS__) {
       initialMarkdownPaths: () => invoke('initial_markdown_paths'),
       readMarkdownDocument: path => invoke('read_markdown_document', { path }),
       writeMarkdownDocument: (path, contents) => invoke('write_markdown_document', { path, contents }),
-      printDocument: () => invoke('print_document'),
+      printDocument: (page) => invoke('print_document', { page: page || null }),
       readDocumentAsset: path => invoke('read_document_asset', { path }),
       writeDocumentAsset: (documentPath, relativePath, bytes) => invoke('write_document_asset', bytes, {
         headers: {
