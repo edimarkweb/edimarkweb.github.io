@@ -895,6 +895,14 @@ body.desktop-mode .markdown-textarea {
       Estrecharla sería reordenar el texto y perder el reparto en páginas.
     */
     overflow-x: auto;
+    /*
+      El hueco de la barra vertical, reservado siempre: el ajuste al ancho mide
+      lo que la mesa deja libre, y una barra que aparece y desaparece cambiaba
+      esa medida —encoger la hoja acorta el documento, que puede quitar la
+      barra, que da ancho para agrandarla otra vez—. Con el hueco fijo la
+      cuenta da lo mismo las dos veces.
+    */
+    scrollbar-gutter: stable;
 }
 .preview-paper {
     width: max-content;
@@ -1366,6 +1374,19 @@ body.desktop-mode .markdown-textarea {
 .dark .preview-zoom-value:hover {
     background-color: #334155;
 }
+/*
+  El aumento que se calcula solo se distingue del que se ha elegido: es un
+  número que se mueve cuando se mueve el separador, y sin la marca parecía que
+  la lupa se desajustaba sola. El subrayado de puntos dice «esto lo llevo yo».
+*/
+.preview-zoom-value[data-ajuste="true"] {
+    color: #2563eb;
+    text-decoration: underline dotted currentColor;
+    text-underline-offset: 0.2em;
+}
+.dark .preview-zoom-value[data-ajuste="true"] {
+    color: #60a5fa;
+}
 
 /*
   Los rótulos de los paneles decían de qué es cada mitad con el mismo peso que
@@ -1578,6 +1599,28 @@ body.desktop-mode .markdown-textarea {
 .toolbar-btn:hover, .copy-btn:hover { background-color: #e2e8f0; color: #1e293b; }
 .dark .toolbar-btn, .dark .copy-btn { color: #94a3b8; }
 .dark .toolbar-btn:hover, .dark .copy-btn:hover { background-color: #334155; color: #e2e8f0; }
+/*
+  El interruptor que ata el panel a la lupa. Atado es lo normal y se dibuja del
+  azul de lo que está puesto; al soltarlo avisa en ámbar, porque la página
+  puede dejar de verse entera. Va detrás de `.toolbar-btn` a propósito: comparte
+  su clase, y con la misma especificidad manda quien llega el último.
+*/
+.preview-link-toggle,
+.preview-link-toggle:hover {
+    color: #2563eb;
+}
+.dark .preview-link-toggle,
+.dark .preview-link-toggle:hover {
+    color: #60a5fa;
+}
+.preview-link-toggle[aria-pressed="false"],
+.preview-link-toggle[aria-pressed="false"]:hover {
+    color: #b45309;
+}
+.dark .preview-link-toggle[aria-pressed="false"],
+.dark .preview-link-toggle[aria-pressed="false"]:hover {
+    color: #fbbf24;
+}
 .toolbar-btn[disabled] {
     opacity: 0.45;
     cursor: not-allowed;

@@ -23,9 +23,15 @@ The working area is split into two resizable panes. **Both edit the same documen
 
 **Splitting them**: drag the central bar, or use `Ctrl+L` and the three layout buttons — Markdown editor only, both at once, visual editor only. The double arrow **maximizes the editing area**, hiding the bars and leaving the screen for the text.
 
-**The zoom** in the status bar (`−`, the percentage and `+`, or `Ctrl` + `+` / `Ctrl` + `-`) enlarges or shrinks what you see in the active pane; the percentage returns to 100 %. It enlarges the whole sheet, pages and margins included, so the page never reflows: when it stops fitting in the pane, a bar appears to move across it. It changes neither the document nor what is exported or printed —paper always comes out at 100 %—: the font size lives in *Text format*.
+**The zoom** in the status bar (`−`, the percentage and `+`, or `Ctrl` + `+` / `Ctrl` + `-`) enlarges or shrinks what you see in the active pane. It enlarges the whole sheet, pages and margins included, so the page never reflows. It changes neither the document nor what is exported or printed —paper always comes out at 100 %—: the font size lives in *Text format*.
 
-**Pages**: the sheet is as wide as the paper —A4 or Letter, whichever the document says— and the visual editor lays the text out in pages, with a gap between one and the next. The break always falls between two blocks, never mid-line: whatever does not fit at the end of a page moves whole to the next one, as in a word processor. It is faithful to the PDF and to printing, which come out of this very sheet and break where it breaks; for Word or LaTeX it is a guide, because each one lays out its lines its own way. If the sheet does not fit whole —a narrow window, or both panes at once— the layout steps aside until it does: lowering the zoom is enough.
+**The pane tied to the zoom** (the chain switch, left of the zoom) keeps the page whole at all times, and works both ways: move the splitter and the zoom is recalculated so the sheet still fits —the percentage then shows blue and underlined, because it set it, not you—; touch the zoom and it is the splitter that moves aside to make room for the sheet. No horizontal scrollbar appears, and the page layout is always kept.
+
+It comes switched on. It stops where the Markdown editor would lose its minimum width: at that point the `+` goes dim and says so on hover. To enlarge beyond that, release the switch —the chain opens and turns amber— or leave the visual editor on its own (`Ctrl` + `L`), which gives it the full width.
+
+100 % is the real size of the paper, and as far as the fit goes on its own: what you see measures what it will measure in print. Ask for more with the zoom and from then on it keeps your level: narrow the pane and the sheet shrinks to fit, give the room back and the sheet takes it up again.
+
+**Pages**: the sheet is as wide as the paper —A4 or Letter, whichever the document says— and the visual editor lays the text out in pages, with a gap between one and the next. The break always falls between two blocks, never mid-line: whatever does not fit at the end of a page moves whole to the next one, as in a word processor. It is faithful to the PDF and to printing, which come out of this very sheet and break where it breaks; for Word or LaTeX it is a guide, because each one lays out its lines its own way. With the pane tied to the zoom the layout is always kept; it only steps aside if you release the switch and set a zoom at which the sheet does not fit in the pane.
 
 ### Paste anything
 

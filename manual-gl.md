@@ -23,9 +23,15 @@ A zona de traballo divídese en dous paneis redimensionables. **Os dous editan o
 
 **Como repartilos**: arrastra a barra central, ou usa `Ctrl+L` e os tres botóns de disposición —só o editor Markdown, os dous á vez, só o editor visual—. A dobre frecha **maximiza a área de edición**, que agocha as barras e deixa a pantalla para o texto.
 
-**A lupa** da barra de estado (`−`, a porcentaxe e `+`, ou `Ctrl` + `+` / `Ctrl` + `-`) agranda ou reduce o que ves no panel activo; a porcentaxe volve ao 100 %. Agranda a folla enteira, coas súas páxinas e as súas marxes, así que a páxina non se reordena: se deixa de caber no panel, aparece unha barra para percorrela. Non cambia o documento nin o que se exporta ou imprime —o papel sae sempre ao 100 %—: o tamaño de letra está en *Formato do texto*.
+**A lupa** da barra de estado (`−`, a porcentaxe e `+`, ou `Ctrl` + `+` / `Ctrl` + `-`) agranda ou reduce o que ves no panel activo. Agranda a folla enteira, coas súas páxinas e as súas marxes, así que a páxina non se reordena. Non cambia o documento nin o que se exporta ou imprime —o papel sae sempre ao 100 %—: o tamaño de letra está en *Formato do texto*.
 
-**As páxinas**: a folla mide o que mide o papel —A4 ou Carta, o que diga o documento— e o editor visual reparte o texto en páxinas, co seu oco entre unha e outra. O corte cae sempre entre dous bloques, nunca a media liña: o que non colle ao final dunha páxina pasa enteiro á seguinte, como nun procesador de textos. É fiel ao PDF e á impresión, que saen desta mesma folla e cortan por onde corta ela; para Word ou LaTeX é orientativo, porque cada un reparte as liñas á súa maneira. Se a folla non colle enteira —unha xanela estreita, ou os dous paneis á vez—, o reparto retírase ata que volva caber: abonda con baixar a lupa.
+**O panel atado á lupa** (o interruptor coa cadea, á esquerda da lupa) mantén a páxina sempre enteira, e traballa nos dous sentidos: se moves o separador, o aumento recalcúlase para que a folla siga collendo —a porcentaxe vai entón en azul e subliñada, porque a pon el e non ti—; se tocas a lupa, é o separador o que se aparta para deixar sitio á folla. Así non aparece a barra de desprazamento horizontal, e o reparto en páxinas consérvase sempre.
+
+Vén posto. Párase onde o editor Markdown quedaría sen a súa largura mínima: ao chegar aí o `+` apágase e dío ao pasar o rato por riba. Para ampliar máis alá, solta o interruptor —a cadea ábrese e vólvese ámbar— ou deixa o editor visual só (`Ctrl` + `L`), que lle dá toda a largura.
+
+O 100 % é o tamaño real do papel e é ata onde chega o axuste pola súa conta: así o que ves mide o que vai medir impreso. Se lle pides máis coa lupa, a partir de aí conserva o teu aumento: estreita o panel e a folla encóllese para caber, devólvelle o sitio e a folla recupérao.
+
+**As páxinas**: a folla mide o que mide o papel —A4 ou Carta, o que diga o documento— e o editor visual reparte o texto en páxinas, co seu oco entre unha e outra. O corte cae sempre entre dous bloques, nunca a media liña: o que non colle ao final dunha páxina pasa enteiro á seguinte, como nun procesador de textos. É fiel ao PDF e á impresión, que saen desta mesma folla e cortan por onde corta ela; para Word ou LaTeX é orientativo, porque cada un reparte as liñas á súa maneira. Co panel atado á lupa o reparto consérvase sempre; só se retira se soltas o interruptor e pos un aumento co que a folla non colla no panel.
 
 ### Pegar calquera cousa
 

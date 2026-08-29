@@ -28,6 +28,19 @@ const LAYOUT_ICONS = { md: 'panel-right', html: 'panel-left', dual: 'columns-2' 
 const PREVIEW_ZOOM_KEY = 'edimarkweb-preview-zoom';
 const MARKDOWN_ZOOM_KEY = 'edimarkweb-markdown-zoom';
 const FOCUS_MODE_KEY = 'edimarkweb-focus-mode';
+/*
+  El ancho de la aplicación: expandida ocupa casi toda la ventana y contraída
+  se queda en la columna centrada de siempre. Arranca expandida —es donde caben
+  el editor y una hoja A4 a tamaño real sin estrecharse—, y quien prefiera la
+  columna lo dice una vez y se recuerda.
+*/
+const EXPANDED_WIDTH_KEY = 'edimarkweb-expanded-width';
+/*
+  El ancho del panel de la vista previa y su lupa, atados: el interruptor de la
+  barra de estado. La clave vive aquí arriba con las demás porque
+  `PREFERENCE_KEYS` se arma antes de que el resto del archivo se lea.
+*/
+const PANEL_ATADO_KEY = 'edimarkweb-panel-atado';
 const LATEX_SETTINGS_KEY = 'edimarkweb-latex-settings';
 const SPELLCHECK_KEY = 'edimarkweb-spellcheck';
 const THEME_KEY = 'edimarkweb-theme';
@@ -250,6 +263,8 @@ const PREFERENCE_KEYS = [
     PREVIEW_ZOOM_KEY,
     MARKDOWN_ZOOM_KEY,
     FOCUS_MODE_KEY,
+    EXPANDED_WIDTH_KEY,
+    PANEL_ATADO_KEY,
     BASE64_PANEL_KEY,
     COPY_ACTION_KEY,
     EXPORT_FORMAT_KEY,
@@ -5364,6 +5379,38 @@ const MARKDOWN_ZOOM = {
   labelId: 'markdown-zoom-value',
 };
 
+/*
+  El panel atado a la lupa: las dos cosas que deciden si la página se ve entera
+  —cuánto ancho tiene el panel y a qué aumento se dibuja la hoja— dejan de ir
+  cada una por su lado y se mueven juntas en los dos sentidos. Se mueve el
+  separador y la lupa se recalcula; se toca la lupa y el separador se aparta
+  para que la hoja siga cabiendo.
+
+  Nace de que la hoja mide el papel de verdad —una A4 son 794 px—, así que con
+  los dos paneles a la vista y una pantalla que no sea grande no cabía y
+  aparecía la barra de desplazamiento horizontal. Estrechar la hoja habría
+  reordenado el texto y perdido el reparto en páginas; encogerla entera, que es
+  lo que hace un procesador de textos, lo deja todo en su sitio.
+
+  Al mover el separador la lupa solo achica: con ancho de sobra la hoja se
+  queda a tamaño real y centrada, que es lo que se espera de una página. Por
+  encima del 100 % se sube a mano, y entonces es el separador el que se aparta.
+*/
+let panelAtadoALaLupa = true;
+/*
+  El ancho de mesa que ha pedido la propia lupa al apartar el separador. Sin
+  esta nota, el observador del ancho leería ese movimiento como uno más del
+  usuario y volvería a calcular la lupa desde él, deshaciendo el aumento que se
+  acababa de pedir.
+*/
+let anchoDeMesaPedidoPorLaLupa = null;
+/*
+  El aumento que se ha pedido con la lupa, que es hasta dónde puede llegar el
+  ajuste al hacerle sitio a la hoja. Mientras nadie toque la lupa vale 1: la
+  página se ve a tamaño real y no más grande.
+*/
+let zoomPedidoAMano = 1;
+
 function normalizeZoom(value) {
   const zoom = Number(value);
   if (!Number.isFinite(zoom)) return 1;
@@ -5373,28 +5420,292 @@ function normalizeZoom(value) {
   );
 }
 
-function applyZoom(panel, value, { persist = true } = {}) {
-  const zoom = normalizeZoom(value);
-  document.documentElement.style.setProperty(panel.variable, String(zoom));
+/*
+  Las medidas del papel llegan en las unidades en que las escribe cada quien:
+  el formato del documento en centímetros y la hoja de estilos en `rem`.
+*/
+function medidaCssEnPx(medida) {
+  const texto = String(medida || '').trim();
+  const valor = parseFloat(texto);
+  if (!Number.isFinite(valor)) return 0;
+  if (texto.endsWith('cm')) return valor * (96 / 2.54);
+  if (texto.endsWith('mm')) return valor * (96 / 25.4);
+  if (texto.endsWith('in')) return valor * 96;
+  if (texto.endsWith('rem')) {
+    return valor * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16);
+  }
+  return valor;
+}
+
+/*
+  Lo que mediría la hoja sin lupa. Se pregunta a la propia hoja, que es donde
+  el formato del documento deja `--paper-width`; mientras no haya formato
+  aplicado manda el ancho de partida de la hoja.
+*/
+function anchoDelPapelSinLupa() {
+  const sheet = document.getElementById('html-output');
+  if (!sheet) return 0;
+  const estilos = getComputedStyle(sheet);
+  const declarado = estilos.getPropertyValue('--paper-width').trim()
+    || estilos.getPropertyValue('--preview-sheet-width').trim();
+  return medidaCssEnPx(declarado);
+}
+
+/*
+  El ancho que la mesa deja libre: el suyo menos sus márgenes. `clientWidth` ya
+  descuenta la barra de desplazamiento vertical, que es justo el hueco que se
+  colaba en la cuenta y dejaba la hoja unos píxeles fuera.
+*/
+function anchoUtilDeLaMesa() {
+  const desk = document.getElementById('preview-desk');
+  if (!desk) return 0;
+  const estilos = getComputedStyle(desk);
+  const util = desk.clientWidth
+    - (parseFloat(estilos.paddingLeft) || 0)
+    - (parseFloat(estilos.paddingRight) || 0);
+  return util > 0 ? util : 0;
+}
+
+/*
+  El aumento al que la hoja cabe entera en el panel.
+
+  Por arriba se para en el tamaño real mientras nadie pida otra cosa: el 100 %
+  es la promesa de que lo que se ve mide lo que va a medir el papel, y llenar
+  el panel a toda costa la rompería en cuanto la pantalla fuera ancha. Quien
+  quiere la página más grande lo dice con la lupa, y desde ese momento el
+  ajuste conserva su aumento: estrecha el panel y la hoja se encoge para caber,
+  vuelve a hacerle sitio y la hoja recupera el aumento que se había pedido.
+
+  Por abajo no se le pone el suelo de la lupa de mano: en un panel muy estrecho
+  su paso más pequeño todavía es más ancho que la mesa, y volvería a asomar la
+  barra que todo esto viene a quitar.
+*/
+function zoomQueCabe() {
+  const papel = anchoDelPapelSinLupa();
+  const mesa = anchoUtilDeLaMesa();
+  // Sin mesa a la vista no hay nada que medir: con la vista previa escondida
+  // se queda la lupa como estaba y la cuenta se rehace al volver.
+  if (!papel || !mesa) return null;
+  // Truncado a la centésima por lo bajo: con el cociente exacto, medio píxel
+  // de sobra basta para que vuelva a asomar la barra.
+  const cabe = Math.floor((mesa / papel) * 100) / 100;
+  return Math.min(Math.max(1, zoomPedidoAMano), Math.max(0.1, cabe));
+}
+
+/*
+  Lo que la mesa se lleva además de la hoja: sus dos márgenes, el hueco de la
+  barra de desplazamiento vertical —medido, que hay sistemas donde flota y no
+  ocupa nada— y el separador entre los dos paneles.
+*/
+function gastosDeLaMesa() {
+  const desk = document.getElementById('preview-desk');
+  const estilos = desk ? getComputedStyle(desk) : null;
+  const relleno = estilos
+    ? (parseFloat(estilos.paddingLeft) || 0) + (parseFloat(estilos.paddingRight) || 0)
+    : 32;
+  const barra = desk && desk.offsetWidth
+    ? Math.max(0, desk.offsetWidth - desk.clientWidth)
+    : 16;
+  return relleno + barra + GUTTER_DE_PANELES;
+}
+
+/*
+  El aumento más grande al que la hoja todavía cabe entera, contando con que el
+  separador se aparte todo lo que puede: hasta dejar al editor de Markdown en
+  su ancho mínimo. Con un solo panel a la vista no hay separador que mover y el
+  tope es lo que mida la mesa.
+*/
+function zoomMaximoQueCabe() {
+  const papel = anchoDelPapelSinLupa();
+  if (!papel) return null;
+  if (currentLayout !== 'dual') {
+    const mesa = anchoUtilDeLaMesa();
+    return mesa ? mesa / papel : null;
+  }
+  const contenedor = document.getElementById('editor-container');
+  const total = contenedor ? contenedor.clientWidth : 0;
+  if (!total) return null;
+  const libre = total - ANCHO_MINIMO_DE_PANEL - gastosDeLaMesa();
+  return libre > 0 ? libre / papel : null;
+}
+
+/*
+  El aumento pedido, recortado a lo que cabe. Con el panel atado la promesa es
+  que la página se ve entera, así que la lupa se para donde el separador ya no
+  puede apartarse más; para ir más allá se suelta el interruptor o se deja la
+  vista previa sola, que da todo el ancho.
+*/
+function zoomQueCabeEnElPanel(zoom) {
+  if (!panelAtadoALaLupa) return zoom;
+  const tope = zoomMaximoQueCabe();
+  if (tope === null || zoom <= tope + 0.001) return zoom;
+  let cabe = ZOOM_STEPS[0];
+  ZOOM_STEPS.forEach((step) => { if (step <= tope + 0.001) cabe = step; });
+  return cabe;
+}
+
+/*
+  Aparta el separador lo justo para que la hoja quepa con este aumento, y lo
+  devuelve cuando se baja. Nunca por debajo de la mitad —el editor visual es lo
+  que se viene a mirar— ni tanto como para dejar al de Markdown sin su ancho
+  mínimo. Con un solo panel a la vista no hay nada que mover.
+*/
+function apartarSeparadorParaLaLupa(zoom) {
+  if (!splitDePaneles || currentLayout !== 'dual') return;
+  const contenedor = document.getElementById('editor-container');
+  const total = contenedor ? contenedor.clientWidth : 0;
+  const papel = anchoDelPapelSinLupa();
+  if (!total || !papel) return;
+  const pedido = papel * zoom + gastosDeLaMesa();
+  const derecha = Math.max(total / 2, Math.min(pedido, total - ANCHO_MINIMO_DE_PANEL));
+  const porcentaje = Math.min(95, Math.max(5, Math.ceil((derecha / total) * 100)));
+  repartoDeLosPaneles = [100 - porcentaje, porcentaje];
+  splitDePaneles.setSizes(repartoDeLosPaneles);
+  // Medido y no calculado: el reparto va en tantos por ciento enteros, así que
+  // el ancho que sale de ellos no es exactamente el que se pidió, y esta nota
+  // tiene que ser el ancho de verdad para que el observador la reconozca.
+  anchoDeMesaPedidoPorLaLupa = anchoUtilDeLaMesa();
+}
+
+function zoomEfectivo(panel) {
+  const declarado = Number(document.documentElement.style.getPropertyValue(panel.variable));
+  return Number.isFinite(declarado) && declarado > 0 ? declarado : 1;
+}
+
+/*
+  La etiqueta de la lupa dice siempre el aumento real, también el que sale de
+  la cuenta —un 86 %, pongamos—. Y cuando ese número lo ha puesto el ajuste y
+  no la mano, se marca: es un tanto por ciento que se mueve solo al mover el
+  separador, y sin la marca parecía que la lupa se desajustaba sola.
+*/
+function pintarEtiquetaDeZoom(panel, zoom, { calculado = false } = {}) {
   const label = document.getElementById(panel.labelId);
   if (label) label.textContent = `${Math.round(zoom * 100)} %`;
+  if (panel !== PREVIEW_ZOOM) return;
+  const boton = document.getElementById('preview-zoom-reset');
+  if (boton) boton.dataset.ajuste = calculado ? 'true' : 'false';
+  refrescarTopeDeLaLupa();
+}
+
+/*
+  El `+` de la vista previa se apaga cuando el panel atado ya no puede dar más
+  ancho: sin eso queda un botón que se pulsa y no hace nada, que es peor que uno
+  apagado. Dice en su título por qué, y se enciende solo en cuanto hay sitio: al
+  soltar el interruptor, al ensanchar la ventana o al dejar la hoja sola.
+*/
+function refrescarTopeDeLaLupa() {
+  const mas = document.getElementById('preview-zoom-in');
+  if (!mas) return;
+  const siguiente = ZOOM_STEPS.find(step => step > zoomEfectivo(PREVIEW_ZOOM) + 0.001);
+  const tope = panelAtadoALaLupa ? zoomMaximoQueCabe() : null;
+  const sinSitio = siguiente !== undefined && tope !== null && siguiente > tope + 0.001;
+  mas.setAttribute('aria-disabled', sinSitio ? 'true' : 'false');
+  const clave = sinSitio ? 'preview_zoom_in_capped_title' : 'preview_zoom_in_title';
+  const rotulo = sinSitio
+    ? 'La hoja ya ocupa el panel entero; suelta el interruptor de al lado o deja la vista previa sola para ampliarla más'
+    : 'Ver la hoja más grande (Ctrl++); no cambia el documento';
+  mas.setAttribute('data-i18n-key', clave);
+  mas.setAttribute('title', getTranslation(clave, rotulo));
+}
+
+/*
+  El interruptor de la barra de estado. Enciende y apaga la atadura entera, y
+  al encenderla ajusta ya mismo lo que haya en pantalla.
+*/
+function pintarInterruptorDelPanelAtado() {
+  const boton = document.getElementById('preview-link-toggle');
+  if (!boton) return;
+  boton.setAttribute('aria-pressed', panelAtadoALaLupa ? 'true' : 'false');
+  const iconHost = boton.querySelector('.link-icon');
+  if (iconHost) {
+    iconHost.innerHTML = `<i data-lucide="${panelAtadoALaLupa ? 'link' : 'unlink'}" class="w-4 h-4"></i>`;
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function atarPanelALaLupa(atado, { persist = true } = {}) {
+  panelAtadoALaLupa = !!atado;
+  if (persist) safeLocalStorageSet(PANEL_ATADO_KEY, panelAtadoALaLupa ? '1' : '0');
+  pintarInterruptorDelPanelAtado();
+  refrescarTopeDeLaLupa();
+  if (panelAtadoALaLupa) {
+    anchoDeMesaPedidoPorLaLupa = null;
+    aplicarAjusteAlAncho();
+  } else {
+    pintarEtiquetaDeZoom(PREVIEW_ZOOM, zoomEfectivo(PREVIEW_ZOOM));
+  }
+}
+
+/*
+  Rehace la cuenta de la lupa desde el ancho del panel. Se llama cada vez que
+  cambia algo de lo que entra en ella: el ancho de la mesa al mover el
+  separador, al cambiar de disposición o al redimensionar la ventana, y el
+  ancho del papel al cambiar el formato del documento. Con el panel suelto no
+  hace nada.
+*/
+function aplicarAjusteAlAncho() {
+  if (!panelAtadoALaLupa) return null;
+  const mesa = anchoUtilDeLaMesa();
+  if (!mesa) return null;
+  /*
+    Este ancho lo pidió la propia lupa al apartar el separador: recalcular
+    desde él bajaría al 100 % el aumento que se acaba de subir a mano.
+  */
+  if (anchoDeMesaPedidoPorLaLupa !== null && Math.abs(mesa - anchoDeMesaPedidoPorLaLupa) <= 2) {
+    return zoomEfectivo(PREVIEW_ZOOM);
+  }
+  anchoDeMesaPedidoPorLaLupa = null;
+  const zoom = zoomQueCabe();
+  if (zoom === null) return null;
+  if (Math.abs(zoom - zoomEfectivo(PREVIEW_ZOOM)) < 0.0001) return zoom;
+  document.documentElement.style.setProperty(PREVIEW_ZOOM.variable, String(zoom));
+  pintarEtiquetaDeZoom(PREVIEW_ZOOM, zoom, { calculado: true });
+  // CodeMirror mide su tipografía al pintarse, y la vista de código comparte
+  // esta lupa.
+  if (htmlEditor) htmlEditor.refresh();
+  return zoom;
+}
+
+/*
+  `aMano` distingue quién pide el aumento. Pedido a mano y con el panel atado,
+  el separador se aparta para que la hoja quepa; puesto al arrancar o venido de
+  otro sitio, la lupa se limita a obedecer y del ancho ya se ocupa el ajuste.
+*/
+function applyZoom(panel, value, { persist = true, aMano = false } = {}) {
+  let zoom = normalizeZoom(value);
+  if (panel === PREVIEW_ZOOM && aMano) {
+    zoom = zoomQueCabeEnElPanel(zoom);
+    zoomPedidoAMano = zoom;
+  }
+  document.documentElement.style.setProperty(panel.variable, String(zoom));
+  pintarEtiquetaDeZoom(panel, zoom);
   if (persist) safeLocalStorageSet(panel.storageKey, zoom);
   // CodeMirror mide su tipografía al pintarse: sin esto, el cursor y el
   // resaltado se quedan en la posición del tamaño anterior.
   if (panel === MARKDOWN_ZOOM && markdownEditor) markdownEditor.refresh();
   if (panel === PREVIEW_ZOOM && htmlEditor) htmlEditor.refresh();
+  if (panel === PREVIEW_ZOOM && aMano && panelAtadoALaLupa) apartarSeparadorParaLaLupa(zoom);
   return zoom;
 }
 
-function currentZoom(panel) {
-  const declared = document.documentElement.style.getPropertyValue(panel.variable);
-  return normalizeZoom(declared || 1);
-}
-
 function stepZoom(panel, direction) {
-  const idx = ZOOM_STEPS.indexOf(currentZoom(panel));
-  const next = Math.min(ZOOM_STEPS.length - 1, Math.max(0, idx + direction));
-  applyZoom(panel, ZOOM_STEPS[next]);
+  /*
+    El paso siguiente se busca por el valor y no por la posición: desde el
+    ajuste automático la lupa cae entre dos pasos, y partiendo del más cercano
+    el primer toque se saltaba uno.
+  */
+  const actual = zoomEfectivo(panel);
+  let siguiente = null;
+  if (direction > 0) {
+    siguiente = ZOOM_STEPS.find(step => step > actual + 0.001);
+    if (siguiente === undefined) siguiente = ZOOM_STEPS[ZOOM_STEPS.length - 1];
+  } else {
+    for (let i = ZOOM_STEPS.length - 1; i >= 0; i -= 1) {
+      if (ZOOM_STEPS[i] < actual - 0.001) { siguiente = ZOOM_STEPS[i]; break; }
+    }
+    if (siguiente === null) siguiente = ZOOM_STEPS[0];
+  }
+  applyZoom(panel, siguiente, { aMano: true });
 }
 
 /*
@@ -5565,6 +5876,52 @@ function prepararSalida(panel, deslizando, salientes) {
   salientes.push(panel);
 }
 
+/*
+  El reparto de partida de los dos paneles. Con un 50 % fijo, en una pantalla de
+  1366 al de la derecha le tocaban 683 px y una hoja A4 mide 794: la vista
+  previa arrancaba siempre encogida por el ajuste al ancho. Se le da de salida
+  lo justo que necesita la hoja a tamaño real, y solo mientras al de la
+  izquierda le quede sitio de sobra; si no cabe, se reparten a medias y del
+  resto se ocupa el ajuste.
+*/
+const ANCHO_MINIMO_DE_PANEL = 280;
+const GUTTER_DE_PANELES = 8;
+let splitDePaneles = null;
+// El reparto que dejó el usuario al arrastrar el separador. Mientras no toque
+// nada manda el calculado, que se rehace si cambia el papel del documento.
+let repartoDeLosPaneles = null;
+
+function repartoDePanelesPorDefecto() {
+  const contenedor = document.getElementById('editor-container');
+  const total = contenedor ? contenedor.clientWidth : 0;
+  const papel = anchoDelPapelSinLupa();
+  if (!total || !papel) return [50, 50];
+  const derecha = papel + gastosDeLaMesa();
+  if (total - derecha < ANCHO_MINIMO_DE_PANEL) return [50, 50];
+  /*
+    Al alza —quedarse un píxel corto es justo lo que se quería evitar—, y nunca
+    por debajo de la mitad: en una pantalla ancha la hoja pide menos del 50 % y
+    dárselo dejaba al editor de Markdown una columna enorme para un texto que
+    se lee en líneas cortas. La hoja es lo que se viene a mirar.
+  */
+  const porcentaje = Math.min(75, Math.max(50, Math.ceil((derecha / total) * 100)));
+  return [100 - porcentaje, porcentaje];
+}
+
+function repartoDePanelesVigente() {
+  return repartoDeLosPaneles || repartoDePanelesPorDefecto();
+}
+
+/*
+  Vuelve a repartir cuando cambia el papel —de A4 a Carta, o al apaisado—, que
+  es lo que decide cuánto ancho pide la hoja. Si el usuario ya movió el
+  separador, manda él.
+*/
+function ajustarRepartoDePaneles() {
+  if (!splitDePaneles || repartoDeLosPaneles || currentLayout !== 'dual') return;
+  splitDePaneles.setSizes(repartoDePanelesPorDefecto());
+}
+
 function applyLayout(layout) {
   const layoutAnterior = currentLayout;
   currentLayout = layout;
@@ -5579,11 +5936,12 @@ function applyLayout(layout) {
   // Un cambio de disposición cancela el anterior si quedaba a medias.
   limpiarTransicionDePaneles();
   const deslizando = layoutAnterior && layoutAnterior !== layout && anchoRepartido();
+  const reparto = repartoDePanelesVigente();
   const anchos = layout === 'md'
     ? [[mdPanel, '100%'], [htmlPanel, '']]
     : layout === 'html'
       ? [[mdPanel, ''], [htmlPanel, '100%']]
-      : [[mdPanel, '50%'], [htmlPanel, '50%']];
+      : [[mdPanel, `${reparto[0]}%`], [htmlPanel, `${reparto[1]}%`]];
 
   gutters.forEach(g => g.style.display = layout === 'dual' ? '' : 'none');
   // Primero los que llegan, para que el que se va los encuentre ya en su sitio
@@ -7782,20 +8140,46 @@ window.onload = async () => {
     htmlEditorWrapperEl = cmWrapper;
     cmWrapper.style.display = 'none';
     
-    // --- INICIO DE LA CORRECCIÓN ---
-    toggleWidthBtn.addEventListener('click', () => {
-        mainContainer.classList.toggle('is-expanded');
-        const isExpanded = mainContainer.classList.contains('is-expanded');
-        const iconName = isExpanded ? 'minimize' : 'maximize';
-        // Solo el icono: el botón lleva ahora su etiqueta de texto al lado.
+    /*
+      El ancho de la aplicación. El HTML ya arranca expandido, que es lo que
+      quiere casi todo el mundo y lo único donde una hoja A4 cabe a tamaño real
+      junto al editor; aquí solo se deshace si el usuario dijo lo contrario. La
+      transición del ancho se retira mientras se aplica lo guardado, o la
+      página abriría encogiéndose a la vista.
+    */
+    const applyExpandedWidth = (expanded) => {
+        mainContainer.classList.toggle('is-expanded', expanded);
         const iconHost = toggleWidthBtn.querySelector('.width-icon');
         if (iconHost) {
+            const iconName = expanded ? 'minimize' : 'maximize';
             iconHost.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>`;
         }
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
+    };
+
+    if (safeLocalStorageGet(EXPANDED_WIDTH_KEY, '1') !== '1') {
+        mainContainer.style.transition = 'none';
+        applyExpandedWidth(false);
+        // Devuelta en el fotograma siguiente, ya con el ancho puesto.
+        requestAnimationFrame(() => { mainContainer.style.removeProperty('transition'); });
+    }
+
+    toggleWidthBtn.addEventListener('click', () => {
+        const expanded = !mainContainer.classList.contains('is-expanded');
+        applyExpandedWidth(expanded);
+        safeLocalStorageSet(EXPANDED_WIDTH_KEY, expanded ? '1' : '0');
         closeSettingsMenu();
     });
-    // --- FIN DE LA CORRECCIÓN ---
+
+    /*
+      Y el reparto de los paneles se rehace cuando el ancho nuevo ha llegado
+      del todo: la transición dura medio segundo, y con una medida de en medio
+      saldría un reparto que no corresponde a ninguno de los dos anchos.
+    */
+    mainContainer.addEventListener('transitionend', (evento) => {
+        if (evento.target !== mainContainer || evento.propertyName !== 'max-width') return;
+        ajustarRepartoDePaneles();
+    });
 
     // --- Gestión del tema (sistema / claro / oscuro) ---
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
@@ -7875,11 +8259,17 @@ window.onload = async () => {
     }
 
     // --- Paneles redimensionables y diseño ---
-    Split(['#markdown-panel', '#html-panel'], {
-        sizes: [50, 50],
-        minSize: 280,
-        gutterSize: 8,
-        onDrag: () => { markdownEditor.refresh(); htmlEditor.refresh(); }
+    splitDePaneles = Split(['#markdown-panel', '#html-panel'], {
+        sizes: repartoDePanelesPorDefecto(),
+        minSize: ANCHO_MINIMO_DE_PANEL,
+        gutterSize: GUTTER_DE_PANELES,
+        onDrag: () => { markdownEditor.refresh(); htmlEditor.refresh(); },
+        /*
+          Lo que deja el usuario al soltar manda desde ese momento: sin
+          guardarlo, ir a un solo panel y volver a los dos devolvía el reparto
+          de partida y se perdía el suyo.
+        */
+        onDragEnd: () => { repartoDeLosPaneles = splitDePaneles.getSizes(); }
     });
     currentLayout = safeLocalStorageGet(LAYOUT_KEY, 'dual');
     applyLayout(currentLayout);
@@ -7891,9 +8281,21 @@ window.onload = async () => {
     ].forEach(([panel, menos, cien, mas]) => {
         applyZoom(panel, safeLocalStorageGet(panel.storageKey, 1), { persist: false });
         if (menos) menos.addEventListener('click', () => stepZoom(panel, -1));
-        if (cien) cien.addEventListener('click', () => applyZoom(panel, 1));
+        // A mano: con el panel atado, tocar la lupa aparta el separador.
+        if (cien) cien.addEventListener('click', () => applyZoom(panel, 1, { aMano: true }));
         if (mas) mas.addEventListener('click', () => stepZoom(panel, 1));
     });
+
+    /*
+      El interruptor que ata el panel a la lupa. Encendido mientras nadie diga
+      lo contrario: es lo que hace que la página se vea entera sin tener que
+      pensar en ello.
+    */
+    const previewLinkToggle = document.getElementById('preview-link-toggle');
+    atarPanelALaLupa(safeLocalStorageGet(PANEL_ATADO_KEY, '1') === '1', { persist: false });
+    if (previewLinkToggle) {
+        previewLinkToggle.addEventListener('click', () => atarPanelALaLupa(!panelAtadoALaLupa));
+    }
 
     // El exportador los consulta al generar LaTeX, no al arrancar, pero
     // publicarlos aquí evita que la primera exportación salga sin ellos.
@@ -9439,9 +9841,17 @@ window.onload = async () => {
         // Y las hojas, una por página, debajo del texto.
         const izquierda = sheet.offsetLeft;
         const ancho = sheet.offsetWidth;
-        // El hueco se mide contra lo que se ve de la mesa, no contra el
-        // envoltorio: con la hoja desbordada, a la derecha no hay sitio.
-        const estrecho = desk.clientWidth - (izquierda + ancho) < 56;
+        /*
+          El hueco que le queda a la derecha con la hoja centrada, y el que
+          decide si el número de página cabe fuera. Se saca del ancho libre de
+          la mesa y no de dónde está ahora la hoja: el envoltorio se ensancha
+          con la propia etiqueta, así que preguntarle su posición era medir la
+          decisión con su propio resultado, y las dos respuestas se alternaban
+          dejando la mesa desplazada a lo ancho por unos pocos píxeles. Con la
+          hoja desbordada la resta sale negativa, que es lo que se quería
+          decir: a la derecha no hay sitio.
+        */
+        const estrecho = (anchoUtilDeLaMesa() - ancho) / 2 < 56;
         layer.classList.toggle('tight', estrecho);
         const hojas = [];
         for (let i = 0; i < paginas; i += 1) {
@@ -9480,6 +9890,15 @@ window.onload = async () => {
         if (repintadoDeCortes) return;
         repintadoDeCortes = requestAnimationFrame(() => {
             repintadoDeCortes = null;
+            /*
+              Primero la lupa y después los cortes: el ajuste al ancho cambia
+              lo que mide la hoja, y midiendo antes las páginas saldrían con el
+              aumento anterior. Aplicado aquí mismo, la medida que viene
+              después ya es la buena.
+            */
+            aplicarAjusteAlAncho();
+            // El ancho ha cambiado, y con él hasta dónde puede llegar la lupa.
+            refrescarTopeDeLaLupa();
             refreshPageBreaks();
         });
     }
@@ -9490,7 +9909,16 @@ window.onload = async () => {
             if (elemento) observador.observe(elemento);
         });
     }
-    window.addEventListener('resize', schedulePageBreaks);
+    window.addEventListener('resize', () => {
+        /*
+          Al cambiar de tamaño la ventana se rehace también el reparto de los
+          paneles: quien arranca con la ventana pequeña se queda con los dos a
+          medias —la hoja no cabía— y al maximizar tenía que mover el separador
+          a mano para recuperar el tamaño real. Si ya lo movió, manda él.
+        */
+        ajustarRepartoDePaneles();
+        schedulePageBreaks();
+    });
 
     /*
       La vista previa es donde se comprueba el ajuste antes de exportar. Los
@@ -9517,6 +9945,10 @@ window.onload = async () => {
         Object.entries(styles).forEach(([property, value]) => {
             preview.style.setProperty(property, value);
         });
+        // El papel acaba de cambiar de ancho: el reparto de los paneles y la
+        // lupa ajustada se hacen con esa medida, así que se rehacen aquí.
+        ajustarRepartoDePaneles();
+        aplicarAjusteAlAncho();
         refreshPageBreaks();
     }
     window.__applyDocumentFormatToPreview = applyDocumentFormatToPreview;
@@ -10550,6 +10982,15 @@ window.onload = async () => {
       Las pruebas esperan esta marca para no pulsar teclas que todavía no
       escucha nadie.
     */
+    /*
+      Y el formato del documento, aplicado de salida: hasta aquí la hoja no
+      tomaba el ancho del papel hasta el primer cambio del documento, así que
+      arrancaba con un ancho de lectura cualquiera, sin el reparto en páginas y
+      sin la medida con la que se calculan el reparto de los paneles y el
+      ajuste al ancho.
+    */
+    applyDocumentFormatToPreview();
+
     window.__edimarkReady = true;
 };
 

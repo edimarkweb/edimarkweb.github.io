@@ -2628,9 +2628,14 @@ test('la lupa de cada panel escala su panel y deja quieto al otro', async (t) =>
   assert.equal(trasAmpliarElEditor.hoja, inicio.hoja, 'la hoja siguió a la lupa del editor');
   assert.equal(await page.locator('#markdown-zoom-value').innerText(), '110 %');
 
-  // Las dos lupas comparten sitio en la barra de estado: se enseña la del panel
-  // en el que se trabaja, así que hay que ir a la hoja para llegar a la suya.
+  /*
+    Las dos lupas comparten sitio en la barra de estado: se enseña la del panel
+    en el que se trabaja, así que hay que ir a la hoja para llegar a la suya. Y
+    se suelta el interruptor, que con el panel atado la hoja ya llena el ancho
+    y la lupa no sube de ahí.
+  */
   await page.locator('#html-output').click();
+  await page.locator('#preview-link-toggle').click();
   await page.locator('#preview-zoom-in').click();
   const trasAmpliarLaHoja = await medir();
   assert.notEqual(trasAmpliarLaHoja.hoja, inicio.hoja, 'la hoja no siguió a su lupa');
@@ -3020,9 +3025,11 @@ test('lo que en pantalla salta de página, en el papel también', async (t) => {
 });
 
 /*
-  Con la hoja estrechada —una ventana pequeña, o los dos paneles a la vez— el
-  texto ya no rompe donde rompería en el papel, así que el reparto mentiría y se
-  retira hasta que vuelva a caber.
+  Con la hoja estrechada el texto ya no rompe donde rompería en el papel, así
+  que el reparto mentiría y se retira hasta que vuelva a caber. Estrechar la
+  ventana ya no basta para llegar a ese caso: la lupa ajustada al ancho encoge
+  la hoja entera y el reparto sigue siendo fiel; hace falta fijar un aumento
+  con el que no quepa.
 */
 test('el reparto en páginas se retira cuando la hoja no cabe entera', async (t) => {
   const { context, page } = await openApp();
@@ -3033,6 +3040,21 @@ test('el reparto en páginas se retira cuando la hoja no cabe entera', async (t)
   await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length > 1);
 
   await page.setViewportSize({ width: 700, height: 900 });
+  await page.waitForFunction(() => (
+    (Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1) < 1
+  ));
+  assert.ok(
+    await page.locator('.page-sheet').count() > 1,
+    'ajustada al ancho la hoja cabe entera, y el reparto se conserva',
+  );
+
+  // Al tamaño real ya no cabe en la ventana, y entonces sí se retira. Con el
+  // panel atado la lupa no llega ahí: se suelta primero, que es lo que haría
+  // quien quiere ampliar más de lo que cabe.
+  await page.evaluate(() => {
+    atarPanelALaLupa(false);
+    applyZoom(PREVIEW_ZOOM, 1);
+  });
   await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length === 0);
   assert.equal(
     await page.locator('#html-output > [data-page-start]').count(),
@@ -3203,6 +3225,8 @@ test('la barra de estado enseña la lupa del panel activo', async (t) => {
     eso contara como cambio de panel, la lupa se cambiaría sola a mitad de la
     faena.
   */
+  // Suelto el interruptor: atado, la hoja ya llena el panel y la lupa no sube.
+  await page.locator('#preview-link-toggle').click();
   await page.locator('#preview-zoom-in').click();
   assert.equal(await page.locator('#preview-zoom').isVisible(), true);
   assert.equal(await page.locator('#preview-zoom-value').innerText(), '110 %');
@@ -3226,6 +3250,9 @@ test('Ctrl y las teclas de más y menos mueven la lupa del panel activo', async 
   assert.equal(await page.locator('#markdown-zoom-value').innerText(), '110 %');
   assert.equal(await page.locator('#preview-zoom-value').innerText(), '100 %');
 
+  await page.locator('#html-output').click();
+  // Con el panel atado la hoja ya llena el ancho: para ampliarla se suelta.
+  await page.locator('#preview-link-toggle').click();
   await page.locator('#html-output').click();
   await page.keyboard.press('Control+Equal');
   assert.equal(await page.locator('#preview-zoom-value').innerText(), '110 %');
@@ -4094,4 +4121,184 @@ test('las imágenes pasadas a la carpeta se escriben al guardar', async (t) => {
   assert.ok(!markdown[2].includes('base64,'), 'el Markdown guardado no debe llevar la imagen dentro');
   const imagen = llamadas.find(call => call[1] === 'tema-3/01.png');
   assert.deepEqual(imagen[2], [...PNG_PIXEL], 'la imagen escrita debe ser la original, byte a byte');
+});
+
+/*
+  La hoja de la vista previa mide el papel de verdad, así que en un panel
+  estrecho no cabía y la mesa se desplazaba a lo ancho. Con el panel atado a la
+  lupa se encoge entera —y no estrechándola, que reordenaría el texto y
+  perdería el reparto en páginas—, de modo que a cualquier anchura la página se
+  ve completa y sin barra horizontal.
+*/
+test('la vista previa se ajusta al ancho del panel y no deja barra horizontal', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const medir = () => page.evaluate(() => {
+    const desk = document.getElementById('preview-desk');
+    const sheet = document.getElementById('html-output');
+    return {
+      barraHorizontal: desk.scrollWidth > desk.clientWidth,
+      zoom: Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1,
+      etiqueta: document.getElementById('preview-zoom-value').textContent,
+      hoja: Math.round(sheet.getBoundingClientRect().width),
+      paginas: document.querySelectorAll('#page-sheets .page-sheet').length,
+    };
+  });
+
+  await page.setViewportSize({ width: 1600, height: 900 });
+  // El formato del documento es quien le da a la hoja el ancho del papel.
+  await page.evaluate(() => window.__applyDocumentFormatToPreview());
+  await page.waitForFunction(() => document.querySelectorAll('#page-sheets .page-sheet').length > 0);
+
+  const ancha = await medir();
+  assert.equal(ancha.barraHorizontal, false);
+  assert.ok(ancha.zoom >= 1, 'con sitio de sobra la hoja llega al menos a tamaño real');
+  assert.ok(ancha.paginas > 0, 'la hoja al ancho del papel va repartida en páginas');
+
+  // Un portátil estrecho: la hoja ya no cabe a tamaño real y la lupa lo resuelve.
+  await page.setViewportSize({ width: 1000, height: 900 });
+  await page.waitForFunction(() => (
+    (Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1) < 1
+  ));
+  const estrecha = await medir();
+  assert.equal(estrecha.barraHorizontal, false);
+  assert.ok(estrecha.zoom < 1, 'la hoja se encoge para caber');
+  assert.ok(estrecha.paginas > 0, 'encogerla entera conserva el reparto en páginas');
+  assert.match(estrecha.etiqueta, /^\d+ ?%$/);
+
+  /*
+    Soltar el interruptor devuelve la lupa a su tamaño real y con ella la
+    barra: es la vía para ampliar más allá de lo que cabe. Los controles de la
+    vista previa solo se enseñan mientras se trabaja en ella, así que antes hay
+    que pasar a ese panel.
+  */
+  assert.equal(await page.locator('#preview-zoom-reset').getAttribute('data-ajuste'), 'true');
+  await page.locator('#html-output').click();
+  await page.locator('#preview-link-toggle').waitFor({ state: 'visible' });
+  await page.locator('#preview-link-toggle').click();
+  await page.locator('#preview-zoom-reset').click();
+  const real = await medir();
+  assert.equal(real.zoom, 1);
+  assert.equal(real.barraHorizontal, true, 'a tamaño real la hoja no cabe: la barra vuelve');
+  assert.equal(await page.locator('#preview-zoom-reset').getAttribute('data-ajuste'), 'false');
+
+  // Y volver a atarlo la encaja otra vez, sin tocar nada más.
+  await page.locator('#preview-link-toggle').click();
+  await page.waitForFunction(() => (
+    (Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1) < 1
+  ));
+  assert.equal((await medir()).barraHorizontal, false);
+  assert.equal(await page.locator('#preview-zoom-reset').getAttribute('data-ajuste'), 'true');
+
+  // Con la vista previa sola le sobra ancho, así que la hoja pasa del tamaño
+  // real; al volver a los dos paneles se encoge otra vez.
+  await page.locator('#layout-switch [data-layout="html"]').click();
+  await page.waitForFunction(() => (
+    (Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1) >= 1
+  ));
+  assert.equal((await medir()).barraHorizontal, false);
+
+  await page.locator('#layout-switch [data-layout="dual"]').click();
+  await page.waitForFunction(() => (
+    (Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1) < 1
+  ));
+  assert.equal((await medir()).barraHorizontal, false);
+});
+
+/*
+  La aplicación abre expandida: en la columna centrada de 1280 px no caben el
+  editor y una hoja A4 a tamaño real, que es lo que se viene a ver. Quien
+  prefiera la columna lo dice una vez con el botón y se recuerda.
+*/
+test('la aplicación abre expandida y recuerda si se contrae', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const expandida = () => page.locator('#main-container').evaluate(el => el.classList.contains('is-expanded'));
+  assert.equal(await expandida(), true);
+
+  await page.locator('#toggle-width-btn').click();
+  assert.equal(await expandida(), false);
+
+  await page.reload();
+  await page.waitForFunction(() => window.__edimarkReady === true);
+  assert.equal(await expandida(), false, 'la columna centrada elegida no sobrevivió a la recarga');
+
+  await page.locator('#toggle-width-btn').click();
+  await page.reload();
+  await page.waitForFunction(() => window.__edimarkReady === true);
+  assert.equal(await expandida(), true);
+});
+
+/*
+  El panel y la lupa, atados en los dos sentidos: subir el aumento aparta el
+  separador para que la hoja siga entera, y moverlo recalcula el aumento. La
+  atadura se para donde el editor de Markdown se quedaría sin su ancho mínimo:
+  la promesa es que la página se ve completa, y para ir más allá se suelta.
+*/
+test('la lupa y el separador van atados en los dos sentidos', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.evaluate(() => window.__applyDocumentFormatToPreview());
+  await page.waitForFunction(() => document.querySelectorAll('#page-sheets .page-sheet').length > 0);
+
+  const medir = () => page.evaluate(() => {
+    const desk = document.getElementById('preview-desk');
+    return {
+      md: document.getElementById('markdown-panel').offsetWidth,
+      barraHorizontal: desk.scrollWidth > desk.clientWidth,
+      zoom: Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1,
+      paginas: document.querySelectorAll('#page-sheets .page-sheet').length,
+    };
+  });
+
+  await page.locator('#html-output').click();
+  const partida = await medir();
+  assert.ok(partida.zoom >= 1);
+  assert.equal(await page.locator('#preview-link-toggle').getAttribute('aria-pressed'), 'true');
+
+  // Ampliar aparta el separador: el editor de Markdown cede ancho.
+  const antesDeAmpliar = partida.zoom;
+  await page.locator('#preview-zoom-in').click();
+  await page.waitForFunction((previo) => (
+    (Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1) > previo
+  ), antesDeAmpliar);
+  const ampliado = await medir();
+  assert.ok(ampliado.zoom > antesDeAmpliar);
+  assert.ok(ampliado.md < partida.md, 'el separador no se apartó al ampliar');
+  assert.equal(ampliado.barraHorizontal, false);
+  assert.ok(ampliado.paginas > 0);
+
+  /*
+    Y sigue ampliando hasta donde cabe, no más: al llegar ahí el `+` se apaga,
+    que es lo que dice que el ancho se ha acabado.
+  */
+  const mas = page.locator('#preview-zoom-in');
+  for (let i = 0; i < 8 && await mas.getAttribute('aria-disabled') !== 'true'; i += 1) {
+    await mas.click();
+    await page.waitForTimeout(120);
+  }
+  assert.equal(await mas.getAttribute('aria-disabled'), 'true', 'el + nunca dijo que se había acabado el ancho');
+  const tope = await medir();
+  assert.equal(tope.barraHorizontal, false, 'la lupa pasó de lo que cabe en el panel');
+  assert.ok(tope.md >= 280, 'el editor de Markdown se quedó sin su ancho mínimo');
+
+  // Mover el separador recalcula el aumento, que es el otro sentido.
+  await page.evaluate(() => {
+    const md = document.getElementById('markdown-panel');
+    const hp = document.getElementById('html-panel');
+    const total = md.offsetWidth + hp.offsetWidth;
+    md.style.width = `${Math.round(total * 0.7)}px`;
+    hp.style.width = `${Math.round(total * 0.3)}px`;
+  });
+  await page.waitForFunction(() => (
+    (Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1) < 1
+  ));
+  const estrechado = await medir();
+  assert.equal(estrechado.barraHorizontal, false);
+  assert.ok(estrechado.paginas > 0, 'encogerla entera conserva el reparto en páginas');
+  assert.equal(await page.locator('#preview-zoom-reset').getAttribute('data-ajuste'), 'true');
 });

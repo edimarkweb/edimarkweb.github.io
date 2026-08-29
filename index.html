@@ -43,7 +43,7 @@
 </head>
 <body class="p-4 sm:p-6 md:p-8">
 
-<main id="main-container" class="max-w-7xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
+<main id="main-container" class="max-w-7xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-700 is-expanded">
     <header class="px-4 py-2 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 dark:border-slate-700">
         <div class="flex items-center gap-3">
             <img src="logo_256.png" alt="Logo EdiMarkWeb" class="w-9 h-9">
@@ -578,7 +578,7 @@
                 <i data-lucide="chevrons-up" class="toggle-icon"></i>
             </button>
             <button type="button" id="toggle-width-btn" class="action-btn flex items-center gap-2 p-2 text-sm" data-i18n-key="toggle_width_btn_title" title="Expandir / Contraer ancho">
-                <span class="width-icon flex"><i data-lucide="maximize" class="w-4 h-4 shrink-0"></i></span>
+                <span class="width-icon flex"><i data-lucide="minimize" class="w-4 h-4 shrink-0"></i></span>
             </button>
             <!--
               Abrir la aplicación en su propia ventana también es cosa de cómo
@@ -713,6 +713,15 @@
                     <button id="preview-zoom-in" type="button" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="preview_zoom_in_title" title="Ver la hoja más grande (Ctrl++); no cambia el documento" aria-keyshortcuts="Control++"><i data-lucide="plus" class="w-4 h-4"></i></button>
                 </div>
             </div>
+            <span class="view-controls-separator" aria-hidden="true"></span>
+            <!--
+              El panel y la lupa, atados: se mueve el separador y el aumento se
+              recalcula, se toca el aumento y el separador se aparta. Va aquí y
+              no con las lupas —que se turnan según el panel en el que se
+              trabaje— porque lo que gobierna es el reparto entre los dos, y
+              porque viene puesto: hay que poder verlo para soltarlo.
+            -->
+            <button id="preview-link-toggle" type="button" class="toolbar-btn preview-link-toggle focus-visible:ring-2 focus-visible:ring-blue-500" aria-pressed="true" data-i18n-key="preview_link_toggle_title" title="Atar el ancho del panel a la lupa: la página se ve siempre entera"><span class="link-icon flex"><i data-lucide="link" class="w-4 h-4"></i></span></button>
             <span class="view-controls-separator" aria-hidden="true"></span>
             <div id="layout-switch" class="layout-switch" role="group" aria-label="Disposición de paneles" data-i18n-key="layout_menu_btn_title">
                 <button type="button" class="layout-switch-btn" data-layout="md" aria-pressed="false" data-i18n-key="layout_switch_md_title" title="Solo el código fuente (Ctrl+L)"><i data-lucide="panel-right"></i></button>
