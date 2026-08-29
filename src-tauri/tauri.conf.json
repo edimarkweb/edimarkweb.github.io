@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "EdiMarkWeb",
-  "version": "2.39.3",
+  "version": "2.39.4",
   "identifier": "io.github.edimarkweb",
   "build": {
     "beforeDevCommand": "npm run build:desktop",
