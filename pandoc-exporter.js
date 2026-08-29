@@ -1126,6 +1126,10 @@ window.PandocExporter = {
   // Y para leer y escribir el índice y la numeración de este documento.
   readOutlineFromFrontMatter,
   outlineFrontMatterEntries,
+  // El editor visual enseña el índice cuando el documento lo pide, así que
+  // necesita resolver lo mismo que la exportación y con el mismo rótulo.
+  resolveOutlineOptions,
+  tocTitleFor,
 };
 
 export { exportDocument, generateHtml, generateLatex, convertLatexToMarkdown, importToMarkdown, trimInlineMath, warmUpExporter, splitFrontMatter, mergeFrontMatter };

@@ -5,9 +5,11 @@ import { normalizeFormulaHrefs } from './odt-formulas.js';
 import {
   applyDocxHyphenation,
   applyDocxMargins,
+  applyDocxPageSize,
   applyDocxStyles,
   applyDocxTheme,
   applyOdtMargins,
+  applyOdtPageSize,
   applyOdtStyles,
 } from './office-format.js';
 
@@ -1214,7 +1216,9 @@ export async function appendEpubStylesheet(archiveBytes, css) {
 export async function applyOfficeFormat(archiveBytes, styles, kind) {
   if (!archiveBytes || archiveBytes.length === 0 || !styles) return archiveBytes;
   const wanted = ['align', 'fontName', 'fontSizePt', 'lineHeight', 'indent', 'hyphenate']
-    .some(key => styles[key]) || Object.keys(styles.marginsCm || {}).length > 0;
+    .some(key => styles[key])
+    || Object.keys(styles.marginsCm || {}).length > 0
+    || Boolean(styles.paperCm);
   if (!wanted) return archiveBytes;
 
   try {
@@ -1233,11 +1237,19 @@ export async function applyOfficeFormat(archiveBytes, styles, kind) {
 
     if (kind === 'docx') {
       rewrite('word/styles.xml', xml => applyDocxStyles(xml, styles));
-      rewrite('word/document.xml', xml => applyDocxMargins(xml, styles.marginsCm));
+      // El tamaño va antes que los márgenes: los dos escriben en la misma
+      // sección y Word exige `w:pgSz` delante de `w:pgMar`.
+      rewrite('word/document.xml', xml => applyDocxMargins(
+        applyDocxPageSize(xml, styles.paperCm),
+        styles.marginsCm,
+      ));
       rewrite('word/settings.xml', xml => applyDocxHyphenation(xml, styles.hyphenate));
       rewrite('word/theme/theme1.xml', xml => applyDocxTheme(xml, styles.fontName));
     } else {
-      rewrite('styles.xml', xml => applyOdtMargins(applyOdtStyles(xml, styles), styles.marginsCm));
+      rewrite('styles.xml', xml => applyOdtMargins(
+        applyOdtPageSize(applyOdtStyles(xml, styles), styles.paperCm),
+        styles.marginsCm,
+      ));
     }
     if (!updated.size) return archiveBytes;
 

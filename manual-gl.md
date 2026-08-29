@@ -23,7 +23,9 @@ A zona de traballo divídese en dous paneis redimensionables. **Os dous editan o
 
 **Como repartilos**: arrastra a barra central, ou usa `Ctrl+L` e os tres botóns de disposición —só o editor Markdown, os dous á vez, só o editor visual—. A dobre frecha **maximiza a área de edición**, que agocha as barras e deixa a pantalla para o texto.
 
-**A lupa** da barra de estado (`−`, a porcentaxe e `+`, ou `Ctrl` + `+` / `Ctrl` + `-`) agranda ou reduce o que ves no panel activo; a porcentaxe volve ao 100 %. Non cambia o documento nin o que se exporta ou imprime —o papel sae sempre ao 100 %—: o tamaño de letra está en *Formato do texto*.
+**A lupa** da barra de estado (`−`, a porcentaxe e `+`, ou `Ctrl` + `+` / `Ctrl` + `-`) agranda ou reduce o que ves no panel activo; a porcentaxe volve ao 100 %. Agranda a folla enteira, coas súas páxinas e as súas marxes, así que a páxina non se reordena: se deixa de caber no panel, aparece unha barra para percorrela. Non cambia o documento nin o que se exporta ou imprime —o papel sae sempre ao 100 %—: o tamaño de letra está en *Formato do texto*.
+
+**As páxinas**: a folla mide o que mide o papel —A4 ou Carta, o que diga o documento— e o editor visual reparte o texto en páxinas, co seu oco entre unha e outra. O corte cae sempre entre dous bloques, nunca a media liña: o que non colle ao final dunha páxina pasa enteiro á seguinte, como nun procesador de textos. É fiel ao PDF e á impresión, que saen desta mesma folla e cortan por onde corta ela; para Word ou LaTeX é orientativo, porque cada un reparte as liñas á súa maneira. Se a folla non colle enteira —unha xanela estreita, ou os dous paneis á vez—, o reparto retírase ata que volva caber: abonda con baixar a lupa.
 
 ### Pegar calquera cousa
 
@@ -153,8 +155,8 @@ A lupa (ou `Ctrl+F`) abre o buscador, que traballa no panel onde esteas:
 
 Xunto ao contador de caracteres, na barra de estado, hai un botón curto, sempre á vista, co idioma no que vai saír o documento (`GL`, `ES`, `FR`…). Se se ve atenuado, ese documento non ten idioma propio e segue o xeral. Ao premelo ábrese o cadro **Este documento**, con dúas lapelas:
 
-* **Documento**: idioma, autor, índice automático e numeración de apartados. O **idioma** é importante: viaxa dentro do ficheiro e é o que fai que Word e LibreOffice deixen de corrixir en inglés un texto en galego. Con *Outro…* podes escribir o código de calquera lingua (`fr`, `de`, `pt-BR`) e con *Herdado* vólvese ao xeral.
-* **Formato**: aliñación, tipo e tamaño de letra, interliñado, marxes, sangría de primeira liña e partición de palabras con guión. Ao elixir *Outra…* no tipo de letra aparece unha lista coas tipografías que a aplicación recoñece instaladas; podes escribir calquera nome aínda que aquí non estea —avísase en ámbar e úsase unha de reserva—, porque o ficheiro pode acabar nun equipo que si a teña. Debaixo de cada campo lese o que herda agora mesmo, e o que non herda nada dio tamén: aí manda o programa que abra o ficheiro.
+* **Documento**: idioma, autor, índice automático e numeración de apartados. O **idioma** é importante: viaxa dentro do ficheiro e é o que fai que Word e LibreOffice deixen de corrixir en inglés un texto en galego. Con *Outro…* podes escribir o código de calquera lingua (`fr`, `de`, `pt-BR`) e con *Herdado* vólvese ao xeral. Co índice posto, o editor visual amósao ao principio da folla —os apartados co seu número de páxina, sacados do reparto que estás vendo—, sen que forme parte do texto: non se pode escribir nel e non chega ao Markdown nin ao que copies. O de verdade xérao cada formato ao exportar.
+* **Formato**: aliñación, tipo e tamaño de letra, interliñado, tamaño de papel, marxes, sangría de primeira liña e partición de palabras con guión. Ao elixir *Outra…* no tipo de letra aparece unha lista coas tipografías que a aplicación recoñece instaladas; podes escribir calquera nome aínda que aquí non estea —avísase en ámbar e úsase unha de reserva—, porque o ficheiro pode acabar nun equipo que si a teña. Debaixo de cada campo lese o que herda agora mesmo, e o que non herda nada dio tamén: aí manda o programa que abra o ficheiro.
 
 Unha pastilla na barra de estado resume como vai saír o documento: o tamaño de letra, o tipo e o interliñado, os tres sempre. Se algunha vez baleiras un nas opcións xerais, un guión (`—`) avisa de que aí manda o programa que abra o ficheiro. O resto —aliñación, sangría, partición e marxes— lese ao pasar o rato, e ao premela ábrese este mesmo cadro pola súa lapela **Formato**.
 
@@ -193,7 +195,7 @@ Na barra hai tamén un botón de exportar coa súa frecha, xunto ao de copiar: o
 **Configuración → Opcións de exportación…** garda os valores de partida para todos os documentos, e lémbranse dunha sesión a outra. Ten catro lapelas:
 
 * **Documento**: **idioma** (por omisión, o mesmo da interface), **autor** —que aparece nas propiedades do ficheiro e na portada do EPUB e do LaTeX; déixao baleiro se non queres que Pandoc escriba a liña do nome en DOCX e ODT—, **índice automático** e **numerar os apartados** (1, 1.1, 1.2…; o ODT non admite esa numeración).
-* **Formato**: os mesmos axustes de texto do apartado anterior, como valores de partida. Tres veñen postos —**12 pt**, **con remates** e interliñado **1,5**—, porque son os que o editor visual precisa para amosar a verdade: declarados, o que se ve na folla é o que sae nos cinco formatos. Os demais saen sen fixar.
+* **Formato**: os mesmos axustes de texto do apartado anterior, como valores de partida. Catro veñen postos —**12 pt**, **con remates**, interliñado **1,5** e papel **A4**—, porque son os que o editor visual precisa para amosar a verdade: declarados, o que se ve na folla é o que sae nos cinco formatos. Os demais saen sen fixar.
 * **EPUB**: a **portada**, que pode ser a que **xera** a aplicación co título e o autor, **unha imaxe túa** (ata 1 MB) ou **ningunha**.
 * **LaTeX**: a **clase** (`article`, `report` ou `book`), as súas **opcións** (`12pt, a4paper`) e un **preámbulo** propio, que se insire xusto antes de `\begin{document}`. Un preámbulo con erros non avisa aquí: o fallo aparece ao compilar.
 

@@ -1772,6 +1772,7 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
         font: 'serif',
         fontSize: '12',
         lineHeight: '1.5',
+        paperSize: 'a4',
         marginTop: '',
         marginRight: '',
         marginBottom: '',
@@ -2345,7 +2346,13 @@ test('una tabla ancha se desplaza dentro de la hoja, sin mover la página', asyn
   const { context, page } = await openApp();
   t.after(() => context.close());
 
-  const columnas = Array.from({ length: 8 }, (_, i) => `Columna bastante larga ${i + 1}`);
+  /*
+    Con la hoja a tamaño de papel, la mesa se desplaza a lo ancho en cuanto el
+    panel es más estrecho que una página: para mirar lo que hace la tabla hace
+    falta una ventana donde la hoja quepa entera.
+  */
+  await page.setViewportSize({ width: 1400, height: 900 });
+  const columnas = Array.from({ length: 12 }, (_, i) => `Columna bastante larga ${i + 1}`);
   await page.locator('#markdown-input').fill([
     '# Con tabla',
     '',
@@ -2354,6 +2361,10 @@ test('una tabla ancha se desplaza dentro de la hoja, sin mover la página', asyn
     `| ${columnas.map((_, i) => `dato ${i + 1}`).join(' | ')} |`,
     '',
   ].join('\n'));
+  await page.locator('#layout-switch [data-layout="html"]').click();
+  // Y con la disposición ya asentada: durante el cambio los paneles todavía se
+  // están repartiendo el ancho.
+  await page.locator('#markdown-panel').waitFor({ state: 'hidden' });
   await page.waitForSelector('#html-output table');
   // El ancho de la tabla depende de la tipografía: medir antes de que cargue
   // da números de otra fuente y la prueba se vuelve caprichosa.
@@ -2778,6 +2789,263 @@ test('el cuadro del documento lleva a las opciones generales por su misma pesta�
   await page.locator('#doc-format-open-general').click();
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'hidden' });
   assert.equal(await page.locator('#doc-settings-tab-document').getAttribute('aria-selected'), 'true');
+});
+
+/*
+  El documento se reparte en páginas: la hoja mide lo que mide el papel y el
+  texto salta a la siguiente cuando se acaba la caja. El corte cae entre dos
+  bloques y nunca a media línea, y las hojas se dibujan fuera del contenido
+  editable: dentro acabarían escritas en el Markdown, que se regenera de él.
+*/
+test('el editor visual reparte el documento en páginas del tamaño del papel', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  /*
+    El reparto se rehace cada vez que la hoja o la mesa cambian de tamaño, así
+    que hay que dejar que la disposición se asiente antes de medir: a mitad del
+    cambio de paneles las cuentas son las del ancho de hace un instante.
+  */
+  const soloVisual = async () => {
+    await page.locator('#layout-switch [data-layout="html"]').click();
+    await page.locator('#markdown-panel').waitFor({ state: 'hidden' });
+    await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length > 1);
+    /*
+      Y a que el reparto deje de moverse: las fórmulas y las imágenes cambian de
+      alto al terminar de pintarse, y cada cambio lo rehace un fotograma después.
+    */
+    await page.waitForFunction(() => new Promise((resolve) => {
+      const foto = () => [...document.querySelectorAll('#html-output > [data-page-start]')]
+        .map(bloque => bloque.style.getPropertyValue('--page-jump')).join('|');
+      const antes = foto();
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve(antes === foto())));
+    }));
+  };
+
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await soloVisual();
+
+  const escribir = async (md) => {
+    await page.locator('#layout-switch [data-layout="dual"]').click();
+    await page.locator('#markdown-input').waitFor({ state: 'visible' });
+    await page.locator('#markdown-input').fill(md);
+    await soloVisual();
+  };
+
+  const medidas = () => page.evaluate(() => {
+    const hoja = document.getElementById('html-output');
+    const hojas = [...document.querySelectorAll('.page-sheet')];
+    const inicios = [...document.querySelectorAll('#html-output > [data-page-start]')];
+    const margen = Number.parseFloat(getComputedStyle(hoja).paddingTop);
+    const paso = Number.parseFloat(hojas[0].style.height) + 24;
+    const origen = hoja.getBoundingClientRect().top - hoja.offsetTop;
+    // Cuánto se aparta cada inicio de página del sitio donde empieza la caja
+    // de texto de su hoja.
+    const desviaciones = inicios.map((bloque) => {
+      const arriba = bloque.getBoundingClientRect().top - origen;
+      const pagina = Math.round((arriba - hoja.offsetTop - margen) / paso);
+      return {
+        bloque: `${bloque.tagName} ${(bloque.textContent || '').slice(0, 30)}`,
+        desvio: Math.abs(arriba - (hoja.offsetTop + pagina * paso + margen)),
+      };
+    });
+    const peor = desviaciones.sort((a, b) => b.desvio - a.desvio)[0];
+    return {
+      ancho: Math.round(hoja.getBoundingClientRect().width),
+      altoHoja: Math.round(Number.parseFloat(hojas[0].style.height)),
+      paginas: hojas.length,
+      saltos: inicios.length,
+      desviacion: peor ? peor.desvio : 0,
+      peorBloque: peor ? peor.bloque : '',
+      etiqueta: hojas[0].textContent,
+      dentroDelTexto: hojas.some(hoja2 => document.getElementById('html-output').contains(hoja2)),
+    };
+  });
+
+  const PX_CM = 96 / 2.54;
+  const a4 = await medidas();
+  assert.equal(a4.ancho, Math.round(21 * PX_CM), 'la hoja no mide un A4 de ancho');
+  assert.equal(a4.altoHoja, Math.round(29.7 * PX_CM), 'la hoja no mide un A4 de alto');
+  assert.match(a4.etiqueta, /Página 1/);
+  assert.equal(a4.dentroDelTexto, false, 'una hoja acabó dentro del contenido editable');
+  assert.ok(a4.saltos >= 1, 'no se repartió en páginas');
+  assert.ok(a4.desviacion < 1, `A4: «${a4.peorBloque}» se desvía ${a4.desviacion}px de su página`);
+
+  // Carta cambia las dos medidas.
+  await escribir('---\npapersize: "letter"\n---\n\n' + 'Texto de relleno. '.repeat(2000));
+  const carta = await medidas();
+  assert.equal(carta.ancho, Math.round(21.59 * PX_CM));
+  assert.equal(carta.altoHoja, Math.round(27.94 * PX_CM));
+  assert.ok(carta.desviacion < 1, `Carta: los saltos se desvían ${carta.desviacion}px`);
+
+  // Y unos márgenes grandes dejan menos caja, así que hacen falta más páginas.
+  await escribir('---\npapersize: "a4"\nmargin-top: "5"\nmargin-bottom: "5"\n---\n\n' + 'Texto de relleno. '.repeat(2000));
+  const conMargenes = await medidas();
+  assert.ok(
+    conMargenes.paginas > carta.paginas,
+    `con márgenes de 5 cm deberían salir más páginas: ${conMargenes.paginas} frente a ${carta.paginas}`,
+  );
+  assert.ok(conMargenes.desviacion < 1, `con márgenes: los saltos se desvían ${conMargenes.desviacion}px`);
+});
+
+/*
+  El índice, cuando el documento lo pide. Hasta ahora marcar «Índice automático»
+  no cambiaba nada hasta exportar, así que era un ajuste fácil de olvidar en las
+  dos direcciones. Ahora se ve el que va a salir, con sus números de página, y
+  sigue sin ser contenido: no se puede editar y no llega al Markdown.
+*/
+test('el editor visual enseña el índice del documento con sus páginas', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.locator('#new-tab-btn').click();
+  const cuerpo = [
+    '# Primero',
+    '',
+    'Texto del primer apartado. '.repeat(120),
+    '',
+    '## Sub A',
+    '',
+    'Más texto. '.repeat(150),
+    '',
+    '# Segundo',
+    '',
+    'Y más. '.repeat(200),
+    '',
+  ].join('\n');
+
+  // Sin pedirlo, no hay índice que valga.
+  await page.locator('#markdown-input').fill(cuerpo);
+  await page.locator('#layout-switch [data-layout="html"]').click();
+  await page.locator('#markdown-panel').waitFor({ state: 'hidden' });
+  await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length > 1);
+  assert.equal(await page.locator('#html-output [data-edimark-toc]').count(), 0);
+
+  // Y pedido en los metadatos, aparece con los apartados y sus páginas.
+  await page.locator('#layout-switch [data-layout="dual"]').click();
+  await page.locator('#markdown-input').fill(`---\ntoc: true\n---\n\n${cuerpo}`);
+  await page.locator('#layout-switch [data-layout="html"]').click();
+  await page.locator('#markdown-panel').waitFor({ state: 'hidden' });
+  await page.waitForFunction(
+    () => document.querySelectorAll('#html-output [data-edimark-toc] .doc-toc-page')?.[2]?.textContent,
+  );
+
+  const indice = await page.evaluate(() => {
+    const nav = document.querySelector('#html-output > [data-edimark-toc]');
+    return {
+      titulo: nav.querySelector('.doc-toc-title').textContent,
+      editable: nav.getAttribute('contenteditable'),
+      entradas: [...nav.querySelectorAll('.doc-toc-entry')].map(entrada => [
+        entrada.querySelector('.doc-toc-text').textContent,
+        entrada.querySelector('.doc-toc-page').textContent,
+      ]),
+    };
+  });
+  assert.equal(indice.titulo, 'Índice');
+  assert.equal(indice.editable, 'false', 'el índice no debería poder editarse');
+  assert.deepEqual(indice.entradas.map(([texto]) => texto), ['Primero', 'Sub A', 'Segundo']);
+  // El primero abre el documento; los otros dos caen más allá de la página uno.
+  assert.equal(indice.entradas[0][1], '1');
+  assert.ok(Number(indice.entradas[2][1]) > 1, `«Segundo» debería caer en otra página: ${indice.entradas[2][1]}`);
+
+  // No es contenido: ni en el Markdown ni en lo que se copia de la hoja.
+  const markdown = await page.locator('#markdown-input').inputValue();
+  assert.equal(markdown.includes('Índice'), false, 'el índice acabó en el Markdown');
+  assert.equal(markdown.includes('doc-toc'), false);
+
+  // Y al quitarlo del documento, desaparece.
+  await page.locator('#layout-switch [data-layout="dual"]').click();
+  await page.locator('#markdown-input').fill(cuerpo);
+  await page.waitForFunction(() => document.querySelectorAll('#html-output [data-edimark-toc]').length === 0);
+});
+
+/*
+  Y el reparto es solo mirada: lo que se guarda tiene que seguir siendo el mismo
+  Markdown, sin rastro de las páginas.
+*/
+test('las páginas no dejan nada escrito en el documento', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.locator('#new-tab-btn').click();
+  // Varios párrafos, y bastantes: el reparto necesita más de una página, y el
+  // corte tiene que caer entre dos de ellos.
+  const original = `# Título\n\n${Array.from({ length: 12 }, (_, i) => `Párrafo ${i + 1}. ${'Con su texto y su fondo. '.repeat(30)}`).join('\n\n')}\n`;
+  await page.locator('#markdown-input').fill(original);
+  await page.locator('#layout-switch [data-layout="html"]').click();
+  await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length > 1);
+
+  // Se escribe sobre la hoja, que es lo que regenera el Markdown.
+  await page.locator('#html-output p').first().click();
+  await page.keyboard.type('Añadido. ');
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('Añadido.'));
+
+  const markdown = await page.locator('#markdown-input').inputValue();
+  assert.equal(markdown.includes('page-jump'), false, 'el salto de página acabó en el Markdown');
+  assert.equal(markdown.includes('page-start'), false, 'la marca de página acabó en el Markdown');
+  assert.equal(markdown.includes('Página'), false, 'el número de página acabó en el Markdown');
+});
+
+/*
+  En el papel no hay huecos que dibujar: el salto de pantalla se cambia por uno
+  de verdad, de modo que el PDF corta por donde cortaba la hoja.
+*/
+test('lo que en pantalla salta de página, en el papel también', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.locator('#layout-switch [data-layout="html"]').click();
+  await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length > 1);
+
+  await page.emulateMedia({ media: 'print' });
+  const enPapel = await page.evaluate(() => {
+    const inicio = document.querySelector('#html-output > [data-page-start]');
+    const estilos = getComputedStyle(inicio);
+    return {
+      salto: estilos.breakBefore,
+      hueco: estilos.marginTop,
+      hojasVisibles: getComputedStyle(document.getElementById('page-sheets')).display,
+      bloquesEnteros: getComputedStyle(document.querySelector('#html-output > p')).breakInside,
+    };
+  });
+  await page.emulateMedia({ media: 'screen' });
+
+  assert.equal(enPapel.salto, 'page', 'el bloque que estrena página no la estrena al imprimir');
+  assert.equal(enPapel.hueco, '0px', 'el hueco de pantalla se imprimiría');
+  assert.equal(enPapel.hojasVisibles, 'none');
+  assert.equal(enPapel.bloquesEnteros, 'avoid', 'el papel podría partir un párrafo que la pantalla no parte');
+});
+
+/*
+  Con la hoja estrechada —una ventana pequeña, o los dos paneles a la vez— el
+  texto ya no rompe donde rompería en el papel, así que el reparto mentiría y se
+  retira hasta que vuelva a caber.
+*/
+test('el reparto en páginas se retira cuando la hoja no cabe entera', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.locator('#layout-switch [data-layout="html"]').click();
+  await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length > 1);
+
+  await page.setViewportSize({ width: 700, height: 900 });
+  await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length === 0);
+  assert.equal(
+    await page.locator('#html-output > [data-page-start]').count(),
+    0,
+    'quedaron saltos aplicados sin páginas que los sostengan',
+  );
+
+  // Y con la lupa más baja la hoja vuelve a caber entera, en proporción.
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--preview-zoom', '0.67');
+    window.__refreshPageBreaks();
+  });
+  await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length > 1);
 });
 
 /*

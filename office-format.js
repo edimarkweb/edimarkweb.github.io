@@ -184,11 +184,39 @@ export function applyDocxMargins(documentXml, marginsCm) {
     return documentXml.replace(/<w:sectPr\s*\/>/, () => `<w:sectPr>${pgMar}</w:sectPr>`);
   }
   if (/<w:sectPr\b[^>]*>/.test(documentXml)) {
-    return documentXml
-      .replace(/<w:pgMar\b[^>]*\/>/, '')
-      .replace(/(<w:sectPr\b[^>]*>)/, (match, open) => `${open}${pgMar}`);
+    const limpio = documentXml.replace(/<w:pgMar\b[^>]*\/>/, '');
+    /*
+      Detrás del tamaño de página si ya está escrito: el esquema de Word fija
+      el orden de la sección —`w:pgSz` y luego `w:pgMar`— y con los dos al
+      revés se niega a abrir el documento.
+    */
+    if (/<w:pgSz\b[^>]*\/>/.test(limpio)) {
+      return limpio.replace(/<w:pgSz\b[^>]*\/>/, match => `${match}${pgMar}`);
+    }
+    return limpio.replace(/(<w:sectPr\b[^>]*>)/, (match, open) => `${open}${pgMar}`);
   }
   return documentXml.replace(/<\/w:body>/, () => `<w:sectPr>${pgMar}</w:sectPr></w:body>`);
+}
+
+/*
+  El tamaño del papel, en la misma sección que los márgenes. Va delante de
+  `w:pgMar` porque el esquema de Word exige ese orden y, si se invierte, Word
+  se niega a abrir el archivo.
+*/
+export function applyDocxPageSize(documentXml, paperCm) {
+  if (typeof documentXml !== 'string' || !documentXml) return documentXml;
+  if (!paperCm || !paperCm.width || !paperCm.height) return documentXml;
+  const pgSz = `<w:pgSz w:w="${round(paperCm.width * TWIPS_PER_CM)}" w:h="${round(paperCm.height * TWIPS_PER_CM)}" />`;
+  if (/<w:pgSz\b[^>]*\/>/.test(documentXml)) {
+    return documentXml.replace(/<w:pgSz\b[^>]*\/>/, () => pgSz);
+  }
+  if (/<w:sectPr\s*\/>/.test(documentXml)) {
+    return documentXml.replace(/<w:sectPr\s*\/>/, () => `<w:sectPr>${pgSz}</w:sectPr>`);
+  }
+  if (/<w:sectPr\b[^>]*>/.test(documentXml)) {
+    return documentXml.replace(/(<w:sectPr\b[^>]*>)/, (match, open) => `${open}${pgSz}`);
+  }
+  return documentXml.replace(/<\/w:body>/, () => `<w:sectPr>${pgSz}</w:sectPr></w:body>`);
 }
 
 /* Word parte las palabras solo si el documento se lo pide. */
@@ -299,6 +327,32 @@ export function applyOdtStyles(stylesXml, styles) {
     );
   }
   return updated;
+}
+
+/*
+  El tamaño del papel del ODT, en la misma disposición de página que los
+  márgenes. La orientación se escribe también: LibreOffice la deduce de las dos
+  medidas, pero dejarla dicha evita que una plantilla apaisada mande sobre un
+  documento vertical.
+*/
+export function applyOdtPageSize(stylesXml, paperCm) {
+  if (typeof stylesXml !== 'string' || !stylesXml) return stylesXml;
+  if (!paperCm || !paperCm.width || !paperCm.height) return stylesXml;
+  return stylesXml.replace(/<style:page-layout-properties\b[^>]*>/, (properties) => {
+    let updated = properties;
+    [
+      ['fo:page-width', `${paperCm.width}cm`],
+      ['fo:page-height', `${paperCm.height}cm`],
+      ['style:print-orientation', 'portrait'],
+    ].forEach(([name, value]) => {
+      const declaration = `${name}="${value}"`;
+      const existing = new RegExp(`${name.replace(':', '\\:')}="[^"]*"`);
+      updated = existing.test(updated)
+        ? updated.replace(existing, () => declaration)
+        : updated.replace(/^<style:page-layout-properties/, match => `${match} ${declaration}`);
+    });
+    return updated;
+  });
 }
 
 /* La caja de la página, en la disposición que declara el propio archivo. */

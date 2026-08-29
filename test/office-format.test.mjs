@@ -6,9 +6,11 @@ import {
   TWIPS_PER_CM,
   applyDocxHyphenation,
   applyDocxMargins,
+  applyDocxPageSize,
   applyDocxStyles,
   applyDocxTheme,
   applyOdtMargins,
+  applyOdtPageSize,
   applyOdtStyles,
 } from '../office-format.js';
 
@@ -191,4 +193,43 @@ test('el EPUB suma el formato a la hoja de Pandoc sin perder la suya', async () 
   assert.match(sheet, /code \{ white-space: pre; \}/);
   assert.match(sheet, /text-align: justify;/);
   assert.ok(sheet.indexOf('white-space') < sheet.indexOf('text-align'));
+});
+
+/*
+  El tamaño del papel: sin escribirlo, el DOCX y el ODT salen con el de la
+  plantilla de Pandoc —Carta— aunque el documento diga A4, y entonces lo que se
+  ve en la aplicación y lo que se imprime desde Word no coinciden.
+*/
+test('el DOCX declara el tamaño del papel antes que los márgenes', () => {
+  const result = applyDocxPageSize('<w:body><w:p /><w:sectPr /></w:body>', { width: 21, height: 29.7 });
+  // 21 cm y 29,7 cm en twips, que es como los mide Word.
+  assert.match(result, /<w:pgSz w:w="11906" w:h="16838" \/>/);
+
+  // Con los dos puestos, el tamaño va delante: el esquema de Word lo exige.
+  const conMargenes = applyDocxMargins(result, { top: 2 });
+  assert.ok(
+    conMargenes.indexOf('<w:pgSz') < conMargenes.indexOf('<w:pgMar'),
+    `el orden es el que rechaza Word: ${conMargenes}`,
+  );
+
+  // Y si la plantilla ya traía uno, se sustituye en vez de duplicarse.
+  const previo = applyDocxPageSize('<w:sectPr><w:pgSz w:w="12240" w:h="15840" /></w:sectPr>', { width: 21, height: 29.7 });
+  assert.equal(previo.match(/<w:pgSz/g).length, 1);
+  assert.match(previo, /w:w="11906"/);
+});
+
+test('el ODT declara el tamaño del papel en su disposición de página', () => {
+  const result = applyOdtPageSize(ODT_STYLES, { width: 21.59, height: 27.94 });
+  assert.match(result, /fo:page-width="21.59cm"/);
+  assert.match(result, /fo:page-height="27.94cm"/);
+  assert.match(result, /style:print-orientation="portrait"/);
+  // Los márgenes siguen entrando en la misma disposición, sin pisarse.
+  const conMargenes = applyOdtMargins(result, { top: 2 });
+  assert.match(conMargenes, /fo:margin-top="2cm"/);
+  assert.match(conMargenes, /fo:page-width="21.59cm"/);
+});
+
+test('sin tamaño de papel el archivo se queda como estaba', () => {
+  assert.equal(applyDocxPageSize('<w:sectPr />', null), '<w:sectPr />');
+  assert.equal(applyOdtPageSize(ODT_STYLES, null), ODT_STYLES);
 });

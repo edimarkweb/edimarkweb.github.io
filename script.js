@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.37.0';
+const APP_VERSION = '2.38.0';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -3977,6 +3977,14 @@ function updateHtml() {
     if (typeof window.__refreshDocLanguageIndicator === 'function') {
         window.__refreshDocLanguageIndicator();
     }
+    /*
+      El índice se pinta después del documento, porque se hace con sus
+      encabezados, y se repone en cada repintado: la hoja se rehace entera
+      desde el Markdown y se lo lleva por delante.
+    */
+    if (typeof window.__refreshDocumentToc === 'function') {
+        window.__refreshDocumentToc();
+    }
     isUpdating = false;
 }
 
@@ -4764,7 +4772,7 @@ const LATEX_SETTINGS_DEFAULTS = {
       plantilla trae los suyos y ninguno se ve en la vista previa, que es una
       columna de texto y no una hoja paginada.
     */
-    documentFormat: { fontSize: '12', font: 'serif', lineHeight: '1.5' },
+    documentFormat: { fontSize: '12', font: 'serif', lineHeight: '1.5', paperSize: 'a4' },
 };
 
 // `documentFormat` es un objeto: sin copiarlo también, los tres retornos
@@ -5465,6 +5473,12 @@ function buildHtmlWithTex() {
   const htmlOutput = document.getElementById('html-output');
   if (!htmlOutput) return '';
   const clone = restoreOriginalImageSources(htmlOutput.cloneNode(true));
+  /*
+    El índice de la hoja es una ayuda para mirar, no contenido: se retira antes
+    de que la hoja se convierta en Markdown, en HTML o en lo que sea que salga
+    de ella. El índice de verdad lo pone Pandoc al exportar.
+  */
+  clone.querySelectorAll('[data-edimark-toc]').forEach(nodo => nodo.remove());
   const inlineFallback = tex => `$${tex}$`;
   const displayFallback = tex => `\n\\[\n${tex}\n\\]\n`;
   const replaceNode = (node, fallbackBuilder) => {
@@ -8716,6 +8730,13 @@ window.onload = async () => {
             min: 0.8, max: 4, step: 0.05,
             placeholderKey: 'doc_format_placeholder_blank', placeholderText: '—',
         })));
+        // El papel va justo encima de los márgenes, que es lo que recorta: los
+        // dos juntos son la caja donde cabe el texto.
+        grid.appendChild(buildFormatField('doc_format_field_paper', 'Tamaño de papel', buildFormatSelect(`${prefix}-paper`, [
+            ...blank,
+            ['a4', 'doc_format_paper_a4', 'A4 (21 × 29,7 cm)'],
+            ['letter', 'doc_format_paper_letter', 'Carta (21,6 × 27,9 cm)'],
+        ])));
         container.appendChild(grid);
 
         const marginsBlock = document.createElement('div');
@@ -8792,6 +8813,7 @@ window.onload = async () => {
         syncFontMissingWarning(prefix);
         setValue('fontsize', values.fontSize);
         setValue('lineheight', values.lineHeight);
+        setValue('paper', values.paperSize);
         setValue('margin-top', values.marginTop);
         setValue('margin-right', values.marginRight);
         setValue('margin-bottom', values.marginBottom);
@@ -8818,6 +8840,10 @@ window.onload = async () => {
             sans: ['doc_format_font_sans', 'Sin remates (sans)'],
             mono: ['doc_format_font_mono', 'Monoespaciada'],
         },
+        paperSize: {
+            a4: ['doc_format_paper_a4', 'A4 (21 × 29,7 cm)'],
+            letter: ['doc_format_paper_letter', 'Carta (21,6 × 27,9 cm)'],
+        },
         indent: {
             yes: ['doc_format_yes', 'Sí'],
             no: ['doc_format_no', 'No'],
@@ -8831,6 +8857,7 @@ window.onload = async () => {
     const DOC_FORMAT_INHERITED_SELECTS = [
         ['align', 'align'],
         ['font', 'font'],
+        ['paper', 'paperSize'],
         ['indent', 'indent'],
         ['hyphenate', 'hyphenate'],
     ];
@@ -8962,6 +8989,7 @@ window.onload = async () => {
             font: font === 'other' ? value('font-custom') : font,
             fontSize: value('fontsize'),
             lineHeight: value('lineheight'),
+            paperSize: value('paper'),
             marginTop: value('margin-top'),
             marginRight: value('margin-right'),
             marginBottom: value('margin-bottom'),
@@ -9071,6 +9099,7 @@ window.onload = async () => {
         add('doc_format_field_lineheight', 'Interlineado', format.lineHeight
             ? documentFormatStatusNumber(format.lineHeight)
             : '');
+        add('doc_format_field_paper', 'Tamaño de papel', inheritedValueLabel('paperSize', format.paperSize));
         // Los cuatro juntos y en el orden del cuadro de diálogo: decir tres
         // márgenes de cuatro sin avisar se lee mal.
         const sides = ['marginTop', 'marginRight', 'marginBottom', 'marginLeft'];
@@ -9142,6 +9171,328 @@ window.onload = async () => {
     }
 
     /*
+      El índice del editor visual.
+
+      Marcar «Índice automático» no cambiaba nada hasta exportar, así que era un
+      ajuste fácil de olvidar en las dos direcciones: entregar un DOCX sin
+      índice creyendo que lo lleva, o con uno que no se quería. Aquí se enseña
+      el que va a salir, con los mismos apartados y, ahora que la hoja está
+      repartida en páginas, con sus números.
+
+      Va dentro de la hoja porque tiene que ocupar su sitio en la primera
+      página, pero no es contenido: no se puede editar y se retira antes de
+      convertir la hoja en Markdown, en HTML o en lo que sea que salga de ella.
+      El índice de verdad lo sigue poniendo Pandoc al exportar.
+    */
+    function documentLanguageCode() {
+        if (!markdownEditor) return '';
+        return splitDocumentFrontMatter(markdownEditor.getValue()).lang || generalDocumentLanguage();
+    }
+
+    function documentTocTitle() {
+        const api = window.PandocExporter;
+        if (!api || typeof api.resolveOutlineOptions !== 'function') return '';
+        const general = window.__edimarkLatexSettings || {};
+        const { toc } = api.resolveOutlineOptions(
+            {
+                toc: general.documentToc === true,
+                numberSections: general.documentNumberSections === true,
+            },
+            currentDocumentOutline(),
+        );
+        if (!toc) return '';
+        const markdown = markdownEditor ? markdownEditor.getValue() : '';
+        const propio = typeof api.tocTitleFor === 'function'
+            ? api.tocTitleFor(documentLanguageCode(), markdown)
+            : '';
+        // En un idioma que la aplicación no habla, el rótulo de la interfaz: en
+        // la hoja hace falta uno, aunque al exportar Pandoc ponga el suyo.
+        return propio || getTranslation('preview_toc_title', 'Índice');
+    }
+
+    function refreshDocumentToc() {
+        const sheet = document.getElementById('html-output');
+        if (!sheet) return;
+        const anterior = sheet.querySelector(':scope > [data-edimark-toc]');
+        const titulo = documentTocTitle();
+        if (!titulo) {
+            if (anterior) anterior.remove();
+            return;
+        }
+        const encabezados = Array.from(sheet.querySelectorAll(':scope > h1, :scope > h2, :scope > h3'));
+        if (!encabezados.length) {
+            if (anterior) anterior.remove();
+            return;
+        }
+
+        const nav = document.createElement('nav');
+        nav.dataset.edimarkToc = 'true';
+        nav.className = 'doc-toc';
+        nav.setAttribute('contenteditable', 'false');
+        const rotulo = document.createElement('p');
+        rotulo.className = 'doc-toc-title';
+        rotulo.textContent = titulo;
+        nav.appendChild(rotulo);
+
+        encabezados.forEach((encabezado, indice) => {
+            const linea = document.createElement('a');
+            linea.className = `doc-toc-entry doc-toc-${encabezado.tagName.toLowerCase()}`;
+            linea.href = '#';
+            linea.dataset.tocTarget = String(indice);
+            const texto = document.createElement('span');
+            texto.className = 'doc-toc-text';
+            texto.textContent = encabezado.textContent.trim();
+            const pagina = document.createElement('span');
+            pagina.className = 'doc-toc-page';
+            linea.append(texto, pagina);
+            nav.appendChild(linea);
+        });
+
+        if (anterior) {
+            anterior.replaceWith(nav);
+        } else {
+            sheet.insertBefore(nav, sheet.firstChild);
+        }
+    }
+    window.__refreshDocumentToc = refreshDocumentToc;
+
+    /*
+      Y sirve para moverse: un índice que no lleva a ninguna parte invita a
+      pulsarlo igualmente. El `href` es de mentira —el apartado no tiene ancla—,
+      así que hay que quedarse con el clic antes de que el navegador lo siga.
+    */
+    document.addEventListener('click', (event) => {
+        const entrada = event.target.closest?.('#html-output [data-edimark-toc] .doc-toc-entry');
+        if (!entrada) return;
+        event.preventDefault();
+        const sheet = document.getElementById('html-output');
+        const encabezados = Array.from(sheet.querySelectorAll(':scope > h1, :scope > h2, :scope > h3'));
+        const destino = encabezados[Number(entrada.dataset.tocTarget)];
+        if (destino) destino.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+
+    /*
+      Los números, cuando ya se sabe por dónde parte cada página. Se escriben
+      después del reparto y no antes, porque el índice ocupa sitio en la primera
+      página y mueve todo lo demás.
+    */
+    function updateTocPageNumbers(alturaPagina) {
+        const sheet = document.getElementById('html-output');
+        const nav = sheet ? sheet.querySelector(':scope > [data-edimark-toc]') : null;
+        if (!nav) return;
+        const encabezados = Array.from(sheet.querySelectorAll(':scope > h1, :scope > h2, :scope > h3'));
+        const origen = sheet.getBoundingClientRect().top - sheet.offsetTop;
+        nav.querySelectorAll('.doc-toc-entry').forEach((entrada) => {
+            const encabezado = encabezados[Number(entrada.dataset.tocTarget)];
+            const hueco = entrada.querySelector('.doc-toc-page');
+            if (!encabezado || !hueco) return;
+            if (!alturaPagina) {
+                hueco.textContent = '';
+                return;
+            }
+            const arriba = encabezado.getBoundingClientRect().top - origen - sheet.offsetTop;
+            hueco.textContent = String(Math.floor(arriba / alturaPagina) + 1);
+        });
+    }
+
+    const PX_POR_CM = 96 / 2.54;
+    // Los mismos 18 mm que usa la impresión cuando el documento no dice otra cosa.
+    const MARGEN_POR_DEFECTO_CM = 1.8;
+    // El hueco entre dos hojas, como el que deja cualquier procesador de textos.
+    const HUECO_ENTRE_PAGINAS = 24;
+
+    function limpiarPaginacion(sheet, layer) {
+        layer.replaceChildren();
+        sheet.classList.remove('is-paginated');
+        sheet.querySelectorAll(':scope > [data-page-start]').forEach((bloque) => {
+            bloque.removeAttribute('data-page-start');
+            bloque.style.removeProperty('--page-jump');
+        });
+    }
+
+    /*
+      Reparte el documento en páginas.
+
+      No se trocea nada: el texto sigue en un solo bloque editable y lo que se
+      hace es empujar hacia abajo el primer bloque de cada página, tanto como
+      mide el hueco entre hojas más los dos márgenes que se saltan. Así el corte
+      cae siempre entre dos bloques —nunca a media línea— y el cursor no cambia
+      de contenedor al escribir.
+
+      Un bloque más alto que la página entera no cabe en ninguna parte: se deja
+      pasar y lo atraviesa el hueco, que es lo que hace también un procesador de
+      textos con una tabla enorme.
+    */
+    function refreshPageBreaks() {
+        const desk = document.getElementById('preview-desk');
+        const sheet = document.getElementById('html-output');
+        const layer = document.getElementById('page-sheets');
+        if (!desk || !sheet || !layer) return;
+
+        const api = documentFormatApi();
+        const format = effectiveDocumentFormat();
+        const paper = api && api.PAPER_SIZES ? api.PAPER_SIZES[format.paperSize] : null;
+        const zoom = Number(getComputedStyle(document.documentElement)
+            .getPropertyValue('--preview-zoom')) || 1;
+        const anchoPapel = paper ? paper.widthCm * PX_POR_CM * zoom : 0;
+
+        /*
+          Sin papel, o con la hoja estrechada para que quepa en la ventana, las
+          páginas mentirían: el texto no rompe donde rompería en la página.
+        */
+        if (!paper || !isPreviewVisible() || sheet.getBoundingClientRect().width < anchoPapel - 1) {
+            limpiarPaginacion(sheet, layer);
+            // Sin páginas no hay números que enseñar: un índice con los de la
+            // última vez sería peor que uno sin ellos.
+            updateTocPageNumbers(0);
+            return;
+        }
+
+        const numero = valor => (valor === '' || valor === null || typeof valor === 'undefined'
+            ? MARGEN_POR_DEFECTO_CM
+            : Number(valor));
+        const margenSuperior = numero(format.marginTop) * PX_POR_CM * zoom;
+        const margenInferior = numero(format.marginBottom) * PX_POR_CM * zoom;
+        const altoPagina = paper.heightCm * PX_POR_CM * zoom;
+        const altoUtil = altoPagina - margenSuperior - margenInferior;
+        if (!(altoUtil > 40)) {
+            limpiarPaginacion(sheet, layer);
+            updateTocPageNumbers(0);
+            return;
+        }
+
+        // El salto que hay que meter para pasar de una caja de texto a la
+        // siguiente: lo que queda de página, el hueco y el margen de la nueva.
+        const salto = margenInferior + HUECO_ENTRE_PAGINAS + margenSuperior;
+
+        // Desde cero: con los saltos de la vuelta anterior puestos, las alturas
+        // que se midieran serían las de la página anterior, no las de esta.
+        sheet.classList.add('is-paginated');
+        const bloques = Array.from(sheet.children);
+        bloques.forEach((bloque) => {
+            bloque.removeAttribute('data-page-start');
+            bloque.style.removeProperty('--page-jump');
+        });
+
+        /*
+          Las alturas se miden sin ningún salto puesto, así que son las de un
+          documento seguido; el reparto se lleva aparte. `inicioPagina` es dónde
+          empieza la caja de texto de la página en curso, en esas mismas
+          coordenadas de documento seguido: por eso al abrir una página nueva
+          pasa a valer la posición natural del bloque que la estrena.
+        */
+        const medidas = bloques.map(bloque => ({
+            bloque,
+            alto: bloque.getBoundingClientRect().height,
+            desde: bloque.offsetTop,
+        }));
+
+        let inicioPagina = margenSuperior;
+        let paginas = 1;
+        // Qué página estrena cada bloque, para poder afinarlo después: con un
+        // bloque más alto que la hoja, el orden ya no coincide con la página.
+        const inicios = [];
+        medidas.forEach(({ bloque, alto, desde }, indice) => {
+            let relativo = desde - inicioPagina;
+            if (indice > 0 && relativo + alto > altoUtil) {
+                bloque.setAttribute('data-page-start', '');
+                bloque.style.setProperty('--page-jump', `${altoUtil + salto - relativo}px`);
+                inicioPagina = desde;
+                relativo = 0;
+                paginas += 1;
+                inicios.push({ bloque, pagina: paginas });
+            }
+            /*
+              Un bloque más alto que la caja de texto no cabe en ninguna página
+              —una tabla larga, una imagen enorme—: no se le puede hacer sitio,
+              así que se cuentan las páginas que ocupa y se sigue por la
+              siguiente. Es lo que hace también un procesador de textos.
+            */
+            const extra = Math.floor((relativo + alto) / altoUtil);
+            if (extra > 0) {
+                paginas += extra;
+                inicioPagina += extra * altoUtil;
+            }
+        });
+
+        /*
+          Y el ajuste fino, midiendo lo que ha quedado. Entre el reparto y la
+          pantalla se cuelan los márgenes que colapsan entre bloques y el
+          redondeo de cada salto, unos pocos píxeles que se van sumando página
+          tras página. Corregirlos con la medida en la mano sale más barato que
+          intentar predecirlos, y cada corrección se ve ya en la siguiente.
+        */
+        // Con `getBoundingClientRect` y no `offsetTop`: este redondea al píxel,
+        // y medio píxel por página se acumula hasta descuadrar la última.
+        const origen = sheet.getBoundingClientRect().top - sheet.offsetTop;
+        inicios.forEach(({ bloque, pagina }) => {
+            const objetivo = sheet.offsetTop
+                + (pagina - 1) * (altoPagina + HUECO_ENTRE_PAGINAS)
+                + margenSuperior;
+            const actual = bloque.getBoundingClientRect().top - origen;
+            const desvio = objetivo - actual;
+            if (Math.abs(desvio) < 0.5) return;
+            const puesto = Number.parseFloat(bloque.style.getPropertyValue('--page-jump')) || 0;
+            bloque.style.setProperty('--page-jump', `${Math.max(0, puesto + desvio)}px`);
+        });
+
+        // Y las hojas, una por página, debajo del texto.
+        const izquierda = sheet.offsetLeft;
+        const ancho = sheet.offsetWidth;
+        // El hueco se mide contra lo que se ve de la mesa, no contra el
+        // envoltorio: con la hoja desbordada, a la derecha no hay sitio.
+        const estrecho = desk.clientWidth - (izquierda + ancho) < 56;
+        layer.classList.toggle('tight', estrecho);
+        const hojas = [];
+        for (let i = 0; i < paginas; i += 1) {
+            const hoja = document.createElement('div');
+            hoja.className = 'page-sheet';
+            // Sin redondear: la hoja y el texto tienen que medirse igual, o el
+            // desfase se ve al final de un documento largo.
+            hoja.style.top = `${sheet.offsetTop + i * (altoPagina + HUECO_ENTRE_PAGINAS)}px`;
+            hoja.style.left = `${izquierda}px`;
+            hoja.style.width = `${ancho}px`;
+            hoja.style.height = `${altoPagina}px`;
+            const etiqueta = document.createElement('span');
+            etiqueta.className = 'page-sheet-label';
+            etiqueta.textContent = formatTranslation(
+                'page_break_label',
+                'Página {page}',
+                { page: String(i + 1) },
+            );
+            hoja.appendChild(etiqueta);
+            hojas.push(hoja);
+        }
+        layer.replaceChildren(...hojas);
+        updateTocPageNumbers(altoPagina + HUECO_ENTRE_PAGINAS);
+    }
+    window.__refreshPageBreaks = refreshPageBreaks;
+
+    /*
+      La altura de la hoja cambia sin avisar: al escribir, al cargar una imagen
+      o una fórmula, al mover la lupa. Y la mesa cambia de ancho al repartir los
+      paneles, que es lo que decide si el número de página cabe fuera de la
+      hoja. Hay que mirar las dos, y una vez por fotograma: un cambio de
+      disposición dispara el observador muchas veces seguidas.
+    */
+    let repintadoDeCortes = null;
+    function schedulePageBreaks() {
+        if (repintadoDeCortes) return;
+        repintadoDeCortes = requestAnimationFrame(() => {
+            repintadoDeCortes = null;
+            refreshPageBreaks();
+        });
+    }
+    if (typeof ResizeObserver === 'function') {
+        const observador = new ResizeObserver(schedulePageBreaks);
+        ['html-output', 'preview-desk'].forEach((id) => {
+            const elemento = document.getElementById(id);
+            if (elemento) observador.observe(elemento);
+        });
+    }
+    window.addEventListener('resize', schedulePageBreaks);
+
+    /*
       La vista previa es donde se comprueba el ajuste antes de exportar. Los
       encabezados no se tocan: la hoja de estilos ya los mide en `em` y siguen
       al cuerpo solos.
@@ -9152,16 +9503,21 @@ window.onload = async () => {
         // El resumen de la barra no depende de que haya vista previa montada.
         updateDocumentFormatStatus();
         applyDocumentMarginsToPrint(effectiveDocumentFormat());
+        // El índice puede acabar de encenderse o apagarse en el mismo cuadro.
+        refreshDocumentToc();
         if (!api || !preview) return;
         const styles = api.toPreviewStyles(effectiveDocumentFormat());
+        // Un formato con todo puesto nombra todas las propiedades que hay que
+        // retirar; si aquí faltara una, la de antes se quedaría pegada.
         Object.keys(api.toPreviewStyles({
-            align: 'left', font: 'serif', fontSize: '12', lineHeight: '1',
+            align: 'left', font: 'serif', fontSize: '12', lineHeight: '1', paperSize: 'a4',
             marginTop: '1', marginRight: '1', marginBottom: '1', marginLeft: '1',
             indent: 'no', hyphenate: 'no',
         })).forEach(property => preview.style.removeProperty(property));
         Object.entries(styles).forEach(([property, value]) => {
             preview.style.setProperty(property, value);
         });
+        refreshPageBreaks();
     }
     window.__applyDocumentFormatToPreview = applyDocumentFormatToPreview;
 

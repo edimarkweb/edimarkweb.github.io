@@ -53,6 +53,17 @@
     },
   };
 
+  /*
+    Tamaños de papel. Son los dos que usa casi todo el mundo —A4 en Europa y
+    América Latina, Carta en Estados Unidos y buena parte de Centroamérica—, y
+    lo que deciden es dónde parte la página: sin saber cuánto mide el papel, la
+    hoja de la vista previa no puede enseñar por dónde va a cortar.
+  */
+  const PAPER_SIZES = {
+    a4: { widthCm: 21, heightCm: 29.7, css: 'A4', latex: 'a4' },
+    letter: { widthCm: 21.59, heightCm: 27.94, css: 'Letter', latex: 'letter' },
+  };
+
   // Los márgenes se guardan en centímetros, que es como se piden en pantalla.
   const MARGIN_SIDES = ['top', 'right', 'bottom', 'left'];
   const MARGIN_MIN_CM = 0;
@@ -76,6 +87,7 @@
     font: '',
     fontSize: '',
     lineHeight: '',
+    paperSize: '',
     marginTop: '',
     marginRight: '',
     marginBottom: '',
@@ -111,6 +123,13 @@
     return '';
   }
 
+  function normalizePaperSize(value) {
+    const raw = String(value ?? '').trim().toLowerCase().replace(/paper$/, '');
+    // `a4paper` y `letterpaper` son como lo escribe LaTeX, y alguien puede
+    // haberlo copiado de ahí al bloque de metadatos.
+    return Object.prototype.hasOwnProperty.call(PAPER_SIZES, raw) ? raw : '';
+  }
+
   function normalizeFont(value) {
     const raw = String(value ?? '').trim();
     if (!raw) return '';
@@ -141,6 +160,7 @@
         min: LINE_HEIGHT_MIN,
         max: LINE_HEIGHT_MAX,
       }),
+      paperSize: normalizePaperSize(source.paperSize),
       indent: normalizeSwitch(source.indent),
       hyphenate: normalizeSwitch(source.hyphenate),
     };
@@ -175,6 +195,7 @@
     ['font', 'font'],
     ['fontSize', 'fontsize'],
     ['lineHeight', 'linestretch'],
+    ['paperSize', 'papersize'],
     ['marginTop', 'margin-top'],
     ['marginRight', 'margin-right'],
     ['marginBottom', 'margin-bottom'],
@@ -241,6 +262,17 @@
       de la vista previa: `toCssRules` y `toLatex`, que sí salen del programa,
       siguen escribiendo la medida desnuda.
     */
+    /*
+      El papel, en variables: la hoja se mide con ellas —ancho de la página y
+      alto de la caja de texto— y con eso puede enseñar por dónde cortará. Van
+      en centímetros porque el navegador ya sabe convertirlos, y la lupa las
+      escala aparte para no perder la medida real.
+    */
+    if (resolved.paperSize) {
+      const paper = PAPER_SIZES[resolved.paperSize];
+      styles['--paper-width'] = `${paper.widthCm}cm`;
+      styles['--paper-height'] = `${paper.heightCm}cm`;
+    }
     if (resolved.fontSize) styles['font-size'] = `calc(${resolved.fontSize}pt * var(--preview-zoom, 1))`;
     if (resolved.lineHeight) styles['line-height'] = resolved.lineHeight;
     if (resolved.indent) styles['text-indent'] = resolved.indent === 'yes' ? '1.5em' : '0';
@@ -276,6 +308,11 @@
 
     const rules = [];
     if (body.length) rules.push(`body {\n  ${body.join('\n  ')}\n}`);
+    // El tamaño de la página lo entienden la impresión del navegador y los
+    // lectores de EPUB que paginan.
+    if (resolved.paperSize) {
+      rules.push(`@page {\n  size: ${PAPER_SIZES[resolved.paperSize].css};\n}`);
+    }
     if (resolved.indent) {
       rules.push(`p {\n  text-indent: ${resolved.indent === 'yes' ? '1.5em' : '0'};\n}`);
     }
@@ -313,6 +350,20 @@
     }
     if (resolved.lineHeight) {
       entries.push({ key: 'linestretch', lines: [`linestretch: "${resolved.lineHeight}"`] });
+    }
+    /*
+      El papel va con los márgenes: los dos los resuelve `geometry`, así que si
+      el preámbulo del usuario ya lo carga, este también se queda fuera.
+    */
+    if (resolved.paperSize) {
+      if (hasGeometry) {
+        dropped.push('papersize');
+      } else {
+        entries.push({
+          key: 'papersize',
+          lines: [`papersize: "${PAPER_SIZES[resolved.paperSize].latex}"`],
+        });
+      }
     }
     if (resolved.indent) {
       entries.push({ key: 'indent', lines: [`indent: ${resolved.indent === 'yes' ? 'true' : 'false'}`] });
@@ -365,8 +416,10 @@
       const value = resolved[marginKey(side)];
       if (value) margins[side] = Number(value);
     });
+    const paper = PAPER_SIZES[resolved.paperSize];
     return {
       align: resolved.align || '',
+      paperCm: paper ? { width: paper.widthCm, height: paper.heightCm } : null,
       fontName: resolved.font ? (stack ? stack.office : resolved.font) : '',
       fontSizePt: resolved.fontSize ? Number(resolved.fontSize) : 0,
       // Cuánto hay que estirar los encabezados de la plantilla para que la
@@ -383,6 +436,7 @@
     ALIGNMENTS,
     FONT_KINDS,
     FONT_STACKS,
+    PAPER_SIZES,
     MARGIN_SIDES,
     OFFICE_BASE_FONT_PT,
     YAML_KEYS,

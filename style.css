@@ -877,12 +877,30 @@ body.desktop-mode .markdown-textarea {
 */
 :root {
     --preview-sheet-width: 46rem;
-    --preview-sheet-margin: 3.5rem;
+    /*
+      El relleno de la hoja cuando el documento no fija márgenes: los mismos
+      18 mm que usa la impresión, para que lo que se ve y lo que sale del papel
+      tengan la misma caja. En el móvil se reduce más abajo, donde una hoja con
+      márgenes de verdad no dejaría ancho para leer.
+    */
+    --preview-sheet-margin: 1.8cm;
     --preview-desk-gutter: 1rem;
 }
 .preview-desk {
     padding: var(--preview-desk-gutter);
     background-color: #e2e8f0;
+    /*
+      Y con la lupa por encima del 100 % la hoja no cabe: se desborda y se llega
+      a ella con la barra, que es lo que mantiene el tamaño real de la página.
+      Estrecharla sería reordenar el texto y perder el reparto en páginas.
+    */
+    overflow-x: auto;
+}
+.preview-paper {
+    width: max-content;
+    min-width: 100%;
+    /* Las hojas se colocan contra este envoltorio, que es quien no se mueve. */
+    position: relative;
 }
 .dark .preview-desk {
     background-color: #0f172a;
@@ -905,13 +923,171 @@ body.desktop-mode .markdown-textarea {
     */
     font-size: calc(1rem * var(--preview-zoom, 1));
     min-height: 100%;
-    width: calc(min(var(--preview-sheet-width), 100%) * var(--preview-zoom, 1));
+    /*
+      La hoja mide lo que mide el papel —A4 o Carta, lo que diga el documento—,
+      y no un ancho de lectura cualquiera: sin esa medida, lo que se ve en
+      pantalla no rompe las líneas donde las rompe la página impresa y no hay
+      manera de enseñar por dónde va a partir. En una ventana estrecha vuelve a
+      ser fluida, y entonces las marcas de página se retiran.
+    */
+    width: calc(var(--paper-width, var(--preview-sheet-width)) * var(--preview-zoom, 1));
+    max-width: none;
     margin: 0 auto;
-    padding: calc(var(--preview-sheet-margin) * var(--preview-zoom, 1)) calc(clamp(1.25rem, 6%, var(--preview-sheet-margin)) * var(--preview-zoom, 1));
+    /*
+      Y el relleno son los márgenes del documento. Los 18 mm de partida son los
+      mismos que usa la impresión cuando el documento no fija ninguno.
+    */
+    padding: calc(var(--preview-sheet-margin) * var(--preview-zoom, 1));
     border-radius: 2px;
     background-color: #ffffff;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14), 0 10px 28px rgba(15, 23, 42, 0.10);
 }
+/*
+  El índice del editor visual: el que va a salir al exportar, con sus apartados
+  y sus números de página. Se lee como un índice y no como parte del texto, así
+  que va en un tono más sobrio y con su línea de puntos hasta el número.
+*/
+.doc-toc {
+    margin: 0 0 2em;
+    padding-bottom: 0.75em;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+    user-select: none;
+}
+.doc-toc-title {
+    margin: 0 0 0.5em;
+    font-weight: 700;
+    font-size: 1.15em;
+}
+.doc-toc-entry {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4em;
+    color: inherit;
+    text-decoration: none;
+    line-height: 1.7;
+    cursor: pointer;
+}
+.doc-toc-entry:hover .doc-toc-text {
+    text-decoration: underline;
+}
+.doc-toc-text {
+    flex: 0 1 auto;
+}
+/* Los puntos de guía, que son lo que hace legible una lista de páginas. */
+.doc-toc-entry::after {
+    content: "";
+    flex: 1 1 auto;
+    height: 0;
+    margin-bottom: 0.25em;
+    border-bottom: 1px dotted rgba(100, 116, 139, 0.5);
+}
+.doc-toc-page {
+    flex: 0 0 auto;
+    order: 3;
+    font-variant-numeric: tabular-nums;
+    color: #64748b;
+}
+.doc-toc-h2 .doc-toc-text { padding-left: 1.2em; }
+.doc-toc-h3 .doc-toc-text { padding-left: 2.4em; }
+.dark .doc-toc {
+    border-bottom-color: rgba(148, 163, 184, 0.25);
+}
+.dark .doc-toc-page {
+    color: #94a3b8;
+}
+.dark .doc-toc-entry::after {
+    border-bottom-color: rgba(148, 163, 184, 0.4);
+}
+
+/*
+  Las páginas.
+
+  El texto sigue en una sola columna —es lo que permite escribir sobre él sin
+  que el cursor salte de caja en caja—, y las hojas se dibujan debajo, en su
+  propia capa: una por página, con su hueco entre medias. Lo que separa una
+  página de la siguiente no es una línea sobre el texto, sino un salto de
+  verdad: al bloque que estrena página se le añade el hueco por delante, así
+  que el corte cae siempre entre dos bloques y nunca parte una línea.
+*/
+.page-sheets {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+.page-sheet {
+    position: absolute;
+    border-radius: 2px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14), 0 10px 28px rgba(15, 23, 42, 0.10);
+}
+.dark .page-sheet {
+    background-color: #1e293b;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+.page-sheet-label {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    transform: translate(calc(100% + 0.5rem), -0.25rem);
+    color: #94a3b8;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+.dark .page-sheet-label {
+    color: #64748b;
+}
+/* Sin sitio en la mesa, el número se mete en el margen inferior de la hoja. */
+.page-sheets.tight .page-sheet-label {
+    transform: translate(-0.6rem, -0.35rem);
+}
+/*
+  Con las hojas dibujadas debajo, el contenido va sobre ellas y sin fondo
+  propio: si lo llevara, taparía los huecos entre páginas.
+*/
+.preview-sheet.is-paginated {
+    position: relative;
+    z-index: 1;
+    background-color: transparent;
+    box-shadow: none;
+}
+/*
+  El salto que estrena página. En pantalla es el hueco entre hojas; en el papel
+  no hace falta ninguna separación, porque ahí la página se acaba de verdad: se
+  cambia por un salto real, y así lo impreso corta donde corta la pantalla.
+*/
+/*
+  El salto va en el margen y no en el relleno: el relleno es parte del bloque y
+  se pinta con él, así que un bloque de código —que tiene fondo propio— llenaba
+  de color el hueco entre las dos hojas. El margen es aire.
+*/
+#html-output > [data-page-start] {
+    margin-top: var(--page-jump, 0px);
+}
+@media print {
+    .page-sheets {
+        display: none !important;
+    }
+    /* En el papel manda la página, no la hoja de la pantalla. */
+    .preview-paper {
+        width: auto !important;
+        min-width: 0 !important;
+    }
+    #html-output > [data-page-start] {
+        margin-top: 0 !important;
+        break-before: page;
+    }
+    /*
+      Y lo que la pantalla no parte, el papel tampoco: sin esto un párrafo
+      cortado a media línea en el PDF dejaría de coincidir con lo que se vio.
+    */
+    #html-output > * {
+        break-inside: avoid;
+    }
+}
+
 /*
   Una tabla ancha no siempre cabe en la hoja: se salía de la página y
   arrastraba consigo a la mesa, que acababa desplazándose a lo ancho por culpa
@@ -1565,6 +1741,23 @@ body.desktop-mode .markdown-textarea {
     :root {
         --preview-sheet-margin: 1.25rem;
         --preview-desk-gutter: 0.5rem;
+    }
+
+    /*
+      En el móvil la hoja vuelve a ser fluida: una página de verdad no cabe en
+      360 px y leer con la barra horizontal puesta no es leer. Sin su tamaño
+      real, el reparto en páginas se retira solo.
+
+      El envoltorio tiene que soltar su `max-content` para que ese `100 %`
+      signifique algo: contra un envoltorio que crece con la hoja, no limita
+      nada.
+    */
+    .preview-paper {
+        width: auto;
+        min-width: 0;
+    }
+    .preview-sheet {
+        width: min(calc(var(--paper-width, var(--preview-sheet-width)) * var(--preview-zoom, 1)), 100%);
     }
 
     /*
