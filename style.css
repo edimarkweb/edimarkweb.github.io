@@ -1285,9 +1285,29 @@ body.desktop-mode .markdown-textarea {
     gap: 0.5rem;
     flex: 0 0 auto;
     flex-wrap: wrap;
-    margin-top: 0.5rem;
-    padding: 0.25rem 0.25rem 0;
+    margin-top: 0.25rem;
+    padding: 0.125rem 0.25rem 0;
     border-top: 1px solid #e2e8f0;
+}
+/*
+  La fila se ciñe a lo que mide su contenido: estos botones no necesitan el aire
+  de la barra de herramientas —van solos, sin vecinos con los que confundirse— y
+  cada píxel que sueltan es un píxel más de documento a la vista. Las medidas
+  del móvil van más abajo y mandan sobre estas, que aquí solo aprietan lo que
+  allí ya estaba apretado.
+*/
+.status-bar .toolbar-btn,
+.status-bar .action-btn,
+.status-bar .layout-switch-btn {
+    padding: 0.25rem;
+}
+/*
+  Los iconos de las disposiciones no llevan medida en el HTML, así que Lucide
+  los pinta a 24 px: eran ellos los que le daban a la fila su altura.
+*/
+.status-bar .layout-switch-btn svg {
+    width: 1rem;
+    height: 1rem;
 }
 .dark .status-bar {
     border-top-color: #334155;
