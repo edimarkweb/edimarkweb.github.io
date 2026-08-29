@@ -3,6 +3,7 @@ import { BaseDirectory, mkdir, readTextFile, writeFile, writeTextFile } from '@t
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { listen } from '@tauri-apps/api/event';
 import { readImage } from '@tauri-apps/plugin-clipboard-manager';
 import { fetch as nativeFetch } from '@tauri-apps/plugin-http';
@@ -13,6 +14,29 @@ import { fetch as nativeFetch } from '@tauri-apps/plugin-http';
 if (window.__TAURI_INTERNALS__) {
   const pendingOpenPathBatches = [];
   const openPathSubscribers = new Set();
+
+  /*
+    Arrastrar y soltar. El webview de Tauri se queda con el arrastre nativo, así
+    que los eventos `drop` del DOM no llegan nunca: en el escritorio hay que
+    escuchar el evento propio, que además trae la ruta de verdad —lo que en el
+    navegador no existe— y con ella el documento se abre sabiendo dónde vive.
+  */
+  const dropSubscribers = new Set();
+
+  getCurrentWebview().onDragDropEvent((event) => {
+    const tipo = event?.payload?.type;
+    if (tipo === 'over' || tipo === 'enter') {
+      dropSubscribers.forEach(callback => callback({ type: 'enter' }));
+      return;
+    }
+    if (tipo === 'leave') {
+      dropSubscribers.forEach(callback => callback({ type: 'leave' }));
+      return;
+    }
+    if (tipo !== 'drop') return;
+    const paths = Array.isArray(event.payload.paths) ? event.payload.paths : [];
+    dropSubscribers.forEach(callback => callback({ type: 'drop', paths }));
+  }).catch(error => console.error('No se pudo escuchar el arrastre de documentos:', error));
 
   listen('open-markdown-files', (event) => {
     const paths = Array.isArray(event.payload) ? event.payload : [];
@@ -95,6 +119,13 @@ if (window.__TAURI_INTERNALS__) {
         while (pendingOpenPathBatches.length) callback(pendingOpenPathBatches.shift());
         return () => openPathSubscribers.delete(callback);
       },
+      onNativeDrop(callback) {
+        dropSubscribers.add(callback);
+        return () => dropSubscribers.delete(callback);
+      },
+      // Las carpetas se recorren en Rust: el webview solo entrega su ruta.
+      droppedDocumentPaths: paths => invoke('dropped_document_paths', { paths }),
+      readDroppedDocument: path => invoke('read_dropped_document', { path }),
     },
   };
 }

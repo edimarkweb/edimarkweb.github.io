@@ -457,6 +457,29 @@
         return app.onOpenMarkdownPaths(callback);
       },
 
+      /*
+        El arrastre del escritorio. En el navegador lo resuelve el DOM con sus
+        `File`; aquí llegan rutas, así que la aplicación pregunta primero qué
+        hay dentro de lo soltado —una carpeta puede traer documentos— y luego
+        lee lo que necesite.
+      */
+      onNativeFileDrop(callback) {
+        if (!desktop || !app || typeof app.onNativeDrop !== 'function') return () => {};
+        return app.onNativeDrop(callback);
+      },
+
+      async expandDroppedPaths(paths) {
+        if (!desktop || !app || typeof app.droppedDocumentPaths !== 'function') return [];
+        const found = await app.droppedDocumentPaths(Array.from(paths || []));
+        return Array.isArray(found) ? found : [];
+      },
+
+      async readDroppedDocumentBytes(path) {
+        if (!desktop || !app || typeof app.readDroppedDocument !== 'function') return null;
+        const bytes = await app.readDroppedDocument(path);
+        return bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : new Uint8Array(bytes || []);
+      },
+
       /* Cierra la aplicación de escritorio; en el navegador no hace nada. */
       async quitApplication() {
         if (!desktop || !app || typeof app.quit !== 'function') return false;

@@ -104,6 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.__updateCopyButtonLabel === 'function') {
       window.__updateCopyButtonLabel();
     }
+    if (typeof window.__updateExportButtonLabel === 'function') {
+      window.__updateExportButtonLabel();
+    }
     if (typeof window.__updateCharCounterLabel === 'function') {
       window.__updateCharCounterLabel();
     }
@@ -123,6 +126,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // etiquetas y decimales del idioma: data-i18n-key no lo alcanza.
     if (typeof window.__updateDocumentFormatStatus === 'function') {
       window.__updateDocumentFormatStatus();
+    }
+    // Y la píldora del idioma tampoco: el documento que no lleva el suyo sigue
+    // al de la interfaz, así que el código cambia con este mismo interruptor.
+    if (typeof window.__refreshDocLanguageIndicator === 'function') {
+      window.__refreshDocLanguageIndicator();
     }
   };
 

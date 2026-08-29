@@ -39,7 +39,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/split.js@1.6.5/dist/split.min.js" integrity="sha384-q2ksSc8z6Q4ZUnxlfZj9AXZLpSdWmD3q/YrId1twTeNHh56fNh98YbJSpppzGUvL" crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" href="style.css?v=2.36.0">
+    <link rel="stylesheet" href="style.css?v=2.37.0">
 </head>
 <body class="p-4 sm:p-6 md:p-8">
 
@@ -299,6 +299,22 @@
                     <i data-lucide="save"></i>
                     <span id="save-dirty-dot" class="save-dirty-dot hidden" aria-hidden="true"></span>
                 </button>
+                <!--
+                  Exportar y copiar hacen lo mismo con distinto destino, así que
+                  van juntos y con la misma forma: el botón repite el último
+                  formato de un clic y la flecha abre la lista. El menú de esta
+                  flecha es el mismo de la cabecera, clonado al arrancar para no
+                  tener dos listas que mantener.
+                -->
+                <div id="export-quick-container" class="relative inline-flex items-center">
+                    <button type="button" id="export-quick-btn" class="action-btn gap-1.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" aria-keyshortcuts="Control+Alt+E">
+                        <i data-lucide="download"></i>
+                        <span class="export-quick-btn-label hidden text-xs font-medium text-slate-500 sm:inline dark:text-slate-400">DOCX</span>
+                    </button>
+                    <button type="button" id="export-quick-menu-toggle" class="action-btn px-1 py-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" aria-haspopup="true" aria-expanded="false" data-i18n-key="export_quick_menu_toggle_title" title="Opciones de exportación" aria-label="Opciones de exportación">
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </button>
+                </div>
 <div id="preview-copy-container" class="relative inline-flex items-center">
                 <button type="button" id="copy-html-btn" class="action-btn gap-1.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="copy_html_btn_title" title="Copiar HTML" aria-keyshortcuts="Control+Alt+C">
                     <i data-lucide="copy"></i>
@@ -405,7 +421,7 @@
     <section id="desktop-release-banner" class="desktop-release-banner" role="status" hidden>
         <i data-lucide="monitor-down" class="desktop-release-banner-icon" aria-hidden="true"></i>
         <div class="desktop-release-banner-content">
-            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.36.0 está disponible para Linux, Windows y macOS.</p>
+            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.37.0 está disponible para Linux, Windows y macOS.</p>
             <a id="desktop-banner-download-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="desktop_banner_download">Ver descargas</a>
             <label class="desktop-release-banner-never">
                 <input id="desktop-banner-never-show" type="checkbox">
@@ -628,6 +644,17 @@
         <footer id="status-bar" class="status-bar">
             <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
             <!--
+              En qué idioma va a salir el documento, siempre a la vista: es lo
+              que decide en qué lengua corrigen Word y LibreOffice lo que se
+              exporta, y sin verlo no hay manera de saberlo sin abrir el cuadro.
+              Atenuado cuando lo hereda de las opciones generales, que es lo
+              normal; encendido cuando lo lleva escrito el propio documento.
+            -->
+            <button id="doc-language-status" class="panel-counter doc-format-status doc-language-status" type="button">
+                <i data-lucide="languages" aria-hidden="true"></i>
+                <span id="doc-language-status-code"></span>
+            </button>
+            <!--
               Cómo va a salir el documento al imprimirlo, resuelto: lo que dice
               el propio documento y, donde calla, lo que ponen las opciones
               generales. Sin esto no hay manera de saber de dónde sale un 12 pt
@@ -647,8 +674,8 @@
               herramientas y el que gobierna la lupa de aquí al lado.
             -->
             <div class="status-bar-group">
-                <h2 id="markdown-panel-title" class="status-bar-panel-name" data-i18n-key="markdown_panel_title">Markdown</h2>
-                <h2 id="html-panel-title" class="status-bar-panel-name" data-i18n-key="html_panel_title">Previsualización</h2>
+                <h2 id="markdown-panel-title" class="status-bar-panel-name" data-i18n-key="markdown_panel_title">Editor Markdown</h2>
+                <h2 id="html-panel-title" class="status-bar-panel-name" data-i18n-key="html_panel_title">Editor visual</h2>
                 <button id="view-toggle-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="view_toggle_btn_title" title="Cambiar a vista de código"><i data-lucide="code-2"></i></button>
             </div>
             <span class="view-controls-separator" aria-hidden="true"></span>
@@ -674,7 +701,7 @@
             <div id="layout-switch" class="layout-switch" role="group" aria-label="Disposición de paneles" data-i18n-key="layout_menu_btn_title">
                 <button type="button" class="layout-switch-btn" data-layout="md" aria-pressed="false" data-i18n-key="layout_switch_md_title" title="Solo el código fuente (Ctrl+L)"><i data-lucide="panel-right"></i></button>
                 <button type="button" class="layout-switch-btn" data-layout="dual" aria-pressed="true" data-i18n-key="layout_switch_dual_title" title="Los dos paneles a la vez (Ctrl+L)"><i data-lucide="columns-2"></i></button>
-                <button type="button" class="layout-switch-btn" data-layout="html" aria-pressed="false" data-i18n-key="layout_switch_html_title" title="Solo el resultado (Ctrl+L)"><i data-lucide="panel-left"></i></button>
+                <button type="button" class="layout-switch-btn" data-layout="html" aria-pressed="false" data-i18n-key="layout_switch_html_title" title="Solo el editor visual (Ctrl+L)"><i data-lucide="panel-left"></i></button>
             </div>
             <div id="layout-menu-container" class="relative">
                 <button id="layout-menu-btn" class="action-btn p-2" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-key="layout_menu_btn_title" title="Disposición de paneles">
@@ -684,7 +711,7 @@
                     <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-layout="md" role="menuitemradio" aria-checked="false">
                         <span class="flex w-full items-center gap-2">
                         <i data-lucide="panel-right" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                        <span data-i18n-key="markdown_panel_layout_maximize">Maximizar panel Markdown</span>
+                        <span data-i18n-key="markdown_panel_layout_maximize">Maximizar el editor Markdown</span>
                         <i data-lucide="check" class="layout-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
 
                         </span>
@@ -693,11 +720,11 @@
                     <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-layout="html" role="menuitemradio" aria-checked="false">
                         <span class="flex w-full items-center gap-2">
                         <i data-lucide="panel-left" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                        <span data-i18n-key="preview_panel_layout_maximize">Maximizar panel de previsualización</span>
+                        <span data-i18n-key="preview_panel_layout_maximize">Maximizar el editor visual</span>
                         <i data-lucide="check" class="layout-check hidden ml-auto w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
 
                         </span>
-                        <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="menu_hint_layout_preview">Solo el resultado</span>
+                        <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="menu_hint_layout_preview">Solo el editor visual</span>
                         </button>
                     <button type="button" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" data-layout="dual" role="menuitemradio" aria-checked="true">
                         <span class="flex w-full items-center gap-2">
@@ -941,7 +968,14 @@
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto dark:bg-slate-800">
             <h3 id="doc-format-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_format_modal_title">Este documento</h3>
             <p class="text-sm text-slate-500 dark:text-slate-400" data-i18n-key="doc_format_modal_hint">Se guarda en el propio documento y viaja con él. Todo lo que dejes en «Heredado» sigue a las opciones de exportación.</p>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mb-5" data-i18n-key="doc_format_inherited_hint">Debajo de cada campo vacío se ve el valor que hereda ahora mismo.</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400" data-i18n-key="doc_format_inherited_hint">Debajo de cada campo vacío se ve el valor que hereda ahora mismo.</p>
+            <!--
+              Y el camino al otro cuadro: quien mira de dónde hereda un campo
+              suele querer cambiarlo para todos, no solo para este documento.
+            -->
+            <p class="mb-5">
+                <button type="button" id="doc-format-open-general" class="inline-link-btn" data-i18n-key="doc_format_open_general">Cambiar lo que heredan todos los documentos…</button>
+            </p>
             <div class="space-y-4">
                 <div id="doc-format-tablist" role="tablist" class="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700">
                     <button type="button" role="tab" id="doc-format-tab-document" aria-controls="doc-format-panel-document" aria-selected="true" class="settings-tab" data-i18n-key="doc_settings_tab_document">Documento</button>
@@ -1187,11 +1221,11 @@
         </div>
     </div>
 
-    <script src="asset-paths.js?v=2.36.0"></script>
-    <script src="document-format.js?v=2.36.0"></script>
-    <script src="platform-api.js?v=2.36.0"></script>
-    <script src="desktop-updater.js?v=2.36.0"></script>
-    <script type="module" src="pandoc-exporter.js?v=2.36.0"></script>
+    <script src="asset-paths.js?v=2.37.0"></script>
+    <script src="document-format.js?v=2.37.0"></script>
+    <script src="platform-api.js?v=2.37.0"></script>
+    <script src="desktop-updater.js?v=2.37.0"></script>
+    <script type="module" src="pandoc-exporter.js?v=2.37.0"></script>
     <script>
     (function () {
       var ANALYTICS_FALLBACK_ENDPOINT = 'https://bilateria.org/app/estadistica/edimarkweb/track.php';
@@ -1371,8 +1405,8 @@
       });
     })();
     </script>
-    <script src="script.js?v=2.36.0" defer></script>
-    <script src="search.js?v=2.36.0" defer></script>
-    <script src="i18n.js?v=2.36.0" defer></script>
+    <script src="script.js?v=2.37.0" defer></script>
+    <script src="search.js?v=2.37.0" defer></script>
+    <script src="i18n.js?v=2.37.0" defer></script>
 </body>
 </html>

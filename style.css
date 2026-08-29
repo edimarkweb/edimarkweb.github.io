@@ -440,14 +440,27 @@ body.desktop-mode .markdown-textarea {
     from { opacity: 0; }
     to { opacity: 1; }
 }
-#editor-container .panel {
+/*
+  El fundido es para donde no cabe el deslizamiento —apilados, en el móvil—, y
+  lo pide el JS con la clase: puesto en el propio `.panel` volvía a dispararse
+  cada vez que otra regla le tocaba la animación.
+*/
+#editor-container .panel.panel-fade-in {
     animation: panel-appear 180ms ease-out;
 }
 #editor-container.layout-changing .panel {
     transition: width 180ms ease-out;
 }
+/*
+  Mientras entra o sale, un panel vale cero: tiene que poder ser más estrecho
+  que su ancho mínimo y recortar lo que asome.
+*/
+#editor-container .panel.panel-sliding {
+    min-width: 0;
+    overflow: hidden;
+}
 @media (prefers-reduced-motion: reduce) {
-    #editor-container .panel {
+    #editor-container .panel.panel-fade-in {
         animation: none;
     }
     #editor-container.layout-changing .panel {
@@ -918,7 +931,14 @@ body.desktop-mode .markdown-textarea {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.35);
 }
 .dark .prose { color: #cbd5e1; }
-.dark .prose h1, .dark .prose h2, .dark .prose h3, .dark .prose strong { color: #f1f5f9; }
+/*
+  Los seis niveles, no los tres primeros: los encabezados que se quedaban fuera
+  heredaban el gris oscuro de Tailwind Typography y sobre el fondo oscuro de la
+  hoja se leían negros.
+*/
+.dark .prose h1, .dark .prose h2, .dark .prose h3,
+.dark .prose h4, .dark .prose h5, .dark .prose h6,
+.dark .prose strong { color: #f1f5f9; }
 .dark .prose code { color: #e2e8f0; }
 .dark .prose blockquote { border-left-color: #475569; color: #94a3b8;}
 .dark .prose a { color: #93c5fd; }
@@ -1251,6 +1271,49 @@ body.desktop-mode .markdown-textarea {
 */
 .doc-format-status.hidden {
     display: none;
+}
+
+/*
+  Un enlace dentro de un cuadro: es un botón, porque no lleva a ninguna
+  dirección, pero se lee y se pulsa como un enlace.
+*/
+.inline-link-btn {
+    font-size: 0.875rem;
+    color: #2563eb;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    padding: 0;
+}
+.inline-link-btn:hover {
+    color: #1d4ed8;
+}
+.inline-link-btn:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 0.125rem;
+}
+.dark .inline-link-btn {
+    color: #93c5fd;
+}
+.dark .inline-link-btn:hover {
+    color: #bfdbfe;
+}
+
+/*
+  El idioma sigue a la píldora del formato, y dice de dónde sale sin gastar una
+  palabra: apagado, lo hereda de las opciones generales; encendido, lo lleva
+  escrito el documento.
+*/
+.doc-language-status {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.doc-language-status.is-inherited {
+    opacity: 0.6;
+    font-weight: 400;
 }
 .dark select.action-btn { background-color: #0f172a; }
 
@@ -1901,11 +1964,23 @@ code {
     }
     /*
       Sobre el papel no hay mesa ni hoja: el ancho lo pone la página impresa,
-      no la caja de la vista previa.
+      no la caja de la vista previa. Y el ancho hay que quitarlo, no solo el
+      máximo: la hoja lo lleva fijado en `rem`.
     */
     #html-output {
+        width: auto !important;
         max-width: none !important;
         margin: 0 !important;
+    }
+    /*
+      La lupa es de la pantalla y aquí no pinta nada. Sin esto, con la lupa por
+      encima del 100 % la hoja salía más ancha que la página —a 125 %, 787 px
+      de hoja para 658 de papel— y el navegador cortaba por la derecha el texto
+      y las imágenes, además de imprimir la letra a un cuerpo que no es el del
+      documento.
+    */
+    :root {
+        --preview-zoom: 1 !important;
     }
     /*
       La ventana independiente y la aplicación de escritorio reparten el alto

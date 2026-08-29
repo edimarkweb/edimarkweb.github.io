@@ -2,301 +2,234 @@
 
 # Manual de EdiMarkWeb
 
-Benvido/a a EdiMarkWeb, un **editor de textos en Markdown** deseñado para docentes e creadores de contido que precisan traballar rápido, exportar a varios formatos e engadir matemáticas con LaTeX sen complicacións. Podes usalo **no navegador**, sen instalar nada, ou **instalalo como aplicación de escritorio** en Linux, Windows e macOS. Nos dous casos o traballo ocorre no teu equipo: nin os documentos nin as imaxes saen del.
+EdiMarkWeb é un **editor de textos en Markdown** pensado para docentes e creadores de contido: escríbese rápido, expórtase a Word, LibreOffice, EPUB, HTML, LaTeX e PDF, e admite fórmulas matemáticas. Funciona **no navegador**, sen instalar nada, e tamén como **aplicación de escritorio** para Linux, Windows e macOS. Nos dous casos o traballo ocorre no teu equipo: nin os documentos nin as imaxes saen del.
 
-## Novidades destacadas
+## Para comezar
 
-- Edición dual: podes traballar tanto en Markdown como directamente na vista previa HTML, sempre sincronizadas.
-- Menú de exportación e de importación compatible con DOCX, ODT, EPUB, HTML, LaTeX e PDF, incluíndo opcións de copia directa ao portapapeis.
-- Buscador con substitución que resalta as coincidencias e acepta termos sen acentos nin distinción entre maiúsculas e minúsculas.
-- Menú **Configuración** co idioma, o tema e a xanela independente reunidos nun mesmo sitio; cada panel leva a súa lupa, que aparece na **barra de estado** mentres traballas nel; o ancho de traballo cámbiase na fila das lapelas e o reparto de paneis, na barra de estado.
-- Tema da interface con tres opcións —Sistema, Claro e Escuro— que se lembra entre sesións.
-- Menú de fórmulas renovado e acceso directo a EdiCuaTeX para construír expresións complexas.
-- Apertura de varios ficheiros, ou de cartafoles enteiros, arrastrándoos ao editor (cada ficheiro na súa lapela): Markdown e tamén DOCX, ODT, EPUB, HTML ou TEX, que se converten ao voo con Pandoc.
-- Busca con expresións regulares e modo de edición a pantalla completa para traballar sen distraccións.
-- **Idioma de cada documento**, gardado dentro do propio ficheiro e visible xunto ao contador de caracteres. Os cinco formatos decláranno, así que Word e LibreOffice deixan de corrixir en inglés un texto en galego.
-- **Opcións de exportación** nun mesmo sitio: autor, portada do EPUB, índice automático, numeración de apartados e, para LaTeX, a clase, as súas opcións e un preámbulo propio.
-- **Aplicación de escritorio** para Linux, Windows e macOS, cos documentos asociados ao dobre clic, gardado sobre o ficheiro orixinal, corrector ortográfico do sistema e funcionamento sen conexión.
-- **Aviso de versións novas** na aplicación de escritorio, con descarga e instalación desde a propia aplicación.
+Escribe no panel da esquerda e verás o documento compoñerse á dereita. Non fai falta saber Markdown: os botóns da barra de ferramentas poñen negras, títulos, listas, táboas, ligazóns, imaxes e fórmulas, e funcionan **nos dous paneis**.
 
-## Pega calquera contido
-
-> **Importante:** podes pegar **calquera obxecto desde o portapapeis**: texto plano, fragmentos de Word ou LibreOffice, HTML completo, fórmulas xeradas por un chatbot e mesmo imaxes copiadas directamente. Usa `Ctrl+V`/`Cmd+V` ou o botón da barra de ferramentas coa icona de portapapeis (`Pegar`) e EdiMarkWeb colocará o contido no panel axeitado:
-
-- O texto Markdown ou sen formato insírese no panel esquerdo respectando exactamente a posición do cursor.
-- O contido enriquecido (HTML, DOCX, pegado desde o navegador, etc.) vólvese calcular no panel dereito e, ao mesmo tempo, xérase o Markdown correspondente para manter ambas as vistas sincronizadas.
-
-Isto elimina os pasos intermedios: copia desde a túa orixe favorita e fai clic en **Pegar** para seguir editando sen interrupcións.
-
-O botón **Imaxe** tamén permite escoller un ficheiro do disco, ademais de escribir un URL, e pregunta como queres inserilo:
-
-* **Con ruta relativa** (o recomendado e o que vén marcado): o documento só nomea a imaxe —`![Gráfico](imaxes/01.png)`—, que queda onde está. É o que fai calquera editor de Markdown e o que mantén o `.md` lixeiro e lexible; a cambio, o documento e o seu cartafol de imaxes viaxan xuntos.
-* **Dentro do documento**: a imaxe incrústase no propio ficheiro, que pasa a ser autónomo pero moito máis pesado. Útil para enviar un `.md` solto por correo.
-
-Na aplicación de escritorio a ruta calcúlase soa desde o cartafol do documento. No navegador non hai forma de coñecer o cartafol da imaxe, así que se escribe só o seu nome e avísase diso.
+Cando remates, tes dous camiños: **Gardar** (`Ctrl+S`) deixa un ficheiro `.md`, que é texto corrente e ábrese en calquera sitio, e **Exportar** xera o DOCX, o PDF ou o formato que precises entregar.
 
 ---
 
-## Xestión de documentos (lapelas)
+## Os dous editores
 
-Traballa con varios documentos á vez, cada un na súa propia lapela.
+A zona de traballo divídese en dous paneis redimensionables. **Os dous editan o mesmo documento**, sincronizados en todo momento:
 
-* **Crear lapelas**: preme o botón `+` (ou `Ctrl+T`) para abrir un documento en branco.
-* **Cambiar de lapela**: fai clic no nome para mostrar o seu contido, ou pasa dunha a outra con `Ctrl+Tab`. Cada lapela lembra onde a deixaches: ao volver, o cursor e as dúas vistas están onde estaban.
-* **Renomear**: fai dobre clic sobre o título para poñer un nome máis descritivo (p. ex. «Tema 3 – Ecuacións»).
-* **Pechar lapelas**: preme o `X`. Se hai cambios sen gardar, a aplicación amosará un aviso.
-* **Cambios sen gardar**: un punto vermello (`●`) indica que hai modificacións pendentes.
-* **Gardado automático**: cada lapela garda soa unha copia no equipo, no espazo propio da aplicación; se recargas a páxina ou volves abrir o programa, o contido reaparece. É unha rede de seguridade, non un substituto de gardar o ficheiro.
+* **Editor Markdown** (esquerda): o código fonte, tal cal. Todo o que escribas aquí aparece no momento no outro panel.
+* **Editor visual** (dereita): o documento xa composto, como unha folla sobre unha mesa, e **escríbese directamente sobre el**. A barra de formato traballa tamén aquí: negra, cursiva, títulos, citas, listas, ligazóns, imaxes, táboas e fórmulas aplícanse sobre o que ves e o Markdown reescríbese só. O mesmo botón quita o que puxo, e `Ctrl+Z` desfai aínda que esteas na folla, porque o historial é o do documento. O botón coa icona de código alterna entre o documento composto e o HTML xerado.
 
----
+**Panel activo**: cos dous á vista, un manda —o que reciben os botóns e a lupa—. Recoñécese polo fío de cor e polo rótulo da barra de estado, que nomea só o panel activo.
 
-## Barra superior de controis
+**Como repartilos**: arrastra a barra central, ou usa `Ctrl+L` e os tres botóns de disposición —só o editor Markdown, os dous á vez, só o editor visual—. A dobre frecha **maximiza a área de edición**, que agocha as barras e deixa a pantalla para o texto.
 
-A cabeceira ten dúas metades. Xunto ao logotipo están os tres menús —**Arquivo**, **Exportar** e **Configuración**—, co seu nome escrito e sen icona, como a barra de menús de calquera programa de escritorio. No extremo dereito, as accións que se usan a diario, como botóns dunha soa icona: **Gardar**, **Copiar**, **Imprimir**, **Buscar** e **Axuda**.
+**A lupa** da barra de estado (`−`, a porcentaxe e `+`, ou `Ctrl` + `+` / `Ctrl` + `-`) agranda ou reduce o que ves no panel activo; a porcentaxe volve ao 100 %. Non cambia o documento nin o que se exporta ou imprime —o papel sae sempre ao 100 %—: o tamaño de letra está en *Formato do texto*.
 
-* **Gardar (Ctrl+S)**: o primeiro botón da dereita. Cando o documento aberto ten cambios pendentes, aparécelle un punto vermello no canto, o mesmo que marca a lapela.
-* **Exportar (Ctrl+Alt+E)**: os seis formatos —DOCX, ODT, EPUB, HTML, TEX e PDF—, cada un cunha liña que di para que serve.
-* **Arquivo**: o que non se fai a diario. `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` e `Pegar LaTeX (Ctrl+Maiús+V)` traen contido; `Gardar (Ctrl+S)` e `Gardar como… (Ctrl+Maiús+S)` sácano. Gardar está aquí ademais da súa icona: a opción leva o atallo escrito, e «Gardar como…» sen «Gardar» ao lado lese mal. Cada opción mostra o seu atallo de teclado. Na aplicación de escritorio o menú remata con **Saír**, que garda o documento en curso e pecha a aplicación.
-* **Configuración**: agrupa todos os axustes da aplicación, cada un cun submenú que indica o valor activo.
-  * **Idioma**: cambia o idioma da interface.
-  * **Tema**: `Sistema` segue o do equipo e cambia con el; `Claro` e `Escuro` fíxano. A elección lémbrase a próxima vez que abras a aplicación.
-  * **Xanela independente**: abre EdiMarkWeb nunha xanela propia do navegador, sen lapelas nin barra de enderezos. Tamén a tes como botón ao final da fila da vista, á dereita dos controis dos paneis. Só aparece na versión web; a aplicación de escritorio xa é unha xanela propia.
-  * **Corrector ortográfico**: subliña as faltas do panel Markdown cos dicionarios instalados no equipo e segue o idioma do documento. Vén activado; ao desmarcalo apágase e a escolla lémbrase.
-  * **Opcións de exportación…**: abre os axustes dos ficheiros que xera a aplicación (idioma e, para LaTeX, clase e preámbulo), explicados máis abaixo.
-* **Imprimir (Ctrl+P)**: xera unha vista preparada para papel ou PDF cos estilos actuais.
-* **Buscar (Ctrl+F)**: abre o buscador avanzado.
-* **Axuda**: o botón da interrogación reúne o **Manual de uso (F1)**, **Acerca de EdiMarkWeb** —versión instalada, autor, licenza e licenzas das bibliotecas de terceiros, coas ligazóns á versión web e ás descargas— e, na aplicación de escritorio, **Buscar actualizacións…**.
+### Pegar calquera cousa
 
-A disposición dos paneis cámbiase con `Ctrl+L` ou cos tres botóns de disposición situados xunto ao botón que maximiza a área de edición: **só o código fonte**, **os dous paneis á vez** e **só o resultado**, nesa orde, co activo resaltado. En pantallas estreitas os tres prégase nun menú coas mesmas opcións. En pantallas pequenas, a barra prégase en dous botóns —**Accións** e **Formato**— que mostran cada grupo cando o precisas.
+Con `Ctrl+V` ou o botón **Pegar**, EdiMarkWeb coloca no panel axeitado o que haxa no portapapeis: o texto plano e o Markdown van ao editor Markdown, na posición do cursor; o contido con formato (Word, LibreOffice, unha páxina web, unha fórmula dun chatbot) e mesmo as imaxes recompóñense no editor visual e xeran o seu Markdown. Non fan falta pasos intermedios: copia de onde sexa e pega.
+
+Con `Ctrl` (ou `Cmd`) premido, un clic nunha ligazón do editor visual ábrea; na aplicación de escritorio, no teu navegador habitual.
 
 ---
 
-## Barra de ferramentas
+## Lapelas
 
-A franxa gris baixo a barra superior contén accesos rápidos a formato e elementos:
+Cada documento vive na súa lapela. `Ctrl+T` crea unha; `Ctrl+Tab` pasa dunha a outra e cada unha lembra onde a deixaches. Dobre clic sobre o título para renomeala, o `X` para pechala, e un punto vermello (`●`) avisa de cambios sen gardar.
 
-* **Desfacer e refacer**: as dúas frechas do extremo esquerdo (`Ctrl+Z` e `Ctrl+Maiús+Z`).
-* **Estilos básicos**: negra, cursiva e un menú de cabeceiras (H1…H6).
-* **Listas e citas**: viñetas, numeración e bloques de cita con atallos asociados.
-* **Código, ligazóns, imaxes e táboas**: insercións guiadas mediante diálogos.
-* **Pegar**: trae ao documento o que haxa no portapapeis, tal e como se explica máis arriba.
-* **Fórmulas LaTeX**: menú cos catro delimitadores —`$...$`, `$$...$$`, `\(...\)` e `\[...\]`—, cada un co seu atallo ao lado. Van en acorde: `Ctrl+M` abre a espera —a barra de estado lembra as teclas— e despois `1`, `2`, `3` ou `4` escolle o delimitador; `Intro` ou unha `M` repetida inseren `$...$`, o de sempre, e `Esc` ou calquera outra tecla cancelan. Faise así porque unha combinación distinta para cada delimitador acaba chocando co navegador ou co escritorio: `Ctrl+Maiús+J` é a consola do navegador e `Ctrl+Maiús+M` pode ser a lupa do sistema, e ningún dos dous solta o seu atallo.
-* **Editor de fórmulas (EdiCuaTeX)**: abre o asistente integrado con `Ctrl+Alt+M`. Ao aceptar, a fórmula volve inserida no editor.
+Todas se **autogardan** soas no equipo: se recargas a páxina ou volves abrir o programa, o contido reaparece. É unha rede de seguridade, non un substituto de gardar o ficheiro.
 
-Cada botón mostra unha descrición ao pasar o rato e indica o atallo de teclado equivalente.
+---
+
+## Menús e barra de ferramentas
+
+Xunto ao logotipo están os menús **Ficheiro**, **Exportar** e **Configuración**. Á dereita, as accións de cada día nunha soa icona: **Gardar**, **Exportar**, **Copiar**, **Imprimir**, **Buscar** e **Axuda**.
+
+* **Ficheiro**: `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` e `Pegar LaTeX (Ctrl+Maiús+V)` traen contido; `Gardar (Ctrl+S)` e `Gardar como… (Ctrl+Maiús+S)` sácano. Na aplicación de escritorio remata con **Saír**, que garda antes de pechar.
+* **Exportar (Ctrl+Alt+E)**: os seis formatos, cada un cunha liña que di para que serve.
+* **Configuración (Ctrl+,)**: **Idioma** da interface; **Tema** (Sistema, Claro ou Escuro, lémbrase); **Xanela independente**, que abre EdiMarkWeb sen lapelas nin barra de enderezos (só na versión web); **Corrector ortográfico**, que subliña as faltas cos dicionarios do equipo e segue o idioma do documento; e **Opcións de exportación…**.
+* **Imprimir (Ctrl+P)**: unha vista lista para papel ou PDF.
+* **Axuda**: o **Manual (F1)**, **Acerca de EdiMarkWeb** —versión, autor e licenzas— e, no escritorio, **Buscar actualizacións…**.
+
+A barra de ferramentas, baixo a anterior, reúne desfacer e refacer, negra, cursiva, cabeceiras (H1…H6), listas, citas, código, ligazóns, imaxes, táboas, **Pegar** e as fórmulas. Cada botón di ao pasar o rato que fai e con que atallo. En pantallas pequenas pregase en dous botóns, **Accións** e **Formato**.
+
+---
+
+## Abrir, importar e arrastrar
+
+* **Abrir (`Ctrl+O`)**: ficheiros `.md` e `.markdown`.
+* **Importar (`Ctrl+Alt+O`)**: converte a Markdown con Pandoc documentos `.docx`, `.odt`, `.epub`, `.html` e `.tex`, coas súas cabeceiras, listas, táboas, ligazóns e imaxes. Dun `.epub` volve tamén o idioma do libro.
+* **Arrastrar e soltar**: solta sobre a aplicación un ou varios ficheiros deses mesmos tipos e cada un ábrese na súa lapela. Tamén cartafoles enteiros: percórrense as súas subcarpetas en orde alfabética e o que non sexa compatible ignórase. Se o documento xa estaba aberto, non se duplica: a aplicación volve á súa lapela.
+
+Na aplicación de escritorio, `Ctrl+S` escribe sobre o ficheiro que abriches; no navegador descárgase. O cartafol que uses lémbrase mentres a aplicación está aberta, así que os seguintes cadros de abrir, gardar ou exportar saen onde estabas.
+
+---
+
+## Imaxes
+
+O botón **Imaxe** admite un ficheiro do disco ou unha URL, e pregunta como inserilo:
+
+* **Con ruta relativa** (o recomendado): o documento só nomea a imaxe —`![Gráfico](imaxes/01.png)`—, que queda no seu cartafol. É o que fai calquera editor de Markdown e mantén o `.md` lixeiro; a cambio, o documento e o seu cartafol de imaxes viaxan xuntos.
+* **Dentro do documento**: a imaxe incrústase no ficheiro, que se volve autónomo pero moito máis pesado. Útil para enviar un `.md` solto por correo.
+
+**Rutas relativas.** Na aplicación de escritorio as imaxes búscanse soas no cartafol do documento. No navegador ningunha páxina pode ler un cartafol sen permiso: se faltan imaxes, aparece un aviso co botón **Buscar o seu cartafol…** e, ao elixilo, vense todas. Abonda con facelo unha vez. Ao gardar, esas imaxes cópianse xunto ao `.md` conservando as súas rutas (ou dentro dun ZIP, se o navegador non permite escribir cartafoles). O Markdown nunca cambia: o que gardas, copias ou exportas leva a ruta que escribiches.
+
+**Imaxes incrustadas.** Cando chegan dentro do texto —ao importar un DOCX, ao pegar desde outra aplicación—, o seu código ocupa milleiros de caracteres. EdiMarkWeb prégaas: no editor queda unha marca curta como `__EDIMARK_B64_1__` e, baixo o panel, unha lista coa miniatura, o formato e o tamaño de cada unha, con botóns para **vela**, **ver o seu código** ou **eliminala**. O contido real consérvase intacto ao gardar, copiar e exportar.
+
+O botón **Pasar as imaxes ao cartafol**, nesa mesma lista, fai o camiño de volta: cada imaxe convértese nun ficheiro dentro dun cartafol co nome do documento (`o-meu-ficheiro.md` → `o-meu-ficheiro/`) e no Markdown queda a súa ruta. Os ficheiros escríbense ao gardar, e `Ctrl+Z` desfai o cambio.
+
+---
+
+## Fórmulas matemáticas
+
+As fórmulas escríbense en LaTeX e compóñense no momento con KaTeX. Hai tres maneiras de poñelas:
+
+* **Menú de fórmulas** (no editor Markdown): `Ctrl+M` abre a espera —a barra de estado lembra as teclas— e despois `1`, `2`, `3` ou `4` elixe o delimitador (`$...$`, `$$...$$`, `\(...\)` ou `\[...\]`); `Intro` insire `$...$` e `Esc` cancela.
+* **Xanela de fórmula** (no editor visual): o botón `{}` —ou `Ctrl+M`, que aquí non pregunta polos delimitadores— abre unha xanela co código LaTeX e o resultado á vista mentres escribes, co aviso do erro se o hai. Aí elixes se vai en liña ou en bloque e con que delimitadores. Faise así porque sobre a folla non hai onde escribir dentro dun `$…$` baleiro: KaTeX convérteo en fórmula en canto se repinta.
+* **EdiCuaTeX (`Ctrl+Alt+M`)**: o editor visual de fórmulas integrado, para construílas co rato. Ao aceptar, a fórmula volve inserida.
+
+### Exemplos de fórmulas con LaTeX
+
+#### Fórmula de segundo grao
+
+Para resolver unha ecuación de segundo grao como $ax^2 + bx + c = 0$, utilízase:
+
+$$
+x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}
+$$
+
+#### Matriz 2x2
+
+$$
+A = \begin{pmatrix}
+ a_{11} & a_{12} \\
+ a_{21} & a_{22}
+\end{pmatrix}
+$$
+
+#### Outros delimitadores
+
+Ademais de `$...$` e `$$...$$`, podes usar os delimitadores propios de LaTeX: \(E = mc^2\) en liña, e en bloque:
+
+\[
+\nabla \cdot \vec{E} = \frac{\rho}{\varepsilon_0}
+\]
+
+#### Sumatorios, límites e integrais
+
+A suma dos $n$ primeiros naturais é $\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$ e a integral $\int_0^1 x^2\,dx = \frac{1}{3}$. O número $e$ defínese como un límite:
+
+$$
+e = \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^n
+$$
+
+#### Sistemas de ecuacións
+
+$$
+\begin{cases}
+2x + y = 5 \\
+x - y = 1
+\end{cases}
+$$
+
+#### Símbolos soltos
+
+Letras gregas ($\alpha$, $\beta$, $\Omega$), subíndices ($H_2O$), comparacións ($a \neq b$, $x \leq y$) e conxuntos ($\mathbb{R}$, $A \subseteq B$).
 
 ---
 
 ## Buscar e substituír
 
-O botón da lupa (ou `Ctrl+F`) abre un panel con busca avanzada:
+A lupa (ou `Ctrl+F`) abre o buscador, que traballa no panel onde esteas:
 
-* O cadro de busca resalta todas as coincidencias, aínda que ignores acentos ou maiúsculas.
-* Usa `Enter` para saltar á seguinte coincidencia e `Maiús+Enter` para retroceder.
-* Preme a frecha lateral para amosar o panel de substitución. Podes substituír coincidencias unha a unha ou todas á vez (con confirmación).
-* O botón **Regex** interpreta o que escribas como unha expresión regular. Neste modo os acentos si contan (as maiúsculas séguense ignorando) e podes usar grupos como `(\d+)`; na substitución recupéranse coas referencias numeradas habituais de JavaScript (o signo de dólar seguido do número de grupo).
-* O contador `actual / total` axúdache a seguir o progreso.
-* `Esc` pecha o buscador e devolve o foco ao editor.
-
-A busca funciona tanto na vista de Markdown como na vista HTML, segundo onde teñas o foco. Mentres o buscador está aberto, os atallos de formato quedan en pausa para non interferir co que escribas nel.
+* Resalta todas as coincidencias aínda que escribas sen acentos ou en minúsculas. `Intro` salta á seguinte e `Maiús+Intro` retrocede; o contador `actual / total` di por onde vas.
+* A frecha lateral desprega a substitución, unha a unha ou todas de golpe (con confirmación).
+* O botón **Regex** interpreta a busca como expresión regular: aí os acentos si contan e podes usar grupos como `(\d+)`, que na substitución se recuperan co signo de dólar e o número de grupo.
+* `Esc` péchao e devolve o foco ao editor. Mentres está aberto, os atallos de formato quedan en pausa.
 
 ---
 
-## Interface principal
+## Os axustes de cada documento
 
-A zona de traballo divídese en dous paneis redimensionables:
+Xunto ao contador de caracteres, na barra de estado, hai un botón curto, sempre á vista, co idioma no que vai saír o documento (`GL`, `ES`, `FR`…). Se se ve atenuado, ese documento non ten idioma propio e segue o xeral. Ao premelo ábrese o cadro **Este documento**, con dúas lapelas:
 
-* **Markdown** (esquerda): editor de texto sinxelo. A súa lupa e o contador de caracteres están na barra de estado, baixo os dous paneis. A lupa (`−`, a porcentaxe e `+`, ou `Ctrl` + `+` / `Ctrl` + `-`) agranda ou reduce o texto do editor sen tocar o documento. Todo o que escribas aquí reflíctese de inmediato no panel dereito.
-* **HTML / Vista previa** (dereita): mostra o resultado final e tamén permite editar o contido directamente. Usa o botón coa icona de código para alternar entre a vista previa rica e o código HTML xerado. O documento preséntase como unha folla sobre unha mesa, e o seu zoom —na barra de estado, mentres estás neste panel— (`−`, a porcentaxe e `+`) faina máis grande ou máis pequena na pantalla; a porcentaxe volve ao 100 %. É unha lupa: non cambia o texto nin o que se exporta —o tamaño do documento está en *Formato do texto*—.
-* **Panel activo**: cos dous paneis á vista, un deles é o que manda —o que reciben os botóns da barra de ferramentas e o que goberna a lupa—. Recoñécese polo fío de cor do panel e polo rótulo da barra de estado, que só nomea o panel activo, e segue marcado aínda que premas un botón e o cursor deixe de pestanexar aí.
-* **Copiar contido**: botóns específicos para copiar o Markdown ou o HTML xerado (inclúe fórmulas convertidas a LaTeX cando copias HTML).
+* **Documento**: idioma, autor, índice automático e numeración de apartados. O **idioma** é importante: viaxa dentro do ficheiro e é o que fai que Word e LibreOffice deixen de corrixir en inglés un texto en galego. Con *Outro…* podes escribir o código de calquera lingua (`fr`, `de`, `pt-BR`) e con *Herdado* vólvese ao xeral.
+* **Formato**: aliñación, tipo e tamaño de letra, interliñado, marxes, sangría de primeira liña e partición de palabras con guión. Ao elixir *Outra…* no tipo de letra aparece unha lista coas tipografías que a aplicación recoñece instaladas; podes escribir calquera nome aínda que aquí non estea —avísase en ámbar e úsase unha de reserva—, porque o ficheiro pode acabar nun equipo que si a teña. Debaixo de cada campo lese o que herda agora mesmo, e o que non herda nada dio tamén: aí manda o programa que abra o ficheiro.
 
-Podes arrastrar a barra central para dar máis espazo a calquera dos paneis, escoller unha das tres disposicións no botón da dereita ou usar a frecha dobre para **maximizar a área de edición**, que agocha as barras superiores e deixa a pantalla para o texto. O botón `+` mantense xusto despois da última lapela.
+Unha pastilla na barra de estado resume como vai saír o documento: o tamaño de letra, o tipo e o interliñado, os tres sempre. Se algunha vez baleiras un nas opcións xerais, un guión (`—`) avisa de que aí manda o programa que abra o ficheiro. O resto —aliñación, sangría, partición e marxes— lese ao pasar o rato, e ao premela ábrese este mesmo cadro pola súa lapela **Formato**.
 
-### Os axustes de cada documento
-
-Xunto ao contador de caracteres hai un botón curto co idioma do documento: `ES`, `CA`, `FR`… Se se ve atenuado, ese documento non ten idioma propio e usa o **idioma xeral** de *Configuración → Opcións de exportación…*, que é o normal.
-
-Ao escoller un idioma concreto, a aplicación gárdao **dentro do propio documento**, de xeito que viaxa co ficheiro: se o gardas e o abres mañá, aquí ou noutro equipo, ou llo pasas a alguén, seguirá sendo ese. Para volver ao anterior, escolle *Idioma xeral*. E con *Outro idioma…* podes escribir o código de calquera lingua (`fr`, `de`, `pt-BR`). Nese mesmo menú, *Autor deste documento…* fai o propio co autor.
-
-Na barra de estado, xunto ao contador de caracteres, unha pastilla resume como vai saír o documento: o tipo e o tamaño de letra, a entreliña ou o aliñamento —os tres primeiros que estean decididos—, xa coa herdanza resolta —o que di o documento e, onde cala, a opción xeral—. O resto —e as marxes, a sangría e a partición— lese ao pasar o rato por riba, e ao premela ábrese este mesmo cadro. En pantallas estreitas queda só co primeiro.
-
-No cadro **Este documento** están tamén o **índice automático** e a **numeración dos apartados**, coas mesmas tres posibilidades: *Herdado*, *Si* e *Non*. Son os mesmos axustes de *Opcións de exportación*, pero ditos por este documento, que é onde adoitan decidirse: un manual quere índice numerado e unha nota de dous parágrafos non. Debaixo de cada campo lese o que herda agora mesmo, e un *Non* explícito quítalle o índice a este documento aínda que a opción xeral o pida.
-
-Se algunha vez abres o teu `.md` cun editor de texto plano, verás esa preferencia arriba de todo, nunhas liñas entre raias:
-
-```
----
-lang: "ca"
-toc: true
----
-```
-
-É a forma estándar de gardar datos sobre un documento e enténdena moitos programas. EdiMarkWeb non a mostra na previsualización, porque non é contido, pero si no panel Markdown, que é o código fonte. Podes borrala ou cambiala a man se queres.
-
-#### O formato do texto
-
-No mesmo cadro —que tamén abre o botón dos controis deslizantes do final da barra— fíxanse a **aliñación** (esquerda, xustificada ou dereita), o **tipo de letra** (con serifa, sen serifa, monoespazada ou a que escribas), o **tamaño** en puntos, o **entreliñado**, as **marxes** dos catro lados en centímetros, a **sangría de primeira liña** e a **partición de palabras con guión**.
-
-Ao escoller *Outra…* no tipo de letra aparece o nome da tipografía xusto debaixo, cunha lista de suxestións: as que a aplicación puido recoñecer como instaladas neste equipo (en Chrome e Edge, ademais, *Ver todas as do sistema…* pide permiso e ofrece a lista completa). Podes escribir calquera nome aínda que non estea instalado: o documento gárdao igual, porque o ficheiro pode acabar nun equipo que si a teña. Se aquí non está, avísase en ámbar e a previsualización usa unha tipografía de reserva; ao exportar, o nome viaxa escrito e resólveo cada programa (Word e LibreOffice se a teñen, e en LaTeX só con XeLaTeX ou LuaLaTeX).
-
-O que deixes en *Herdado* segue **Configuración → Opcións de exportación…**, onde están os mesmos axustes como valores de partida para todos os documentos. Debaixo de cada campo vese, en gris, o valor que herda agora mesmo. O que fixes aquí gárdase dentro do propio documento, xunto ao idioma e ao autor, así que viaxa co ficheiro. *Quitar todo do documento* déixao sen nada propio:
+Todo o que fixes gárdase **dentro do propio `.md`**, nunhas liñas entre raias ao principio do ficheiro:
 
 ```
 ---
 lang: "gl"
+toc: true
 align: "justify"
 fontsize: "12pt"
-margin-left: "3cm"
 ---
 ```
 
-Aplícase á previsualización e aos cinco formatos de exportación, con tres salvidades que convén coñecer:
+É a forma estándar de gardar datos sobre un documento e enténdena moitos programas. Aparece no editor Markdown, que é o código fonte, pero non no editor visual, porque non é contido. O que deixes en *Herdado* segue **Configuración → Opcións de exportación…**, e o propio cadro leva unha ligazón, *Cambiar o que herdan todos os documentos…*, que abre esas opcións pola mesma lapela. *Quitar todo do documento* déixao sen nada propio.
 
-* No **EPUB** as marxes son unha suxestión: quen manda sobre a caixa da páxina é o lector de libros.
-* No **TEX**, se o teu preámbulo xa carga `geometry`, mandan as túas marxes: a aplicación avisa de que deixou fóra as do menú en lugar de romper a compilación con dous `\usepackage` iguais.
-* A **partición de palabras** usa os dicionarios de guións do sistema. Word en Windows e macOS trae os seus; en Linux, LibreOffice precisa o paquete do idioma (por exemplo, `hyphen-gl`).
-
-### Imaxes con ruta relativa
-
-Un `.md` corrente non leva as imaxes dentro: gárdaas nun cartafol ao lado e noméaas cunha ruta relativa, `imaxes/01.png`. EdiMarkWeb resolve esas rutas e mostra as imaxes na previsualización.
-
-* Na **aplicación de escritorio** non hai que facer nada: ao abrir o documento, as imaxes búscanse no seu cartafol e aparecen.
-* No **navegador** ningunha páxina pode ler un cartafol do disco sen permiso. Se o documento nomea imaxes que non se atopan, sobre a previsualización aparece un aviso co botón **Buscar o seu cartafol…**: ao escoller o cartafol do documento, todas as imaxes vense. Abonda con facelo unha vez: EdiMarkWeb garda no navegador as imaxes que usa o documento e recupéraas ao recargar a páxina.
-* Arrastrar un cartafol enteiro ao editor abre os seus documentos **e** rexistra as súas imaxes dunha vez.
-* Ao **gardar**, as imaxes recuperadas cópianse xunto ao `.md`, conservando rutas como `imaxes/01.png`. No navegador escóllese o cartafol de destino; se o navegador non permite escribir cartafoles, descárgase un ZIP listo para descomprimir. **Gardar como…** fai a mesma copia na aplicación de escritorio.
-
-O Markdown non cambia en ningún momento: o que se garda, se copia ou se exporta segue levando a ruta que escribiches. As imaxes que non se atopan márcanse cun recadro descontinuo en lugar da icona rota do navegador.
-
-### Imaxes incrustadas
-
-Cando un documento leva imaxes en base64 —ao importar un DOCX, ao pegar desde outra aplicación—, o seu código ocupa miles de caracteres e fai ilexible o Markdown. EdiMarkWeb prégaas automaticamente: no editor aparece unha marca curta do tipo `__EDIMARK_B64_1__` e, baixo o panel, unha lista con cada imaxe agochada, o seu formato, o seu tamaño e un botón **Ver código** para consultala ou copiala. O contido real consérvase intacto ao gardar, copiar ou exportar. A lista vén recollida nunha soa liña, co número de imaxes: ao despregala, cada unha amosa a súa miniatura —clic nela para vela a tamaño grande— e a lista queda coa súa propia altura e barra de desprazamento, así que por moitas imaxes que teña o documento nunca lle come sitio ao editor. Lémbrase se a deixaches aberta ou pechada. Cada liña trae ademais un botón **Eliminar**, que quita a imaxe do documento —o código enteiro, non só o marcador— tras pedir confirmación, e **Ver código**, útil se queres copiar o `data:` para pegar esa mesma imaxe noutro documento ou noutra ferramenta.
-
-Se prefires que as imaxes non vaian dentro do texto, o botón **Pasar as imaxes á carpeta**, nese mesmo panel, fai o camiño de volta: cada imaxe convértese nun ficheiro dunha carpeta co nome do documento —`o-meu-ficheiro.md` sácaas a `o-meu-ficheiro/`, cos espazos en guións— e no Markdown queda a súa ruta, que é como garda as imaxes calquera `.md`. A carpeta leva o nome do documento para que dous `.md` gardados un ao lado do outro non se pisen as imaxes, numeradas desde o `01` en cada un. Os ficheiros escríbense ao gardar o documento, polo mesmo camiño que o resto de imaxes con ruta: xunto ao `.md` na aplicación de escritorio, na carpeta que escollas no navegador e, onde o navegador non ofrece escoller carpeta, dentro do ZIP. Mentres tanto séguense vendo na vista previa, e `Ctrl`+`Z` desfai o cambio se non era o que querías.
-
----
-
-## Vista previa interactiva
-
-* Fai clic no panel dereito para editar directamente sobre o resultado: os cambios sincronízanse co Markdown mantendo o formato sempre que a edición sexa compatible.
-* A vista previa admite seleccións, copiar e pegar.
-* **A barra de formato tamén traballa aquí.** Co cursor na folla, a negra, a cursiva, o código, os títulos, a cita, as listas, as ligazóns, as imaxes, as táboas e as fórmulas aplícanse sobre o que estás a ver, e o Markdown reescríbese só: é un editor de texto con formato que vai traducindo a Markdown. O mesmo botón quita o que puxo —premer *Negra* sobre algo xa en negra quítaa— e os atallos (`Ctrl`+`B`, `Ctrl`+`I`, `Ctrl`+`Maiús`+`L`, etc.) fan o mesmo que os botóns. `Ctrl`+`Z` desfai aínda que esteas na folla: o historial é sempre o do documento.
-* Mantén premido `Ctrl` (ou `Cmd` en macOS) e fai clic para abrir ligazóns; na aplicación de escritorio ábrense no teu navegador habitual.
-* **As fórmulas escríbense na súa propia xanela.** Sobre a folla non hai onde escribir dentro dun `$…$` baleiro, porque KaTeX convérteo en fórmula en canto se repinta; por iso, co cursor na vista previa, o botón `{}` abre directamente unha xanela co código LaTeX, o resultado á vista mentres escribes e o aviso do erro se o hai. O que tiveses seleccionado chega xa escrito. Dentro escóllese se a fórmula vai **en liña ou en bloque** e con que **delimitadores**, `\(...\)` ou `$...$`, que é o que vén posto de partida: en liña e `\(...\)`. Desde o panel Markdown non cambia nada: o mesmo botón desprega os catro pares e os delimitadores escríbense no texto, como sempre.
-* As fórmulas LaTeX represéntanse automaticamente con KaTeX; ao editalas volven á súa sintaxe orixinal.
-
----
-
-## Accións principais
-
-* **Abrir (`Ctrl+O`)**: importa ficheiros `.md` ou `.markdown`.
-* **Importar**: converte a Markdown documentos noutros formatos mediante Pandoc: `.docx`, `.odt`, `.epub`, `.html` e `.tex`. Recupéranse as cabeceiras, as listas, as táboas e as ligazóns, e tamén as imaxes: cando proceden dun `.docx`, `.odt` ou `.epub` extráense do propio ficheiro e quedan incrustadas no Markdown, de xeito que se ven na vista previa e viaxan contigo ao exportar. Dun `.epub` volve ademais o idioma do documento, que o libro garda no seu envoltorio e non no texto.
-* **Gardar (`Ctrl+S`)**: garda o documento actual. Na aplicación de escritorio actualiza o ficheiro xa aberto; **Gardar como… (`Ctrl+Maiús+S`)** sempre permite escoller outro nome ou localización.
-* **Copiar contido**: o panel esquerdo inclúe un botón para copiar o Markdown; na vista previa podes elixir que se copiará (HTML representado ou variantes LaTeX) desde o menú despregable xunto á icona de copia.
-* **Cambiar tema, disposición ou ancho**: usa **Configuración** para o tema, `Ctrl+L` ou os botóns de paneis para a disposición e o botón de ancho (só icona), á dereita da frecha dobre, para ampliar o espazo web.
-* **Manual**: dispós deste documento sempre actualizado con `Ctrl+H`.
-* **A carpeta lémbrase**: na aplicación de escritorio, o primeiro cadro de abrir ou gardar sae onde diga o sistema, pero a partir de aí todos —abrir, gardar como, exportar, escoller unha imaxe— volven á última carpeta que usaches. Lémbrase só mentres a aplicación está aberta.
+O formato aplícase ao editor visual e aos cinco formatos de exportación, con tres salvidades: no **EPUB** as marxes son unha suxestión, porque manda o lector de libros; en **TEX**, se o teu preámbulo xa carga `geometry`, mandan as túas marxes e a aplicación avisa; e a **partición de palabras** usa os dicionarios de guións do sistema (en Linux, LibreOffice precisa o paquete do idioma, por exemplo `hyphen-gl`).
 
 ---
 
 ## Exportar
 
-Abre o botón **Arquivo** e selecciona `Exportar` para descargar versións listas para entregar ou publicar:
+**Exportar (Ctrl+Alt+E)** xera o documento listo para entregar ou publicar:
 
-* **DOCX (Microsoft Word)**: ideal para compartir con alumnado ou colegas que usan Word, e compatible con Google Docs.
-* **ODT (LibreOffice)**: pensado para suites libres como LibreOffice ou OnlyOffice.
-* **EPUB (libro dixital)**: crea un libro electrónico compatible con lectores de EPUB 3 (Calibre, Apple Libros, Thorium, tinta electrónica…). O título tómase da primeira cabeceira de nivel 1 (ou do nome do documento), e o autor, a portada e o idioma saen dos axustes que se explican máis abaixo.
-* **HTML (páxina web)**: xera un ficheiro autónomo con estilos e fórmulas incrustados, listo para aloxar na web. O título da lapela do navegador tómase do primeiro encabezamento, ou do nome do documento se non o hai.
-* **TEX (LaTeX)**: crea un documento `.tex` completo con cabeceira preparada para compilar. Leva o idioma do documento, de xeito que a partición de palabras e os rótulos automáticos saen na túa lingua, e se o documento comeza cun único encabezamento de nivel 1 este pasa a ser o título (`\title` e `\maketitle`) no canto dunha sección máis.
-* **PDF**: abre o diálogo de impresión do sistema, onde escolles «Gardar como PDF» como destino. Sae exactamente o que ves na vista previa, coas fórmulas compostas e as marxes do documento, e o texto queda seleccionable e buscable. É o mesmo camiño que o botón **Imprimir (Ctrl+P)**.
+* **DOCX (Word)**: para compartir con quen usa Word; tamén o abre Google Docs.
+* **ODT (LibreOffice)**: para suites libres como LibreOffice ou OnlyOffice.
+* **EPUB (libro dixital)**: compatible con lectores de EPUB 3. O título sae da primeira cabeceira de nivel 1 (ou do nome do documento) e o autor, a portada e o idioma, dos axustes.
+* **HTML (páxina web)**: un ficheiro autónomo cos estilos e as fórmulas dentro, listo para subir á web.
+* **TEX (LaTeX)**: un `.tex` completo coa cabeceira preparada para compilar.
+* **PDF**: abre o diálogo de impresión, onde elixes «Gardar como PDF». Sae exactamente o que ves, coas fórmulas compostas e o texto seleccionable. As marxes son as do documento; se non leva ningunha, 18 mm.
 
-Durante a exportación, a barra superior mostra mensaxes de estado (progreso, éxito ou erros).
+Na barra hai tamén un botón de exportar coa súa frecha, xunto ao de copiar: o botón repite dun clic o último formato que usaches —dío nun rótulo pequeno, e de partida é DOCX— e a frecha abre esta mesma lista.
 
 ### Opcións de exportación
 
-**Configuración → Opcións de exportación…** garda preferencias que se reutilizan en cada exportación, tamén a próxima vez que abras a aplicación.
+**Configuración → Opcións de exportación…** garda os valores de partida para todos os documentos, e lémbranse dunha sesión a outra. Ten catro lapelas:
 
-O cadro está repartido en catro lapelas —**Documento**, **Formato**, **EPUB** e **LaTeX**— que tamén se percorren coas frechas do teclado. Na aplicación de escritorio, ademais, estas opcións gárdanse nun ficheiro `settings.json` dentro do cartafol de configuración de EdiMarkWeb no teu perfil de usuario, así que sobreviven a unha limpeza de datos do navegador interno ou a unha reinstalación.
+* **Documento**: **idioma** (por omisión, o mesmo da interface), **autor** —que aparece nas propiedades do ficheiro e na portada do EPUB e do LaTeX; déixao baleiro se non queres que Pandoc escriba a liña do nome en DOCX e ODT—, **índice automático** e **numerar os apartados** (1, 1.1, 1.2…; o ODT non admite esa numeración).
+* **Formato**: os mesmos axustes de texto do apartado anterior, como valores de partida. Tres veñen postos —**12 pt**, **con remates** e interliñado **1,5**—, porque son os que o editor visual precisa para amosar a verdade: declarados, o que se ve na folla é o que sae nos cinco formatos. Os demais saen sen fixar.
+* **EPUB**: a **portada**, que pode ser a que **xera** a aplicación co título e o autor, **unha imaxe túa** (ata 1 MB) ou **ningunha**.
+* **LaTeX**: a **clase** (`article`, `report` ou `book`), as súas **opcións** (`12pt, a4paper`) e un **preámbulo** propio, que se insire xusto antes de `\begin{document}`. Un preámbulo con erros non avisa aquí: o fallo aparece ao compilar.
 
-**Idioma do documento**, que se aplica aos cinco formatos. É o que decide en que lingua corrixen a ortografía Word e LibreOffice ao abrir un DOCX ou un ODT, como parte as palabras LaTeX e que idioma declaran o HTML e o EPUB para os lectores de pantalla. Por omisión é **Igual ca a interface**: se cambias o idioma de EdiMarkWeb, os documentos ségueno. Podes fixar calquera dos cinco idiomas da aplicación ou escoller **Outro…** e escribir o seu código (`fr`, `de`, `pt-BR`).
+> **Sobre o índice**: en DOCX e ODT é un campo que calcula o procesador de textos, así que o documento ábrese coa lista de apartados pero sen números de páxina. Para que saian, actualízao: en Word, clic dereito sobre o índice → *Actualizar campos*; en LibreOffice, *Ferramentas → Actualizar → Índices*.
 
-**Autor**, que se garda nas propiedades do ficheiro e aparece como autor do libro no EPUB e na portada do LaTeX. En DOCX e ODT, ademais, Pandoc escribe unha liña co nome ao principio do documento; se non queres que apareza, deixa o campo baleiro. Un documento concreto pode levar outro autor: *Autor deste documento…*, no menú do botón de idioma.
-
-**Portada do EPUB**, con tres posibilidades. De partida, EdiMarkWeb **xera unha** co título e o autor do documento, porque un libro sen imaxe aparece coa icona xenérica no estante do lector. Podes poñer **unha imaxe túa** —ata 1 MB, que para unha portada sobra: gárdase canda os teus documentos, no espazo propio da aplicación— ou deixar o libro **sen portada**. Só afecta ao EPUB.
-
-**Formato do texto**: aliñación, tipo e tamaño de letra, entreliñado, marxes, sangría e partición de palabras, cos valores de partida para todos os documentos. O tamaño vén posto en doce puntos, que é o que xa escriben DOCX e ODT, para que a vista previa teña sempre un corpo concreto que amosar; os demais saen sen fixar. Cada documento pode fixar os seus desde o panel Markdown, e o que non fixe hérdao de aquí.
-
-**Índice automático**, que engade ao principio do documento un índice cos apartados. En DOCX é un índice de Word de verdade e en ODT un nativo de LibreOffice; o EPUB non o precisa, porque o lector xa trae o seu índice de navegación. É o valor de partida: cada documento pode pedilo ou rexeitalo pola súa conta no cadro **Este documento**.
-
-> **Sobre os números de páxina**: en DOCX e ODT o índice é un campo que calcula o procesador de textos, porque hai que maquetar as páxinas para saber en cal cae cada apartado. EdiMarkWeb escríbelle dentro a lista de apartados, así que o documento ábrese co índice á vista, pero sen números. Para que aparezan, actualízao: en Word, clic dereito sobre o índice → *Actualizar campos*; en LibreOffice, *Ferramentas → Actualizar → Índices*.
-
-**Numerar os apartados**, que antepón 1, 1.1, 1.2… aos encabezamentos. Funciona en DOCX, HTML e LaTeX; o ODT non admite esta numeración e sae sen ela. Tamén a pode fixar cada documento.
-
-E tres axustes **só para LaTeX**, que se aplican ao exportar a TEX e ao copiar *LaTeX – documento completo*:
-
-* **Clase de documento**: `article` (a predeterminada), `report` ou `book`.
-* **Opcións de clase**: o que vai entre corchetes en `\documentclass`, separado por comas (`12pt, a4paper`).
-* **Preámbulo**: os teus paquetes e macros, que se insiren tal cal ao final do preámbulo, xusto antes de `\begin{document}`.
-
-Se o documento comeza cos seus propios metadatos YAML, mandan eles e ningún destes axustes se aplica. E ten en conta que un preámbulo con erros non dará ningún aviso aquí: o fallo aparecerá ao compilar o `.tex`.
+Se o documento comeza cos seus propios metadatos YAML, mandan eles.
 
 ---
 
-## Copiar e compartir sen descargar
+## Copiar sen descargar
 
-O botón de copiar está na cabeceira, xunto a **Exportar**: os dous fan o mesmo con distinto destino, un ao ficheiro e outro ao portapapeis. Copia en catro formatos:
+O botón de copiar, xunto a **Exportar**, fai o mesmo pero ao portapapeis, en catro formatos:
 
-* *Markdown* (`Ctrl+Alt+C` e logo `1`): o texto fonte, tal cal está no editor.
-* *HTML* (`Ctrl+Alt+C 2`): o documento representado, tal como o ves na vista previa. É a opción para levar o texto **co seu formato** a Word, LibreOffice, Google Docs, o correo ou calquera outro editor: todos len o HTML do portapapeis e pegan encabezamentos, negras, listas e táboas xa compostos, sen pasar por ningún ficheiro. Dous avisos: as fórmulas péganse como texto, non como ecuacións —para iso hai que exportar a DOCX ou ODT—, e as imaxes só viaxan se están incrustadas no documento.
+* *Markdown* (`Ctrl+Alt+C` e logo `1`): o texto fonte tal cal.
+* *HTML* (`Ctrl+Alt+C 2`): o documento composto. É a opción para levar o texto **co seu formato** a Word, LibreOffice, Google Docs ou o correo, sen pasar por ningún ficheiro. Dous avisos: as fórmulas péganse como texto —para ecuacións de verdade, exporta a DOCX ou ODT— e as imaxes só viaxan se están incrustadas.
 * *LaTeX* (`Ctrl+Alt+C 3`): só o fragmento actual.
-* *LaTeX completo* (`Ctrl+Alt+C 4`): inclúe cabeceira e contorno listos para compilar, co mesmo idioma e título ca a exportación a TEX.
+* *LaTeX completo* (`Ctrl+Alt+C 4`): con cabeceira e contorno listos para compilar.
 
-O botón lembra o último formato que escolliches e dío nunha etiqueta pequena ao seu carón —`Markdown`, `HTML`, `LaTeX`—, así que copiar outra vez nese formato é un só clic, ou `Ctrl+Alt+C` seguido de `Intro`. A frecha do lado abre a lista para cambialo.
-
-Cada opción mostra unha notificación de éxito e, cando corresponde, prepara automaticamente o marcado LaTeX a partir da vista previa representada.
-
----
-
-## Arrastrar e soltar ficheiros
-
-Arrastra un ou varios ficheiros sobre a aplicación. Admítense `.md` e `.markdown`, que se abren tal cal, e `.docx`, `.odt`, `.epub`, `.html` e `.tex`, que se converten a Markdown con Pandoc antes de abrirse:
-
-* Verás un marco iluminado que confirma que os podes soltar.
-* Cada ficheiro abrirase na súa propia lapela co nome orixinal.
-* Tamén podes arrastrar cartafoles completos desde o explorador do sistema: percórrense os seus subcartafoles e cada ficheiro compatible ábrese na súa lapela, por orde alfabética. O que non sexa compatible ignórase e, se non hai nada aproveitable, a aplicación avísache.
-* O contido queda dispoñible sen conexión grazas ao gardado automático.
+O botón lembra o último formato e dio nun rótulo ao seu carón, así que repetir é un clic; a frecha abre a lista para cambialo.
 
 ---
 
 ## A aplicación de escritorio
 
-Ademais da versión web, EdiMarkWeb instálase como programa en **Linux, Windows e macOS**. É a mesma aplicación —os mesmos menús, os mesmos atallos e os mesmos formatos—, así que o que aprendas nunha valeche na outra.
+É a mesma aplicación —os mesmos menús, atallos e formatos— instalada en **Linux, Windows e macOS**. Os instaladores están na [páxina de descargas](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest): `.deb` e `.AppImage` para Linux, `.exe` e `.msi` para Windows, e `.dmg` para Mac con procesador Apple ou Intel.
 
-### Instalala
+Fronte ao navegador engade:
 
-Os instaladores están na [páxina de descargas](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest), un para cada sistema:
+* **Dobre clic para abrir**: os ficheiros `.md` e `.markdown` quedan asociados, amosan a icona de EdiMarkWeb no xestor de ficheiros e ábrense na aplicación; se xa está aberta, o documento chega a esa mesma xanela, que se pon diante. E se ese ficheiro xa estaba aberto, volve á súa lapela en vez de duplicarse. (A icona instálana o paquete `.deb` e os instaladores de Windows; a AppImage non toca o sistema.)
+* **Gardar escribe no ficheiro de verdade**, sen pasar polo cartafol de descargas.
+* **Corrector ortográfico do sistema**, cos dicionarios do equipo (en Linux pode facer falta instalalos, por exemplo `hunspell-gl`).
+* **Funciona sen conexión**: leva dentro Pandoc e EdiCuaTeX. Só fai falta internet para comprobar se hai versións novas.
 
-* **Linux**: un paquete `.deb` para Debian, Ubuntu, Mint e derivadas, e unha `.AppImage` que se executa sen instalar en calquera distribución.
-* **Windows**: un instalador `.exe` e outro `.msi`, para quen despregue a aplicación nunha aula ou nun centro.
-* **macOS**: unha imaxe `.dmg` para os Mac con procesador Apple e outra para os Mac con Intel.
+**Actualizacións**: ao arrincar comproba unha vez ao día se hai versión nova e, se a hai, aparece un aviso con **Descargar e instalar**, que baixa o instalador e láncao. Como ningún instalador pode substituír os ficheiros dunha aplicación aberta, o mesmo aviso trae **Pechar EdiMarkWeb**, que garda e pecha. Cunha AppImage, a aplicación descarga a nova e abre o seu cartafol para que substitúas a anterior. Podes pedir a comprobación cando queiras desde **Axuda → Buscar actualizacións…**, ou desactivala coa caixa **Comprobar ao iniciar**.
 
-### Que engade respecto ao navegador
-
-* **Os documentos ábrense cun dobre clic**: a instalación asocia os ficheiros `.md` e `.markdown`, de xeito que se abren en EdiMarkWeb desde o xestor de ficheiros. Se a aplicación xa está aberta, o documento chega a esa mesma xanela nunha lapela nova.
-* **Gardar escribe no ficheiro de verdade**: `Ctrl+S` actualiza o documento que abriches, sen pasar pola carpeta de descargas. **Gardar como…** abre o diálogo do sistema para escoller nome e cartafol.
-* **Corrector ortográfico do sistema**: o editor subliña as faltas cos dicionarios instalados no equipo. En Windows e macOS son os idiomas que xa teñas; en Linux pode ser necesario instalar o dicionario que queiras (por exemplo, o paquete `hunspell-gl`). Podes apagalo en **Configuración → Corrector ortográfico**.
-* **Funciona sen conexión**: a aplicación leva dentro todo o que precisa, incluídos Pandoc e o editor de fórmulas EdiCuaTeX, así que podes escribir, importar e exportar sen internet. Só fai falta conexión para comprobar se hai versións novas.
-* **Saír**: ao final do menú **Arquivo**, garda o documento en curso e pecha a aplicación.
-
-### Mantela ao día
-
-Ao arrincar, a aplicación comproba unha vez ao día se hai unha versión máis recente. Cando a hai, aparece un aviso baixo a barra de ferramentas co botón **Descargar e instalar**: baixa o instalador que corresponde ao teu sistema, amosa o progreso e entrégallo ao instalador do sistema para que remates nun par de clics. Cunha AppImage non hai nada que instalar, así que a aplicación descarga a nova e abre o seu cartafol para que substitúas a que tiñas. Ningún instalador pode substituír os ficheiros dunha aplicación aberta, así que en canto arranca aparece no mesmo aviso o botón **Pechar EdiMarkWeb**, que garda o que esteas a escribir e pecha: ao rematar a instalación, volve abrila e xa terás a versión nova.
-
-O aviso inclúe a caixa **Comprobar ao iniciar**, que desactiva esa comprobación automática, e a ligazón **Ver novidades** coa lista de cambios. Podes pedila cando queiras desde **Axuda → Buscar actualizacións…**; se xa tes a última versión, dirácho na barra de estado.
-
-### O que non cambia
-
-Os documentos que comeces no navegador e os da aplicación de escritorio son ficheiros Markdown correntes: podes movelos dun a outro sen conversións. O gardado automático das lapelas, en cambio, é independente en cada un, porque cada versión garda a súa copia de traballo no seu propio espazo.
+Os documentos son os mesmos ficheiros Markdown nas dúas versións e pasan dunha a outra sen conversións; o que non se comparte é o autogardado, porque cada versión garda a súa copia de traballo no seu propio espazo.
 
 ---
 
@@ -349,67 +282,6 @@ Os atallos dunha soa letra actúan sobre o documento, así que quedan en pausa m
 
 ---
 
-## Exemplos de fórmulas con LaTeX
-
-### Fórmula de segundo grao
-
-Para resolver unha ecuación de segundo grao como $ax^2 + bx + c = 0$, utilízase:
-
-$$
-x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}
-$$
-
-### Matriz 2x2
-
-$$
-A = \begin{pmatrix}
- a_{11} & a_{12} \\
- a_{21} & a_{22}
-\end{pmatrix}
-$$
-
-### Outros delimitadores
-
-Ademais de `$...$` e `$$...$$`, podes usar os delimitadores propios de LaTeX: \(E = mc^2\) en liña, e en bloque:
-
-\[
-\nabla \cdot \vec{E} = \frac{\rho}{\varepsilon_0}
-\]
-
-### Sumatorios, límites e integrais
-
-A suma dos $n$ primeiros naturais é $\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$ e a integral $\int_0^1 x^2\,dx = \frac{1}{3}$. O número $e$ defínese como un límite:
-
-$$
-e = \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^n
-$$
-
-### Sistemas de ecuacións
-
-$$
-\begin{cases}
-2x + y = 5 \\
-x - y = 1
-\end{cases}
-$$
-
-### Símbolos soltos
-
-Letras gregas ($\alpha$, $\beta$, $\Omega$), subíndices ($H_2O$), comparacións ($a \neq b$, $x \leq y$) e conxuntos ($\mathbb{R}$, $A \subseteq B$).
-
-Se prefires construílas visualmente, selecciona o texto no editor e abre **EdiCuaTeX**: a fórmula volverá inserida automaticamente.
-
----
-
-## Ideas para docentes
-
-* **Apuntamentos e resumos**: combina texto con fórmulas e ligazóns para compartilos na túa aula virtual.
-* **Exames e exercicios**: exporta a DOCX/ODT para imprimir ou editar posteriormente.
-* **Modelos reutilizables**: garda documentos como HTML autónomo para subilos a Moodle, blogs ou GitHub Pages.
-* **Traballo do alumnado**: convídaos a redactar en Markdown; co gardado automático non perderán os seus avances.
-
----
-
 ## Licenza e contribucións
 
-EdiMarkWeb é software libre baixo a [GNU Affero General Public License v3.0](LICENSE). Isto significa que podes usar a aplicación na túa aula, adaptala e desplegala en servidores propios, sempre que compartas calquera mellora baixo a mesma licenza e ofrezas o código a quen use a túa versión. Se detectas un problema ou queres propoñer cambios, abre unha incidencia en [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) ou envía un pull request.
+EdiMarkWeb é software libre baixo a [GNU Affero General Public License v3.0](LICENSE): podes usalo na túa aula, adaptalo e despregalo en servidores propios, sempre que compartas calquera mellora baixo a mesma licenza e ofrezas o código a quen use a túa versión. Se detectas un problema ou queres propoñer cambios, abre unha incidencia en [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) ou envía un pull request.

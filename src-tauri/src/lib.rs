@@ -47,6 +47,92 @@ fn initial_markdown_paths(state: tauri::State<'_, PendingOpenPaths>) -> Vec<Stri
     paths
 }
 
+/// Extensiones que la aplicación sabe abrir al soltarlas: el Markdown se abre
+/// tal cual y el resto pasa por Pandoc, igual que en el navegador.
+const DROPPABLE_EXTENSIONS: [&str; 8] = ["md", "markdown", "docx", "odt", "epub", "html", "htm", "tex"];
+
+fn droppable_extension(path: &Path) -> Option<String> {
+    let extension = path.extension()?.to_string_lossy().to_ascii_lowercase();
+    DROPPABLE_EXTENSIONS
+        .contains(&extension.as_str())
+        .then_some(extension)
+}
+
+/// Recorre una carpeta soltada y recoge lo que se puede abrir. La profundidad
+/// se limita para que soltar `/` por descuido no deje la aplicación recorriendo
+/// el disco entero, y el número de archivos también: abrir mil pestañas no es
+/// lo que nadie quiere de un arrastre.
+fn collect_droppable(path: &Path, depth: usize, found: &mut Vec<PathBuf>) {
+    const MAX_DEPTH: usize = 8;
+    const MAX_FILES: usize = 200;
+
+    if found.len() >= MAX_FILES {
+        return;
+    }
+    if path.is_file() {
+        if droppable_extension(path).is_some() {
+            found.push(path.to_path_buf());
+        }
+        return;
+    }
+    if !path.is_dir() || depth > MAX_DEPTH {
+        return;
+    }
+    let Ok(entries) = std::fs::read_dir(path) else {
+        return;
+    };
+    // En orden: dos carpetas iguales tienen que abrir sus pestañas igual.
+    let mut children: Vec<PathBuf> = entries.filter_map(|entry| entry.ok().map(|e| e.path())).collect();
+    children.sort();
+    for child in children {
+        collect_droppable(&child, depth + 1, found);
+    }
+}
+
+/// Las rutas soltadas sobre la ventana, ya expandidas y filtradas.
+#[tauri::command]
+fn dropped_document_paths(paths: Vec<String>) -> Vec<String> {
+    let mut found: Vec<PathBuf> = Vec::new();
+    for raw in paths {
+        let candidate = Path::new(&raw).to_path_buf();
+        if !candidate.is_absolute() {
+            continue;
+        }
+        collect_droppable(&candidate, 0, &mut found);
+    }
+    found.dedup();
+    found
+        .into_iter()
+        .map(|path| path.to_string_lossy().into_owned())
+        .collect()
+}
+
+/// El contenido en bruto de un documento soltado, para que Pandoc lo convierta
+/// en el mismo camino que sigue el navegador con un `File`.
+#[tauri::command]
+fn read_dropped_document(path: String) -> Result<tauri::ipc::Response, String> {
+    // 256 MB: un EPUB con imágenes cabe de sobra y nada razonable pasa de ahí.
+    const MAX_BYTES: u64 = 256 * 1024 * 1024;
+
+    let candidate = Path::new(&path);
+    if !candidate.is_absolute() {
+        return Err("La ruta del documento debe ser absoluta.".to_string());
+    }
+    if droppable_extension(candidate).is_none() {
+        return Err("Ese tipo de archivo no se puede abrir.".to_string());
+    }
+    let metadata = std::fs::metadata(candidate).map_err(|error| error.to_string())?;
+    if !metadata.is_file() {
+        return Err("La ruta no corresponde a un archivo.".to_string());
+    }
+    if metadata.len() > MAX_BYTES {
+        return Err("El documento es demasiado grande.".to_string());
+    }
+    std::fs::read(candidate)
+        .map(tauri::ipc::Response::new)
+        .map_err(|error| error.to_string())
+}
+
 #[tauri::command]
 fn read_markdown_document(path: String) -> Result<String, String> {
     let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
@@ -468,6 +554,23 @@ fn set_spell_checking(
     }
 }
 
+/// Traer la ventana al frente cuando llega un documento de fuera. `set_focus`
+/// basta en Windows y macOS, pero varios escritorios de Linux no dejan que una
+/// ventana se ponga delante por su cuenta y se limitan a ignorarlo; ahí el
+/// aviso de atención es lo que hace que la barra de tareas la marque en vez de
+/// que el documento se abra sin que nadie se entere.
+#[cfg(desktop)]
+fn bring_main_window_to_front(app: &tauri::AppHandle) {
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+    let _ = window.show();
+    let _ = window.unminimize();
+    if window.set_focus().is_err() || !window.is_focused().unwrap_or(false) {
+        let _ = window.request_user_attention(Some(tauri::UserAttentionType::Informational));
+    }
+}
+
 #[cfg(desktop)]
 fn deliver_markdown_paths(app: &tauri::AppHandle, paths: Vec<String>) {
     if paths.is_empty() {
@@ -493,11 +596,7 @@ pub fn run() {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
             let paths = markdown_paths(args.into_iter().skip(1), Path::new(&cwd));
             deliver_markdown_paths(app, paths);
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.unminimize();
-                let _ = window.set_focus();
-            }
+            bring_main_window_to_front(app);
         }));
     }
 
@@ -512,6 +611,8 @@ pub fn run() {
         .manage(PendingOpenPaths::default())
         .invoke_handler(tauri::generate_handler![
             initial_markdown_paths,
+            dropped_document_paths,
+            read_dropped_document,
             read_markdown_document,
             write_markdown_document,
             print_document,
@@ -541,6 +642,9 @@ pub fn run() {
                     .map(|path| path.to_string_lossy().into_owned())
                     .collect();
                 deliver_markdown_paths(app, paths);
+                // Finder ya trae la aplicación al frente, pero si estaba
+                // minimizada el documento se abriría sin verse.
+                bring_main_window_to_front(app);
             }
         });
 }

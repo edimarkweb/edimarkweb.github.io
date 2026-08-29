@@ -350,6 +350,57 @@ test('abre las rutas Markdown recibidas al iniciar o desde una segunda instancia
   assert.equal(subscriber, null);
 });
 
+/*
+  El arrastre del escritorio no pasa por el DOM —el webview se queda con él—,
+  así que la plataforma entrega las rutas soltadas, pregunta a Rust qué hay
+  dentro (una carpeta trae documentos) y lee en bruto lo que va a Pandoc.
+*/
+test('entrega el arrastre nativo, expande lo soltado y lee su contenido', async () => {
+  let subscriber;
+  let pedidas = null;
+  const platform = createPlatformApi({
+    Blob,
+    __EDIMARK_TAURI__: {
+      dialog: {},
+      fs: {},
+      app: {
+        onNativeDrop: (callback) => {
+          subscriber = callback;
+          return () => { subscriber = null; };
+        },
+        droppedDocumentPaths: async (paths) => {
+          pedidas = paths;
+          return ['/tmp/carpeta/uno.md', '/tmp/carpeta/dos.docx'];
+        },
+        readDroppedDocument: async () => new Uint8Array([80, 75, 3, 4]),
+      },
+    },
+  });
+
+  const recibidos = [];
+  const unsubscribe = platform.onNativeFileDrop(event => recibidos.push(event));
+  subscriber({ type: 'enter' });
+  subscriber({ type: 'drop', paths: ['/tmp/carpeta'] });
+  assert.deepEqual(recibidos, [{ type: 'enter' }, { type: 'drop', paths: ['/tmp/carpeta'] }]);
+
+  assert.deepEqual(
+    await platform.expandDroppedPaths(['/tmp/carpeta']),
+    ['/tmp/carpeta/uno.md', '/tmp/carpeta/dos.docx'],
+  );
+  assert.deepEqual(pedidas, ['/tmp/carpeta']);
+  assert.deepEqual([...await platform.readDroppedDocumentBytes('/tmp/carpeta/dos.docx')], [80, 75, 3, 4]);
+
+  unsubscribe();
+  assert.equal(subscriber, null);
+});
+
+test('en el navegador el arrastre nativo no existe y no estorba', async () => {
+  const platform = createPlatformApi({ Blob });
+  assert.equal(typeof platform.onNativeFileDrop(() => {}), 'function');
+  assert.deepEqual(await platform.expandDroppedPaths(['/tmp/x.md']), []);
+  assert.equal(await platform.readDroppedDocumentBytes('/tmp/x.md'), null);
+});
+
 test('expone la imagen del portapapeles nativo solo en escritorio', async () => {
   const nativeImage = { rgba: new Uint8Array([255, 0, 0, 255]), size: { width: 1, height: 1 } };
   const platform = createPlatformApi({

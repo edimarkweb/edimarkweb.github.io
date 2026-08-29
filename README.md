@@ -11,13 +11,13 @@ EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores t
 
 ## Características principales
 
-- **Edición dual sincronizada**: redacta en Markdown o modifica el HTML renderizado; ambos paneles se actualizan al instante.
+- **Edición dual sincronizada**: dos editores del mismo documento —el editor Markdown y el editor visual—, que se actualizan al instante el uno con el otro.
 - **Pestañas ilimitadas con autoguardado**: trabaja con varios documentos a la vez; cada pestaña guarda una copia local para evitar pérdidas.
 - **Menú Archivo unificado**: abrir (`Ctrl+O`), importar vía Pandoc (`Ctrl+Alt+O`), pegar LaTeX (`Ctrl+Mayús+V`), guardar (`Ctrl+S`), guardar como (`Ctrl+Mayús+S`) y exportar a DOCX, ODT, EPUB, HTML autónomo o LaTeX completo.
 - **Soporte matemático avanzado**: integración con KaTeX y acceso directo a EdiCuaTeX para insertar expresiones complejas.
-- **Imágenes con ruta relativa**: los `![](imagenes/01.png)` de cualquier Markdown se muestran en la previsualización. La aplicación de escritorio las busca sola en la carpeta del documento; en el navegador, un aviso ofrece vincular esa carpeta —o basta con arrastrarla al editor— y las imágenes usadas se conservan al recargar la página. Al guardar, las imágenes recuperadas se copian con el `.md` conservando su estructura (en navegadores sin escritura de carpetas, dentro de un ZIP). El Markdown mantiene siempre la ruta original, y al insertar una imagen se puede elegir entre referenciarla (lo recomendado) o incrustarla en el documento.
+- **Imágenes con ruta relativa**: los `![](imagenes/01.png)` de cualquier Markdown se muestran en el editor visual. La aplicación de escritorio las busca sola en la carpeta del documento; en el navegador, un aviso ofrece vincular esa carpeta —o basta con arrastrarla al editor— y las imágenes usadas se conservan al recargar la página. Al guardar, las imágenes recuperadas se copian con el `.md` conservando su estructura (en navegadores sin escritura de carpetas, dentro de un ZIP). El Markdown mantiene siempre la ruta original, y al insertar una imagen se puede elegir entre referenciarla (lo recomendado) o incrustarla en el documento.
 - **Corrección ortográfica del sistema**: el editor activa el corrector disponible en el navegador o WebView y selecciona el diccionario según el idioma efectivo del documento.
-- **Panel de previsualización editable**: edita sobre el resultado final, copia HTML o genera variantes LaTeX desde un menú contextual.
+- **Editor visual**: escribe sobre el resultado final con la misma barra de formato, copia HTML o genera variantes LaTeX desde un menú contextual.
 - **Búsqueda y reemplazo inteligente**: ignora tildes y mayúsculas, resalta coincidencias, admite expresiones regulares y ofrece navegación rápida.
 - **Internacionalización y accesibilidad**: selector de idioma, control del tamaño de fuente, modo claro/oscuro y atajos visibles.
 - **Diseño adaptable**: barras plegables, modo escritorio independiente, área de edición a pantalla completa y posibilidad de ampliar el ancho de trabajo.
@@ -29,17 +29,17 @@ EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores t
 | --- | --- |
 | **Barra superior** | Gestión de archivos, idioma, tamaño de fuente, tema, ancho expandido, ventana independiente, impresión, diálogo «Acerca de» y acceso directo al manual (`Ctrl+H`). En la aplicación de escritorio añade «Buscar actualizaciones…» y «Salir». |
 | **Barra de herramientas** | Formatos básicos, listas, citas, bloques de código, enlaces, imágenes, tablas y un menú de fórmulas con snippets listos. |
-| **Panel Markdown** | Editor de texto con contador de caracteres, indicador de idioma del documento, plegado de imágenes base64, botón de copia y soporte de arrastrar y soltar archivos o carpetas enteras (`.md` y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo). |
-| **Panel HTML / Vista previa** | Cambia entre vista renderizada y código HTML, copia contenido con distintos perfiles (HTML, LaTeX parcial o completo). |
+| **Editor Markdown** | Editor de texto con contador de caracteres, indicador de idioma del documento, plegado de imágenes base64, botón de copia y soporte de arrastrar y soltar archivos o carpetas enteras (`.md` y también DOCX, ODT, EPUB, HTML o TEX, que se convierten al vuelo). |
+| **Editor visual** | Escribe sobre el documento compuesto, cambia entre este y el código HTML, copia contenido con distintos perfiles (HTML, LaTeX parcial o completo). |
 
 Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pueden renombrarse con doble clic. El autoguardado recupera el contenido al recargar la página o al volver a abrir la aplicación; cada versión, web y escritorio, mantiene su propia copia de trabajo.
 
 ## Importación, exportación y copia rápida
 
-- **Imágenes**: las rutas relativas se resuelven contra la carpeta del documento (escritorio) o contra la carpeta vinculada por el usuario (navegador), y las que no se encuentran se marcan en la vista previa en lugar de aparecer rotas.
+- **Imágenes**: las rutas relativas se resuelven contra la carpeta del documento (escritorio) o contra la carpeta vinculada por el usuario (navegador), y las que no se encuentran se marcan en el editor visual en lugar de aparecer rotas.
 - **Importar**: abre Markdown locales, pega documentos LaTeX completos o convierte ficheros mediante Pandoc (DOCX, ODT, EPUB, HTML, TEX). Al arrastrar y soltar se admiten carpetas enteras, que se recorren en busca de archivos compatibles. Las imágenes de los documentos DOCX, ODT y EPUB se extraen del archivo y se incrustan en el Markdown.
-- **Exportar**: genera descargas inmediatas en DOCX, ODT, EPUB (libro digital), HTML autónomo (con estilos y fórmulas incrustados) o LaTeX preparado para compilar. Todos los formatos declaran el idioma del documento —corrector ortográfico en DOCX y ODT, partición de palabras en LaTeX, atributo `lang` en HTML y EPUB— y el `.tex` usa el primer encabezado como título. Desde **Configuración → Opciones de exportación…** se fijan ese idioma, el autor, la portada del EPUB (generada, propia o ninguna), el índice automático, la numeración de apartados y, para LaTeX, la clase, sus opciones y un preámbulo propio que se reutiliza en cada exportación. El HTML autónomo toma el título de la pestaña del primer encabezado. Cada documento puede además llevar el suyo: el botón de idioma del panel Markdown lo guarda como `lang` en el front matter del `.md`, de modo que viaja con el archivo.
-- **Copiar**: botones dedicados para copiar Markdown del panel izquierdo o seleccionar, desde el panel derecho, qué formato enviar al portapapeles.
+- **Exportar**: genera descargas inmediatas en DOCX, ODT, EPUB (libro digital), HTML autónomo (con estilos y fórmulas incrustados) o LaTeX preparado para compilar. Todos los formatos declaran el idioma del documento —corrector ortográfico en DOCX y ODT, partición de palabras en LaTeX, atributo `lang` en HTML y EPUB— y el `.tex` usa el primer encabezado como título. Desde **Configuración → Opciones de exportación…** se fijan ese idioma, el autor, la portada del EPUB (generada, propia o ninguna), el índice automático, la numeración de apartados y, para LaTeX, la clase, sus opciones y un preámbulo propio que se reutiliza en cada exportación. El HTML autónomo toma el título de la pestaña del primer encabezado. Cada documento puede además llevar el suyo: el botón de idioma de la barra de estado lo guarda como `lang` en el front matter del `.md`, de modo que viaja con el archivo.
+- **Copiar**: botones dedicados para copiar Markdown del editor Markdown o seleccionar, desde el editor visual, qué formato enviar al portapapeles.
 
 ## Atajos esenciales
 

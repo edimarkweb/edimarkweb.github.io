@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.36.0';
+const APP_VERSION = '2.37.0';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -56,6 +56,7 @@ let desktopWindow = null;
 let desktopWindowMonitor = null;
 const DESKTOP_SIZE_KEY = 'edimarkweb-desktop-size';
 const COPY_ACTION_KEY = 'edimarkweb-copy-action';
+const EXPORT_FORMAT_KEY = 'edimarkweb-export-format';
 let base64UiContainer = null;
 let base64UiList = null;
 let base64UiCountLabel = null;
@@ -251,6 +252,7 @@ const PREFERENCE_KEYS = [
     FOCUS_MODE_KEY,
     BASE64_PANEL_KEY,
     COPY_ACTION_KEY,
+    EXPORT_FORMAT_KEY,
     SPELLCHECK_KEY,
     UPDATE_AUTO_CHECK_KEY,
     DESKTOP_SIZE_KEY,
@@ -2850,14 +2852,16 @@ function startRename(tab) {
     input.addEventListener('keydown', handleKey);
 }
 
-function newDoc(name = '', md = '', { isManual = false, filePath = '' } = {}) {
+function newDoc(name = '', md = '', { isManual = false, filePath = '', activate = true } = {}) {
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
     const normalizedMd = normalizeNewlines(md || '');
     const documentName = name || getTranslation('untitled_document', 'Documento sin título');
     const newDoc = { id, name: documentName, md: normalizedMd, lastSaved: normalizedMd, isManual, filePath };
     docs.push(newDoc);
     addTabElement(newDoc);
-    switchTo(id);
+    // `activate` en falso es para el documento que llega tarde y ya no manda:
+    // el manual, cuando el usuario ha abierto un archivo mientras se cargaba.
+    if (activate) switchTo(id);
     saveDocsList();
     return newDoc;
 }
@@ -3114,6 +3118,16 @@ function openManualDoc(forceReload = false) {
         return;
     }
 
+    /*
+      El manual se pide por red y tarda. En el escritorio, un documento abierto
+      con doble clic puede llegar mientras tanto: si al terminar la descarga el
+      manual se pusiera delante, el archivo que el usuario acaba de abrir se
+      quedaría en su pestaña y el foco saltaría a la primera, que es el manual.
+      Por eso solo se activa si nadie ha abierto nada por el camino; pedirlo a
+      mano (F1, o recargarlo) es otra cosa y ahí manda quien lo pide.
+    */
+    const activoAlEmpezar = currentId;
+
     fetchManualMarkdown()
         .then(md => {
             const normalized = normalizeNewlines(md);
@@ -3126,7 +3140,10 @@ function openManualDoc(forceReload = false) {
                 switchTo(doc.id);
                 updateDirtyIndicator(doc.id, false);
             } else {
-                newDoc('Manual', normalized, { isManual: true });
+                newDoc('Manual', normalized, {
+                    isManual: true,
+                    activate: currentId === activoAlEmpezar,
+                });
             }
         })
         .catch(err => {
@@ -4728,16 +4745,26 @@ const LATEX_SETTINGS_DEFAULTS = {
       Alineación, letra, interlineado, márgenes, sangría y partición: los
       valores de partida que hereda cualquier documento que no fije los suyos.
 
-      El tamaño sí trae número desde el principio, y los demás no, porque el
-      tamaño es el único que la vista previa necesita para poder enseñar la
-      verdad: desde que dejó de seguir al de la interfaz, sin un número
-      concreto se quedaba en el que le diera la hoja de estilos, que no es el
-      que se exporta. Doce puntos es lo que ya escriben DOCX y ODT, así que
-      hacerlo explícito no cambia lo que sale por ahí; en LaTeX sustituye a los
-      diez de `article`, y esa es justo la incoherencia que quita: los cinco
-      formatos parten del mismo cuerpo, y quien quiera otro lo escribe.
+      Traen número los tres que deciden cómo se lee un documento —cuerpo, letra
+      e interlineado—, por la misma razón: la vista previa no puede enseñar la
+      verdad sobre lo que no está declarado. Sin ellos se quedaba con lo que le
+      diera la hoja de estilos —la tipografía de la interfaz y un interlineado
+      de lectura en pantalla—, mientras que el DOCX salía con la letra de la
+      plantilla de Word y el `.tex` con la de `article`: tres resultados
+      distintos para el mismo documento. Declarándolos, lo que se ve es lo que
+      sale en los cinco formatos.
+
+      Doce puntos y Times/Georgia son lo que ya escriben DOCX y ODT, así que
+      hacerlos explícitos no cambia lo que sale por ahí; en LaTeX sustituyen a
+      los diez de `article`. El interlineado de uno y medio no lo trae ningún
+      formato: es una elección, la del documento cómodo de leer y de corregir a
+      mano, y quien quiera otro lo escribe aquí una vez.
+
+      Los márgenes se quedan fuera a propósito: son cosa del papel, cada
+      plantilla trae los suyos y ninguno se ve en la vista previa, que es una
+      columna de texto y no una hoja paginada.
     */
-    documentFormat: { fontSize: '12' },
+    documentFormat: { fontSize: '12', font: 'serif', lineHeight: '1.5' },
 };
 
 // `documentFormat` es un objeto: sin copiarlo también, los tres retornos
@@ -5462,8 +5489,70 @@ function buildHtmlWithTex() {
 }
 
 let layoutTransitionTimer = null;
+let panelSlideTimer = null;
+
+/*
+  Los paneles no aparecen ni desaparecen de golpe: el que entra crece desde
+  cero y el que se va se encoge hasta cero, los dos a la vez. Como van en fila,
+  eso les da a los dos su lado —el editor visual entra por la derecha y el
+  Markdown por la izquierda—, y el que se queda no da ningún salto. Solo cabe
+  en horizontal: apilados (móvil) el ancho no reparte nada y el que llega se
+  funde, y con las animaciones desactivadas el cambio es seco.
+*/
+function anchoRepartido() {
+  return window.matchMedia('(min-width: 769px)').matches
+    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function limpiarTransicionDePaneles() {
+  clearTimeout(panelSlideTimer);
+  panelSlideTimer = null;
+  document.querySelectorAll('#editor-container .panel.panel-sliding, #editor-container .panel.panel-fade-in')
+    .forEach(panel => panel.classList.remove('panel-sliding', 'panel-fade-in'));
+}
+
+function estaOculto(panel) {
+  return window.getComputedStyle(panel).display === 'none';
+}
+
+/*
+  El cero de partida tiene que quedar puesto sin transición; si no, el panel
+  entrante animaría desde el ancho que tuviera la última vez. De ahí la lectura
+  de `offsetWidth`: obliga al navegador a recalcular ahí mismo, antes de que la
+  transición entre en juego con el ancho final.
+*/
+function prepararEntrada(panel, deslizando) {
+  if (!panel) return;
+  const llegaba = estaOculto(panel);
+  /*
+    `flex` y no `block`: el panel de Markdown tiene que repartir su alto entre
+    el editor y la lista de imágenes incrustadas, y en bloque esa lista se salía
+    por debajo del panel, donde `overflow: hidden` la dejaba invisible.
+  */
+  panel.style.display = 'flex';
+  if (!llegaba) return;
+  if (!deslizando) {
+    panel.classList.add('panel-fade-in');
+    return;
+  }
+  panel.classList.add('panel-sliding');
+  panel.style.width = '0%';
+  void panel.offsetWidth;
+}
+
+function prepararSalida(panel, deslizando, salientes) {
+  if (!panel) return;
+  if (!deslizando || estaOculto(panel)) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.classList.add('panel-sliding');
+  panel.style.width = '0%';
+  salientes.push(panel);
+}
 
 function applyLayout(layout) {
+  const layoutAnterior = currentLayout;
   currentLayout = layout;
   syncEnabled = (layout === 'dual');
   // Esconder la vista previa devuelve el formato al Markdown, y con él el menú.
@@ -5473,34 +5562,30 @@ function applyLayout(layout) {
   const mdPanel = document.getElementById('markdown-panel');
   const htmlPanel = document.getElementById('html-panel');
   const gutters = document.querySelectorAll('.gutter');
-  /*
-    Los dos paneles son columnas flexibles también en la web: el de Markdown
-    tiene que repartir su alto entre el editor y la lista de imágenes
-    incrustadas, y en bloque esa lista se salía por debajo del panel, donde
-    `overflow: hidden` la dejaba invisible.
-  */
-  const visiblePanelDisplay = 'flex';
+  // Un cambio de disposición cancela el anterior si quedaba a medias.
+  limpiarTransicionDePaneles();
+  const deslizando = layoutAnterior && layoutAnterior !== layout && anchoRepartido();
+  const anchos = layout === 'md'
+    ? [[mdPanel, '100%'], [htmlPanel, '']]
+    : layout === 'html'
+      ? [[mdPanel, ''], [htmlPanel, '100%']]
+      : [[mdPanel, '50%'], [htmlPanel, '50%']];
 
-  switch (layout) {
-    case 'md':
-      mdPanel.style.display = visiblePanelDisplay;
-      htmlPanel.style.display = 'none';
-      gutters.forEach(g => g.style.display = 'none');
-      mdPanel.style.width = '100%';
-      break;
-    case 'html':
-      mdPanel.style.display = 'none';
-      htmlPanel.style.display = visiblePanelDisplay;
-      gutters.forEach(g => g.style.display = 'none');
-      htmlPanel.style.width = '100%';
-      break;
-    default:
-      mdPanel.style.display = visiblePanelDisplay;
-      htmlPanel.style.display = visiblePanelDisplay;
-      gutters.forEach(g => g.style.display = '');
-      mdPanel.style.width = '50%';
-      htmlPanel.style.width = '50%';
-  }
+  gutters.forEach(g => g.style.display = layout === 'dual' ? '' : 'none');
+  // Primero los que llegan, para que el que se va los encuentre ya en su sitio
+  // y los dos anchos se muevan en la misma transición.
+  anchos.forEach(([panel, ancho]) => { if (ancho) prepararEntrada(panel, deslizando); });
+  const salientes = [];
+  anchos.forEach(([panel, ancho]) => {
+    if (ancho) panel.style.width = ancho;
+    else prepararSalida(panel, deslizando, salientes);
+  });
+  panelSlideTimer = setTimeout(() => {
+    document.querySelectorAll('#editor-container .panel.panel-sliding, #editor-container .panel.panel-fade-in')
+      .forEach(panel => panel.classList.remove('panel-sliding', 'panel-fade-in'));
+    salientes.forEach(panel => { panel.style.display = 'none'; });
+    panelSlideTimer = null;
+  }, 200);
 
   document.querySelectorAll('#layout-menu [data-layout]').forEach((option) => {
     const selected = option.dataset.layout === layout;
@@ -5607,7 +5692,41 @@ window.onload = async () => {
     const exportMenuContainer = document.getElementById('export-menu-container');
     const exportMenuBtn = document.getElementById('export-menu-btn');
     const exportMenu = document.getElementById('export-menu');
-    const exportOptionButtons = exportMenu ? Array.from(exportMenu.querySelectorAll('[data-export-format]')) : [];
+    const exportQuickContainer = document.getElementById('export-quick-container');
+    const exportQuickBtn = document.getElementById('export-quick-btn');
+    const exportQuickToggleBtn = document.getElementById('export-quick-menu-toggle');
+    /*
+      La lista de la flecha es la misma de la cabecera, clonada: dos listas en
+      el HTML acabarían diciendo cosas distintas en cuanto una de las dos se
+      tocara. El clon vive en el DOM desde el arranque, así que el traductor lo
+      alcanza igual que al original. Se le añade la marca del formato activo,
+      que en la cabecera no hace falta.
+    */
+    const exportQuickMenu = (exportMenu && exportQuickContainer)
+        ? exportMenu.cloneNode(true)
+        : null;
+    if (exportQuickMenu) {
+        exportQuickMenu.id = 'export-quick-menu';
+        // Alineado a la derecha y colgando del contenedor, como el de copiar:
+        // en una fila de botones centrados, un absoluto sin `top-full` se
+        // coloca a la altura del centro y el menú sale por encima de la barra.
+        exportQuickMenu.classList.remove('left-0');
+        exportQuickMenu.classList.add('right-0', 'top-full');
+        exportQuickMenu.setAttribute('aria-labelledby', 'export-quick-menu-toggle');
+        exportQuickMenu.querySelectorAll('[data-export-format]').forEach((option) => {
+            option.setAttribute('role', 'menuitemradio');
+            option.setAttribute('aria-checked', 'false');
+            const fila = option.querySelector('span');
+            if (!fila) return;
+            const marca = document.createElement('i');
+            marca.dataset.lucide = 'check';
+            // Invisible y no oculta: así las filas no bailan al cambiar de formato.
+            marca.className = 'export-check invisible ml-auto w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400';
+            fila.appendChild(marca);
+        });
+        exportQuickContainer.appendChild(exportQuickMenu);
+    }
+    const exportOptionButtons = Array.from(document.querySelectorAll('[data-export-format]'));
     const printBtn = document.getElementById('print-btn');
     const helpBtn = document.getElementById('help-btn');
     const aboutBtn = document.getElementById('about-btn');
@@ -5809,6 +5928,67 @@ window.onload = async () => {
     };
 
     applyCopyActionState(currentCopyAction, { persist: false });
+
+    /*
+      Exportar, igual que copiar: el botón repite de un clic el último formato
+      —que es lo que se hace casi siempre, entregar el mismo documento en el
+      mismo formato— y lo dice en un rótulo pequeño, para que nadie tenga que
+      abrir la lista solo para comprobar cuál saldría. De partida, DOCX: es el
+      primero de la lista y el único que casi todo el mundo puede abrir.
+    */
+    const EXPORT_FORMATS = ['docx', 'odt', 'epub', 'html-download', 'latex-full-download', 'pdf'];
+    const exportFormatShortKeys = {
+        docx: ['export_menu_option_docx', 'DOCX'],
+        odt: ['export_menu_option_odt', 'ODT'],
+        epub: ['export_menu_option_epub', 'EPUB'],
+        'html-download': ['export_menu_option_html_download', 'HTML'],
+        'latex-full-download': ['export_menu_option_latex_full_download', 'TEX'],
+        pdf: ['export_menu_option_pdf', 'PDF'],
+    };
+    let currentExportFormat = safeLocalStorageGet(EXPORT_FORMAT_KEY);
+    if (!EXPORT_FORMATS.includes(currentExportFormat)) currentExportFormat = 'docx';
+
+    function updateExportButtonLabel(format) {
+        if (!exportQuickBtn) return;
+        const [clave, respaldo] = exportFormatShortKeys[format] || exportFormatShortKeys.docx;
+        const formato = getTranslation(clave, respaldo);
+        const titleText = formatTranslation(
+            'export_btn_title_format',
+            'Exportar el documento a {format} (Ctrl+Alt+E para la lista)',
+            { format: formato },
+        );
+        exportQuickBtn.setAttribute('title', titleText);
+        exportQuickBtn.setAttribute('aria-label', titleText);
+        exportQuickBtn.setAttribute('data-current-export-format', format);
+        const labelEl = exportQuickBtn.querySelector('.export-quick-btn-label');
+        if (labelEl) labelEl.textContent = formato;
+    }
+
+    function updateExportOptionStyles(format) {
+        if (!exportQuickMenu) return;
+        exportQuickMenu.querySelectorAll('[data-export-format]').forEach((option) => {
+            const activa = option.getAttribute('data-export-format') === format;
+            option.setAttribute('aria-checked', activa ? 'true' : 'false');
+            option.classList.toggle('font-semibold', activa);
+            const marca = option.querySelector('.export-check');
+            if (marca) marca.classList.toggle('invisible', !activa);
+        });
+    }
+
+    function applyExportFormatState(format, { persist = true } = {}) {
+        const usable = EXPORT_FORMATS.includes(format) ? format : 'docx';
+        currentExportFormat = usable;
+        if (persist) safeLocalStorageSet(EXPORT_FORMAT_KEY, usable);
+        updateExportButtonLabel(usable);
+        updateExportOptionStyles(usable);
+    }
+
+    window.__updateExportButtonLabel = () => {
+        updateExportButtonLabel(currentExportFormat);
+        updateExportOptionStyles(currentExportFormat);
+    };
+
+    applyExportFormatState(currentExportFormat, { persist: false });
 
     undoButtonEl = document.getElementById('undo-btn');
     redoButtonEl = document.getElementById('redo-btn');
@@ -6117,11 +6297,37 @@ window.onload = async () => {
         return window.__edimarkLang || document.documentElement.lang || 'es';
     }
 
+    /*
+      El idioma efectivo, en la barra de estado y siempre: es el que se va a
+      declarar en los cinco formatos, y hasta ahora había que abrir el cuadro
+      para saberlo. Apagado cuando lo hereda de las opciones generales.
+    */
+    function updateDocLanguageStatus(effective, own) {
+        const button = document.getElementById('doc-language-status');
+        const code = document.getElementById('doc-language-status-code');
+        if (!button || !code) return;
+        // El código, siempre igual escrito: la píldora lo enseña en mayúsculas
+        // y el rótulo emergente diría `es` donde se lee `ES`.
+        const shown = effective.toUpperCase();
+        code.textContent = shown;
+        button.classList.toggle('is-inherited', !own);
+        button.title = own
+            ? getTranslation(
+                'doc_language_status_own',
+                'Idioma de este documento: {code}. Pulsa para cambiarlo.',
+            ).replace('{code}', shown)
+            : getTranslation(
+                'doc_language_status_inherited',
+                'Idioma heredado de las opciones generales: {code}. Pulsa para darle uno propio.',
+            ).replace('{code}', shown);
+    }
+
     function refreshDocLanguageIndicator() {
         if (!markdownEditor) return;
         const own = splitDocumentFrontMatter(markdownEditor.getValue()).lang;
         const effective = own || generalDocumentLanguage();
         if (markdownTextareaEl) markdownTextareaEl.setAttribute('lang', effective);
+        updateDocLanguageStatus(effective, own);
         applySpellChecking(effective);
         // El bloque de metadatos también lleva el formato, y se edita a mano.
         if (typeof window.__applyDocumentFormatToPreview === 'function') {
@@ -6605,6 +6811,9 @@ window.onload = async () => {
                 event.preventDefault();
                 const format = btn.getAttribute('data-export-format');
                 closeExportMenu();
+                closeExportQuickMenu();
+                // Elegir en la lista es también decir cuál repetirá el botón.
+                if (format) applyExportFormatState(format);
                 // El PDF sale del diálogo de impresión, no de Pandoc.
                 if (format === 'pdf') {
                     printPreview();
@@ -6612,6 +6821,38 @@ window.onload = async () => {
                 }
                 if (format) performExport(format);
             });
+        });
+    }
+
+    if (exportQuickBtn) {
+        // Un clic: el formato de siempre, sin abrir nada.
+        exportQuickBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            closeExportQuickMenu();
+            if (currentExportFormat === 'pdf') {
+                printPreview();
+                return;
+            }
+            performExport(currentExportFormat);
+        });
+    }
+
+    if (exportQuickToggleBtn) {
+        exportQuickToggleBtn.setAttribute('aria-expanded', 'false');
+        exportQuickToggleBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            toggleExportQuickMenu();
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        });
+        exportQuickToggleBtn.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                if (!isExportQuickMenuOpen()) openExportQuickMenu();
+                exportQuickMenu?.querySelector('[data-export-format]')?.focus();
+            }
         });
     }
 
@@ -6708,12 +6949,26 @@ window.onload = async () => {
         }, { capture: true });
     }
 
+    if (exportQuickContainer) {
+        document.addEventListener('click', (event) => {
+            if (!isExportQuickMenuOpen()) return;
+            if (!exportQuickContainer.contains(event.target)) {
+                closeExportQuickMenu();
+            }
+        }, { capture: true });
+    }
+
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
         let handled = false;
         if (isExportMenuOpen()) {
             closeExportMenu();
             if (exportMenuBtn) exportMenuBtn.focus();
+            handled = true;
+        }
+        if (isExportQuickMenuOpen()) {
+            closeExportQuickMenu();
+            if (exportQuickToggleBtn) exportQuickToggleBtn.focus();
             handled = true;
         }
         if (isPreviewCopyMenuOpen()) {
@@ -6753,6 +7008,7 @@ window.onload = async () => {
         closeActionsMenu();
         closeSettingsMenu();
         closeExportMenu();
+        closeExportQuickMenu();
         closePreviewCopyMenu();
         helpMenu.classList.remove('hidden');
         fitMenuInViewport(helpMenu);
@@ -6796,6 +7052,7 @@ window.onload = async () => {
     function openActionsMenu() {
         if (!actionsMenu) return;
         closeExportMenu();
+        closeExportQuickMenu();
         closeHelpMenu();
         closePreviewCopyMenu();
         closeSettingsMenu();
@@ -6826,6 +7083,7 @@ window.onload = async () => {
     function openSettingsMenu() {
         if (!settingsMenu) return;
         closeActionsMenu();
+        closeExportQuickMenu();
         closeHelpMenu();
         closeExportMenu();
         closePreviewCopyMenu();
@@ -6962,6 +7220,7 @@ window.onload = async () => {
     function openExportMenu() {
         if (!exportMenu) return;
         closePreviewCopyMenu();
+        closeExportQuickMenu();
         closeSettingsMenu();
         closeActionsMenu();
         closeHelpMenu();
@@ -6985,6 +7244,37 @@ window.onload = async () => {
         }
     }
 
+    function isExportQuickMenuOpen() {
+        return exportQuickMenu && !exportQuickMenu.classList.contains('hidden');
+    }
+
+    function openExportQuickMenu() {
+        if (!exportQuickMenu) return;
+        closeExportMenu();
+        closePreviewCopyMenu();
+        closeSettingsMenu();
+        closeActionsMenu();
+        closeHelpMenu();
+        exportQuickMenu.classList.remove('hidden');
+        fitMenuInViewport(exportQuickMenu);
+        if (exportQuickToggleBtn) exportQuickToggleBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeExportQuickMenu() {
+        if (!exportQuickMenu) return;
+        exportQuickMenu.classList.add('hidden');
+        if (exportQuickToggleBtn) exportQuickToggleBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleExportQuickMenu() {
+        if (!exportQuickMenu) return;
+        if (isExportQuickMenuOpen()) {
+            closeExportQuickMenu();
+        } else {
+            openExportQuickMenu();
+        }
+    }
+
     function isPreviewCopyMenuOpen() {
         return previewCopyMenu && !previewCopyMenu.classList.contains('hidden');
     }
@@ -6992,6 +7282,7 @@ window.onload = async () => {
     function openPreviewCopyMenu() {
         if (!previewCopyMenu) return;
         closeExportMenu();
+        closeExportQuickMenu();
         closeActionsMenu();
         closeSettingsMenu();
         previewCopyMenu.classList.remove('hidden');
@@ -7606,8 +7897,46 @@ window.onload = async () => {
     }).catch(error => console.warn('No se han podido leer las opciones del disco:', error));
 
     // --- Carga inicial de documentos y autoguardado ---
+    /*
+      Un archivo que ya está abierto no se abre otra vez: se va a su pestaña.
+      Abrirlo dos veces dejaba dos pestañas del mismo documento, cada una con su
+      copia, y guardar en una pisaba lo escrito en la otra.
+
+      Si el disco trae algo distinto y la pestaña no tiene nada sin guardar, se
+      refresca: quien abre un documento quiere ver lo que hay en él. Con cambios
+      sin guardar no se toca —perderlos por un doble clic sería el peor de los
+      resultados—; solo se activa y se avisa en la barra de estado.
+    */
+    function reuseOpenedMarkdownDocument(opened) {
+        const path = opened?.path || '';
+        if (!path) return null;
+        const existente = docs.find(doc => doc.filePath === path);
+        if (!existente) return null;
+        const enDisco = normalizeNewlines(opened.content || '');
+        const enEdicion = existente.id === currentId && markdownEditor
+            ? markdownEditor.getValue()
+            : existente.md;
+        const sinGuardar = enEdicion !== existente.lastSaved;
+        if (sinGuardar) {
+            reportStatus(getTranslation(
+                'open_file_already_open_dirty',
+                'Ese documento ya está abierto y tiene cambios sin guardar: se deja como está.',
+            ));
+        } else if (enDisco !== existente.lastSaved) {
+            existente.md = enDisco;
+            existente.lastSaved = enDisco;
+            lastAutosavedById.set(existente.id, enDisco);
+            autosaveDoc(existente.id, enDisco);
+        }
+        switchTo(existente.id);
+        updateDirtyIndicator(existente.id, sinGuardar);
+        return existente;
+    }
+
     function addOpenedMarkdownDocument(opened) {
         if (!opened) return null;
+        const yaAbierto = reuseOpenedMarkdownDocument(opened);
+        if (yaAbierto) return yaAbierto;
         const normalized = normalizeNewlines(opened.content || '');
         const doc = newDoc(opened.name, normalized, { filePath: opened.path || '' });
         doc.lastSaved = normalized;
@@ -7630,6 +7959,9 @@ window.onload = async () => {
         }
         return openedCount;
     }
+
+    // El arrastre del escritorio abre por el mismo camino que el doble clic.
+    window.__edimarkOpenNativePaths = openNativeMarkdownPaths;
 
     const platform = window.EdiMarkPlatform;
     if (platform?.isDesktop && typeof platform.onTextDocumentPaths === 'function') {
@@ -8562,13 +8894,27 @@ window.onload = async () => {
         return hint;
     }
 
-    function setInheritedHint(field, label) {
+    /*
+      `vacio` es lo que se dice cuando tampoco lo general fija nada: callar ahí
+      dejaba el campo sin una línea que sus vecinos sí tenían, y no había manera
+      de saber si es que no heredaba nada o es que la pista se había perdido.
+    */
+    function setInheritedHint(field, label, vacio = '') {
         if (!field) return;
         const hint = inheritedHintFor(field);
-        hint.textContent = label
+        const texto = label
             ? `${getTranslation('doc_format_inherited_now', 'Hereda')}: ${label}`
-            : '';
-        hint.classList.toggle('hidden', !label || field.value !== '');
+            : vacio;
+        hint.textContent = texto;
+        hint.classList.toggle('hidden', !texto || field.value !== '');
+    }
+
+    /* Lo que no fija ni el documento ni lo general: lo pone el destino. */
+    function unsetInheritedLabel() {
+        return getTranslation(
+            'doc_format_inherited_none',
+            'Sin fijar: lo decide el programa que abra el documento.',
+        );
     }
 
     function refreshInheritedDocumentHints() {
@@ -8582,7 +8928,11 @@ window.onload = async () => {
         const prefix = docFormatFields.id;
         const general = generalDocumentFormat();
         DOC_FORMAT_INHERITED_SELECTS.forEach(([id, field]) => {
-            setInheritedHint(document.getElementById(`${prefix}-${id}`), inheritedValueLabel(field, general[field]));
+            setInheritedHint(
+                document.getElementById(`${prefix}-${id}`),
+                inheritedValueLabel(field, general[field]),
+                unsetInheritedLabel(),
+            );
         });
         // Los numéricos ya tienen dónde decirlo: el marcador del campo vacío,
         // que así deja de ser un guion suelto que no informa de nada.
@@ -8591,9 +8941,11 @@ window.onload = async () => {
             if (!input) return;
             const value = general[field];
             input.placeholder = value || getTranslation('doc_format_placeholder_blank', '—');
+            // El rótulo es prosa y escribe el decimal como el idioma; el
+            // marcador se queda con el valor crudo, que es lo que se teclea.
             input.title = value
-                ? `${getTranslation('doc_format_inherited_now', 'Hereda')}: ${value}`
-                : '';
+                ? `${getTranslation('doc_format_inherited_now', 'Hereda')}: ${documentFormatStatusNumber(value)}`
+                : unsetInheritedLabel();
         });
     }
     window.__refreshInheritedDocumentHints = refreshInheritedDocumentHints;
@@ -8675,7 +9027,15 @@ window.onload = async () => {
       Los márgenes no entran: un «2 cm» al lado de un «12 pt» se lee como otro
       tamaño, y en el título caben de sobra.
     */
-    const DOC_FORMAT_STATUS_ORDER = ['font', 'fontSize', 'lineHeight', 'align', 'indent', 'hyphenate'];
+    /*
+      Los tres que decide cualquiera al empezar un documento, y en este orden:
+      el tamaño va primero porque es el que se consulta a diario y el único que
+      queda cuando la fila se estrecha. Lo demás —alineación, sangría, partición
+      y márgenes— se lee en el rótulo emergente.
+    */
+    const DOC_FORMAT_STATUS_ORDER = ['fontSize', 'font', 'lineHeight'];
+    // Un ajuste que no fija ni el documento ni las opciones generales.
+    const DOC_FORMAT_STATUS_UNSET = '—';
 
     /* El nombre de una tipografía escrita a mano se enseña tal cual. */
     function documentFormatStatusPart(field, value) {
@@ -8693,10 +9053,15 @@ window.onload = async () => {
         return number.toLocaleString(window.__edimarkLang || 'es');
     }
 
+    /*
+      Todos los ajustes, también los que nadie ha fijado: la lista es la única
+      respuesta completa a «cómo va a salir esto», y un campo que desaparece de
+      ella no se distingue de uno que no existe.
+    */
     function documentFormatStatusTitle(format) {
         const lines = [];
         const add = (labelKey, labelText, value) => {
-            if (value) lines.push(`${getTranslation(labelKey, labelText)}: ${value}`);
+            lines.push(`${getTranslation(labelKey, labelText)}: ${value || DOC_FORMAT_STATUS_UNSET}`);
         };
         add('doc_format_field_align', 'Alineación', inheritedValueLabel('align', format.align));
         add('doc_format_field_font', 'Tipo de letra', inheritedValueLabel('font', format.font));
@@ -8706,17 +9071,21 @@ window.onload = async () => {
         add('doc_format_field_lineheight', 'Interlineado', format.lineHeight
             ? documentFormatStatusNumber(format.lineHeight)
             : '');
-        // Los cuatro juntos y en el orden del cuadro de diálogo; el que no
-        // está fijado deja su hueco marcado, que decir tres márgenes de cuatro
-        // sin avisar se lee mal.
+        // Los cuatro juntos y en el orden del cuadro de diálogo: decir tres
+        // márgenes de cuatro sin avisar se lee mal.
         const sides = ['marginTop', 'marginRight', 'marginBottom', 'marginLeft'];
-        if (sides.some(side => format[side])) {
-            add('doc_format_field_margins', 'Márgenes de página (cm)', sides
-                .map(side => (format[side] ? documentFormatStatusNumber(format[side]) : '—'))
-                .join(' / '));
-        }
+        add('doc_format_field_margins', 'Márgenes de página (cm)', sides
+            .map(side => (format[side] ? documentFormatStatusNumber(format[side]) : DOC_FORMAT_STATUS_UNSET))
+            .join(' / '));
         add('doc_format_field_indent', 'Sangría de primera línea', inheritedValueLabel('indent', format.indent));
         add('doc_format_field_hyphenate', 'Partir palabras con guion', inheritedValueLabel('hyphenate', format.hyphenate));
+        // Y qué quiere decir un guion, que si no se lee como un fallo.
+        if (lines.some(line => line.endsWith(DOC_FORMAT_STATUS_UNSET))) {
+            lines.push(getTranslation(
+                'doc_format_status_unset_hint',
+                '— : sin fijar, lo decide el programa que abra el documento.',
+            ));
+        }
         lines.push(getTranslation(
             'doc_format_status_hint',
             'Así saldrá al exportar o imprimir. Pulsa para cambiarlo.',
@@ -8730,19 +9099,47 @@ window.onload = async () => {
         const rest = document.getElementById('doc-format-status-rest');
         if (!button || !main || !rest) return;
         const format = effectiveDocumentFormat();
+        /*
+          Los tres, siempre: media píldora que aparece y desaparece según lo que
+          haya fijado obliga a abrir el cuadro para saber si un ajuste está sin
+          poner o es que no cabía. El guion lo dice sin gastar sitio.
+        */
         const parts = DOC_FORMAT_STATUS_ORDER
-            .map(field => documentFormatStatusPart(field, format[field]))
-            .filter(Boolean)
-            .slice(0, 3);
-        // Sin un solo valor fijado no hay nada que contar, y una píldora vacía
-        // solo gasta el sitio que le hace falta a la fila.
-        button.classList.toggle('hidden', parts.length === 0);
-        if (parts.length === 0) return;
+            .map(field => documentFormatStatusPart(field, format[field]) || DOC_FORMAT_STATUS_UNSET);
+        button.classList.remove('hidden');
         main.textContent = parts[0];
-        rest.textContent = parts.length > 1 ? `· ${parts.slice(1).join(' · ')}` : '';
+        rest.textContent = `· ${parts.slice(1).join(' · ')}`;
         button.title = documentFormatStatusTitle(format);
     }
     window.__updateDocumentFormatStatus = updateDocumentFormatStatus;
+
+    /*
+      Los márgenes del documento, en el papel. La hoja los enseña como relleno
+      —es una columna de texto, no una página—, pero al imprimir ese relleno se
+      quita y quien manda es `@page`, que no se puede escribir en el `style` de
+      un elemento: hace falta una regla de verdad, y de ahí esta hoja propia.
+      Lo que el documento no fija se queda con el margen de partida del CSS de
+      impresión, que va antes que esta.
+    */
+    function applyDocumentMarginsToPrint(format) {
+        let sheet = document.getElementById('doc-print-page-style');
+        if (!sheet) {
+            sheet = document.createElement('style');
+            sheet.id = 'doc-print-page-style';
+            document.head.appendChild(sheet);
+        }
+        const declarations = [
+            ['top', 'marginTop'],
+            ['right', 'marginRight'],
+            ['bottom', 'marginBottom'],
+            ['left', 'marginLeft'],
+        ]
+            .filter(([, key]) => format[key])
+            .map(([side, key]) => `margin-${side}: ${format[key]}cm;`);
+        sheet.textContent = declarations.length
+            ? `@media print { @page { ${declarations.join(' ')} } }`
+            : '';
+    }
 
     /*
       La vista previa es donde se comprueba el ajuste antes de exportar. Los
@@ -8754,6 +9151,7 @@ window.onload = async () => {
         const preview = document.getElementById('html-output');
         // El resumen de la barra no depende de que haya vista previa montada.
         updateDocumentFormatStatus();
+        applyDocumentMarginsToPrint(effectiveDocumentFormat());
         if (!api || !preview) return;
         const styles = api.toPreviewStyles(effectiveDocumentFormat());
         Object.keys(api.toPreviewStyles({
@@ -8889,7 +9287,11 @@ window.onload = async () => {
 
     let selectDocFormatTab = null;
 
-    function toggleDocFormatModal(show) {
+    /*
+      `tab` dice con cuál de las dos se abre: quien viene de la píldora del
+      formato quiere el formato, y hacerle pulsar la pestaña cada vez sobra.
+    */
+    function toggleDocFormatModal(show, { tab = 'document' } = {}) {
         if (!docFormatOverlay) return;
         docFormatOverlay.style.display = show ? 'flex' : 'none';
         if (!show) return;
@@ -8900,15 +9302,31 @@ window.onload = async () => {
         */
         const tablist = document.getElementById('doc-format-tablist');
         selectDocFormatTab = setupSettingsTabs(tablist) || selectDocFormatTab;
-        if (selectDocFormatTab && tablist) selectDocFormatTab(tablist.querySelector('[role="tab"]'));
+        const pedida = tablist && document.getElementById(`doc-format-tab-${tab}`);
+        const elegida = pedida || (tablist && tablist.querySelector('[role="tab"]'));
+        if (selectDocFormatTab && elegida) selectDocFormatTab(elegida);
         renderDocumentFormatFields(docFormatFields, { inherit: true });
+        /*
+          El aviso del enlace a las opciones generales se pone aquí y no con
+          `data-i18n-key`: el traductor, cuando un elemento tiene `title`, deja
+          en él la traducción y ya no toca el texto, y este botón necesita las
+          dos cosas distintas.
+        */
+        const general = document.getElementById('doc-format-open-general');
+        if (general) {
+            general.title = getTranslation(
+                'doc_format_open_general_hint',
+                'Abre las opciones de exportación. Este cuadro se cierra sin guardar lo que hayas cambiado aquí.',
+            );
+        }
         // Siempre desde el documento: cancelar tiene que descartar de verdad.
         fillDocumentFormatFields('doc-format-fields', currentDocumentFormat());
         fillDocumentOwnFields();
         refreshInheritedDocumentHints();
+        // El foco, en la pestaña con la que se abre y no en la primera: es la
+        // que va a recorrer con las flechas quien acaba de elegirla.
         setTimeout(() => {
-            const first = document.querySelector('#doc-format-tablist [role="tab"]');
-            if (first) first.focus();
+            if (elegida) elegida.focus();
         }, 0);
     }
     window.__openDocumentSettings = () => toggleDocFormatModal(true);
@@ -8926,7 +9344,27 @@ window.onload = async () => {
     // y de paso es el camino más corto para cambiarlo.
     const docFormatStatusBtn = document.getElementById('doc-format-status');
     if (docFormatStatusBtn) {
-        docFormatStatusBtn.addEventListener('click', () => toggleDocFormatModal(true));
+        docFormatStatusBtn.addEventListener('click', () => toggleDocFormatModal(true, { tab: 'format' }));
+    }
+    /*
+      Del cuadro de este documento al general, por la misma pestaña: quien mira
+      de dónde hereda un campo suele querer cambiarlo para todos. Cierra sin
+      guardar, como cancelar, y el rótulo emergente lo avisa.
+    */
+    const docFormatOpenGeneralBtn = document.getElementById('doc-format-open-general');
+    if (docFormatOpenGeneralBtn) {
+        docFormatOpenGeneralBtn.addEventListener('click', () => {
+            const enFormato = document.getElementById('doc-format-tab-format')
+                ?.getAttribute('aria-selected') === 'true';
+            toggleDocFormatModal(false);
+            toggleLatexSettingsModal(true, { tab: enFormato ? 'format' : 'document' });
+        });
+    }
+
+    // Y la del idioma, al mismo cuadro: el idioma se cambia en su primera fila.
+    const docLanguageStatusBtn = document.getElementById('doc-language-status');
+    if (docLanguageStatusBtn) {
+        docLanguageStatusBtn.addEventListener('click', () => toggleDocFormatModal(true));
     }
     if (docFormatCancelBtn) {
         docFormatCancelBtn.addEventListener('click', () => toggleDocFormatModal(false));
@@ -9000,22 +9438,27 @@ window.onload = async () => {
 
     let selectSettingsTab = null;
 
-    function toggleLatexSettingsModal(show) {
+    /*
+      `tab` dice con cuál abrirlo: quien llega desde el cuadro de este documento
+      viene de una pestaña concreta y busca la misma, pero de todos.
+    */
+    function toggleLatexSettingsModal(show, { tab = 'document' } = {}) {
         if (!latexSettingsOverlay) return;
         latexSettingsOverlay.style.display = show ? 'flex' : 'none';
         if (show) {
             const tablist = document.getElementById('doc-settings-tablist');
             selectSettingsTab = setupSettingsTabs(tablist) || selectSettingsTab;
-            // Siempre por la primera: al abrir, lo que se busca casi nunca es
-            // la pestaña donde se estuvo la última vez.
-            if (selectSettingsTab && tablist) selectSettingsTab(tablist.querySelector('[role="tab"]'));
+            // Por la pedida o, si no, por la primera: al abrirlo del menú, lo
+            // que se busca casi nunca es la pestaña donde se estuvo la última vez.
+            const pedida = tablist && document.getElementById(`doc-settings-tab-${tab}`);
+            const elegida = pedida || (tablist && tablist.querySelector('[role="tab"]'));
+            if (selectSettingsTab && elegida) selectSettingsTab(elegida);
             // Siempre desde lo guardado: cancelar tiene que descartar de verdad.
             fillLatexSettingsForm(readLatexSettings());
-            // El foco, en la primera pestaña: el antiguo primer campo vive
-            // ahora en la de LaTeX, y enfocarlo la abriría sin querer.
+            // El foco, en su pestaña: el antiguo primer campo vive ahora en la
+            // de LaTeX, y enfocarlo la abriría sin querer.
             setTimeout(() => {
-                const first = document.querySelector('#doc-settings-tablist [role="tab"]');
-                if (first) first.focus();
+                if (elegida) elegida.focus();
             }, 0);
         }
     }
@@ -9498,7 +9941,19 @@ window.onload = async () => {
               ejecutaría las dos acciones a la vez.
             */
             switch (e.shiftKey ? null : e.key.toLowerCase()) {
-                case 'm': e.preventDefault(); startChord(FORMULA_CHORD); break;
+                /*
+                  Sobre la hoja no hay delimitadores que elegir antes de
+                  escribir —la ventana los trae como una opción más—, así que
+                  el atajo abre directamente lo mismo que el botón.
+                */
+                case 'm':
+                    e.preventDefault();
+                    if (isPreviewFormatTarget()) {
+                        document.getElementById('formula-btn')?.click();
+                    } else {
+                        startChord(FORMULA_CHORD);
+                    }
+                    break;
                 case 'o': e.preventDefault(); openFileBtn.click(); break;
                 case 's': e.preventDefault(); saveBtn.click(); break;
                 case 'p': e.preventDefault(); printBtn.click(); break;
@@ -9959,4 +10414,68 @@ window.onload = async () => {
 
   document.addEventListener('drop', handleDrop);
   backdrop.addEventListener('drop', handleDrop);
+
+  /*
+    Y el arrastre de la aplicación de escritorio, que no pasa por el DOM: el
+    webview se queda con el arrastre nativo y estos eventos nunca llegarían.
+    A cambio, lo que llega son rutas de verdad, así que el Markdown se abre por
+    el mismo camino que un doble clic —con su archivo detrás, listo para
+    guardar— y el resto se lee en bruto y va a Pandoc como en el navegador.
+  */
+  const plataforma = window.EdiMarkPlatform;
+  if (plataforma?.isDesktop && typeof plataforma.onNativeFileDrop === 'function') {
+    const esMarkdownNativo = ruta => /\.(md|markdown)$/i.test(ruta || '');
+    const nombreDeRuta = ruta => String(ruta || '').split(/[\\/]/).pop() || '';
+
+    async function abrirRutasSoltadas(rutas) {
+      const encontradas = await plataforma.expandDroppedPaths(rutas);
+      if (!encontradas.length) {
+        notifyUser(getTranslation(
+          'drop_unsupported',
+          'Solo se pueden soltar archivos Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX.',
+        ));
+        return;
+      }
+      const markdown = encontradas.filter(esMarkdownNativo);
+      const importables = encontradas.filter(ruta => !esMarkdownNativo(ruta));
+
+      // Los importables, en objetos `File` como los del navegador: a partir de
+      // ahí es exactamente la misma importación.
+      const archivos = [];
+      for (const ruta of importables) {
+        try {
+          const bytes = await plataforma.readDroppedDocumentBytes(ruta);
+          if (bytes) archivos.push(new File([bytes], nombreDeRuta(ruta)));
+        } catch (error) {
+          console.error('No se pudo leer el documento soltado:', error);
+        }
+      }
+      const convertibles = archivos.filter(archivo => detectImportFormat(archivo));
+      if (convertibles.length) await importFilesSequentially(convertibles);
+
+      if (markdown.length && typeof window.__edimarkOpenNativePaths === 'function') {
+        await window.__edimarkOpenNativePaths(markdown);
+      }
+    }
+
+    plataforma.onNativeFileDrop((event) => {
+      if (event?.type === 'enter') {
+        backdrop.classList.remove('hidden');
+        addHalo();
+        return;
+      }
+      if (event?.type === 'leave') {
+        backdrop.classList.add('hidden');
+        removeHalo();
+        return;
+      }
+      if (event?.type !== 'drop') return;
+      backdrop.classList.add('hidden');
+      removeHalo();
+      abrirRutasSoltadas(event.paths || []).catch((error) => {
+        console.error('No se pudieron abrir los documentos soltados:', error);
+        notifyUser(getTranslation('open_file_error', 'No se pudo abrir el documento.'));
+      });
+    });
+  }
 })();

@@ -1,5 +1,22 @@
 {
   "bundle": {
-    "targets": ["deb", "appimage"]
+    "targets": [
+      "deb",
+      "appimage"
+    ],
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/share/icons/hicolor/32x32/mimetypes/text-markdown.png": "icons/32x32.png",
+          "/usr/share/icons/hicolor/64x64/mimetypes/text-markdown.png": "icons/64x64.png",
+          "/usr/share/icons/hicolor/128x128/mimetypes/text-markdown.png": "icons/128x128.png",
+          "/usr/share/icons/hicolor/256x256/mimetypes/text-markdown.png": "icons/128x128@2x.png",
+          "/usr/share/icons/hicolor/32x32/mimetypes/text-x-markdown.png": "icons/32x32.png",
+          "/usr/share/icons/hicolor/64x64/mimetypes/text-x-markdown.png": "icons/64x64.png",
+          "/usr/share/icons/hicolor/128x128/mimetypes/text-x-markdown.png": "icons/128x128.png",
+          "/usr/share/icons/hicolor/256x256/mimetypes/text-x-markdown.png": "icons/128x128@2x.png"
+        }
+      }
+    }
   }
 }

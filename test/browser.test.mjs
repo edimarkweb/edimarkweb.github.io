@@ -349,9 +349,162 @@ test('el PDF del menú de exportación sale por la impresión, no por Pandoc', a
   await page.evaluate(() => { window.__impresiones = 0; window.print = () => { window.__impresiones += 1; }; });
   await page.locator('#export-menu-btn').click();
   await page.locator('#export-menu').waitFor({ state: 'visible' });
-  await page.locator('[data-export-format="pdf"]').click();
+  await page.locator('#export-menu [data-export-format="pdf"]').click();
   await page.waitForFunction(() => window.__impresiones === 1);
   assert.equal(await page.locator('#export-menu').isVisible(), false);
+});
+
+/*
+  Exportar y copiar son la misma acción con distinto destino, así que el botón
+  de exportar funciona igual que el de copiar: repite de un clic el último
+  formato, lo dice en su rótulo y guarda la flecha para cambiarlo. Las dos
+  listas —la de la cabecera y la de la flecha— alimentan esa memoria.
+*/
+test('el botón de exportar repite el último formato y lo dice', async (t) => {
+  const { context, page } = await openApp({});
+  t.after(() => context.close());
+
+  // Se prueba con PDF, que es el único formato que no pasa por Pandoc.
+  await page.evaluate(() => { window.__impresiones = 0; window.print = () => { window.__impresiones += 1; }; });
+
+  const rotulo = () => page.locator('#export-quick-btn').innerText();
+  assert.equal((await rotulo()).trim(), 'DOCX', 'de partida, el primero de la lista');
+
+  // Elegir en la lista de la cabecera es decir también qué repetirá el botón.
+  await page.locator('#export-menu-btn').click();
+  await page.locator('#export-menu [data-export-format="pdf"]').click();
+  await page.waitForFunction(() => window.__impresiones === 1);
+  assert.equal((await rotulo()).trim(), 'PDF');
+
+  // Y el botón lo repite sin abrir nada.
+  await page.locator('#export-quick-btn').click();
+  await page.waitForFunction(() => window.__impresiones === 2);
+  assert.equal(await page.locator('#export-quick-menu').isVisible(), false);
+
+  // La flecha abre la misma lista, con el formato de ahora marcado.
+  await page.locator('#export-quick-menu-toggle').click();
+  await page.locator('#export-quick-menu').waitFor({ state: 'visible' });
+  assert.equal(
+    await page.locator('#export-quick-menu [data-export-format="pdf"]').getAttribute('aria-checked'),
+    'true',
+  );
+  assert.equal(
+    await page.locator('#export-quick-menu [data-export-format="docx"]').getAttribute('aria-checked'),
+    'false',
+  );
+  // Y se cierra con Escape, como los demás menús.
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#export-quick-menu').isVisible(), false);
+
+  // El formato elegido sobrevive a la recarga.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.__edimarkReady === true);
+  assert.equal((await rotulo()).trim(), 'PDF');
+});
+
+/*
+  En el escritorio, un documento llega por su ruta: al abrirlo dos veces —doble
+  clic, o soltándolo— no puede acabar en dos pestañas, cada una con su copia,
+  porque guardar en una pisaría lo escrito en la otra. Y el arrastre nativo no
+  pasa por el DOM: el webview se queda con él, así que la aplicación escucha el
+  evento propio de la ventana.
+*/
+const escritorioConDisco = () => {
+  window.__edimarkDisco = { '/docs/tema.md': '# Tema\n\nPrimera versión' };
+  window.__EDIMARK_TAURI__ = {
+    dialog: {},
+    fs: {},
+    app: {
+      initialMarkdownPaths: async () => ['/docs/tema.md'],
+      readMarkdownDocument: async path => window.__edimarkDisco[path] ?? '',
+      onOpenMarkdownPaths: (callback) => { window.__abrirRutas = callback; return () => {}; },
+      onNativeDrop: (callback) => { window.__soltar = callback; return () => {}; },
+      droppedDocumentPaths: async paths => paths,
+      readDroppedDocument: async () => new Uint8Array(),
+    },
+  };
+};
+
+test('un documento del sistema abierto dos veces vuelve a su pestaña', async (t) => {
+  const { context, page } = await openApp({ initStorage: escritorioConDisco });
+  t.after(() => context.close());
+
+  const pestanas = () => page.locator('.tab-name').allTextContents();
+  const activa = () => page.locator('.tab[aria-selected="true"] .tab-name').innerText();
+
+  // Al arrancar se abre el documento asociado, y es el que queda delante.
+  await page.waitForFunction(() => document.querySelector('.tab[aria-selected="true"] .tab-name')?.textContent === 'tema.md');
+  assert.deepEqual(await pestanas(), ['tema.md']);
+
+  // Abrirlo otra vez no lo duplica: vuelve a su pestaña y trae lo que hay en
+  // el disco, que puede haber cambiado desde fuera.
+  await page.evaluate(() => {
+    window.__edimarkDisco['/docs/tema.md'] = '# Tema\n\nSegunda versión';
+    window.__abrirRutas(['/docs/tema.md']);
+  });
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('Segunda versión'));
+  assert.deepEqual(await pestanas(), ['tema.md']);
+  assert.equal(await activa(), 'tema.md');
+  // Y llega sin marca de cambios: es lo que hay guardado.
+  assert.equal(await page.locator('.tab[aria-selected="true"] .tab-dirty').isVisible(), false);
+
+  // Soltarlo sobre la ventana hace lo mismo, por el evento nativo.
+  await page.evaluate(() => window.__soltar({ type: 'drop', paths: ['/docs/tema.md'] }));
+  await page.waitForTimeout(300);
+  assert.deepEqual(await pestanas(), ['tema.md']);
+
+  // Y un documento distinto sí abre su pestaña.
+  await page.evaluate(() => {
+    window.__edimarkDisco['/docs/otro.md'] = '# Otro';
+    window.__soltar({ type: 'drop', paths: ['/docs/otro.md'] });
+  });
+  await page.waitForFunction(() => document.querySelectorAll('.tab-name').length === 2);
+  assert.equal(await activa(), 'otro.md');
+});
+
+/*
+  El manual se pide por red y tarda. Si mientras tanto llega un documento del
+  sistema, el manual no puede ponerse delante: el archivo que el usuario acaba
+  de abrir se quedaría en su pestaña y el foco saltaría a la primera.
+*/
+test('el manual que llega tarde no le quita el sitio al documento abierto', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__edimarkDisco = { '/docs/tema.md': '# Tema' };
+      // El manual, con retraso: es lo que provoca la carrera.
+      const original = window.fetch;
+      window.fetch = (input, init) => {
+        const url = String(typeof input === 'string' ? input : input?.url || '');
+        if (/manual[^/]*\.md/.test(url)) {
+          return new Promise(resolve => setTimeout(() => resolve(original(input, init)), 600));
+        }
+        return original(input, init);
+      };
+      window.__EDIMARK_TAURI__ = {
+        dialog: {},
+        fs: {},
+        app: {
+          initialMarkdownPaths: async () => [],
+          readMarkdownDocument: async path => window.__edimarkDisco[path] ?? '',
+          onOpenMarkdownPaths: (callback) => { window.__abrirRutas = callback; return () => {}; },
+          onNativeDrop: () => () => {},
+          droppedDocumentPaths: async paths => paths,
+          readDroppedDocument: async () => new Uint8Array(),
+        },
+      };
+    },
+  });
+  t.after(() => context.close());
+
+  // En cuanto la aplicación escucha, llega el documento: el manual sigue en el aire.
+  await page.waitForFunction(() => typeof window.__abrirRutas === 'function');
+  await page.evaluate(() => window.__abrirRutas(['/docs/tema.md']));
+  await page.waitForFunction(() => document.querySelectorAll('.tab-name').length === 2);
+
+  // El manual acaba de llegar y se queda en su pestaña, sin robar el foco.
+  const nombres = await page.locator('.tab-name').allTextContents();
+  assert.ok(nombres.includes('Manual'), `faltó el manual: ${nombres}`);
+  assert.equal(await page.locator('.tab[aria-selected="true"] .tab-name').innerText(), 'tema.md');
 });
 
 test('una lista local dañada no impide arrancar y conserva una copia', async (t) => {
@@ -1108,23 +1261,81 @@ test('los tres botones cambian de disposición y dicen cuál está puesta', asyn
   assert.equal(await boton('dual').getAttribute('aria-pressed'), 'true');
 
   await boton('md').click();
+  // El panel que se va se encoge antes de esconderse, así que la disposición no
+  // está puesta del todo hasta que desaparece.
+  await page.locator('#html-panel').waitFor({ state: 'hidden' });
   assert.equal(await page.locator('#markdown-panel').isVisible(), true);
-  assert.equal(await page.locator('#html-panel').isVisible(), false);
   assert.equal(await boton('md').getAttribute('aria-pressed'), 'true');
   assert.equal(await boton('dual').getAttribute('aria-pressed'), 'false');
   // El menú, aunque no se vea, dice lo mismo que los botones.
   assert.equal(await page.locator('#layout-menu [data-layout="md"]').getAttribute('aria-checked'), 'true');
 
   await boton('html').click();
-  assert.equal(await page.locator('#markdown-panel').isVisible(), false);
+  await page.locator('#markdown-panel').waitFor({ state: 'hidden' });
   assert.equal(await page.locator('#html-panel').isVisible(), true);
   assert.equal(await boton('html').getAttribute('aria-pressed'), 'true');
 
   // Ctrl+L rota, y el resaltado lo sigue: es lo que hace visible el atajo.
   await page.keyboard.press('Control+l');
   assert.equal(await boton('dual').getAttribute('aria-pressed'), 'true');
-  assert.equal(await page.locator('#markdown-panel').isVisible(), true);
+  // El que vuelve crece desde cero: hasta que no tiene ancho no está a la vista.
+  await page.locator('#markdown-panel').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#html-panel').isVisible(), true);
+});
+
+/*
+  Cambiar de disposición no es aparecer y desaparecer: el panel que llega crece
+  desde cero y el que se va se encoge hasta cero. Como van en fila, el editor
+  visual entra siempre por la derecha —su borde derecho no se mueve— y el
+  Markdown por la izquierda.
+*/
+test('los paneles entran creciendo por su lado', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const bordes = () => page.evaluate(() => {
+    const caja = id => {
+      const el = document.getElementById(id);
+      if (getComputedStyle(el).display === 'none') return null;
+      const { left, right } = el.getBoundingClientRect();
+      return { left: Math.round(left), right: Math.round(right) };
+    };
+    return { md: caja('markdown-panel'), html: caja('html-panel') };
+  });
+
+  // Un clic y una lectura en la misma vuelta: durante el cambio los dos paneles
+  // están a la vista, el que se va todavía sin esconder.
+  const pulsar = destino => page.evaluate((valor) => {
+    document.querySelector(`#layout-switch [data-layout="${valor}"]`).click();
+    const md = document.getElementById('markdown-panel');
+    const html = document.getElementById('html-panel');
+    return {
+      mdVisible: getComputedStyle(md).display !== 'none',
+      htmlVisible: getComputedStyle(html).display !== 'none',
+      encogiendo: [md, html]
+        .filter(panel => panel.classList.contains('panel-sliding'))
+        .map(panel => panel.id),
+    };
+  }, destino);
+
+  await page.locator('#layout-switch [data-layout="md"]').click();
+  await page.locator('#html-panel').waitFor({ state: 'hidden' });
+  const inicio = await bordes();
+
+  // Solo Markdown → solo el editor visual: entra por la derecha.
+  const entrando = await pulsar('html');
+  assert.equal(entrando.mdVisible, true, 'el Markdown se escondió de golpe');
+  assert.equal(entrando.htmlVisible, true, 'el editor visual no había llegado aún');
+  assert.deepEqual(entrando.encogiendo.sort(), ['html-panel', 'markdown-panel']);
+  await page.locator('#markdown-panel').waitFor({ state: 'hidden' });
+  const final = await bordes();
+  assert.equal(final.html.right, inicio.md.right, 'el borde derecho se movió: no entró por la derecha');
+
+  // Y de vuelta, el Markdown entra por la izquierda: su borde izquierdo se queda.
+  await pulsar('md');
+  await page.locator('#html-panel').waitFor({ state: 'hidden' });
+  const vuelta = await bordes();
+  assert.equal(vuelta.md.left, inicio.md.left, 'el borde izquierdo se movió: no entró por la izquierda');
 });
 
 test('en pantalla estrecha las disposiciones vuelven al menú', async (t) => {
@@ -1552,15 +1763,15 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
       classOptions: '12pt, a4paper',
       preamble: '\\usepackage{amsthm}',
       /*
-        Sin tocar el formato del texto, sus ajustes quedan sin fijar salvo el
-        tamaño, que trae número de partida: la vista previa dejó de seguir al
-        de la interfaz y sin él no tendría ninguno que enseñar.
+        Sin tocar el formato del texto, quedan sin fijar todos menos los tres
+        que la vista previa necesita para enseñar la verdad —cuerpo, letra e
+        interlineado—, que traen valor de partida y viajan a los cinco formatos.
       */
       documentFormat: {
         align: '',
-        font: '',
+        font: 'serif',
         fontSize: '12',
-        lineHeight: '',
+        lineHeight: '1.5',
         marginTop: '',
         marginRight: '',
         marginBottom: '',
@@ -2451,6 +2662,233 @@ test('el panel activo queda marcado aunque el foco salga de él', async (t) => {
 });
 
 /*
+  La lupa de la vista previa es de la pantalla: agranda la hoja para leerla, no
+  el documento. Al imprimir se colaba —la hoja salía más ancha que la página— y
+  el navegador cortaba por la derecha el texto y las imágenes.
+*/
+test('la lupa de la vista previa no llega al papel', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  // Un ancho parecido al imprimible de un A4 con sus márgenes.
+  await page.setViewportSize({ width: 658, height: 900 });
+  await page.emulateMedia({ media: 'print' });
+  const enPapel = zoom => page.evaluate((valor) => {
+    document.documentElement.style.setProperty('--preview-zoom', valor);
+    const hoja = document.getElementById('html-output');
+    return {
+      cabe: Math.round(hoja.getBoundingClientRect().width) <= document.documentElement.clientWidth,
+      cuerpo: getComputedStyle(hoja).fontSize,
+      desborda: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    };
+  }, zoom);
+
+  const normal = await enPapel('1');
+  assert.deepEqual(normal, { cabe: true, cuerpo: '16px', desborda: false });
+  for (const zoom of ['1.25', '2']) {
+    assert.deepEqual(await enPapel(zoom), normal, `la lupa al ${zoom} cambió el papel`);
+  }
+  await page.emulateMedia({ media: 'screen' });
+});
+
+/*
+  Y los márgenes del documento sí llegan: la hoja los enseña como relleno, pero
+  al imprimir el relleno se quita y hace falta escribirlos en `@page`.
+*/
+test('los márgenes del documento se escriben para el papel', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const regla = () => page.evaluate(
+    () => document.getElementById('doc-print-page-style')?.textContent ?? '',
+  );
+  // Sin márgenes propios manda el de partida del CSS de impresión.
+  assert.equal(await regla(), '');
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('---\nmargin-left: "3"\nmargin-right: "2.5"\n---\n\nTexto\n');
+  await page.waitForFunction(
+    () => (document.getElementById('doc-print-page-style')?.textContent || '').includes('margin-left'),
+  );
+  const escrita = await regla();
+  assert.match(escrita, /@media print \{ @page \{/);
+  assert.match(escrita, /margin-left: 3cm;/);
+  assert.match(escrita, /margin-right: 2\.5cm;/);
+});
+
+/*
+  Lo que no fija nadie también se cuenta: sin decirlo, un campo sin pista no se
+  distingue de uno cuya pista se ha perdido, y el rótulo del resumen dejaba
+  fuera justo los ajustes por los que se pregunta.
+*/
+test('lo que no hereda nada lo dice, en el cuadro y en el resumen', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  // El rótulo del resumen nombra los siete ajustes, con guion los no fijados.
+  const rotulo = await page.locator('#doc-format-status').getAttribute('title');
+  const etiquetas = ['Alineación', 'Tipo de letra', 'Tamaño', 'Interlineado',
+    'Márgenes', 'Sangría de primera línea', 'Partir palabras'];
+  etiquetas.forEach(etiqueta => assert.ok(
+    rotulo.includes(etiqueta), `el rótulo no nombra «${etiqueta}»: ${rotulo}`,
+  ));
+  assert.ok(rotulo.includes('Sangría de primera línea: —'));
+  assert.ok(rotulo.includes('Márgenes de página (cm): — / — / — / —'));
+  // Y explica el guion, que si no se lee como un fallo.
+  assert.match(rotulo, /—\s*:\s*sin fijar/);
+
+  // En el cuadro, cada campo sin valor general lo dice bajo su casilla.
+  await page.locator('#doc-format-status').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  const pista = id => page.evaluate((campo) => {
+    const hint = document.getElementById(campo)?.nextElementSibling;
+    return hint && hint.dataset.inheritedHint && !hint.classList.contains('hidden')
+      ? hint.textContent
+      : '';
+  }, id);
+  assert.match(await pista('doc-format-fields-indent'), /Sin fijar/);
+  assert.match(await pista('doc-format-fields-align'), /Sin fijar/);
+  // Y el que sí hereda sigue diciendo de qué.
+  assert.match(await pista('doc-format-fields-font'), /Hereda: Con remates/);
+  const margen = await page.locator('#doc-format-fields-margin-top').getAttribute('title');
+  assert.match(margen, /Sin fijar/);
+});
+
+/*
+  De lo de este documento a lo de todos: el cuadro dice que lo heredado sale de
+  las opciones de exportación, y lleva a ellas por la misma pestaña, que es lo
+  que se busca cuando uno se pregunta de dónde viene un valor.
+*/
+test('el cuadro del documento lleva a las opciones generales por su misma pestaña', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  // Desde la pestaña del formato, a la del formato.
+  await page.locator('#doc-format-status').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  await page.locator('#doc-format-open-general').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'hidden' });
+  assert.equal(await page.locator('#doc-settings-tab-format').getAttribute('aria-selected'), 'true');
+  assert.equal(await page.locator('#doc-settings-panel-format').isVisible(), true);
+  await page.locator('#latex-settings-cancel-btn').click();
+
+  // Y desde la del documento, a la del documento.
+  await page.locator('#doc-language-status').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  await page.locator('#doc-format-open-general').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'hidden' });
+  assert.equal(await page.locator('#doc-settings-tab-document').getAttribute('aria-selected'), 'true');
+});
+
+/*
+  El resumen del formato enseña siempre los tres ajustes que se consultan a
+  diario —tamaño, tipo de letra e interlineado—, con un guion donde no hay nada
+  fijado: una píldora que cambia de contenido según lo que haya obliga a abrir
+  el cuadro para saber si un ajuste está sin poner o es que no cabía.
+*/
+test('el resumen del formato enseña siempre los tres ajustes', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const pildora = page.locator('#doc-format-status');
+  const texto = () => pildora.evaluate(el => el.innerText.replace(/\s+/g, ' ').trim());
+
+  // Recién abierto, los tres valores de partida de las opciones generales.
+  await pildora.waitFor({ state: 'visible' });
+  assert.equal(await texto(), '12 pt · Serif · 1,5');
+
+  // Y con los tres puestos en el documento, los tres con su valor.
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('---\nfontsize: "14pt"\nfont: "sans"\nlinestretch: "2"\n---\n\nHola\n');
+  await page.waitForFunction(
+    () => document.getElementById('doc-format-status').innerText.includes('14 pt'),
+  );
+  assert.equal(await texto(), '14 pt · Sans · 2');
+
+  // Y lleva al cuadro por la pestaña del formato, que es lo que resume.
+  await pildora.click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#doc-format-tab-format').getAttribute('aria-selected'), 'true');
+  assert.equal(await page.locator('#doc-format-panel-format').isVisible(), true);
+
+  // La del idioma, en cambio, abre por la suya.
+  await page.locator('#doc-format-cancel-btn').click();
+  await page.locator('#doc-language-status').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#doc-format-tab-document').getAttribute('aria-selected'), 'true');
+});
+
+/*
+  El idioma con el que va a salir el documento se lee en la barra de estado sin
+  abrir nada: es lo que decide en qué lengua corrigen Word y LibreOffice. Y dice
+  de dónde sale —del documento o de las opciones generales— sin gastar palabras.
+*/
+test('la barra de estado enseña siempre el idioma del documento', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const pildora = page.locator('#doc-language-status');
+  const heredado = () => pildora.evaluate(el => el.classList.contains('is-inherited'));
+
+  // Sin idioma propio: el general, y atenuado.
+  await pildora.waitFor({ state: 'visible' });
+  assert.equal(await pildora.innerText(), 'ES');
+  assert.equal(await heredado(), true);
+
+  // Con el suyo escrito en los metadatos: encendido y con su código.
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('---\nlang: "pt-BR"\n---\n\nOlá\n');
+  await page.waitForFunction(
+    () => document.getElementById('doc-language-status').innerText.trim() === 'PT-BR',
+  );
+  assert.equal(await heredado(), false);
+
+  // Al quitarlo vuelve a seguir al general.
+  await page.locator('#markdown-input').fill('Sin idioma propio\n');
+  await page.waitForFunction(
+    () => document.getElementById('doc-language-status').innerText.trim() === 'ES',
+  );
+  assert.equal(await heredado(), true);
+
+  // Y el heredado sigue al idioma de la interfaz cuando este cambia.
+  await page.evaluate(() => {
+    const select = document.getElementById('language-select');
+    select.value = 'en';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await page.waitForFunction(
+    () => document.getElementById('doc-language-status').innerText.trim() === 'EN',
+  );
+
+  // Lleva al mismo cuadro donde se cambia.
+  await pildora.click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+});
+
+/*
+  En el tema oscuro los encabezados del documento tienen que aclararse los seis:
+  los que se quedaban fuera de la regla heredaban el gris oscuro de Tailwind
+  Typography y sobre la hoja oscura se leían negros.
+*/
+test('en el tema oscuro los seis niveles de encabezado se aclaran', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      try { localStorage.setItem('edimarkweb-theme', 'dark'); } catch (_error) {}
+    },
+  });
+  t.after(() => context.close());
+
+  await page.waitForFunction(() => document.documentElement.classList.contains('dark'));
+  await page.locator('#markdown-input').fill('# Uno\n\n## Dos\n\n### Tres\n\n#### Cuatro\n\n##### Cinco\n\n###### Seis\n');
+  await page.locator('#html-output h6').waitFor();
+  const colores = await page.evaluate(() => (
+    ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']
+      .map(tag => getComputedStyle(document.querySelector(`#html-output ${tag}`)).color)
+  ));
+  assert.deepEqual(new Set(colores), new Set(['rgb(241, 245, 249)']), `encabezados sin aclarar: ${colores}`);
+});
+
+/*
   La misma marca, dicha con palabras: la barra de estado lleva el nombre del
   panel activo, y solo ese. El botón que alterna la hoja y su código es cosa del
   panel derecho, así que solo sale cuando ese es el activo.
@@ -2470,7 +2908,7 @@ test('la barra de estado nombra el panel activo', async (t) => {
   assert.equal(await page.locator('#view-toggle-btn').isVisible(), true);
 
   // Y ese rótulo nombra lo que se está mirando en el panel.
-  assert.equal(await page.locator('#html-panel-title').innerText(), 'PREVISUALIZACIÓN');
+  assert.equal(await page.locator('#html-panel-title').innerText(), 'EDITOR VISUAL');
   await page.locator('#view-toggle-btn').click();
   assert.equal(await page.locator('#html-panel-title').innerText(), 'CÓDIGO HTML');
 });
@@ -2884,6 +3322,28 @@ test('sobre la vista previa las fórmulas se escriben en su propia ventana', asy
   assert.equal(await page.locator('#math-modal-overlay').isVisible(), false);
   await page.locator('[data-format="latex-inline-dollar"]').click();
   await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('$$'));
+});
+
+/*
+  Ctrl+M hace lo mismo que el botón, y el botón hace dos cosas distintas: sobre
+  la hoja no hay delimitadores que elegir, así que la espera de las cuatro
+  teclas no pinta nada y el atajo abre la ventana de una vez.
+*/
+test('sobre la vista previa Ctrl+M abre la ventana en lugar de la espera', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await documentoDePrueba(page, 'x^2');
+  await seleccionarEnLaHoja(page, 'x^2');
+
+  await page.keyboard.press('Control+KeyM');
+  await page.locator('#math-modal-overlay').waitFor({ state: 'visible' });
+  // La espera no llegó a abrirse: la barra de estado no anuncia las teclas.
+  assert.equal(await page.locator('#status-toast-message').textContent(), '');
+  // Y lo seleccionado en la hoja llega escrito, como con el botón.
+  assert.equal(await page.locator('#math-code').inputValue(), 'x^2');
+  await page.locator('#cancel-math-btn').click();
 });
 
 /*
