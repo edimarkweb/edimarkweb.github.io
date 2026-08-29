@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.38.0';
+const APP_VERSION = '2.39.0';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
