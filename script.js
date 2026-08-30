@@ -10646,6 +10646,32 @@ window.onload = async () => {
             syncOwnLanguageCodeField();
         });
     }
+    /*
+      Intro confirma el cuadro, como en cualquier diálogo.
+
+      Sin esto, quien escribía un número y pulsaba Intro no veía pasar nada: el
+      cuadro seguía abierto, el botón de guardar estaba fuera de la vista al
+      final de una lista larga de campos, y al cerrar con Escape o pulsando
+      fuera el valor se iba con él. Parecía que el ajuste no se guardaba salvo
+      que antes se cambiara el foco de campo, que es cuando el botón se busca.
+
+      Quedan fuera el preámbulo de LaTeX —ahí Intro es un salto de línea— y los
+      botones y enlaces, que el navegador ya activa por su cuenta.
+    */
+    function confirmarConIntro(overlay, saveButton) {
+        if (!overlay || !saveButton) return;
+        overlay.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+            const target = event.target;
+            if (!target || typeof target.closest !== 'function') return;
+            if (target.closest('textarea, button, a, [role="tab"]')) return;
+            event.preventDefault();
+            saveButton.click();
+        });
+    }
+    confirmarConIntro(docFormatOverlay, docFormatSaveBtn);
+    confirmarConIntro(latexSettingsOverlay, latexSettingsSaveBtn);
+
     if (docFormatSaveBtn) {
         docFormatSaveBtn.addEventListener('click', () => {
             const own = window.__documentOwnSettings;
