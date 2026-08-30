@@ -4383,6 +4383,30 @@ test('las imágenes pasadas a la carpeta se escriben al guardar', async (t) => {
   assert.deepEqual(imagen[2], [...PNG_PIXEL], 'la imagen escrita debe ser la original, byte a byte');
 });
 
+test('los esquemas preformateados se reducen para caber sin alterar el Markdown', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const linea = '┌' + '─'.repeat(92) + '┐';
+  const markdown = `\`\`\`\n${linea}\n│ MAPA DEL ECOSISTEMA MARKDOWN${' '.repeat(63)}│\n${linea}\n\`\`\`\n`;
+  await page.locator('#markdown-input').fill(markdown);
+  const pre = page.locator('#html-output pre');
+  await pre.waitFor();
+  await page.waitForFunction(() => {
+    const block = document.querySelector('#html-output pre');
+    return block && Number.parseFloat(getComputedStyle(block).fontSize) < 14;
+  });
+
+  const medida = await pre.evaluate((block) => ({
+    clientWidth: block.clientWidth,
+    scrollWidth: block.scrollWidth,
+    scale: Number.parseFloat(block.style.getPropertyValue('--edimark-pre-fit')),
+  }));
+  assert.ok(medida.scale < 1 && medida.scale >= 0.6);
+  assert.ok(medida.scrollWidth <= medida.clientWidth + 1, 'el esquema todavía desborda la hoja');
+  assert.equal(await page.locator('#markdown-input').inputValue(), markdown);
+});
+
 /*
   La hoja de la vista previa mide el papel de verdad, así que en un panel
   estrecho no cabía y la mesa se desplazaba a lo ancho. Con el panel atado a la

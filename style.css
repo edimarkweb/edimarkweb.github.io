@@ -1110,6 +1110,17 @@ body.desktop-mode .markdown-textarea {
 }
 
 /*
+  Un esquema ASCII conserva sus columnas solo con `white-space: pre`, pero una
+  línea más ancha que el papel obligaba a recorrerla con una barra horizontal
+  situada al final del bloque. La vista previa calcula una escala únicamente
+  para los bloques que no caben; los casos extremos conservan la barra para no
+  convertir código arbitrariamente largo en texto ilegible.
+*/
+.preview-sheet pre {
+    font-size: calc(0.875em * var(--edimark-pre-fit, 1));
+}
+
+/*
   La sangría de primera línea que fija el documento. Va aquí y solo sobre los
   párrafos —la misma regla que `toCssRules` escribe para el HTML y el EPUB—
   porque `text-indent` se hereda: puesta en la hoja entera sangraba también los

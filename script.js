@@ -4258,6 +4258,29 @@ function markdownLineForBlockIndex(index) {
     return null;
 }
 
+/*
+  Los bloques preformateados no pueden partir líneas sin deshacer diagramas,
+  tablas ASCII o código alineado. Si el bloque completo cabe reduciendo la
+  letra hasta un 60 %, se ajusta a la hoja; por debajo de eso conserva su
+  tamaño mínimo y la barra horizontal que aporta la hoja tipográfica.
+
+  La escala vive en una variable de presentación. Turndown ignora este detalle
+  al devolver el bloque a Markdown, de modo que el texto original no cambia.
+*/
+function fitWidePreformattedBlocks(container) {
+    if (!container) return;
+    container.querySelectorAll('pre').forEach((block) => {
+        block.style.removeProperty('--edimark-pre-fit');
+        const computed = getComputedStyle(block);
+        const horizontalPadding = (Number.parseFloat(computed.paddingLeft) || 0)
+            + (Number.parseFloat(computed.paddingRight) || 0);
+        const available = Math.max(0, block.clientWidth - horizontalPadding);
+        const required = Math.max(0, block.scrollWidth - horizontalPadding);
+        if (!available || required <= available + 1) return;
+        block.style.setProperty('--edimark-pre-fit', String(Math.max(0.6, available / required)));
+    });
+}
+
 // --- Funciones principales ---
 function updateHtml() {
     if (isUpdating) return;
@@ -4275,6 +4298,7 @@ function updateHtml() {
         const parsedHtml = marked.parse(sanitizedText);
         const restoredHtml = restoreMathSegments(parsedHtml, mathSegments);
         htmlOutput.innerHTML = restoredHtml;
+        fitWidePreformattedBlocks(htmlOutput);
 
         // Las rutas relativas se resuelven sobre el DOM ya montado; el HTML
         // que acaba de recibir el editor conserva las originales.
@@ -10372,6 +10396,7 @@ window.onload = async () => {
               después ya es la buena.
             */
             aplicarAjusteAlAncho();
+            fitWidePreformattedBlocks(document.getElementById('html-output'));
             // El ancho ha cambiado, y con él hasta dónde puede llegar la lupa.
             refrescarTopeDeLaLupa();
             refreshPageBreaks();
