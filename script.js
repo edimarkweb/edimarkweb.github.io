@@ -3371,7 +3371,11 @@ function registerAssetFolder(files, { docId = null, folderName = '' } = {}) {
 const EXTRACTED_ASSETS_FALLBACK_FOLDER = 'imagenes';
 
 function extractedAssetsFolder(doc) {
-    const rawName = doc && typeof doc.name === 'string' ? doc.name.trim() : '';
+    return extractedAssetsFolderName(doc && typeof doc.name === 'string' ? doc.name : '');
+}
+
+function extractedAssetsFolderName(name) {
+    const rawName = String(name || '').trim();
     const folder = rawName
         .replace(/\.md$/i, '')
         .replace(/[\\/:*?"<>|]+/g, '-')
@@ -4943,6 +4947,7 @@ async function saveFile(filename, content, type, {
     companionFiles,
     directoryHandle,
     fileHandle,
+    prepareForSave,
 } = {}) {
     const platform = window.EdiMarkPlatform;
     if (platform && typeof platform.saveFile === 'function') {
@@ -4955,6 +4960,7 @@ async function saveFile(filename, content, type, {
             companionFiles,
             directoryHandle,
             fileHandle,
+            prepareForSave,
         });
     }
 
@@ -5013,8 +5019,47 @@ async function collectLinkedDocumentAssets(doc, content) {
     return assets;
 }
 
+/*
+  Las imágenes extraídas de base64 viven en una carpeta que lleva el nombre
+  del documento. «Guardar como» cambia también esa carpeta y las referencias
+  del Markdown, pero deja intactas las carpetas ajenas (`imagenes/`,
+  `../comunes/`, etc.). El callback se ejecuta cuando el diálogo nativo ya ha
+  devuelto el nombre realmente elegido.
+*/
+function renameOwnAssetFolderForSave(doc, content, companionFiles, savedName) {
+    const oldFolder = extractedAssetsFolder(doc);
+    const newFolder = extractedAssetsFolderName(savedName);
+    if (!oldFolder || !newFolder || oldFolder === newFolder) {
+        return { contents: content, companionFiles };
+    }
+
+    const prefix = `${oldFolder}/`;
+    let hasOwnAssets = false;
+    const renamedFiles = (Array.isArray(companionFiles) ? companionFiles : []).map(file => {
+        const relativePath = assetPathUtils?.normalizeRelativePath(file?.relativePath || '') || '';
+        if (!relativePath.startsWith(prefix)) return file;
+        const renamedPath = `${newFolder}/${relativePath.slice(prefix.length)}`;
+        hasOwnAssets = true;
+        return { ...file, relativePath: renamedPath };
+    });
+    if (!hasOwnAssets) return { contents: content, companionFiles };
+
+    const rewritten = String(content).replace(
+        /(!\[[^\]]*?\]\(\s*)([^)\s]+)/g,
+        (match, opening, source) => {
+            const normalized = assetPathUtils?.normalizeRelativePath(source) || '';
+            if (!normalized.startsWith(prefix)) return match;
+            const renamed = `${newFolder}/${normalized.slice(prefix.length)}`;
+            const suffix = source.slice(source.replace(/[?#].*$/, '').length);
+            return `${opening}${renamed}${suffix}`;
+        },
+    );
+    return { contents: rewritten, companionFiles: renamedFiles };
+}
+
 async function saveCurrentDocument({ saveAs = false } = {}) {
     const content = markdownEditor.getValue();
+    let savedContent = content;
     const doc = docs.find(d => d.id === currentId);
     const rawName = doc && typeof doc.name === 'string' ? doc.name.trim() : '';
     const cleanName = rawName.replace(/\.md$/i, '') || 'documento';
@@ -5029,6 +5074,13 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
             companionFiles,
             directoryHandle: saveAs ? null : (assetEntry?.saveDirectoryHandle || null),
             fileHandle: saveAs ? null : (assetEntry?.saveFileHandle || null),
+            prepareForSave: saveAs && window.EdiMarkPlatform?.isDesktop
+                ? ({ name }) => {
+                    const prepared = renameOwnAssetFolderForSave(doc, content, companionFiles, name);
+                    savedContent = prepared.contents;
+                    return prepared;
+                }
+                : null,
         };
         let result;
         try {
@@ -5047,10 +5099,13 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
         if (!result || !result.saved) return false;
         if (doc) {
             const savedName = String(result.name || filename).replace(/\.md$/i, '') || cleanName;
+            if (savedContent !== content) {
+                markdownEditor.setValue(savedContent);
+            }
             doc.name = savedName;
             doc.filePath = result.path || doc.filePath || '';
-            doc.md = content;
-            doc.lastSaved = content;
+            doc.md = savedContent;
+            doc.lastSaved = savedContent;
             const tabNameEl = document.querySelector(`.tab[data-id="${currentId}"] .tab-name`);
             if (tabNameEl) tabNameEl.textContent = savedName;
             updateDirtyIndicator(currentId, false);

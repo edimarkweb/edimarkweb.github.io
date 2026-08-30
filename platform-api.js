@@ -533,6 +533,7 @@
         companionFiles,
         directoryHandle,
         fileHandle,
+        prepareForSave,
       } = {}) {
         if (!desktop) {
           if (Array.isArray(companionFiles) && companionFiles.length) {
@@ -572,6 +573,30 @@
         }
         if (!path) return { saved: false, path: '', name: suggestedName };
         rememberDirectory(path);
+
+        /*
+          Algunas partes del documento dependen del nombre elegido en el
+          diálogo. Es el caso de la carpeta propia de imágenes: al guardar
+          `tema.md` como `resumen.md`, `tema/01.png` debe convertirse en
+          `resumen/01.png`. Se prepara el contenido después de conocer la ruta
+          y antes de escribir nada.
+        */
+        if (typeof prepareForSave === 'function') {
+          const prepared = await prepareForSave({
+            path,
+            name: fileNameFromPath(path) || suggestedName,
+            contents,
+            companionFiles,
+          });
+          if (prepared && typeof prepared === 'object') {
+            if (Object.prototype.hasOwnProperty.call(prepared, 'contents')) {
+              contents = prepared.contents;
+            }
+            if (Object.prototype.hasOwnProperty.call(prepared, 'companionFiles')) {
+              companionFiles = prepared.companionFiles;
+            }
+          }
+        }
 
         /*
           El `.md` se escribe desde Rust cuando se puede. El diálogo autoriza al

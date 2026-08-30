@@ -1608,7 +1608,7 @@ test('en escritorio Guardar como copia las imágenes relativas del documento ori
       window.__EDIMARK_TAURI__ = {
         dialog: {
           open: async () => '/origen/tema.md',
-          save: async () => '/destino/tema.md',
+          save: async () => '/destino/resumen.md',
         },
         fs: {
           readTextFile: async () => '# Tema\n\n![Gráfico](imagenes/grafico.png)',
@@ -1645,10 +1645,61 @@ test('en escritorio Guardar como copia las imágenes relativas del documento ori
 
   const calls = await page.evaluate(() => window.__desktopAssetSaveCalls);
   assert.ok(calls.some(call => call[0] === 'read-image' && call[1] === '/origen/imagenes/grafico.png'));
+  assert.ok(calls.some(call => call[0] === 'text'
+    && call[1] === '/destino/resumen.md'
+    && call[2] === '# Tema\n\n![Gráfico](imagenes/grafico.png)'));
   assert.ok(calls.some(call => call[0] === 'write-image'
-    && call[1] === '/destino/tema.md'
+    && call[1] === '/destino/resumen.md'
     && call[2] === 'imagenes/grafico.png'
     && JSON.stringify(call[3]) === '[1,2,3,4]'));
+});
+
+test('en escritorio Guardar como renombra la carpeta propia de imágenes', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__desktopOwnFolderSaveCalls = [];
+      window.__EDIMARK_TAURI__ = {
+        dialog: {
+          open: async () => '/origen/tema.md',
+          save: async () => '/destino/resumen.md',
+        },
+        fs: {
+          readTextFile: async () => '# Tema\n\n![Gráfico](tema/grafico.png)',
+          writeTextFile: async (path, contents) => {
+            window.__desktopOwnFolderSaveCalls.push(['text', path, contents]);
+          },
+          writeFile: async () => {},
+        },
+        app: {
+          readDocumentAsset: async path => {
+            window.__desktopOwnFolderSaveCalls.push(['read-image', path]);
+            return [1, 2, 3, 4];
+          },
+          writeDocumentAsset: async (documentPath, relativePath, contents) => {
+            window.__desktopOwnFolderSaveCalls.push([
+              'write-image', documentPath, relativePath, [...contents],
+            ]);
+          },
+        },
+      };
+    },
+  });
+  t.after(() => context.close());
+
+  await page.keyboard.press('Control+o');
+  await page.locator('.tab-name').getByText('tema.md', { exact: true }).waitFor();
+  await page.keyboard.press('Control+Shift+s');
+  await page.waitForFunction(() => window.__desktopOwnFolderSaveCalls.some(call => call[0] === 'write-image'));
+
+  const calls = await page.evaluate(() => window.__desktopOwnFolderSaveCalls);
+  assert.ok(calls.some(call => call[0] === 'text'
+    && call[1] === '/destino/resumen.md'
+    && call[2] === '# Tema\n\n![Gráfico](resumen/grafico.png)'));
+  assert.ok(calls.some(call => call[0] === 'read-image' && call[1] === '/origen/tema/grafico.png'));
+  assert.ok(calls.some(call => call[0] === 'write-image'
+    && call[1] === '/destino/resumen.md'
+    && call[2] === 'resumen/grafico.png'));
+  assert.equal(await page.locator('#markdown-input').inputValue(), '# Tema\n\n![Gráfico](resumen/grafico.png)');
 });
 
 test('pegar detecta imágenes publicadas solo en clipboardData.items', async (t) => {
