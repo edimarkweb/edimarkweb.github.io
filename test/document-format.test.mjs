@@ -50,6 +50,8 @@ test('los interruptores entienden sí, no y vacío', () => {
   assert.equal(normalizeDocumentFormat({ indent: 'false' }).indent, 'no');
   assert.equal(normalizeDocumentFormat({ indent: '' }).indent, '');
   assert.equal(normalizeDocumentFormat({ hyphenate: 'sí' }).hyphenate, 'yes');
+  assert.equal(normalizeDocumentFormat({ pageBreakBeforeH1: true }).pageBreakBeforeH1, 'yes');
+  assert.equal(normalizeDocumentFormat({ orientation: 'landscape' }).orientation, 'landscape');
 });
 
 test('el documento manda y lo que calla lo pone el ajuste general', () => {
@@ -153,6 +155,19 @@ test('los márgenes salen como @page y como relleno, para quien pagina y quien n
   assert.match(css, /padding-left: 3cm;/);
 });
 
+test('la orientación intercambia las medidas y llega a CSS', () => {
+  const preview = toPreviewStyles({ paperSize: 'a4', orientation: 'landscape' });
+  assert.equal(preview['--paper-width'], '29.7cm');
+  assert.equal(preview['--paper-height'], '21cm');
+  assert.match(documentFormat.toCssRules({ paperSize: 'a4', orientation: 'landscape' }), /size: A4 landscape/);
+});
+
+test('el salto antes de H1 se escribe para HTML y EPUB', () => {
+  const css = documentFormat.toCssRules({ pageBreakBeforeH1: 'yes' });
+  assert.match(css, /h1:not\(:first-of-type\)/);
+  assert.match(css, /break-before: page/);
+});
+
 test('la partición lleva los prefijos que aún piden los lectores de EPUB', () => {
   const css = documentFormat.toCssRules({ hyphenate: 'yes' });
   assert.match(css, /-webkit-hyphens: auto;/);
@@ -187,6 +202,14 @@ test('con geometry ya cargado los márgenes se descartan en vez de romper la com
   const clash = documentFormat.toLatex({ marginTop: '2', marginLeft: '3' }, { hasGeometry: true });
   assert.deepEqual(clash.entries, []);
   assert.deepEqual(clash.dropped, ['margin-top', 'margin-left']);
+});
+
+test('la orientación apaisada usa geometry en LaTeX', () => {
+  const normal = documentFormat.toLatex({ orientation: 'landscape' });
+  assert.deepEqual(normal.entries.flatMap(entry => entry.lines), ['geometry: "landscape"']);
+  const clash = documentFormat.toLatex({ orientation: 'landscape' }, { hasGeometry: true });
+  assert.deepEqual(clash.entries, []);
+  assert.deepEqual(clash.dropped, ['orientation']);
 });
 
 test('una tipografía suelta va como mainfont, que solo resuelven XeLaTeX y LuaLaTeX', () => {

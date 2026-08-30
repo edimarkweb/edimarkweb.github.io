@@ -209,6 +209,8 @@ Na barra hai tamén un botón de exportar coa súa frecha, xunto ao de copiar: o
 
 > **Sobre o índice**: en DOCX e ODT é un campo que calcula o procesador de textos, así que o documento ábrese coa lista de apartados pero sen números de páxina. Para que saian, actualízao: en Word, clic dereito sobre o índice → *Actualizar campos*; en LibreOffice, *Ferramentas → Actualizar → Índices*.
 
+A profundidade permite limitalo a H1, H1–H2 ou H1–H3. En **Formato** tamén podes escoller orientación vertical ou horizontal e facer que cada H1, agás o primeiro, comece nunha páxina nova; a vista previa e as exportacións respectan os tres axustes.
+
 Se o documento comeza cos seus propios metadatos YAML, mandan eles.
 
 ---

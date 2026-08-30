@@ -648,14 +648,15 @@ test('el autor llega a las propiedades del DOCX y del EPUB', { timeout: 240000 }
 */
 test('el índice y la numeración llegan a DOCX, ODT y LaTeX', { timeout: 300000 }, async () => {
   const fuente = ensureExportMetadata(
-    '# Tema 1\n\nTexto.\n\n## Apartado A\n\nMás.\n',
+    '# Tema 1\n\nTexto.\n\n## Apartado A\n\nMás.\n\n### Detalle\n\nFondo.\n',
     { lang: 'es', tocTitle: 'Índice' },
   ).markdown;
 
   const docx = readZipEntries((await runPandoc(
-    buildExportArgs('docx', { toc: true, numberSections: true }), fuente,
+    buildExportArgs('docx', { toc: true, tocDepth: 2, numberSections: true }), fuente,
   )).bytes).get('word/document.xml').toString('utf8');
   assert.match(docx, /TOC \\o/, 'el DOCX debe llevar un campo de índice de Word');
+  assert.match(docx, /TOC \\o &quot;1-2&quot;/, 'el índice debe detenerse en H2');
   assert.match(docx, /Índice/, 'el rótulo del índice va en el idioma del documento');
   // Cada etiqueta deja su marca: se colapsan para leer el texto seguido.
   const textoDocx = docx.replace(/<[^>]+>/g, '|').replace(/\|+/g, '|');
@@ -663,9 +664,10 @@ test('el índice y la numeración llegan a DOCX, ODT y LaTeX', { timeout: 300000
   assert.match(textoDocx, /\|1\.1\|Apartado A\|/);
 
   const odt = readZipEntries((await runPandoc(
-    buildExportArgs('odt', { toc: true }), fuente,
+    buildExportArgs('odt', { toc: true, tocDepth: 2 }), fuente,
   )).bytes).get('content.xml').toString('utf8');
   assert.match(odt, /text:table-of-content/, 'el ODT debe llevar su índice nativo');
+  assert.match(odt, /text:outline-level="2"/, 'el índice ODT debe detenerse en H2');
 
   const latex = new TextDecoder().decode((await runPandoc(
     `-s -f ${MARKDOWN_READER_NO_AUTO_IDS} -t latex --no-highlight --toc --number-sections`, fuente,

@@ -5135,6 +5135,7 @@ const LATEX_SETTINGS_DEFAULTS = {
     documentLanguage: 'auto',
     documentAuthor: '',
     documentToc: false,
+    documentTocDepth: 3,
     documentNumberSections: false,
     // La portada generada es el valor de partida: un EPUB sin imagen aparece
     // con el icono genérico en la estantería del lector.
@@ -5167,7 +5168,10 @@ const LATEX_SETTINGS_DEFAULTS = {
       plantilla trae los suyos y ninguno se ve en la vista previa, que es una
       columna de texto y no una hoja paginada.
     */
-    documentFormat: { fontSize: '12', font: 'serif', lineHeight: '1.5', paperSize: 'a4' },
+    documentFormat: {
+        fontSize: '12', font: 'serif', lineHeight: '1.5', paperSize: 'a4',
+        orientation: 'portrait', pageBreakBeforeH1: 'no',
+    },
 };
 
 // `documentFormat` es un objeto: sin copiarlo también, los tres retornos
@@ -5192,7 +5196,14 @@ function withDefaultDocumentFormat(stored) {
     const api = window.EdiMarkDocumentFormat;
     const normalized = api ? api.normalizeDocumentFormat(stored) : {};
     const format = { ...normalized };
-    if (stored && typeof stored === 'object') return format;
+    if (stored && typeof stored === 'object') {
+        // Estos campos no existían en los ajustes guardados anteriores. Solo
+        // se migran si falta la propiedad; una cadena vacía guardada después
+        // sigue significando «sin fijar».
+        if (!Object.prototype.hasOwnProperty.call(stored, 'orientation')) format.orientation = 'portrait';
+        if (!Object.prototype.hasOwnProperty.call(stored, 'pageBreakBeforeH1')) format.pageBreakBeforeH1 = 'no';
+        return format;
+    }
     Object.entries(LATEX_SETTINGS_DEFAULTS.documentFormat).forEach(([key, value]) => {
         if (!String(format[key] ?? '').trim()) format[key] = value;
     });
@@ -5211,6 +5222,9 @@ function readLatexSettings() {
                 : LATEX_SETTINGS_DEFAULTS.documentLanguage,
             documentAuthor: typeof parsed.documentAuthor === 'string' ? parsed.documentAuthor : '',
             documentToc: parsed.documentToc === true,
+            documentTocDepth: [1, 2, 3].includes(Number(parsed.documentTocDepth))
+                ? Number(parsed.documentTocDepth)
+                : LATEX_SETTINGS_DEFAULTS.documentTocDepth,
             documentNumberSections: parsed.documentNumberSections === true,
             epubCover: ['none', 'auto', 'custom'].includes(parsed.epubCover) ? parsed.epubCover : LATEX_SETTINGS_DEFAULTS.epubCover,
             epubCoverImage: typeof parsed.epubCoverImage === 'string' ? parsed.epubCoverImage : '',
@@ -6893,6 +6907,7 @@ window.onload = async () => {
     const docOwnLanguageRow = document.getElementById('doc-own-language-code-row');
     const docOwnAuthor = document.getElementById('doc-own-author');
     const docOwnToc = document.getElementById('doc-own-toc');
+    const docOwnTocDepth = document.getElementById('doc-own-toc-depth');
     const docOwnNumberSections = document.getElementById('doc-own-numbersections');
     const docFormatOverlay = document.getElementById('doc-format-modal-overlay');
     const docFormatToolbarBtn = document.getElementById('doc-format-toolbar-btn');
@@ -6921,6 +6936,7 @@ window.onload = async () => {
     const docLanguageCodeInput = document.getElementById('doc-language-code');
     const docAuthorInput = document.getElementById('doc-author');
     const docTocCheckbox = document.getElementById('doc-toc');
+    const docTocDepthSelect = document.getElementById('doc-toc-depth');
     const docNumberingCheckbox = document.getElementById('doc-number-sections');
     const coverRadios = Array.from(document.querySelectorAll('input[name="epub-cover"]'));
     const coverPicker = document.getElementById('epub-cover-picker');
@@ -9296,6 +9312,7 @@ window.onload = async () => {
         coverRadios.forEach((radio) => { radio.checked = radio.value === coverMode; });
         syncCoverPicker();
         if (docTocCheckbox) docTocCheckbox.checked = settings.documentToc === true;
+        if (docTocDepthSelect) docTocDepthSelect.value = String(settings.documentTocDepth || 3);
         if (docNumberingCheckbox) docNumberingCheckbox.checked = settings.documentNumberSections === true;
         if (latexClassSelect) latexClassSelect.value = settings.documentClass || 'article';
         if (latexClassOptionsInput) latexClassOptionsInput.value = settings.classOptions || '';
@@ -9598,6 +9615,11 @@ window.onload = async () => {
             ['a4', 'doc_format_paper_a4', 'A4 (21 × 29,7 cm)'],
             ['letter', 'doc_format_paper_letter', 'Carta (21,6 × 27,9 cm)'],
         ])));
+        grid.appendChild(buildFormatField('doc_format_field_orientation', 'Orientación', buildFormatSelect(`${prefix}-orientation`, [
+            ...blank,
+            ['portrait', 'doc_format_orientation_portrait', 'Vertical'],
+            ['landscape', 'doc_format_orientation_landscape', 'Horizontal'],
+        ])));
         container.appendChild(grid);
 
         const marginsBlock = document.createElement('div');
@@ -9631,6 +9653,11 @@ window.onload = async () => {
             ['no', 'doc_format_no', 'No'],
         ])));
         switches.appendChild(buildFormatField('doc_format_field_hyphenate', 'Partir palabras con guion', buildFormatSelect(`${prefix}-hyphenate`, [
+            ...blank,
+            ['yes', 'doc_format_yes', 'Sí'],
+            ['no', 'doc_format_no', 'No'],
+        ])));
+        switches.appendChild(buildFormatField('doc_format_field_pagebreak_h1', 'Cada H1 empieza en página nueva', buildFormatSelect(`${prefix}-pagebreak-h1`, [
             ...blank,
             ['yes', 'doc_format_yes', 'Sí'],
             ['no', 'doc_format_no', 'No'],
@@ -9675,12 +9702,14 @@ window.onload = async () => {
         setValue('fontsize', values.fontSize);
         setValue('lineheight', values.lineHeight);
         setValue('paper', values.paperSize);
+        setValue('orientation', values.orientation);
         setValue('margin-top', values.marginTop);
         setValue('margin-right', values.marginRight);
         setValue('margin-bottom', values.marginBottom);
         setValue('margin-left', values.marginLeft);
         setValue('indent', values.indent);
         setValue('hyphenate', values.hyphenate);
+        setValue('pagebreak-h1', values.pageBreakBeforeH1);
     }
 
     /*
@@ -9705,11 +9734,19 @@ window.onload = async () => {
             a4: ['doc_format_paper_a4', 'A4 (21 × 29,7 cm)'],
             letter: ['doc_format_paper_letter', 'Carta (21,6 × 27,9 cm)'],
         },
+        orientation: {
+            portrait: ['doc_format_orientation_portrait', 'Vertical'],
+            landscape: ['doc_format_orientation_landscape', 'Horizontal'],
+        },
         indent: {
             yes: ['doc_format_yes', 'Sí'],
             no: ['doc_format_no', 'No'],
         },
         hyphenate: {
+            yes: ['doc_format_yes', 'Sí'],
+            no: ['doc_format_no', 'No'],
+        },
+        pageBreakBeforeH1: {
             yes: ['doc_format_yes', 'Sí'],
             no: ['doc_format_no', 'No'],
         },
@@ -9719,8 +9756,10 @@ window.onload = async () => {
         ['align', 'align'],
         ['font', 'font'],
         ['paper', 'paperSize'],
+        ['orientation', 'orientation'],
         ['indent', 'indent'],
         ['hyphenate', 'hyphenate'],
+        ['pagebreak-h1', 'pageBreakBeforeH1'],
     ];
 
     const DOC_FORMAT_INHERITED_NUMBERS = [
@@ -9810,6 +9849,7 @@ window.onload = async () => {
         setInheritedHint(docOwnLanguage, inheritedLanguageLabel());
         setInheritedHint(docOwnAuthor, String(settings.documentAuthor || '').trim());
         setInheritedHint(docOwnToc, inheritedSwitchLabel(settings.documentToc));
+        setInheritedHint(docOwnTocDepth, String(settings.documentTocDepth || 3));
         setInheritedHint(docOwnNumberSections, inheritedSwitchLabel(settings.documentNumberSections));
 
         if (!docFormatFields || docFormatFields.dataset.rendered !== 'true') return;
@@ -9851,12 +9891,14 @@ window.onload = async () => {
             fontSize: value('fontsize'),
             lineHeight: value('lineheight'),
             paperSize: value('paper'),
+            orientation: value('orientation'),
             marginTop: value('margin-top'),
             marginRight: value('margin-right'),
             marginBottom: value('margin-bottom'),
             marginLeft: value('margin-left'),
             indent: value('indent'),
             hyphenate: value('hyphenate'),
+            pageBreakBeforeH1: value('pagebreak-h1'),
         };
         return api ? api.normalizeDocumentFormat(raw) : raw;
     }
@@ -9961,6 +10003,7 @@ window.onload = async () => {
             ? documentFormatStatusNumber(format.lineHeight)
             : '');
         add('doc_format_field_paper', 'Tamaño de papel', inheritedValueLabel('paperSize', format.paperSize));
+        add('doc_format_field_orientation', 'Orientación', inheritedValueLabel('orientation', format.orientation));
         // Los cuatro juntos y en el orden del cuadro de diálogo: decir tres
         // márgenes de cuatro sin avisar se lee mal.
         const sides = ['marginTop', 'marginRight', 'marginBottom', 'marginLeft'];
@@ -9969,6 +10012,7 @@ window.onload = async () => {
             .join(' / '));
         add('doc_format_field_indent', 'Sangría de primera línea', inheritedValueLabel('indent', format.indent));
         add('doc_format_field_hyphenate', 'Partir palabras con guion', inheritedValueLabel('hyphenate', format.hyphenate));
+        add('doc_format_field_pagebreak_h1', 'Cada H1 empieza en página nueva', inheritedValueLabel('pageBreakBeforeH1', format.pageBreakBeforeH1));
         // Y qué quiere decir un guion, que si no se lee como un fallo.
         if (lines.some(line => line.endsWith(DOC_FORMAT_STATUS_UNSET))) {
             lines.push(getTranslation(
@@ -10035,6 +10079,7 @@ window.onload = async () => {
             marginBottom: numero(format.marginBottom),
             marginLeft: numero(format.marginLeft),
             paperSize: format.paperSize || null,
+            orientation: format.orientation || null,
         };
     }
     window.__paginaParaImprimir = paginaParaImprimir;
@@ -10066,9 +10111,13 @@ window.onload = async () => {
         ].filter(([, key]) => format[key]);
 
         const pagina = lados.map(([side, key]) => `margin-${side}: ${format[key]}cm;`);
-        if (paper) pagina.unshift(`size: ${paper.css};`);
+        if (paper) pagina.unshift(`size: ${paper.css}${format.orientation ? ` ${format.orientation}` : ''};`);
 
-        sheet.textContent = pagina.length ? `@media print { @page { ${pagina.join(' ')} } }` : '';
+        const saltoH1 = format.pageBreakBeforeH1 === 'yes'
+            ? '#html-output > h1:not(:first-of-type) { break-before: page; page-break-before: always; }'
+            : '';
+        const reglas = [pagina.length ? `@page { ${pagina.join(' ')} }` : '', saltoH1].filter(Boolean);
+        sheet.textContent = reglas.length ? `@media print { ${reglas.join(' ')} }` : '';
     }
 
     /*
@@ -10093,14 +10142,7 @@ window.onload = async () => {
     function documentTocTitle() {
         const api = window.PandocExporter;
         if (!api || typeof api.resolveOutlineOptions !== 'function') return '';
-        const general = window.__edimarkLatexSettings || {};
-        const { toc } = api.resolveOutlineOptions(
-            {
-                toc: general.documentToc === true,
-                numberSections: general.documentNumberSections === true,
-            },
-            currentDocumentOutline(),
-        );
+        const { toc } = effectiveDocumentOutline();
         if (!toc) return '';
         const markdown = markdownEditor ? markdownEditor.getValue() : '';
         const propio = typeof api.tocTitleFor === 'function'
@@ -10109,6 +10151,29 @@ window.onload = async () => {
         // En un idioma que la aplicación no habla, el rótulo de la interfaz: en
         // la hoja hace falta uno, aunque al exportar Pandoc ponga el suyo.
         return propio || getTranslation('preview_toc_title', 'Índice');
+    }
+
+    function effectiveDocumentOutline() {
+        const api = window.PandocExporter;
+        const general = window.__edimarkLatexSettings || {};
+        if (!api || typeof api.resolveOutlineOptions !== 'function') {
+            return { toc: false, tocDepth: 3, numberSections: false };
+        }
+        return api.resolveOutlineOptions(
+            {
+                toc: general.documentToc === true,
+                tocDepth: general.documentTocDepth,
+                numberSections: general.documentNumberSections === true,
+            },
+            currentDocumentOutline(),
+        );
+    }
+
+    function previewTocHeadings(sheet) {
+        const depth = effectiveDocumentOutline().tocDepth || 3;
+        return Array.from(sheet.querySelectorAll(
+            Array.from({ length: depth }, (_, index) => `:scope > h${index + 1}`).join(', '),
+        ));
     }
 
     function refreshDocumentToc() {
@@ -10120,7 +10185,7 @@ window.onload = async () => {
             if (anterior) anterior.remove();
             return;
         }
-        const encabezados = Array.from(sheet.querySelectorAll(':scope > h1, :scope > h2, :scope > h3'));
+        const encabezados = previewTocHeadings(sheet);
         if (!encabezados.length) {
             if (anterior) anterior.remove();
             return;
@@ -10167,7 +10232,7 @@ window.onload = async () => {
         if (!entrada) return;
         event.preventDefault();
         const sheet = document.getElementById('html-output');
-        const encabezados = Array.from(sheet.querySelectorAll(':scope > h1, :scope > h2, :scope > h3'));
+        const encabezados = previewTocHeadings(sheet);
         const destino = encabezados[Number(entrada.dataset.tocTarget)];
         if (destino) destino.scrollIntoView({ block: 'start', behavior: 'smooth' });
     });
@@ -10181,7 +10246,7 @@ window.onload = async () => {
         const sheet = document.getElementById('html-output');
         const nav = sheet ? sheet.querySelector(':scope > [data-edimark-toc]') : null;
         if (!nav) return;
-        const encabezados = Array.from(sheet.querySelectorAll(':scope > h1, :scope > h2, :scope > h3'));
+        const encabezados = previewTocHeadings(sheet);
         const origen = sheet.getBoundingClientRect().top - sheet.offsetTop;
         nav.querySelectorAll('.doc-toc-entry').forEach((entrada) => {
             const encabezado = encabezados[Number(entrada.dataset.tocTarget)];
@@ -10233,9 +10298,10 @@ window.onload = async () => {
         const api = documentFormatApi();
         const format = effectiveDocumentFormat();
         const paper = api && api.PAPER_SIZES ? api.PAPER_SIZES[format.paperSize] : null;
+        const landscape = format.orientation === 'landscape';
         const zoom = Number(getComputedStyle(document.documentElement)
             .getPropertyValue('--preview-zoom')) || 1;
-        const anchoPapel = paper ? paper.widthCm * PX_POR_CM * zoom : 0;
+        const anchoPapel = paper ? (landscape ? paper.heightCm : paper.widthCm) * PX_POR_CM * zoom : 0;
 
         /*
           Sin papel, o con la hoja estrechada para que quepa en la ventana, las
@@ -10254,7 +10320,7 @@ window.onload = async () => {
             : Number(valor));
         const margenSuperior = numero(format.marginTop) * PX_POR_CM * zoom;
         const margenInferior = numero(format.marginBottom) * PX_POR_CM * zoom;
-        const altoPagina = paper.heightCm * PX_POR_CM * zoom;
+        const altoPagina = (landscape ? paper.widthCm : paper.heightCm) * PX_POR_CM * zoom;
         const altoUtil = altoPagina - margenSuperior - margenInferior;
         if (!(altoUtil > 40)) {
             limpiarPaginacion(sheet, layer);
@@ -10290,12 +10356,17 @@ window.onload = async () => {
 
         let inicioPagina = margenSuperior;
         let paginas = 1;
+        let vistoPrimerH1 = false;
         // Qué página estrena cada bloque, para poder afinarlo después: con un
         // bloque más alto que la hoja, el orden ya no coincide con la página.
         const inicios = [];
         medidas.forEach(({ bloque, alto, desde }, indice) => {
             let relativo = desde - inicioPagina;
-            if (indice > 0 && relativo + alto > altoUtil) {
+            const esH1 = bloque.tagName === 'H1';
+            const saltoForzado = format.pageBreakBeforeH1 === 'yes'
+                && esH1 && vistoPrimerH1 && relativo > 0.5;
+            if (esH1) vistoPrimerH1 = true;
+            if (indice > 0 && (saltoForzado || relativo + alto > altoUtil)) {
                 bloque.setAttribute('data-page-start', '');
                 bloque.style.setProperty('--page-jump', `${altoUtil + salto - relativo}px`);
                 inicioPagina = desde;
@@ -10441,8 +10512,9 @@ window.onload = async () => {
         // retirar; si aquí faltara una, la de antes se quedaría pegada.
         Object.keys(api.toPreviewStyles({
             align: 'left', font: 'serif', fontSize: '12', lineHeight: '1', paperSize: 'a4',
+            orientation: 'landscape',
             marginTop: '1', marginRight: '1', marginBottom: '1', marginLeft: '1',
-            indent: 'no', hyphenate: 'no',
+            indent: 'no', hyphenate: 'no', pageBreakBeforeH1: 'no',
         })).forEach(property => preview.style.removeProperty(property));
         Object.entries(styles).forEach(([property, value]) => {
             preview.style.setProperty(property, value);
@@ -10463,13 +10535,13 @@ window.onload = async () => {
     function currentDocumentOutline() {
         const api = window.PandocExporter;
         if (!api || typeof api.readOutlineFromFrontMatter !== 'function' || !markdownEditor) {
-            return { toc: '', numberSections: '' };
+            return { toc: '', tocDepth: '', numberSections: '' };
         }
         const { frontMatter } = splitDocumentFrontMatter(markdownEditor.getValue());
         return api.readOutlineFromFrontMatter(frontMatter);
     }
 
-    const OUTLINE_YAML_KEYS = ['toc', 'numbersections'];
+    const OUTLINE_YAML_KEYS = ['toc', 'toc-depth', 'numbersections'];
 
     function outlineEntries(outline) {
         const api = window.PandocExporter;
@@ -10550,6 +10622,7 @@ window.onload = async () => {
         if (docOwnAuthor) docOwnAuthor.value = own.author() || '';
         const outline = currentDocumentOutline();
         if (docOwnToc) docOwnToc.value = outlineFieldValue(outline.toc);
+        if (docOwnTocDepth) docOwnTocDepth.value = outline.tocDepth === '' ? '' : String(outline.tocDepth);
         if (docOwnNumberSections) docOwnNumberSections.value = outlineFieldValue(outline.numberSections);
         syncOwnLanguageCodeField();
     }
@@ -10566,7 +10639,11 @@ window.onload = async () => {
             if (!field || !field.value) return '';
             return field.value === 'yes';
         };
-        return { toc: value(docOwnToc), numberSections: value(docOwnNumberSections) };
+        return {
+            toc: value(docOwnToc),
+            tocDepth: docOwnTocDepth && docOwnTocDepth.value ? Number(docOwnTocDepth.value) : '',
+            numberSections: value(docOwnNumberSections),
+        };
     }
 
     function readOwnLanguageFromFields() {
@@ -10811,6 +10888,7 @@ window.onload = async () => {
                 epubCoverImage: readCoverMode() === 'custom' ? pendingCover.image : '',
                 epubCoverName: readCoverMode() === 'custom' ? pendingCover.name : '',
                 documentToc: docTocCheckbox ? docTocCheckbox.checked : false,
+                documentTocDepth: docTocDepthSelect ? Number(docTocDepthSelect.value) : 3,
                 documentNumberSections: docNumberingCheckbox ? docNumberingCheckbox.checked : false,
                 documentClass: latexClassSelect ? latexClassSelect.value : 'article',
                 classOptions: latexClassOptionsInput ? latexClassOptionsInput.value.trim() : '',

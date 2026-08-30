@@ -28,6 +28,7 @@
 }(typeof window !== 'undefined' ? window : globalThis, function documentFormatFactory() {
   const ALIGNMENTS = ['left', 'justify', 'right'];
   const FONT_KINDS = ['serif', 'sans', 'mono'];
+  const ORIENTATIONS = ['portrait', 'landscape'];
 
   /*
     Familias genéricas en vez de nombres sueltos: cada formato de salida entiende
@@ -88,12 +89,14 @@
     fontSize: '',
     lineHeight: '',
     paperSize: '',
+    orientation: '',
     marginTop: '',
     marginRight: '',
     marginBottom: '',
     marginLeft: '',
     indent: '',
     hyphenate: '',
+    pageBreakBeforeH1: '',
   };
 
   function marginKey(side) {
@@ -161,8 +164,12 @@
         max: LINE_HEIGHT_MAX,
       }),
       paperSize: normalizePaperSize(source.paperSize),
+      orientation: ORIENTATIONS.includes(String(source.orientation ?? '').trim().toLowerCase())
+        ? String(source.orientation).trim().toLowerCase()
+        : '',
       indent: normalizeSwitch(source.indent),
       hyphenate: normalizeSwitch(source.hyphenate),
+      pageBreakBeforeH1: normalizeSwitch(source.pageBreakBeforeH1),
     };
     MARGIN_SIDES.forEach((side) => {
       format[marginKey(side)] = normalizeNumber(source[marginKey(side)], {
@@ -196,18 +203,22 @@
     ['fontSize', 'fontsize'],
     ['lineHeight', 'linestretch'],
     ['paperSize', 'papersize'],
+    ['orientation', 'orientation'],
     ['marginTop', 'margin-top'],
     ['marginRight', 'margin-right'],
     ['marginBottom', 'margin-bottom'],
     ['marginLeft', 'margin-left'],
     ['indent', 'indent'],
     ['hyphenate', 'hyphenate'],
+    ['pageBreakBeforeH1', 'pagebreak-before-h1'],
   ];
 
   const UNITS = { fontSize: 'pt', marginTop: 'cm', marginRight: 'cm', marginBottom: 'cm', marginLeft: 'cm' };
 
   function yamlValue(field, value) {
-    if (field === 'indent' || field === 'hyphenate') return value === 'yes' ? 'true' : 'false';
+    if (field === 'indent' || field === 'hyphenate' || field === 'pageBreakBeforeH1') {
+      return value === 'yes' ? 'true' : 'false';
+    }
     const unit = UNITS[field];
     return unit ? `"${value}${unit}"` : `"${value}"`;
   }
@@ -270,8 +281,9 @@
     */
     if (resolved.paperSize) {
       const paper = PAPER_SIZES[resolved.paperSize];
-      styles['--paper-width'] = `${paper.widthCm}cm`;
-      styles['--paper-height'] = `${paper.heightCm}cm`;
+      const landscape = resolved.orientation === 'landscape';
+      styles['--paper-width'] = `${landscape ? paper.heightCm : paper.widthCm}cm`;
+      styles['--paper-height'] = `${landscape ? paper.widthCm : paper.heightCm}cm`;
     }
     if (resolved.fontSize) styles['font-size'] = `calc(${resolved.fontSize}pt * var(--preview-zoom, 1))`;
     if (resolved.lineHeight) styles['line-height'] = resolved.lineHeight;
@@ -318,10 +330,14 @@
     // El tamaño de la página lo entienden la impresión del navegador y los
     // lectores de EPUB que paginan.
     if (resolved.paperSize) {
-      rules.push(`@page {\n  size: ${PAPER_SIZES[resolved.paperSize].css};\n}`);
+      const orientation = resolved.orientation ? ` ${resolved.orientation}` : '';
+      rules.push(`@page {\n  size: ${PAPER_SIZES[resolved.paperSize].css}${orientation};\n}`);
     }
     if (resolved.indent) {
       rules.push(`p {\n  text-indent: ${resolved.indent === 'yes' ? '1.5em' : '0'};\n}`);
+    }
+    if (resolved.pageBreakBeforeH1 === 'yes') {
+      rules.push('body > h1:not(:first-of-type) {\n  break-before: page;\n  page-break-before: always;\n}');
     }
     const margins = MARGIN_SIDES
       .map(side => [side, resolved[marginKey(side)]])
@@ -370,6 +386,13 @@
           key: 'papersize',
           lines: [`papersize: "${PAPER_SIZES[resolved.paperSize].latex}"`],
         });
+      }
+    }
+    if (resolved.orientation === 'landscape') {
+      if (hasGeometry) {
+        dropped.push('orientation');
+      } else {
+        entries.push({ key: 'geometry', lines: ['geometry: "landscape"'] });
       }
     }
     if (resolved.indent) {
@@ -424,9 +447,14 @@
       if (value) margins[side] = Number(value);
     });
     const paper = PAPER_SIZES[resolved.paperSize];
+    const landscape = resolved.orientation === 'landscape';
     return {
       align: resolved.align || '',
-      paperCm: paper ? { width: paper.widthCm, height: paper.heightCm } : null,
+      paperCm: paper ? {
+        width: landscape ? paper.heightCm : paper.widthCm,
+        height: landscape ? paper.widthCm : paper.heightCm,
+        orientation: landscape ? 'landscape' : 'portrait',
+      } : null,
       fontName: resolved.font ? (stack ? stack.office : resolved.font) : '',
       fontSizePt: resolved.fontSize ? Number(resolved.fontSize) : 0,
       // Cuánto hay que estirar los encabezados de la plantilla para que la
@@ -436,12 +464,14 @@
       marginsCm: margins,
       indent: resolved.indent,
       hyphenate: resolved.hyphenate,
+      pageBreakBeforeH1: resolved.pageBreakBeforeH1,
     };
   }
 
   return {
     ALIGNMENTS,
     FONT_KINDS,
+    ORIENTATIONS,
     FONT_STACKS,
     PAPER_SIZES,
     MARGIN_SIDES,

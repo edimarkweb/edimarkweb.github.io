@@ -909,6 +909,14 @@
                                     <span class="block text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_toc_hint">Añade un índice al principio del documento, con los apartados. En DOCX y ODT se escribe ya listo para leer, aunque sin números de página: para que aparezcan, actualízalo en tu programa (en Word, clic derecho sobre él → Actualizar campos; en LibreOffice, Herramientas → Actualizar → Índices). En el EPUB no hace falta: el lector ya tiene el suyo.</span>
                                 </span>
                             </label>
+                            <div class="pl-6">
+                                <label for="doc-toc-depth" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_settings_toc_depth_label">Profundidad del índice</label>
+                                <select id="doc-toc-depth" class="mt-1 block w-full max-w-xs rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                    <option value="1" data-i18n-key="doc_settings_toc_depth_1">Solo H1</option>
+                                    <option value="2" data-i18n-key="doc_settings_toc_depth_2">H1 y H2</option>
+                                    <option value="3" data-i18n-key="doc_settings_toc_depth_3">H1, H2 y H3</option>
+                                </select>
+                            </div>
                             <label class="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
                                 <input type="checkbox" id="doc-number-sections" class="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700">
                                 <span>
@@ -1035,13 +1043,22 @@
                     </fieldset>
                     <fieldset class="rounded-lg border border-slate-200 px-4 pb-4 pt-2 dark:border-slate-700">
                         <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_toc_section">Índice y numeración</legend>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-4 sm:grid-cols-3">
                             <div>
                                 <label for="doc-own-toc" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_settings_toc_label">Índice automático</label>
                                 <select id="doc-own-toc" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
                                     <option value="" data-i18n-key="doc_format_inherit">Heredado</option>
                                     <option value="yes" data-i18n-key="doc_format_yes">Sí</option>
                                     <option value="no" data-i18n-key="doc_format_no">No</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="doc-own-toc-depth" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="doc_settings_toc_depth_label">Profundidad del índice</label>
+                                <select id="doc-own-toc-depth" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                    <option value="" data-i18n-key="doc_format_inherit">Heredado</option>
+                                    <option value="1" data-i18n-key="doc_settings_toc_depth_1">Solo H1</option>
+                                    <option value="2" data-i18n-key="doc_settings_toc_depth_2">H1 y H2</option>
+                                    <option value="3" data-i18n-key="doc_settings_toc_depth_3">H1, H2 y H3</option>
                                 </select>
                             </div>
                             <div>

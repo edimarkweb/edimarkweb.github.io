@@ -6,6 +6,7 @@ import {
   ensureEpubMetadata,
   ensureExportMetadata,
   prepareLatexStandalone,
+  insertLatexPageBreaksBeforeH1,
   extractMarkdownTitle,
   hasYamlFrontMatter,
   collectRemoteImageUrls,
@@ -93,19 +94,22 @@ test('ensureEpubMetadata encadena encabezado, nombre del documento y sin título
   escritor DOCX ignora `toc: true` y la numeración no sale sin la bandera.
 */
 test('buildExportArgs añade índice y numeración solo cuando se piden', () => {
-  assert.equal(buildExportArgs('docx', {}).includes('--toc'), false);
+  assert.equal(/--toc(?:\s|$)/.test(buildExportArgs('docx', {})), false);
   assert.match(buildExportArgs('docx', { toc: true }), /--toc(?!-)/);
+  assert.match(buildExportArgs('docx', { toc: true, tocDepth: 2 }), /--toc-depth=2/);
   assert.match(buildExportArgs('docx', { numberSections: true }), /--number-sections/);
   // El EPUB ya trae su índice de navegación; otro encima sobra.
-  assert.equal(buildExportArgs('epub3', { toc: true }).includes('--toc'), false);
+  assert.equal(/--toc(?:\s|$)/.test(buildExportArgs('epub3', { toc: true })), false);
   assert.match(buildExportArgs('epub3', { toc: true, numberSections: true }), /--number-sections/);
 });
 
 test('readOutlineFromFrontMatter distingue el sí, el no y el silencio', () => {
   const dicho = readOutlineFromFrontMatter('---\ntoc: true\nnumbersections: false\n---');
-  assert.deepEqual(dicho, { toc: true, numberSections: false });
+  assert.deepEqual(dicho, { toc: true, tocDepth: '', numberSections: false });
   // Sin línea, el documento no se pronuncia y manda la opción general.
-  assert.deepEqual(readOutlineFromFrontMatter('---\nlang: "es"\n---'), { toc: '', numberSections: '' });
+  assert.deepEqual(readOutlineFromFrontMatter('---\nlang: "es"\n---'), { toc: '', tocDepth: '', numberSections: '' });
+  assert.equal(readOutlineFromFrontMatter('---\ntoc-depth: 2\n---').tocDepth, 2);
+  assert.equal(readOutlineFromFrontMatter('---\ntoc-depth: 7\n---').tocDepth, '');
   // El bloque se teclea a mano: valen las formas que escribiría una persona.
   assert.equal(readOutlineFromFrontMatter('---\ntoc: "sí"\n---').toc, true);
   assert.equal(readOutlineFromFrontMatter('---\ntoc: no  # esta vez no\n---').toc, false);
@@ -114,15 +118,15 @@ test('readOutlineFromFrontMatter distingue el sí, el no y el silencio', () => {
 });
 
 test('el documento manda sobre el índice general, también para quitarlo', () => {
-  const general = { toc: true, numberSections: true };
-  assert.deepEqual(resolveOutlineOptions(general, {}), { toc: true, numberSections: true });
+  const general = { toc: true, tocDepth: 2, numberSections: true };
+  assert.deepEqual(resolveOutlineOptions(general, {}), { toc: true, tocDepth: 2, numberSections: true });
   assert.deepEqual(
     resolveOutlineOptions(general, { toc: false, numberSections: false }),
-    { toc: false, numberSections: false },
+    { toc: false, tocDepth: 2, numberSections: false },
   );
   assert.deepEqual(
     resolveOutlineOptions({}, { toc: true, numberSections: '' }),
-    { toc: true, numberSections: false },
+    { toc: true, tocDepth: 3, numberSections: false },
   );
 });
 
@@ -135,6 +139,19 @@ test('solo lo que el documento fija ocupa una línea en sus metadatos', () => {
       { key: 'numbersections', lines: ['numbersections: false'] },
     ],
   );
+});
+
+test('la profundidad propia del índice viaja en los metadatos', () => {
+  assert.deepEqual(outlineFrontMatterEntries({ tocDepth: 2 }), [
+    { key: 'toc-depth', lines: ['toc-depth: 2'] },
+  ]);
+});
+
+test('los saltos LaTeX se insertan solo antes de H1 posteriores y fuera del código', () => {
+  const markdown = '# Uno\n\n```md\n# No\n```\n\n# Dos\n';
+  const result = insertLatexPageBreaksBeforeH1(markdown);
+  assert.equal((result.match(/\\clearpage/g) || []).length, 1);
+  assert.match(result, /```md\n# No\n```\n\n\\clearpage\n\n# Dos/);
 });
 
 test('el rótulo del índice viaja como metadato', () => {

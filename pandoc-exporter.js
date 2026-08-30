@@ -29,6 +29,7 @@ import {
   applyOfficeFormat,
   mergeFrontMatter,
   prepareLatexStandalone,
+  insertLatexPageBreaksBeforeH1,
   extractMarkdownTitle,
   collectFetchableImageUrls,
   inlineArchiveImages,
@@ -356,7 +357,11 @@ function documentOutlineOptions(markdown) {
   const settings = documentSettings();
   const { frontMatter } = splitFrontMatter(typeof markdown === 'string' ? markdown : '');
   return resolveOutlineOptions(
-    { toc: settings.documentToc === true, numberSections: settings.documentNumberSections === true },
+    {
+      toc: settings.documentToc === true,
+      tocDepth: settings.documentTocDepth,
+      numberSections: settings.documentNumberSections === true,
+    },
     readOutlineFromFrontMatter(frontMatter),
   );
 }
@@ -780,8 +785,8 @@ async function exportDocument({
     */
     let finalBytes = resultadoBytes;
     if (outline.toc) {
-      if (normalizedFormat === 'docx') finalBytes = await requestDocxFieldUpdate(resultadoBytes);
-      else if (normalizedFormat === 'odt') finalBytes = await fillOdtTableOfContents(resultadoBytes);
+      if (normalizedFormat === 'docx') finalBytes = await requestDocxFieldUpdate(resultadoBytes, outline.tocDepth);
+      else if (normalizedFormat === 'odt') finalBytes = await fillOdtTableOfContents(resultadoBytes, outline.tocDepth);
     }
     /*
       El formato del texto va después del índice: los dos reescriben el mismo
@@ -851,8 +856,9 @@ async function generateHtml({
     let pandocArgs = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --mathjax`;
     if (standalone) {
       pandocArgs += ' -s';
-      const { toc, numberSections } = documentOutlineOptions(normalized);
+      const { toc, tocDepth, numberSections } = documentOutlineOptions(normalized);
       if (toc) pandocArgs += ' --toc';
+      pandocArgs += ` --toc-depth=${tocDepth}`;
       if (numberSections) pandocArgs += ' --number-sections';
     }
     const resultadoBytes = await pandoc(pandocArgs, withLanguage, base64);
@@ -905,6 +911,9 @@ async function generateLatex({
   let shiftHeadings = false;
   if (standalone) {
     const settings = currentLatexSettings();
+    if (resolvedDocumentFormat(normalized)?.pageBreakBeforeH1 === 'yes') {
+      normalized = insertLatexPageBreaksBeforeH1(normalized);
+    }
     const latexFormat = documentFormatForLatex(normalized, settings.preamble || '');
     if (latexFormat.dropped.length) {
       // Dos `\usepackage{geometry}` abortan la compilación, así que manda el
@@ -912,7 +921,7 @@ async function generateLatex({
       triggerNotification(
         onNotification,
         'latex_margins_dropped',
-        'El preámbulo ya carga geometry, así que los márgenes del formato del documento no se han aplicado al TEX.',
+        'El preámbulo ya carga geometry, así que los márgenes o la orientación del formato del documento no se han aplicado al TEX.',
       );
     }
     const prepared = prepareLatexStandalone(normalized, {
@@ -937,8 +946,9 @@ async function generateLatex({
       // El encabezado promovido a \title dejaría el resto colgando un nivel
       // por debajo del que les corresponde.
       if (shiftHeadings) pandocArgs += ' --shift-heading-level-by=-1';
-      const { toc, numberSections } = documentOutlineOptions(normalized);
+      const { toc, tocDepth, numberSections } = documentOutlineOptions(normalized);
       if (toc) pandocArgs += ' --toc';
+      pandocArgs += ` --toc-depth=${tocDepth}`;
       if (numberSections) pandocArgs += ' --number-sections';
     }
     const resultadoBytes = await pandoc(pandocArgs, normalized, base64);

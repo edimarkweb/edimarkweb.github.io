@@ -209,6 +209,8 @@ The toolbar also carries an export button with its arrow, next to the copy one: 
 
 > **About the table of contents**: in DOCX and ODT it is a field the word processor calculates, so the document opens with the list of sections but without page numbers. To get them, update it: in Word, right-click the table of contents → *Update field*; in LibreOffice, *Tools → Update → Indexes and Tables*.
 
+Depth can limit it to H1, H1–H2, or H1–H3. Under **Format** you can also choose portrait or landscape orientation and make every H1 except the first start on a new page; the preview and exports respect all three settings.
+
 If the document starts with its own YAML metadata, that is what counts.
 
 ---

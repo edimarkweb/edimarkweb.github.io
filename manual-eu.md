@@ -209,6 +209,8 @@ Barran esportatzeko botoi bat ere badago, bere geziarekin, kopiatzekoaren ondoan
 
 > **Aurkibideari buruz**: DOCX eta ODTn testu-prozesadoreak kalkulatzen duen eremu bat da, beraz dokumentua atalen zerrendarekin irekitzen da baina orrialde-zenbakirik gabe. Ager daitezen, eguneratu ezazu: Word-en, eskuineko klika aurkibidean → *Eguneratu eremuak*; LibreOfficen, *Tresnak → Eguneratu → Aurkibideak*.
 
+Sakonerak H1, H1–H2 edo H1–H3 mailetara mugatzeko aukera ematen du. **Formatua** atalean orientazio bertikala edo horizontala ere hauta dezakezu, eta H1 bakoitza, lehena izan ezik, orri berri batean has dadin ezarri; aurrebistak eta esportazioek hiru doikuntzak errespetatzen dituzte.
+
 Dokumentua bere YAML metadatuekin hasten bada, haiek agintzen dute.
 
 ---

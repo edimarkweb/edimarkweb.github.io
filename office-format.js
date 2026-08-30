@@ -141,11 +141,30 @@ function docxHeadingSizes(xml, scale) {
   );
 }
 
+function docxHeadingPageBreak(xml, setting) {
+  if (!setting) return xml;
+  return xml.replace(
+    /<w:style\b[^>]*w:styleId="Heading1"[\s\S]*?<\/w:style>/,
+    (style) => {
+      if (setting === 'no') return style.replace(/<w:pageBreakBefore\b[^>]*\/>/g, '');
+      if (/<w:pageBreakBefore\b[^>]*\/>/.test(style)) return style;
+      if (/<w:pPr\s*\/>/.test(style)) {
+        return style.replace(/<w:pPr\s*\/>/, '<w:pPr><w:pageBreakBefore /></w:pPr>');
+      }
+      if (/<w:pPr\b[^>]*>/.test(style)) {
+        return style.replace(/<\/w:pPr>/, '<w:pageBreakBefore /></w:pPr>');
+      }
+      return style.replace(/(<w:rPr\b|<\/w:style>)/, '<w:pPr><w:pageBreakBefore /></w:pPr>$1');
+    },
+  );
+}
+
 export function applyDocxStyles(stylesXml, styles) {
   if (typeof stylesXml !== 'string' || !stylesXml) return stylesXml;
   let updated = docxRunDefaults(stylesXml, styles);
   updated = docxParagraphDefaults(updated, styles);
   updated = docxHeadingSizes(updated, styles.headingScale);
+  updated = docxHeadingPageBreak(updated, styles.pageBreakBeforeH1);
   return updated;
 }
 
@@ -206,7 +225,8 @@ export function applyDocxMargins(documentXml, marginsCm) {
 export function applyDocxPageSize(documentXml, paperCm) {
   if (typeof documentXml !== 'string' || !documentXml) return documentXml;
   if (!paperCm || !paperCm.width || !paperCm.height) return documentXml;
-  const pgSz = `<w:pgSz w:w="${round(paperCm.width * TWIPS_PER_CM)}" w:h="${round(paperCm.height * TWIPS_PER_CM)}" />`;
+  const orient = paperCm.orientation === 'landscape' ? ' w:orient="landscape"' : '';
+  const pgSz = `<w:pgSz w:w="${round(paperCm.width * TWIPS_PER_CM)}" w:h="${round(paperCm.height * TWIPS_PER_CM)}"${orient} />`;
   if (/<w:pgSz\b[^>]*\/>/.test(documentXml)) {
     return documentXml.replace(/<w:pgSz\b[^>]*\/>/, () => pgSz);
   }
@@ -326,6 +346,24 @@ export function applyOdtStyles(stylesXml, styles) {
       ),
     );
   }
+  if (styles.pageBreakBeforeH1) {
+    updated = updated.replace(
+      /(<style:style[^>]*style:name="Heading_20_1"[^>]*>)([\s\S]*?)(<\/style:style>)/,
+      (match, open, body, close) => {
+        if (styles.pageBreakBeforeH1 === 'no') {
+          return `${open}${body.replace(/\s*fo:break-before="page"/g, '')}${close}`;
+        }
+        if (/fo:break-before="page"/.test(body)) return match;
+        if (/<style:paragraph-properties\b[^>]*\/>/.test(body)) {
+          return `${open}${body.replace(/<style:paragraph-properties\b([^>]*)\/>/, '<style:paragraph-properties$1 fo:break-before="page" />')}${close}`;
+        }
+        if (/<style:paragraph-properties\b[^>]*>/.test(body)) {
+          return `${open}${body.replace(/<style:paragraph-properties\b([^>]*)>/, '<style:paragraph-properties$1 fo:break-before="page">')}${close}`;
+        }
+        return `${open}<style:paragraph-properties fo:break-before="page" />${body}${close}`;
+      },
+    );
+  }
   return updated;
 }
 
@@ -343,7 +381,7 @@ export function applyOdtPageSize(stylesXml, paperCm) {
     [
       ['fo:page-width', `${paperCm.width}cm`],
       ['fo:page-height', `${paperCm.height}cm`],
-      ['style:print-orientation', 'portrait'],
+      ['style:print-orientation', paperCm.orientation === 'landscape' ? 'landscape' : 'portrait'],
     ].forEach(([name, value]) => {
       const declaration = `${name}="${value}"`;
       const existing = new RegExp(`${name.replace(':', '\\:')}="[^"]*"`);

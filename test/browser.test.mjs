@@ -1824,6 +1824,7 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
       documentLanguage: 'auto',
       documentAuthor: '',
       documentToc: false,
+      documentTocDepth: 3,
       documentNumberSections: false,
       epubCover: 'auto',
       epubCoverImage: '',
@@ -1842,12 +1843,14 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
         fontSize: '12',
         lineHeight: '1.5',
         paperSize: 'a4',
+        orientation: 'portrait',
         marginTop: '',
         marginRight: '',
         marginBottom: '',
         marginLeft: '',
         indent: '',
         hyphenate: '',
+        pageBreakBeforeH1: 'no',
       },
     }
   );
@@ -2157,7 +2160,7 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
   t.after(() => context.close());
   await conLaHojaATamanoReal(page);
 
-  await page.locator('#markdown-input').fill('# Prueba\n\nUn párrafo cualquiera.');
+  await page.locator('#markdown-input').fill('# Prueba\n\nUn párrafo cualquiera.\n\n# Segundo tema\n\nMás texto.');
 
   // El botón Aa de la barra abre el mismo cuadro que el menú del documento.
   await page.locator('#doc-format-toolbar-btn').click();
@@ -2169,6 +2172,8 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
   await page.locator('#doc-format-fields-fontsize').fill('13');
   await page.locator('#doc-format-fields-margin-left').fill('2,5');
   await page.locator('#doc-format-fields-hyphenate').selectOption('yes');
+  await page.locator('#doc-format-fields-orientation').selectOption('landscape');
+  await page.locator('#doc-format-fields-pagebreak-h1').selectOption('yes');
   await page.locator('#doc-format-save-btn').click();
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'hidden' });
 
@@ -2179,6 +2184,8 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
   // La coma decimal es la que se teclea en español.
   assert.match(markdown, /margin-left: "2.5cm"/);
   assert.match(markdown, /hyphenate: true/);
+  assert.match(markdown, /orientation: "landscape"/);
+  assert.match(markdown, /pagebreak-before-h1: true/);
   assert.match(markdown, /# Prueba/);
 
   const styles = await page.locator('#html-output').evaluate(preview => ({
@@ -2186,6 +2193,8 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
     size: preview.style.fontSize,
     padding: preview.style.paddingLeft,
     hyphens: preview.style.hyphens,
+    paperWidth: preview.style.getPropertyValue('--paper-width'),
+    paperHeight: preview.style.getPropertyValue('--paper-height'),
   }));
   // El tamaño y el margen llevan dentro la lupa de la vista previa, que vale 1
   // mientras nadie la toque: lo que se comprueba es que llegan los 13 pt.
@@ -2194,6 +2203,8 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
     size: 'calc(13pt * var(--preview-zoom, 1))',
     padding: 'calc(2.5cm * var(--preview-zoom, 1))',
     hyphens: 'auto',
+    paperWidth: '29.7cm',
+    paperHeight: '21cm',
   });
   const tamañoUsado = await page.locator('#html-output')
     .evaluate(preview => parseFloat(getComputedStyle(preview).fontSize));
@@ -2207,12 +2218,14 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
   await page.locator('#doc-format-tab-format').click();
   assert.equal(await page.locator('#doc-format-fields-align').inputValue(), 'justify');
   assert.equal(await page.locator('#doc-format-fields-fontsize').inputValue(), '13');
+  assert.equal(await page.locator('#doc-format-fields-orientation').inputValue(), 'landscape');
+  assert.equal(await page.locator('#doc-format-fields-pagebreak-h1').inputValue(), 'yes');
 
   // Y quitarlo del documento devuelve el Markdown a lo que era.
   await page.locator('#doc-format-reset-btn').click();
   await page.locator('#doc-format-save-btn').click();
   const limpio = await page.locator('#markdown-input').inputValue();
-  assert.equal(/align:|fontsize:|margin-left:|hyphenate:/.test(limpio), false);
+  assert.equal(/align:|fontsize:|margin-left:|hyphenate:|orientation:|pagebreak-before-h1:/.test(limpio), false);
   assert.match(limpio, /# Prueba/);
   assert.equal(await page.locator('#html-output').evaluate(preview => preview.style.textAlign), '');
 });
@@ -2514,33 +2527,38 @@ test('el índice y la numeración de este documento viajan en sus metadatos', as
   const { context, page } = await openApp();
   t.after(() => context.close());
 
-  await page.locator('#markdown-input').fill('# Manual\n\nUn párrafo cualquiera.');
+  await page.locator('#markdown-input').fill('# Manual\n\n## Parte\n\n### Detalle\n\nUn párrafo cualquiera.');
 
   await page.locator('#doc-format-toolbar-btn').click();
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
   await page.locator('#doc-own-toc').selectOption('yes');
+  await page.locator('#doc-own-toc-depth').selectOption('2');
   await page.locator('#doc-own-numbersections').selectOption('no');
   await page.locator('#doc-format-save-btn').click();
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'hidden' });
 
   const markdown = await page.locator('#markdown-input').inputValue();
   assert.match(markdown, /toc: true/);
+  assert.match(markdown, /toc-depth: 2/);
   assert.match(markdown, /numbersections: false/);
   assert.match(markdown, /# Manual/);
+  await page.waitForFunction(() => document.querySelectorAll('#html-output .doc-toc-entry').length === 2);
 
   // Al reabrirlo, el cuadro muestra lo que el documento declara.
   await page.locator('#doc-format-toolbar-btn').click();
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#doc-own-toc').inputValue(), 'yes');
+  assert.equal(await page.locator('#doc-own-toc-depth').inputValue(), '2');
   assert.equal(await page.locator('#doc-own-numbersections').inputValue(), 'no');
 
   // Y volver a «Heredado» deja el documento sin decir nada.
   await page.locator('#doc-own-toc').selectOption('');
+  await page.locator('#doc-own-toc-depth').selectOption('');
   await page.locator('#doc-own-numbersections').selectOption('');
   await page.locator('#doc-format-save-btn').click();
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'hidden' });
   const limpio = await page.locator('#markdown-input').inputValue();
-  assert.equal(/toc:|numbersections:/.test(limpio), false);
+  assert.equal(/toc:|toc-depth:|numbersections:/.test(limpio), false);
   assert.match(limpio, /# Manual/);
 });
 
@@ -2981,7 +2999,7 @@ test('los márgenes del documento se escriben para el papel', async (t) => {
     y el reparto en páginas de la pantalla dejaba de valer. De los márgenes,
     mientras no se fijen, se ocupa el de partida del CSS de impresión.
   */
-  assert.equal(await regla(), '@media print { @page { size: A4; } }');
+  assert.equal(await regla(), '@media print { @page { size: A4 portrait; } }');
 
   await page.locator('#new-tab-btn').click();
   await page.locator('#markdown-input').fill('---\npapersize: "letter"\nmargin-left: "3"\nmargin-right: "2.5"\n---\n\nTexto\n');
@@ -4653,5 +4671,6 @@ test('la impresión lleva consigo los márgenes y el papel del documento', async
     marginBottom: 1.8,
     marginLeft: 3.5,
     paperSize: 'letter',
+    orientation: 'portrait',
   });
 });

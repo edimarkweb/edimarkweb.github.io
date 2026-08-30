@@ -64,11 +64,13 @@ export function buildExportArgs(pandocFormat, {
   titleFromHeading = false,
   toc = false,
   numberSections = false,
+  tocDepth = 3,
 } = {}) {
   let args = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t ${pandocFormat}`;
   if (mathml) args += ' --mathml';
   // El EPUB ya trae su propio índice de navegación, que es el que usa el lector.
   if (toc && pandocFormat !== 'epub3') args += ' --toc';
+  if (Number.isInteger(tocDepth) && tocDepth >= 1 && tocDepth <= 3) args += ` --toc-depth=${tocDepth}`;
   if (numberSections) args += ' --number-sections';
   if (pandocFormat === 'epub3' && titleFromHeading) {
     // The body already opens with the title, so skip Pandoc's title page.
@@ -86,6 +88,7 @@ export function buildExportArgs(pandocFormat, {
 */
 export const OUTLINE_YAML_KEYS = [
   ['toc', 'toc'],
+  ['tocDepth', 'toc-depth'],
   ['numberSections', 'numbersections'],
 ];
 
@@ -104,23 +107,36 @@ export function normalizeOutlineSwitch(value) {
   return '';
 }
 
+export function normalizeTocDepth(value) {
+  if (value === null || typeof value === 'undefined' || String(value).trim() === '') return '';
+  const depth = Number.parseInt(String(value).trim().replace(/^['"]|['"]$/g, ''), 10);
+  return depth >= 1 && depth <= 3 ? depth : '';
+}
+
 /* Lo que el documento declare por su cuenta, sin resolver herencias. */
 export function readOutlineFromFrontMatter(frontMatter) {
   const source = typeof frontMatter === 'string' ? frontMatter : '';
-  const outline = { toc: '', numberSections: '' };
+  const outline = { toc: '', tocDepth: '', numberSections: '' };
   OUTLINE_YAML_KEYS.forEach(([field, key]) => {
     const match = source.match(new RegExp(`^${key}\\s*:\\s*(.*)$`, 'm'));
     if (!match) return;
-    outline[field] = normalizeOutlineSwitch(match[1].trim().replace(/\s+#.*$/, ''));
+    const value = match[1].trim().replace(/\s+#.*$/, '');
+    outline[field] = field === 'tocDepth' ? normalizeTocDepth(value) : normalizeOutlineSwitch(value);
   });
   return outline;
 }
 
 /* Lo que el documento no diga lo pone el ajuste general. */
 export function resolveOutlineOptions(general = {}, own = {}) {
-  const document = { toc: normalizeOutlineSwitch(own.toc), numberSections: normalizeOutlineSwitch(own.numberSections) };
+  const document = {
+    toc: normalizeOutlineSwitch(own.toc),
+    tocDepth: normalizeTocDepth(own.tocDepth),
+    numberSections: normalizeOutlineSwitch(own.numberSections),
+  };
+  const generalDepth = normalizeTocDepth(general.tocDepth);
   return {
     toc: document.toc === '' ? general.toc === true : document.toc,
+    tocDepth: document.tocDepth === '' ? (generalDepth || 3) : document.tocDepth,
     numberSections: document.numberSections === '' ? general.numberSections === true : document.numberSections,
   };
 }
@@ -128,9 +144,14 @@ export function resolveOutlineOptions(general = {}, own = {}) {
 /* Solo lo que el documento fije ocupa una línea en su bloque de metadatos. */
 export function outlineFrontMatterEntries(outline = {}) {
   return OUTLINE_YAML_KEYS
-    .map(([field, key]) => [key, normalizeOutlineSwitch(outline[field])])
+    .map(([field, key]) => [key, field === 'tocDepth'
+      ? normalizeTocDepth(outline[field])
+      : normalizeOutlineSwitch(outline[field])])
     .filter(([, value]) => value !== '')
-    .map(([key, value]) => ({ key, lines: [`${key}: ${value ? 'true' : 'false'}`] }));
+    .map(([key, value]) => ({
+      key,
+      lines: [`${key}: ${typeof value === 'boolean' ? (value ? 'true' : 'false') : value}`],
+    }));
 }
 
 /*
@@ -597,6 +618,26 @@ function scanTopLevelHeadings(lines) {
 export const LATEX_DOCUMENT_CLASSES = ['article', 'report', 'book'];
 
 /*
+  LaTeX no tiene un metadato equivalente a «salto antes de H1». Se insertan
+  órdenes raw solo para este escritor, delante de cada H1 salvo el primero; el
+  Markdown original no se modifica y los cercados de código quedan intactos.
+*/
+export function insertLatexPageBreaksBeforeH1(markdown) {
+  const source = typeof markdown === 'string' ? markdown : '';
+  const { body, frontMatter } = splitFrontMatter(source);
+  const lines = body.split('\n');
+  const { headings } = scanTopLevelHeadings(lines);
+  if (headings.length < 2) return source;
+  const breaks = new Set(headings.slice(1).map(heading => heading.index));
+  const expanded = [];
+  lines.forEach((line, index) => {
+    if (breaks.has(index)) expanded.push('\\clearpage', '');
+    expanded.push(line);
+  });
+  return `${frontMatter ? `${frontMatter}\n\n` : ''}${expanded.join('\n')}`;
+}
+
+/*
   A user preamble is arbitrary LaTeX: backslashes, colons, quotes and blank
   lines. Quoting it would mean escaping all of that, so it goes in as a YAML
   literal block, where every indented line is taken verbatim. A `---` of the
@@ -987,7 +1028,8 @@ function escapeXmlText(text) {
 // de apartado si se pidió numeración.
 const DOCX_HEADING_RE = /<w:p\b[^>]*>(?:(?!<\/w:p>)[\s\S])*?<w:pStyle w:val="Heading([1-3])"\s*\/>(?:(?!<\/w:p>)[\s\S])*?<\/w:p>/g;
 
-export function collectDocxHeadings(documentXml) {
+export function collectDocxHeadings(documentXml, depth = 3) {
+  const maxDepth = normalizeTocDepth(depth) || 3;
   const headings = [];
   for (const match of String(documentXml || '').matchAll(DOCX_HEADING_RE)) {
     const text = match[0]
@@ -997,7 +1039,9 @@ export function collectDocxHeadings(documentXml) {
       .replace(/<[^>]+>/g, '')
       .replace(/\s+/g, ' ')
       .trim();
-    if (text) headings.push({ level: Number(match[1]), text: unescapeXmlText(text) });
+    if (text && Number(match[1]) <= maxDepth) {
+      headings.push({ level: Number(match[1]), text: unescapeXmlText(text) });
+    }
   }
   return headings;
 }
@@ -1029,7 +1073,7 @@ function tocEntriesXml(headings) {
   Any failure leaves the original file untouched: an index that needs a manual
   refresh is a nuisance, a corrupted DOCX is a lost document.
 */
-export async function requestDocxFieldUpdate(archiveBytes) {
+export async function requestDocxFieldUpdate(archiveBytes, depth = 3) {
   if (!archiveBytes || archiveBytes.length === 0) return archiveBytes;
   try {
     const entries = await readZipEntries(archiveBytes);
@@ -1047,7 +1091,7 @@ export async function requestDocxFieldUpdate(archiveBytes) {
     const documentXml = new TextDecoder().decode(document);
     let updatedDocument = documentXml;
     const emptyResult = /<w:fldChar w:fldCharType="separate"\s*\/>\s*<w:fldChar w:fldCharType="end"\s*\/>/;
-    const headings = collectDocxHeadings(documentXml);
+    const headings = collectDocxHeadings(documentXml, depth);
     if (headings.length && emptyResult.test(documentXml)) {
       /*
         El resultado del campo ocupa sus propios párrafos, así que el que abre
@@ -1080,13 +1124,14 @@ export async function requestDocxFieldUpdate(archiveBytes) {
 // Encabezados del ODT, con su nivel tomado del atributo de esquema.
 const ODT_HEADING_RE = /<text:h\b[^>]*text:outline-level="([1-3])"[^>]*>([\s\S]*?)<\/text:h>/g;
 
-export function collectOdtHeadings(contentXml) {
+export function collectOdtHeadings(contentXml, depth = 3) {
+  const maxDepth = normalizeTocDepth(depth) || 3;
   const headings = [];
   for (const match of String(contentXml || '').matchAll(ODT_HEADING_RE)) {
     const text = unescapeXmlText(
       match[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
     );
-    if (text) headings.push({ level: Number(match[1]), text });
+    if (text && Number(match[1]) <= maxDepth) headings.push({ level: Number(match[1]), text });
   }
   return headings;
 }
@@ -1119,7 +1164,7 @@ const ODT_TOC_STYLES = [1, 2, 3].map(level => (
 
   Any failure leaves the original file untouched.
 */
-export async function fillOdtTableOfContents(archiveBytes) {
+export async function fillOdtTableOfContents(archiveBytes, depth = 3) {
   if (!archiveBytes || archiveBytes.length === 0) return archiveBytes;
   try {
     const entries = await readZipEntries(archiveBytes);
@@ -1129,7 +1174,7 @@ export async function fillOdtTableOfContents(archiveBytes) {
     // Ya relleno (o sin índice): no hay nada que hacer.
     if (!xml.includes('<text:table-of-content') || xml.includes('<text:index-body')) return archiveBytes;
 
-    const headings = collectOdtHeadings(xml);
+    const headings = collectOdtHeadings(xml, depth);
     if (!headings.length) return archiveBytes;
 
     const titleMatch = /<text:index-title-template[^>]*>([\s\S]*?)<\/text:index-title-template>/.exec(xml);
@@ -1215,7 +1260,7 @@ export async function appendEpubStylesheet(archiveBytes, css) {
 */
 export async function applyOfficeFormat(archiveBytes, styles, kind) {
   if (!archiveBytes || archiveBytes.length === 0 || !styles) return archiveBytes;
-  const wanted = ['align', 'fontName', 'fontSizePt', 'lineHeight', 'indent', 'hyphenate']
+  const wanted = ['align', 'fontName', 'fontSizePt', 'lineHeight', 'indent', 'hyphenate', 'pageBreakBeforeH1']
     .some(key => styles[key])
     || Object.keys(styles.marginsCm || {}).length > 0
     || Boolean(styles.paperCm);

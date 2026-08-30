@@ -76,6 +76,12 @@ test('los encabezados del DOCX se estiran con el cuerpo para no perder la jerarq
   assert.match(result, /Heading2[\s\S]*?<w:sz w:val="48" \/>/);
 });
 
+test('el H1 del DOCX puede empezar siempre en página nueva', () => {
+  const result = applyDocxStyles(DOCX_STYLES, { pageBreakBeforeH1: 'yes' });
+  assert.match(result, /Heading1[\s\S]*?<w:pPr><w:pageBreakBefore \/><\/w:pPr>/);
+  assert.equal(/Heading2[\s\S]*pageBreakBefore/.test(result), false);
+});
+
 test('los márgenes abren la sección vacía que deja Pandoc', () => {
   const result = applyDocxMargins('<w:body><w:p /><w:sectPr /></w:body>', { top: 2, left: 3 });
   assert.match(result, /<w:sectPr><w:pgMar w:top="1134" w:left="1701" \/><\/w:sectPr>/);
@@ -133,6 +139,15 @@ test('en el ODT los encabezados cuelgan de Heading, que sí mide en puntos', () 
   assert.match(heading, /fo:font-size="21pt"/);
   assert.match(heading, /style:font-name="Georgia"/);
   assert.match(heading, /style:font-name-asian="Georgia"/);
+});
+
+test('el H1 del ODT puede empezar siempre en página nueva', () => {
+  const source = ODT_STYLES.replace(
+    '</office:styles>',
+    '<style:style style:name="Heading_20_1" style:family="paragraph"><style:paragraph-properties /></style:style></office:styles>',
+  );
+  const result = applyOdtStyles(source, { pageBreakBeforeH1: 'yes' });
+  assert.match(result, /Heading_20_1[\s\S]*?fo:break-before="page"/);
 });
 
 test('los márgenes del ODT sustituyen a los de la plantilla, en centímetros', () => {
@@ -218,6 +233,13 @@ test('el DOCX declara el tamaño del papel antes que los márgenes', () => {
   assert.match(previo, /w:w="11906"/);
 });
 
+test('el DOCX declara la orientación apaisada', () => {
+  const result = applyDocxPageSize('<w:body><w:sectPr /></w:body>', {
+    width: 29.7, height: 21, orientation: 'landscape',
+  });
+  assert.match(result, /w:w="16838" w:h="11906" w:orient="landscape"/);
+});
+
 test('el ODT declara el tamaño del papel en su disposición de página', () => {
   const result = applyOdtPageSize(ODT_STYLES, { width: 21.59, height: 27.94 });
   assert.match(result, /fo:page-width="21.59cm"/);
@@ -227,6 +249,14 @@ test('el ODT declara el tamaño del papel en su disposición de página', () => 
   const conMargenes = applyOdtMargins(result, { top: 2 });
   assert.match(conMargenes, /fo:margin-top="2cm"/);
   assert.match(conMargenes, /fo:page-width="21.59cm"/);
+});
+
+test('el ODT declara la orientación apaisada', () => {
+  const result = applyOdtPageSize(ODT_STYLES, {
+    width: 29.7, height: 21, orientation: 'landscape',
+  });
+  assert.match(result, /fo:page-width="29.7cm"/);
+  assert.match(result, /style:print-orientation="landscape"/);
 });
 
 test('sin tamaño de papel el archivo se queda como estaba', () => {

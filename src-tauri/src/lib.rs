@@ -195,6 +195,8 @@ struct PrintPage {
     margin_left: Option<f64>,
     /// `a4` o `letter`, los dos que entiende el editor.
     paper_size: Option<String>,
+    /// `portrait` o `landscape`.
+    orientation: Option<String>,
 }
 
 /// Manda la vista previa a la impresora, que es de donde sale el PDF.
@@ -242,6 +244,9 @@ fn print_with_page_setup(window: &tauri::WebviewWindow, page: PrintPage) -> bool
         let setup = gtk::PageSetup::new();
         if let Some(name) = paper_size_name(page.paper_size.as_deref()) {
             setup.set_paper_size(&gtk::PaperSize::new(Some(name)));
+        }
+        if page.orientation.as_deref() == Some("landscape") {
+            setup.set_orientation(gtk::PageOrientation::Landscape);
         }
         let unidad = gtk::Unit::Mm;
         // Del centímetro del documento al milímetro que entiende GTK.

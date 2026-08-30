@@ -209,6 +209,8 @@ A la barra hi ha també un botó d'exportar amb la seva fletxa, al costat del de
 
 > **Sobre l'índex**: en DOCX i ODT és un camp que calcula el processador de textos, així que el document s'obre amb la llista d'apartats però sense números de pàgina. Perquè surtin, actualitza'l: al Word, clic dret sobre l'índex → *Actualitzar camps*; al LibreOffice, *Eines → Actualitza → Índexs*.
 
+La profunditat permet limitar-lo a H1, H1–H2 o H1–H3. A **Format** també pots triar orientació vertical o horitzontal i fer que cada H1, tret del primer, comenci en una pàgina nova; la vista prèvia i les exportacions respecten els tres ajustos.
+
 Si el document comença amb les seves pròpies metadades YAML, manen elles.
 
 ---
