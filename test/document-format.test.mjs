@@ -128,7 +128,10 @@ test('la vista previa recibe solo las propiedades que se han fijado', () => {
   assert.equal(styles['line-height'], '1.5');
   assert.equal(styles['padding-left'], 'calc(3cm * var(--preview-zoom, 1))');
   assert.equal(styles.hyphens, 'auto');
-  assert.equal(styles['text-indent'], '0');
+  // En una variable propia: `text-indent` se hereda y sangraría también los
+  // encabezados y los elementos de lista, que no la llevan en lo exportado.
+  assert.equal(styles['--doc-indent'], '0');
+  assert.equal(styles['text-indent'], undefined);
   assert.equal(styles['padding-right'], undefined);
 });
 

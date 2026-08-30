@@ -275,7 +275,14 @@
     }
     if (resolved.fontSize) styles['font-size'] = `calc(${resolved.fontSize}pt * var(--preview-zoom, 1))`;
     if (resolved.lineHeight) styles['line-height'] = resolved.lineHeight;
-    if (resolved.indent) styles['text-indent'] = resolved.indent === 'yes' ? '1.5em' : '0';
+    /*
+      La sangría, en una variable propia y no en `text-indent`: esa se hereda,
+      y puesta en el contenedor de la hoja sangraba también los encabezados,
+      las citas y cada elemento de lista. Lo exportado no hace eso —la regla de
+      HTML y EPUB dice `p`—, así que la vista previa enseñaba una sangría que
+      no salía por ninguna parte. La hoja de estilos la aplica a los párrafos.
+    */
+    if (resolved.indent) styles['--doc-indent'] = resolved.indent === 'yes' ? '1.5em' : '0';
     if (resolved.hyphenate) styles.hyphens = resolved.hyphenate === 'yes' ? 'auto' : 'manual';
     // Los márgenes de página se sugieren como relleno: la vista previa es una
     // columna de texto, no una hoja, y sin esto el ajuste sería invisible.
