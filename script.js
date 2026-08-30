@@ -5154,15 +5154,21 @@ function defaultLatexSettings() {
 }
 
 /*
-  Los valores de partida por debajo de lo guardado, campo a campo: quien ya
-  tenía ajustes de antes no fijó ningún tamaño —no existía la opción— y su
-  vista previa se quedaría sin número igual que si fuera nueva. Lo que el
-  usuario haya escrito manda; solo se rellena lo que dejó vacío.
+  Los valores de partida solo cuando no hay bloque de formato guardado: quien
+  tenía ajustes de antes de existir la opción no fijó ningún tamaño, y su vista
+  previa se quedaría sin número igual que si fuera nueva.
+
+  En cambio, un bloque guardado manda entero, campos vacíos incluidos. Antes se
+  rellenaba hueco por hueco en cada lectura, y eso convertía «quitar el tamaño»
+  en «volver a 12 pt» en cuanto se recargaba la página: la letra, el cuerpo, el
+  interlineado y el papel eran los cuatro únicos ajustes imposibles de dejar
+  sin fijar, que es justo lo que hace el botón «Restablecer» con los demás.
 */
 function withDefaultDocumentFormat(stored) {
     const api = window.EdiMarkDocumentFormat;
     const normalized = api ? api.normalizeDocumentFormat(stored) : {};
     const format = { ...normalized };
+    if (stored && typeof stored === 'object') return format;
     Object.entries(LATEX_SETTINGS_DEFAULTS.documentFormat).forEach(([key, value]) => {
         if (!String(format[key] ?? '').trim()) format[key] = value;
     });
