@@ -17,6 +17,14 @@ let undoButtonEl = null;
 let redoButtonEl = null;
 const AUTOSAVE_KEY_PREFIX = 'edimarkweb-autosave';
 const DOCS_LIST_KEY = 'edimarkweb-docslist';
+/*
+  La pestaña abierta al salir. Sin ella, recargar la página o cerrar y volver a
+  abrir la aplicación devolvía siempre a la primera, que casi nunca es en la
+  que se estaba trabajando. Vive con la lista de documentos y no en las
+  preferencias: es estado de la sesión de trabajo, no un ajuste que el
+  escritorio tenga que llevarse al archivo del perfil.
+*/
+const ACTIVE_DOC_KEY = 'edimarkweb-active-doc';
 const CORRUPT_DOCS_LIST_BACKUP_KEY = 'edimarkweb-docslist-corrupt-backup';
 const LAYOUT_KEY = 'edimarkweb-layout';
 /*
@@ -3295,6 +3303,8 @@ function switchTo(id) {
     currentId = id;
     const doc = docs.find(d => d.id === id);
     if (!doc) return;
+    // Para volver aquí en el próximo arranque.
+    safeLocalStorageSet(ACTIVE_DOC_KEY, id);
 
     document.querySelectorAll('.tab').forEach(t => {
         const isActive = t.dataset.id === id;
@@ -3379,6 +3389,7 @@ async function closeDoc(id) {
             switchTo(docs[newIndex].id);
         } else {
             currentId = null;
+            safeLocalStorageRemove(ACTIVE_DOC_KEY);
             markdownEditor.setValue('');
             if (typeof markdownEditor.clearHistory === 'function') {
                 markdownEditor.clearHistory();
@@ -8810,7 +8821,14 @@ window.onload = async () => {
             lastAutosavedById.set(docInfo.id, normalized);
             addTabElement(docInfo);
         });
-        switchTo(docs[0].id);
+        /*
+          A la pestaña donde se estaba, si sigue existiendo: cerrarla en la
+          sesión anterior, o abrir la aplicación en otro navegador, deja un
+          identificador que ya no está en la lista, y entonces vale la primera.
+        */
+        const guardada = safeLocalStorageGet(ACTIVE_DOC_KEY, '');
+        const inicial = docs.some(d => d.id === guardada) ? guardada : docs[0].id;
+        switchTo(inicial);
         if (!platform?.isDesktop) {
             docs.forEach(doc => {
                 restorePersistedDocumentAssets(doc).catch(error => {
