@@ -45,9 +45,9 @@ const LATEX_SETTINGS_KEY = 'edimarkweb-latex-settings';
 const SPELLCHECK_KEY = 'edimarkweb-spellcheck';
 const THEME_KEY = 'edimarkweb-theme';
 /*
-  La lista de imágenes incrustadas vive plegada salvo que se pida: crecía con
-  cada imagen pegada y le comía al editor la mitad de la pantalla justo cuando
-  más texto hay que escribir.
+  La lista de imágenes del documento vive plegada salvo que se pida: con muchas
+  imágenes le comería al editor la mitad de la pantalla justo cuando más texto
+  hay que escribir.
 */
 const BASE64_PANEL_KEY = 'edimarkweb-base64-panel';
 const EDICUATEX_BASE_URL = 'https://edicuatex.github.io/index.html';
@@ -78,12 +78,15 @@ let base64PreviewOverlay = null;
 let base64PreviewImage = null;
 let base64PreviewTitle = null;
 let base64PreviewMeta = null;
+let base64ExtractBtn = null;
 let base64ModalOverlayEl = null;
 let base64ModalTextarea = null;
 let base64ModalCopyBtn = null;
 let base64ModalCloseBtn = null;
 let currentBase64State = { placeholders: new Map(), total: 0 };
+let currentLinkedImages = new Map();
 let currentBase64ModalPlaceholder = null;
+let imageModalReplacement = null;
 let markdownTextareaEl = null;
 let htmlOutputEl = null;
 let htmlEditorWrapperEl = null;
@@ -707,21 +710,201 @@ function base64EntryLabels(placeholder, info, index) {
     };
 }
 
+function collectLinkedImageEntries(sourceText, doc) {
+    const entries = new Map();
+    if (
+        !doc
+        || !assetPathUtils
+        || !String(sourceText || '').includes('![')
+        || !window.marked
+        || typeof marked.lexer !== 'function'
+        || typeof marked.walkTokens !== 'function'
+    ) return entries;
+    let tokens;
+    try {
+        tokens = marked.lexer(splitDocumentFrontMatter(String(sourceText || '')).body);
+    } catch (error) {
+        console.debug('No se pudo preparar la lista de imágenes del documento:', error);
+        return entries;
+    }
+    let index = 0;
+    marked.walkTokens(tokens, token => {
+        if (!token || token.type !== 'image') return;
+        const source = String(token.href || '').trim();
+        const remote = /^(?:https?:)?\/\//i.test(source);
+        const file = assetPathUtils.isRelativeAssetPath(source) && assetPathUtils.isImagePath(source);
+        if (!remote && !file) return;
+        index += 1;
+        const snippet = String(token.raw || '');
+        if (!snippet) return;
+        const key = `linked-${index}`;
+        const alt = String(token.text || '').trim();
+        entries.set(key, {
+            key,
+            docId: doc.id,
+            kind: remote ? 'remote' : 'file',
+            source,
+            snippet,
+            alt,
+            title: alt
+                || source.split('/').pop()
+                || formatTranslation('base64_image_default_alt', 'Imagen {number}', { number: index }),
+        });
+    });
+    return entries;
+}
+
+function refreshLinkedImagesUi(sourceText, doc) {
+    currentLinkedImages = collectLinkedImageEntries(sourceText, doc);
+    updateBase64Ui(currentBase64State);
+}
+
+function linkedImageLabels(info) {
+    return {
+        title: info.title,
+        meta: `${getTranslation(
+            info.kind === 'remote' ? 'linked_image_online_label' : 'linked_image_file_label',
+            info.kind === 'remote' ? 'En línea' : 'Archivo',
+        )} · ${info.source}`,
+    };
+}
+
+function repeatedImageSnippetOccurrence(entries, targetKey, snippetForEntry) {
+    let occurrence = 0;
+    for (const [key, info] of entries) {
+        const snippet = snippetForEntry(key, info);
+        if (key === targetKey) return { snippet, occurrence };
+        if (snippet && snippet === snippetForEntry(targetKey, entries.get(targetKey))) occurrence += 1;
+    }
+    return null;
+}
+
+function base64ReplacementTarget(placeholder) {
+    const entries = currentBase64State?.placeholders;
+    const targetInfo = entries?.get(placeholder);
+    if (!targetInfo) return null;
+    const snippetForEntry = (key, info) => {
+        const context = findPlaceholderContext(key);
+        return context ? context.snippet.replace(key, info.data) : '';
+    };
+    const located = repeatedImageSnippetOccurrence(entries, placeholder, snippetForEntry);
+    const context = findPlaceholderContext(placeholder);
+    if (!located?.snippet || !context) return null;
+    return {
+        docId: currentId,
+        snippet: located.snippet,
+        occurrence: located.occurrence,
+        alt: context.alt || '',
+    };
+}
+
+function linkedReplacementTarget(key) {
+    const info = currentLinkedImages.get(key);
+    if (!info) return null;
+    const located = repeatedImageSnippetOccurrence(currentLinkedImages, key, (_key, entry) => entry.snippet);
+    if (!located?.snippet) return null;
+    return {
+        docId: info.docId,
+        snippet: located.snippet,
+        occurrence: located.occurrence,
+        alt: info.alt || '',
+    };
+}
+
+function openImageReplacement(target) {
+    if (!target) {
+        notifyUser(getTranslation('document_image_replace_error', 'No se pudo localizar la imagen que se quería reemplazar.'));
+        return;
+    }
+    toggleImageModal(true, target.alt, target);
+}
+
+async function linkedImageUrl(info) {
+    const doc = docs.find(candidate => candidate.id === info?.docId);
+    if (!doc || !info) return null;
+    if (info.kind === 'remote') return info.source;
+    const url = await assetUrlFor(doc, info.source);
+    if (url) return url;
+    return window.EdiMarkPlatform?.isDesktop ? null : info.source;
+}
+
+function appendDocumentImageItem({ title, meta, thumbnailUrl = '', loadThumbnail, onPreview, actions }) {
+    const item = document.createElement('div');
+    item.className = 'base64-hidden-item';
+    item.setAttribute('role', 'listitem');
+
+    const thumbBtn = document.createElement('button');
+    thumbBtn.type = 'button';
+    thumbBtn.className = 'base64-hidden-thumb';
+    thumbBtn.title = getTranslation('base64_preview_btn', 'Ver la imagen');
+    thumbBtn.setAttribute('aria-label', getTranslation('base64_preview_btn', 'Ver la imagen'));
+    const thumb = document.createElement('img');
+    thumb.alt = '';
+    thumb.loading = 'lazy';
+    if (thumbnailUrl) thumb.src = thumbnailUrl;
+    thumbBtn.appendChild(thumb);
+    thumbBtn.addEventListener('click', onPreview);
+
+    if (!thumbnailUrl && typeof loadThumbnail === 'function') {
+        loadThumbnail().then(url => {
+            if (url && item.isConnected) thumb.src = url;
+        }).catch(() => {});
+    }
+
+    const details = document.createElement('div');
+    details.className = 'base64-hidden-details';
+    const titleEl = document.createElement('h4');
+    titleEl.textContent = title;
+    titleEl.title = title;
+    const metaEl = document.createElement('p');
+    metaEl.textContent = meta;
+    metaEl.title = meta;
+    details.append(titleEl, metaEl);
+
+    const actionContainer = document.createElement('div');
+    actionContainer.className = 'base64-hidden-actions';
+    actions.forEach(action => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `base64-hidden-btn${action.danger ? ' base64-hidden-btn-danger' : ''}`;
+        button.textContent = action.label;
+        if (action.title) button.title = action.title;
+        button.addEventListener('click', () => action.run(button));
+        actionContainer.appendChild(button);
+    });
+
+    item.append(thumbBtn, details, actionContainer);
+    base64UiList.appendChild(item);
+}
+
 function updateBase64Ui(state) {
     currentBase64State = state || { placeholders: new Map(), total: 0 };
     if (!base64UiContainer || !base64UiList || !base64UiCountLabel) return;
     const entries = currentBase64State.placeholders ? Array.from(currentBase64State.placeholders.entries()) : [];
-    const hasEntries = entries.length > 0;
+    const linkedEntries = Array.from(currentLinkedImages.entries());
+    const totalEntries = entries.length + linkedEntries.length;
+    const hasEntries = totalEntries > 0;
     base64UiContainer.classList.toggle('hidden', !hasEntries);
     base64UiCountLabel.textContent = hasEntries
         ? formatTranslation(
-            entries.length === 1 ? 'base64_count_singular' : 'base64_count_plural',
-            entries.length === 1 ? '{count} imagen' : '{count} imágenes',
-            { count: entries.length }
+            totalEntries === 1 ? 'base64_count_singular' : 'base64_count_plural',
+            totalEntries === 1 ? '{count} imagen' : '{count} imágenes',
+            { count: totalEntries }
         )
         : getTranslation('base64_count_empty', '0 encontradas');
-
     const expanded = base64PanelExpanded();
+    /*
+      La acción de pasar las incrustadas a la carpeta viaja con la lista: si
+      asomara con el panel plegado, la cabecera dejaría de ser una línea y le
+      comería al editor el alto que se le acaba de devolver.
+    */
+    if (base64ExtractBtn) {
+        const showExtract = expanded && entries.length > 0;
+        base64ExtractBtn.toggleAttribute('hidden', !showExtract);
+        const actions = base64ExtractBtn.parentElement;
+        if (actions) actions.toggleAttribute('hidden', !showExtract);
+    }
+
     if (base64UiToggle) {
         base64UiToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         const chevron = base64UiToggle.querySelector('.base64-hidden-chevron');
@@ -735,53 +918,48 @@ function updateBase64Ui(state) {
 
     entries.forEach(([placeholder, info], index) => {
         const { title, meta } = base64EntryLabels(placeholder, info, index);
-        const item = document.createElement('div');
-        item.className = 'base64-hidden-item';
-        item.setAttribute('role', 'listitem');
+        appendDocumentImageItem({
+            title,
+            meta,
+            thumbnailUrl: base64DataUri(info),
+            onPreview: () => openBase64Preview(placeholder),
+            actions: [{
+                label: getTranslation('document_image_replace_btn', 'Reemplazar'),
+                title: getTranslation('document_image_replace_btn_title', 'Elegir otra imagen del portapapeles, del disco o de internet'),
+                run: () => openImageReplacement(base64ReplacementTarget(placeholder)),
+            }, {
+                label: getTranslation('base64_view_code_btn', 'Ver código'),
+                title: getTranslation('base64_view_code_hint', 'Copiar el código de la imagen para pegarla en otro documento.'),
+                run: () => openBase64Modal(placeholder),
+            }, {
+                label: getTranslation('base64_delete_btn', 'Eliminar'),
+                danger: true,
+                run: () => removeBase64Entry(placeholder, title),
+            }],
+        });
+    });
 
-        // La miniatura es el botón: saber qué imagen es cada línea era lo que
-        // faltaba, y el nombre del portapapeles no lo dice.
-        const thumbBtn = document.createElement('button');
-        thumbBtn.type = 'button';
-        thumbBtn.className = 'base64-hidden-thumb';
-        thumbBtn.title = getTranslation('base64_preview_btn', 'Ver la imagen');
-        thumbBtn.setAttribute('aria-label', getTranslation('base64_preview_btn', 'Ver la imagen'));
-        const thumb = document.createElement('img');
-        thumb.src = base64DataUri(info);
-        thumb.alt = '';
-        thumb.loading = 'lazy';
-        thumbBtn.appendChild(thumb);
-        thumbBtn.addEventListener('click', () => openBase64Preview(placeholder));
-
-        const details = document.createElement('div');
-        details.className = 'base64-hidden-details';
-        const titleEl = document.createElement('h4');
-        titleEl.textContent = title;
-        titleEl.title = title;
-        const metaEl = document.createElement('p');
-        metaEl.textContent = meta;
-        details.append(titleEl, metaEl);
-
-        const actions = document.createElement('div');
-        actions.className = 'base64-hidden-actions';
-        const viewBtn = document.createElement('button');
-        viewBtn.type = 'button';
-        viewBtn.className = 'base64-hidden-btn';
-        viewBtn.textContent = getTranslation('base64_view_code_btn', 'Ver código');
-        viewBtn.title = getTranslation(
-            'base64_view_code_hint',
-            'Copiar el código de la imagen para pegarla en otro documento.',
-        );
-        viewBtn.addEventListener('click', () => openBase64Modal(placeholder));
-        const deleteBtn = document.createElement('button');
-        deleteBtn.type = 'button';
-        deleteBtn.className = 'base64-hidden-btn base64-hidden-btn-danger';
-        deleteBtn.textContent = getTranslation('base64_delete_btn', 'Eliminar');
-        deleteBtn.addEventListener('click', () => removeBase64Entry(placeholder, title));
-        actions.append(viewBtn, deleteBtn);
-
-        item.append(thumbBtn, details, actions);
-        base64UiList.appendChild(item);
+    linkedEntries.forEach(([key, info]) => {
+        const { title, meta } = linkedImageLabels(info);
+        appendDocumentImageItem({
+            title,
+            meta,
+            loadThumbnail: () => linkedImageUrl(info),
+            onPreview: () => openLinkedImagePreview(key),
+            actions: [{
+                label: getTranslation('document_image_replace_btn', 'Reemplazar'),
+                title: getTranslation('document_image_replace_btn_title', 'Elegir otra imagen del portapapeles, del disco o de internet'),
+                run: () => openImageReplacement(linkedReplacementTarget(key)),
+            }, {
+                label: getTranslation('linked_image_embed_btn', 'Incrustar'),
+                title: getTranslation('linked_image_embed_btn_title', 'Convertir la imagen a Base64 dentro del documento'),
+                run: button => convertLinkedImageToBase64(key, button),
+            }, {
+                label: getTranslation('base64_delete_btn', 'Eliminar'),
+                danger: true,
+                run: () => removeLinkedImageEntry(key),
+            }],
+        });
     });
     if (window.lucide) lucide.createIcons();
 }
@@ -804,8 +982,13 @@ async function removeBase64Entry(placeholder, title) {
 
     const value = markdownEditor.getValue();
     const snippet = context.snippet.replace(placeholder, info.data);
+    removeImageSnippetFromMarkdown(value, snippet);
+}
+
+function removeImageSnippetFromMarkdown(value, snippet) {
+    if (!markdownEditor || !snippet) return false;
     const index = value.indexOf(snippet);
-    if (index < 0) return;
+    if (index < 0) return false;
     let start = index;
     let end = index + snippet.length;
     const lineStart = value.lastIndexOf('\n', start - 1) + 1;
@@ -823,6 +1006,96 @@ async function removeBase64Entry(placeholder, title) {
         end += 1;
     }
     markdownEditor.setValue(value.slice(0, start) + value.slice(end));
+    return true;
+}
+
+function replaceImageSnippetInMarkdown(target, replacement) {
+    if (!markdownEditor || !target?.snippet || target.docId !== currentId) return false;
+    const value = markdownEditor.getValue();
+    let index = -1;
+    let from = 0;
+    const occurrence = Math.max(0, Number(target.occurrence) || 0);
+    for (let current = 0; current <= occurrence; current += 1) {
+        index = value.indexOf(target.snippet, from);
+        if (index < 0) return false;
+        from = index + target.snippet.length;
+    }
+    markdownEditor.setValue(
+        value.slice(0, index) + replacement + value.slice(index + target.snippet.length),
+    );
+    return true;
+}
+
+async function removeLinkedImageEntry(key) {
+    const info = currentLinkedImages.get(key);
+    if (!info || !markdownEditor) return;
+    const message = formatTranslation(
+        'base64_delete_confirm',
+        '¿Quitar «{name}» del documento? No se puede deshacer.',
+        { name: info.title },
+    );
+    if (!await confirmAction(message)) return;
+    removeImageSnippetFromMarkdown(markdownEditor.getValue(), info.snippet);
+}
+
+async function linkedImageAsDataUrl(info) {
+    const doc = docs.find(candidate => candidate.id === info?.docId);
+    if (!doc || !info || !assetPathUtils) throw new Error('No se encontró la imagen.');
+    if (info.kind === 'remote') {
+        const response = await fetch(info.source);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const blob = await response.blob();
+        if (!String(blob.type || '').toLowerCase().startsWith('image/')) {
+            throw new Error('La dirección no devolvió una imagen.');
+        }
+        return readFileAsDataUrl(blob);
+    }
+
+    const indexedFile = lookupAssetFile(doc, info.source);
+    if (indexedFile) return readFileAsDataUrl(indexedFile);
+
+    const platform = window.EdiMarkPlatform;
+    if (platform?.isDesktop && doc.filePath && typeof platform.readDocumentAsset === 'function') {
+        const baseDir = assetPathUtils.directoryOf(doc.filePath);
+        const absolutePath = assetPathUtils.resolveAgainstDirectory(baseDir, info.source);
+        const bytes = await platform.readDocumentAsset(absolutePath);
+        if (!bytes || !bytes.length) throw new Error('No se encontró la imagen.');
+        return readFileAsDataUrl(new Blob([bytes], { type: assetPathUtils.mimeTypeFor(info.source) }));
+    }
+
+    const url = await linkedImageUrl(info);
+    if (!url) throw new Error('No se encontró la imagen.');
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return readFileAsDataUrl(await response.blob());
+}
+
+async function convertLinkedImageToBase64(key, button) {
+    const info = currentLinkedImages.get(key);
+    if (!info || !markdownEditor) return;
+    if (button) button.disabled = true;
+    try {
+        const dataUrl = await linkedImageAsDataUrl(info);
+        const replacement = info.snippet.replace(
+            /(!\[[^\]]*?\]\(\s*)([^)\s]+)([^)]*\))$/,
+            (_match, opening, _source, closing) => `${opening}${dataUrl}${closing}`,
+        );
+        if (replacement === info.snippet) throw new Error('No se pudo localizar la referencia.');
+        const value = markdownEditor.getValue();
+        const index = value.indexOf(info.snippet);
+        if (index < 0) throw new Error('No se pudo localizar la referencia.');
+        markdownEditor.setValue(value.slice(0, index) + replacement + value.slice(index + info.snippet.length));
+        reportStatus(formatTranslation(
+            'linked_image_embed_done',
+            '«{name}» se ha incrustado dentro del documento.',
+            { name: info.title },
+        ));
+    } catch (error) {
+        console.error('No se pudo incrustar la imagen enlazada:', error);
+        notifyUser(getTranslation('linked_image_embed_error', 'No se pudo incrustar la imagen dentro del documento.'));
+    } finally {
+        if (button && button.isConnected) button.disabled = false;
+    }
 }
 
 function openBase64Preview(placeholder) {
@@ -844,6 +1117,23 @@ function closeBase64Preview() {
     base64PreviewOverlay.classList.remove('flex');
     // Sin la fuente, el navegador suelta la imagen descodificada.
     if (base64PreviewImage) base64PreviewImage.removeAttribute('src');
+}
+
+async function openLinkedImagePreview(key) {
+    const info = currentLinkedImages.get(key);
+    if (!info || !base64PreviewOverlay || !base64PreviewImage) return;
+    const url = await linkedImageUrl(info);
+    if (!url) {
+        notifyUser(getTranslation('linked_image_read_error', 'No se pudo leer la imagen enlazada.'));
+        return;
+    }
+    const { title, meta } = linkedImageLabels(info);
+    base64PreviewImage.src = url;
+    base64PreviewImage.alt = title;
+    if (base64PreviewTitle) base64PreviewTitle.textContent = title;
+    if (base64PreviewMeta) base64PreviewMeta.textContent = meta;
+    base64PreviewOverlay.classList.remove('hidden');
+    base64PreviewOverlay.classList.add('flex');
 }
 
 window.__updateBase64UiLabels = () => updateBase64Ui(currentBase64State);
@@ -2524,8 +2814,12 @@ function createBase64AwareEditor(editor, textarea) {
     const rawReplaceRange = typeof editor.replaceRange === 'function' ? editor.replaceRange.bind(editor) : null;
     const enhanced = { ...editor };
 
-    function applyState(state) {
+    function applyState(state, sourceText) {
         currentBase64State = state;
+        currentLinkedImages = collectLinkedImageEntries(
+            sourceText,
+            docs.find(doc => doc.id === currentId),
+        );
         updateBase64Ui(state);
     }
 
@@ -2537,7 +2831,7 @@ function createBase64AwareEditor(editor, textarea) {
         const normalized = typeof value === 'string' ? normalizeNewlines(value) : '';
         const state = buildBase64CollapsedState(normalized);
         rawSetValue(state.collapsedText);
-        applyState(state);
+        applyState(state, normalized);
     };
 
     enhanced.recollapseBase64 = (preserveCursor = true) => {
@@ -2578,19 +2872,45 @@ function createBase64AwareEditor(editor, textarea) {
     // Estado inicial
     const initialState = buildBase64CollapsedState(rawGetValue());
     rawSetValue(initialState.collapsedText);
-    applyState(initialState);
+    applyState(initialState, expandBase64Placeholders(rawGetValue(), initialState.placeholders));
 
     return enhanced;
+}
+
+function countMarkdownWords(sourceText) {
+    const text = typeof sourceText === 'string' ? sourceText : '';
+    if (!text.trim()) return 0;
+    const locale = window.__edimarkLang || document.documentElement.lang || 'es';
+    if (typeof Intl.Segmenter === 'function') {
+        const segmenter = new Intl.Segmenter(locale, { granularity: 'word' });
+        let count = 0;
+        for (const segment of segmenter.segment(text)) {
+            if (segment.isWordLike) count += 1;
+        }
+        return count;
+    }
+    // Motores antiguos: letras y números forman palabras; la puntuación no.
+    return (text.match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu) || []).length;
 }
 
 function updateMarkdownCharCounter(sourceText) {
     if (!markdownCharCounterEl) return;
     const text = typeof sourceText === 'string' ? sourceText : '';
-    const count = text.length;
-    const singularLabel = getTranslation('char_counter_singular', 'carácter');
-    const pluralLabel = getTranslation('char_counter_plural', 'caracteres');
-    const unit = count === 1 ? singularLabel : pluralLabel;
-    markdownCharCounterEl.textContent = `${count.toLocaleString()} ${unit}`;
+    const charCount = text.length;
+    const wordCount = countMarkdownWords(text);
+    const charUnit = charCount === 1
+        ? getTranslation('char_counter_singular', 'carácter')
+        : getTranslation('char_counter_plural', 'caracteres');
+    const wordUnit = wordCount === 1
+        ? getTranslation('word_counter_singular', 'palabra')
+        : getTranslation('word_counter_plural', 'palabras');
+    const charAbbreviation = getTranslation('char_counter_abbreviation', 'c');
+    const wordAbbreviation = getTranslation('word_counter_abbreviation', 'p');
+    const compact = `${charCount.toLocaleString()} ${charAbbreviation} · ${wordCount.toLocaleString()} ${wordAbbreviation}`;
+    const full = `${charCount.toLocaleString()} ${charUnit} · ${wordCount.toLocaleString()} ${wordUnit}`;
+    markdownCharCounterEl.textContent = compact;
+    markdownCharCounterEl.title = full;
+    markdownCharCounterEl.setAttribute('aria-label', full);
 }
 /*
   Shortcut hints in the Archivo menu are written for Windows/Linux; on macOS the
@@ -3935,6 +4255,7 @@ function updateHtml() {
     const markdownText = splitDocumentFrontMatter(fullMarkdown).body;
     const htmlOutput = document.getElementById('html-output');
     updateMarkdownCharCounter(fullMarkdown);
+    refreshLinkedImagesUi(fullMarkdown, docs.find(d => d.id === currentId));
 
     const { text: markdownWithoutMath, segments: mathSegments } = protectMathSegments(markdownText);
     const sanitizedText = preserveMarkdownEscapes(markdownWithoutMath);
@@ -4734,8 +5055,28 @@ function insertMathFromModal() {
     insertRawContent(`${open}${tex}${close}`, { block });
 }
 
-function toggleImageModal(show, presetText = '') {
-    document.getElementById('image-modal-overlay').style.display = show ? 'flex' : 'none';
+function toggleImageModal(show, presetText = '', replacement = null) {
+    const overlay = document.getElementById('image-modal-overlay');
+    const title = document.getElementById('image-modal-title');
+    const submit = document.getElementById('insert-image-btn');
+    overlay.style.display = show ? 'flex' : 'none';
+    if (!show) {
+        imageModalReplacement = null;
+        return;
+    }
+    imageModalReplacement = replacement;
+    const replacing = Boolean(replacement);
+    if (title) {
+        title.textContent = getTranslation(
+            replacing ? 'replace_image_modal_title' : 'insert_image_modal_title',
+            replacing ? 'Reemplazar imagen' : 'Insertar imagen',
+        );
+        title.setAttribute('data-i18n-key', replacing ? 'replace_image_modal_title' : 'insert_image_modal_title');
+    }
+    if (submit) {
+        submit.textContent = getTranslation(replacing ? 'replace_btn' : 'insert_btn', replacing ? 'Reemplazar' : 'Insertar');
+        submit.setAttribute('data-i18n-key', replacing ? 'replace_btn' : 'insert_btn');
+    }
     if (show) {
         document.getElementById('image-alt-text').value = presetText;
         const fileInput = document.getElementById('image-file-input');
@@ -6207,7 +6548,7 @@ window.onload = async () => {
             updateBase64Ui(currentBase64State);
         });
     }
-    const base64ExtractBtn = document.getElementById('base64-extract-btn');
+    base64ExtractBtn = document.getElementById('base64-extract-btn');
     if (base64ExtractBtn) {
         base64ExtractBtn.addEventListener('click', async () => {
             // Un documento con muchas imágenes tarda un momento en pasarlas.
@@ -10511,6 +10852,9 @@ window.onload = async () => {
     const imageSourceFile = document.getElementById('image-source-file');
     const imageSourceUrl = document.getElementById('image-source-url');
     const imageUrlInput = document.getElementById('image-url');
+    const imagePasteBtn = document.getElementById('image-paste-btn');
+    const relativeImageMode = document.querySelector('input[name="image-insert-mode"][value="relative"]');
+    const embeddedImageMode = document.querySelector('input[name="image-insert-mode"][value="embedded"]');
 
     /*
       La imagen elegida del disco. En la aplicación de escritorio se pide con el
@@ -10530,6 +10874,22 @@ window.onload = async () => {
       imageFileName.textContent = name || getTranslation('image_file_none', 'Ninguna seleccionada');
       if (name) imageFileName.removeAttribute('data-i18n-key');
       else imageFileName.setAttribute('data-i18n-key', 'image_file_none');
+    }
+
+    function selectPickedImage(image, { clipboard = false } = {}) {
+      pickedImage = image ? { ...image, clipboard } : null;
+      if (relativeImageMode) relativeImageMode.disabled = Boolean(pickedImage?.clipboard);
+      if (pickedImage?.clipboard && embeddedImageMode) embeddedImageMode.checked = true;
+      showImageFileName(pickedImage?.clipboard
+        ? getTranslation('image_clipboard_selected', 'Imagen pegada')
+        : (pickedImage?.name || ''));
+      refreshImageSource();
+    }
+
+    function selectClipboardImage(file) {
+      if (!file || !String(file.type || '').toLowerCase().startsWith('image/')) return false;
+      selectPickedImage({ file, name: file.name || 'clipboard-image.png', path: '' }, { clipboard: true });
+      return true;
     }
 
     /*
@@ -10592,6 +10952,7 @@ window.onload = async () => {
 
     function resetImageSource() {
       pickedImage = null;
+      if (relativeImageMode) relativeImageMode.disabled = false;
       showImageFileName('');
       if (imageUrlInput) imageUrlInput.value = '';
       refreshImageSource();
@@ -10608,9 +10969,7 @@ window.onload = async () => {
     if (imageFileInput) {
       imageFileInput.addEventListener('change', () => {
         const file = imageFileInput.files && imageFileInput.files[0];
-        pickedImage = file ? { file, name: file.name, path: '' } : null;
-        showImageFileName(pickedImage?.name || '');
-        refreshImageModeWarning();
+        selectPickedImage(file ? { file, name: file.name, path: '' } : null);
       });
       /*
         En el escritorio se toma el diálogo nativo: el del navegador no da la
@@ -10622,14 +10981,41 @@ window.onload = async () => {
         event.preventDefault();
         platform.pickImageFile().then(chosen => {
           if (!chosen) return;
-          pickedImage = { file: null, name: chosen.name, path: chosen.path };
-          showImageFileName(chosen.name);
-          refreshImageModeWarning();
+          selectPickedImage({ file: null, name: chosen.name, path: chosen.path });
         }).catch(error => {
           console.error('No se pudo elegir la imagen:', error);
         });
       });
     }
+
+    if (imagePasteBtn) {
+      imagePasteBtn.addEventListener('click', async () => {
+        if (imagePasteBtn.disabled) return;
+        imagePasteBtn.disabled = true;
+        try {
+          const clipboard = await readClipboardForButton();
+          const file = Array.isArray(clipboard?.files)
+            ? clipboard.files.find(candidate => String(candidate?.type || '').toLowerCase().startsWith('image/'))
+            : null;
+          if (!selectClipboardImage(file)) {
+            notifyUser(getTranslation('image_clipboard_empty', 'El portapapeles no contiene ninguna imagen.'));
+          }
+        } catch (error) {
+          console.error('No se pudo pegar la imagen desde el portapapeles:', error);
+          notifyUser(getTranslation('clipboard_read_error', 'No pude leer el portapapeles. Usa Ctrl+V como alternativa.'));
+        } finally {
+          imagePasteBtn.disabled = false;
+        }
+      });
+    }
+
+    imageModalOverlay.addEventListener('paste', event => {
+      const payload = classifyClipboardDataPayload(event.clipboardData);
+      const file = payload?.files?.find(candidate => String(candidate?.type || '').toLowerCase().startsWith('image/'));
+      if (!file) return;
+      event.preventDefault();
+      selectClipboardImage(file);
+    });
 
     insertImageBtn.addEventListener('click', async () => {
       const mode = selectedInsertMode();
@@ -10652,9 +11038,26 @@ window.onload = async () => {
         }
       }
 
-      const defaultAlt = pickedImage?.name || getTranslation('base64_image_default_alt', 'imagen');
-      const alt = document.getElementById('image-alt-text').value.trim() || defaultAlt;
-      insertMarkdownContent(`![${alt}](${reference || '#'})`, { inline: true });
+      if (imageModalReplacement && !reference) {
+        notifyUser(getTranslation('image_source_required', 'Elige o pega una imagen, o escribe su dirección.'));
+        return;
+      }
+
+      const defaultAlt = pickedImage?.clipboard
+        ? getTranslation('image_clipboard_selected', 'Imagen pegada')
+        : (pickedImage?.name || getTranslation('base64_image_default_alt', 'imagen'));
+      const enteredAlt = document.getElementById('image-alt-text').value.trim();
+      const alt = imageModalReplacement ? enteredAlt : (enteredAlt || defaultAlt);
+      const imageMarkdown = `![${alt}](${reference || '#'})`;
+      if (imageModalReplacement) {
+        if (!replaceImageSnippetInMarkdown(imageModalReplacement, imageMarkdown)) {
+          notifyUser(getTranslation('document_image_replace_error', 'No se pudo localizar la imagen que se quería reemplazar.'));
+          return;
+        }
+        reportStatus(getTranslation('document_image_replace_done', 'Imagen reemplazada.'));
+      } else {
+        insertMarkdownContent(imageMarkdown, { inline: true });
+      }
       if (imageFileInput) imageFileInput.value = '';
       resetImageSource();
       toggleImageModal(false);

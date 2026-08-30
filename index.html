@@ -599,19 +599,19 @@
                 <div id="base64-hidden-container" class="base64-hidden-container hidden" aria-live="polite">
                     <button type="button" id="base64-hidden-toggle" class="base64-hidden-summary" aria-expanded="false" aria-controls="base64-hidden-list">
                         <i data-lucide="chevron-right" class="base64-hidden-chevron" aria-hidden="true"></i>
-                        <span class="base64-hidden-title" data-i18n-key="base64_hidden_title">Imágenes base64 ocultas</span>
+                        <span class="base64-hidden-title" data-i18n-key="base64_hidden_title">Imágenes del documento</span>
                         <span id="base64-hidden-count" class="base64-hidden-count-text">0 encontradas</span>
-                        <span class="base64-hidden-hint" data-i18n-key="base64_hidden_hint">Se oculta el código para facilitar la edición.</span>
+                        <span class="base64-hidden-hint" data-i18n-key="base64_hidden_hint">Incrustadas, enlazadas desde archivos o en línea.</span>
                     </button>
                     <!--
-                      Sacar las imágenes del texto: la vuelta a lo que hace
-                      insertarlas incrustadas. Va aquí, junto al recuento, que
-                      es donde se ve cuántas hay y cuánto ocupan.
+                      Sacar las imágenes incrustadas del texto. Va aquí, junto
+                      al recuento de todas las imágenes, pero se oculta cuando
+                      el documento solo contiene archivos enlazados.
                     -->
-                    <div class="base64-hidden-actions">
-                        <button type="button" id="base64-extract-btn" class="base64-hidden-action-btn" data-i18n-key="base64_extract_btn_title" title="Escribe cada imagen como archivo en la carpeta del documento y deja su ruta en el texto">
+                    <div class="base64-hidden-actions" hidden>
+                        <button type="button" id="base64-extract-btn" class="base64-hidden-action-btn" data-i18n-key="base64_extract_btn_title" title="Escribe cada imagen incrustada como archivo en la carpeta del documento y deja su ruta en el texto" hidden>
                             <i data-lucide="folder-down" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
-                            <span data-i18n-key="base64_extract_btn">Pasar las imágenes a la carpeta</span>
+                            <span data-i18n-key="base64_extract_btn">Pasar las incrustadas a la carpeta</span>
                         </button>
                     </div>
                     <div id="base64-hidden-list" class="base64-hidden-list hidden" role="list"></div>
@@ -658,7 +658,7 @@
           devuelve al documento el alto que gastaban los dos rótulos.
         -->
         <footer id="status-bar" class="status-bar">
-            <span id="markdown-char-counter" class="panel-counter" aria-live="polite">0 caracteres</span>
+            <span id="markdown-char-counter" class="panel-counter" aria-live="polite" aria-label="0 caracteres · 0 palabras" title="0 caracteres · 0 palabras">0 c · 0 p</span>
             <!--
               En qué idioma va a salir el documento, siempre a la vista: es lo
               que decide en qué lengua corrigen Word y LibreOffice lo que se
@@ -1201,12 +1201,16 @@
                 </div>
                 <div id="image-source-file">
                     <span class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="image_file_label">Imagen del disco</span>
-                    <div class="mt-1 flex items-center gap-3">
+                    <div class="mt-1 flex flex-wrap items-center gap-3">
                         <label for="image-file-input" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-800 hover:bg-slate-200 focus-within:ring-2 focus-within:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">
                             <i data-lucide="folder-open" class="w-4 h-4"></i>
                             <span data-i18n-key="image_file_choose">Elegir imagen…</span>
                             <input id="image-file-input" type="file" accept="image/*" class="sr-only">
                         </label>
+                        <button type="button" id="image-paste-btn" class="inline-flex items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-800 hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">
+                            <i data-lucide="clipboard-paste" class="w-4 h-4" aria-hidden="true"></i>
+                            <span data-i18n-key="image_clipboard_paste">Pegar imagen</span>
+                        </button>
                         <span id="image-file-name" class="min-w-0 truncate text-sm text-slate-500 dark:text-slate-400" data-i18n-key="image_file_none">Ninguna seleccionada</span>
                     </div>
                 </div>

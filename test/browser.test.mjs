@@ -719,7 +719,7 @@ test('el JSONP de analítica no alcanza la página que lo carga', {
   );
 });
 
-test('los controles base64 y de pegado se traducen', async (t) => {
+test('los controles de imágenes y de pegado se traducen', async (t) => {
   const { context, page } = await openApp({ locale: 'en-US' });
   t.after(() => context.close());
 
@@ -727,8 +727,7 @@ test('los controles base64 y de pegado se traducen', async (t) => {
   assert.equal(await page.locator('#paste-btn').getAttribute('title'), 'Paste from clipboard (Ctrl+Alt+V)');
   await page.locator('#new-tab-btn').click();
   await page.evaluate(() => markdownEditor.setValue('![Demo](data:image/png;base64,iVBORw0KGgo=)'));
-  await page.locator('.base64-hidden-title').getByText('Hidden base64 images', { exact: true }).waitFor();
-  // La lista viene plegada para no comerle sitio al editor.
+  await page.locator('.base64-hidden-title').getByText('Document images', { exact: true }).waitFor();
   await page.locator('#base64-hidden-toggle').click();
   await page.locator('.base64-hidden-btn').getByText('View code', { exact: true }).click();
   assert.equal(await page.locator('#base64-modal-title').textContent(), 'Image code');
@@ -2567,6 +2566,21 @@ test('al imprimir no sale nada de la interfaz, solo el documento', async (t) => 
   await page.emulateMedia({ media: 'screen' });
 });
 
+test('el contador compacto muestra caracteres y palabras con detalle accesible', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const counter = page.locator('#markdown-char-counter');
+  await page.locator('#markdown-input').fill('# Hola, mundo\n\nDos palabras.');
+  await page.waitForFunction(() => document.getElementById('markdown-char-counter').textContent === '28 c · 4 p');
+  assert.equal(await counter.getAttribute('title'), '28 caracteres · 4 palabras');
+  assert.equal(await counter.getAttribute('aria-label'), '28 caracteres · 4 palabras');
+
+  await page.locator('#markdown-input').fill('A');
+  await page.waitForFunction(() => document.getElementById('markdown-char-counter').textContent === '1 c · 1 p');
+  assert.equal(await counter.getAttribute('title'), '1 carácter · 1 palabra');
+});
+
 /*
   La marca del corrector se quedaba puesta aunque el corrector se apagara: el
   SVG que escribe Lucide conserva su `data-lucide`, la siguiente pasada de
@@ -2599,7 +2613,7 @@ test('la marca del corrector ortográfico sigue al estado real', async (t) => {
   al editor fuera de la pantalla, y las líneas no decían qué imagen era cada
   una: un nombre del portapapeles y su tamaño.
 */
-test('la lista de imágenes incrustadas se pliega y muestra miniaturas', async (t) => {
+test('la lista de imágenes se pliega y muestra miniaturas', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
 
@@ -2613,6 +2627,7 @@ test('la lista de imágenes incrustadas se pliega y muestra miniaturas', async (
   await page.locator('#base64-hidden-count').getByText('2 imágenes', { exact: true }).waitFor();
   assert.equal(await lista.isVisible(), false, 'de partida la lista viene plegada');
   const altoPlegado = await page.locator('#base64-hidden-container').evaluate(el => el.getBoundingClientRect().height);
+  assert.ok(altoPlegado < 45, `la cabecera plegada ocupa demasiado alto (${altoPlegado}px)`);
 
   await page.locator('#base64-hidden-toggle').click();
   await lista.waitFor({ state: 'visible' });
@@ -2668,6 +2683,179 @@ test('una imagen incrustada se puede quitar del documento desde la lista', async
   assert.match(markdown, /Texto con en medio\./);
   assert.match(markdown, /# Título/);
   assert.equal(await page.locator('#base64-hidden-container').isVisible(), false);
+});
+
+test('las imágenes enlazadas desde disco se pueden ver, incrustar y quitar', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+      const bytes = Array.from(atob(png), character => character.charCodeAt(0));
+      window.__EDIMARK_TAURI__ = {
+        dialog: { open: async () => '/documentos/tema.md' },
+        fs: {
+          readTextFile: async () => [
+            '`![ejemplo](imagenes/no-es-una-imagen.png)`',
+            '',
+            '![una](imagenes/una.png)',
+            '',
+            '![dos](imagenes/dos.png)',
+          ].join('\n'),
+        },
+        app: { readDocumentAsset: async () => bytes },
+      };
+    },
+  });
+  t.after(() => context.close());
+  page.on('dialog', dialog => dialog.accept());
+
+  await page.keyboard.press('Control+o');
+  await page.locator('.tab-name').getByText('tema.md', { exact: true }).waitFor();
+  await page.locator('#base64-hidden-count').getByText('2 imágenes', { exact: true }).waitFor();
+  assert.equal(await page.evaluate(() => currentBase64State.placeholders.size), 0);
+  assert.equal(await page.locator('#base64-extract-btn').getAttribute('hidden'), '');
+  assert.equal(await page.locator('#base64-extract-btn').isVisible(), false, 'sin Base64 no aparece la acción de extraer');
+
+  await page.locator('#base64-hidden-toggle').click();
+  const items = page.locator('.base64-hidden-item');
+  await items.first().locator('.base64-hidden-thumb img').waitFor();
+  await page.waitForFunction(() => document.querySelector('.base64-hidden-thumb img')?.src.startsWith('blob:'));
+  assert.equal(await items.count(), 2, 'el ejemplo escrito como código no entra en la lista');
+
+  await items.first().locator('.base64-hidden-thumb').click();
+  await page.locator('#base64-preview-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#base64-preview-title').textContent(), 'una');
+  assert.equal(await page.locator('#base64-preview-meta').textContent(), 'Archivo · imagenes/una.png');
+  await page.keyboard.press('Escape');
+
+  await items.filter({ hasText: 'una' }).getByRole('button', { name: 'Incrustar' }).click();
+  await page.waitForFunction(() => markdownEditor.getValue().includes('data:image/png;base64,'));
+  let markdown = await page.evaluate(() => markdownEditor.getValue());
+  assert.equal(markdown.includes('imagenes/una.png'), false);
+  assert.equal(markdown.includes('imagenes/dos.png'), true);
+
+  const linkedItem = page.locator('.base64-hidden-item').filter({ hasText: 'dos' });
+  await linkedItem.getByRole('button', { name: 'Eliminar' }).click();
+  await page.waitForFunction(() => !markdownEditor.getValue().includes('imagenes/dos.png'));
+  markdown = await page.evaluate(() => markdownEditor.getValue());
+  assert.match(markdown, /data:image\/png;base64,/);
+  await page.locator('#base64-hidden-count').getByText('1 imagen', { exact: true }).waitFor();
+});
+
+test('las imágenes en línea se pueden ver, incrustar y quitar', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  page.on('dialog', dialog => dialog.accept());
+  await context.route(/^https:\/\/images\.example\.test\//, route => route.fulfill({
+    status: 200,
+    contentType: 'image/png',
+    headers: { 'Access-Control-Allow-Origin': '*' },
+    body: PNG_PIXEL,
+  }));
+
+  const firstUrl = 'https://images.example.test/render?id=primera';
+  const secondUrl = 'https://images.example.test/segunda.png';
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(([first, second]) => markdownEditor.setValue([
+    `![remota](${first})`,
+    '',
+    `![otra](${second})`,
+  ].join('\n')), [firstUrl, secondUrl]);
+
+  await page.locator('#base64-hidden-count').getByText('2 imágenes', { exact: true }).waitFor();
+  await page.locator('#base64-hidden-toggle').click();
+  const items = page.locator('.base64-hidden-item');
+  await items.first().locator('.base64-hidden-thumb img').waitFor();
+  assert.equal(await items.count(), 2, 'también se admite una URL sin extensión de imagen');
+
+  await items.filter({ hasText: 'remota' }).locator('.base64-hidden-thumb').click();
+  await page.locator('#base64-preview-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#base64-preview-meta').textContent(), `En línea · ${firstUrl}`);
+  assert.equal(await page.locator('#base64-preview-image').getAttribute('src'), firstUrl);
+  await page.keyboard.press('Escape');
+
+  await items.filter({ hasText: 'remota' }).getByRole('button', { name: 'Incrustar' }).click();
+  await page.waitForFunction(() => markdownEditor.getValue().includes('data:image/png;base64,'));
+  let markdown = await page.evaluate(() => markdownEditor.getValue());
+  assert.equal(markdown.includes(firstUrl), false);
+  assert.equal(markdown.includes(secondUrl), true);
+
+  await page.locator('.base64-hidden-item').filter({ hasText: 'otra' })
+    .getByRole('button', { name: 'Eliminar' }).click();
+  await page.waitForFunction(url => !markdownEditor.getValue().includes(url), secondUrl);
+  markdown = await page.evaluate(() => markdownEditor.getValue());
+  assert.match(markdown, /data:image\/png;base64,/);
+  await page.locator('#base64-hidden-count').getByText('1 imagen', { exact: true }).waitFor();
+});
+
+test('cualquier imagen se puede reemplazar desde internet, disco o portapapeles', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  const png = PNG_PIXEL.toString('base64');
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(base64 => markdownEditor.setValue([
+    `![base](data:image/png;base64,${base64})`,
+    '',
+    '![local](imagenes/original.png)',
+    '',
+    '![web](https://images.example.test/original.png)',
+  ].join('\n')), png);
+  await page.locator('#base64-hidden-count').getByText('3 imágenes', { exact: true }).waitFor();
+  await page.locator('#base64-hidden-toggle').click();
+
+  // Una Base64 se sustituye por una dirección web sin cambiar su texto alternativo.
+  await page.locator('.base64-hidden-item').filter({ hasText: 'base' })
+    .getByRole('button', { name: 'Reemplazar' }).click();
+  assert.equal(await page.locator('#image-modal-title').textContent(), 'Reemplazar imagen');
+  assert.equal(await page.locator('#image-alt-text').inputValue(), 'base');
+  await page.locator('input[name="image-insert-mode"][value="url"]').check();
+  await page.locator('#image-url').fill('https://replacement.example.test/render?id=1');
+  await page.locator('#insert-image-btn').getByText('Reemplazar', { exact: true }).click();
+  await page.waitForFunction(() => markdownEditor.getValue().includes('![base](https://replacement.example.test/render?id=1)'));
+
+  // Una imagen local se cambia por otro archivo y conserva el modo de ruta relativa.
+  await page.locator('.base64-hidden-item').filter({ hasText: 'local' })
+    .getByRole('button', { name: 'Reemplazar' }).click();
+  assert.equal(await page.locator('#image-alt-text').inputValue(), 'local');
+  await page.locator('#image-file-input').setInputFiles({
+    name: 'nueva local.png',
+    mimeType: 'image/png',
+    buffer: PNG_PIXEL,
+  });
+  await page.locator('#insert-image-btn').getByText('Reemplazar', { exact: true }).click();
+  await page.waitForFunction(() => markdownEditor.getValue().includes('![local](nueva%20local.png)'));
+
+  // Una imagen en línea se reemplaza por la imagen del portapapeles, que se
+  // incrusta porque una imagen pegada no tiene una ruta propia en el disco.
+  await page.evaluate(base64 => {
+    const bytes = Uint8Array.from(atob(base64), character => character.charCodeAt(0));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        read: async () => [{
+          types: ['image/png'],
+          getType: async () => new Blob([bytes], { type: 'image/png' }),
+        }],
+      },
+    });
+  }, png);
+  await page.locator('.base64-hidden-item').filter({ hasText: 'web' })
+    .getByRole('button', { name: 'Reemplazar' }).click();
+  await page.locator('#image-paste-btn').click();
+  await page.locator('#image-file-name').getByText('Imagen pegada', { exact: true }).waitFor();
+  assert.equal(await page.locator('input[name="image-insert-mode"][value="embedded"]').isChecked(), true);
+  assert.equal(await page.locator('input[name="image-insert-mode"][value="relative"]').isDisabled(), true);
+  await page.locator('#insert-image-btn').getByText('Reemplazar', { exact: true }).click();
+  await page.waitForFunction(() => {
+    const markdown = markdownEditor.getValue();
+    return markdown.includes('![web](data:image/png;base64,')
+      && !markdown.includes('images.example.test/original.png');
+  });
+
+  const markdown = await page.evaluate(() => markdownEditor.getValue());
+  assert.equal(markdown.includes('imagenes/original.png'), false);
+  assert.equal(markdown.match(/!\[base\]\(/)?.length, 1);
+  assert.equal(markdown.match(/!\[local\]\(/)?.length, 1);
+  assert.equal(markdown.match(/!\[web\]\(/)?.length, 1);
 });
 
 
@@ -4113,6 +4301,11 @@ async function documentoConImagenIncrustada(page, extra = '') {
     markdownEditor.setValue(`# Con una imagen\n\n![Un gráfico](data:image/png;base64,${datos})\n${cola}`);
   }, [PNG_BASE64, extra]);
   await page.locator('#base64-hidden-container').waitFor({ state: 'visible' });
+  // La acción de extraer vive dentro de la lista, que arranca plegada.
+  if (await page.locator('#base64-hidden-toggle').getAttribute('aria-expanded') !== 'true') {
+    await page.locator('#base64-hidden-toggle').click();
+    await page.locator('#base64-hidden-list').waitFor({ state: 'visible' });
+  }
 }
 
 test('las imágenes incrustadas se pueden pasar a la carpeta del documento', async (t) => {
@@ -4135,8 +4328,10 @@ test('las imágenes incrustadas se pueden pasar a la carpeta del documento', asy
   assert.match(markdown, /!\[Un gráfico\]\(Mi-archivo\/02\.png\)/);
   assert.match(markdown, /!\[Ya suelta\]\(Mi-archivo\/01\.png\)/);
 
-  // El panel de incrustadas se vacía y la vista previa las sigue enseñando.
-  await page.locator('#base64-hidden-container').waitFor({ state: 'hidden' });
+  // Ya no quedan Base64: el gestor conserva las dos imágenes, ahora como
+  // archivos enlazados, y retira la acción de extraerlas otra vez.
+  await page.locator('#base64-hidden-count').getByText('2 imágenes', { exact: true }).waitFor();
+  assert.equal(await page.locator('#base64-extract-btn').isVisible(), false);
   const imagenes = await page.locator('#html-output img').evaluateAll(nodes => nodes.map(img => ({
     src: img.getAttribute('src'),
     original: img.dataset.edimarkSrc || '',

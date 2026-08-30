@@ -506,7 +506,7 @@ body.desktop-mode .markdown-textarea {
 }
 /*
   El panel de Markdown reparte su alto entre el editor y la lista de imágenes
-  incrustadas, que va debajo. Ese alto no lo pone él: se lo impone el panel de
+  del documento, que va debajo. Ese alto no lo pone él: se lo impone el panel de
   la vista previa, porque los dos se estiran a la misma altura. Sin este
   reparto el editor seguía midiendo la pantalla entera, la lista caía por
   debajo del panel y `overflow: hidden` la recortaba: no aparecía ni
@@ -632,14 +632,14 @@ body.desktop-mode .markdown-textarea {
     background-color: rgba(14, 165, 233, 0.5);
 }
 .base64-hidden-container {
-    margin-top: 0.75rem;
+    margin-top: 0.5rem;
     border: 1px dashed #cbd5e1;
-    border-radius: 0.85rem;
-    padding: 0.85rem;
+    border-radius: 0.65rem;
+    padding: 0.4rem 0.65rem;
     background-color: #f8fafc;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 .base64-hidden-container.hidden,
 [hidden] {
@@ -704,7 +704,7 @@ body.desktop-mode .markdown-textarea {
 }
 /*
   Con su propio alto y su propia barra: antes la lista crecía con cada imagen
-  pegada y empujaba el editor hacia arriba hasta taparlo.
+  y empujaba el editor hacia arriba hasta taparlo.
 */
 .base64-hidden-actions {
     display: flex;
