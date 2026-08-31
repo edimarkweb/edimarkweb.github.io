@@ -242,11 +242,9 @@ fn print_with_page_setup(window: &tauri::WebviewWindow, page: PrintPage) -> bool
     let aviso = Arc::clone(&lanzada);
     let resultado = window.with_webview(move |webview| {
         let setup = gtk::PageSetup::new();
-        if let Some(name) = paper_size_name(page.paper_size.as_deref()) {
-            setup.set_paper_size(&gtk::PaperSize::new(Some(name)));
-        }
-        if page.orientation.as_deref() == Some("landscape") {
-            setup.set_orientation(gtk::PageOrientation::Landscape);
+        let landscape = page.orientation.as_deref() == Some("landscape");
+        if let Some(paper) = print_paper_size(page.paper_size.as_deref(), landscape) {
+            setup.set_paper_size(&paper);
         }
         let unidad = gtk::Unit::Mm;
         // Del centímetro del documento al milímetro que entiende GTK.
@@ -279,13 +277,57 @@ fn print_with_page_setup(window: &tauri::WebviewWindow, page: PrintPage) -> bool
     lanzada.lock().map(|marca| *marca).unwrap_or(false)
 }
 
+/*
+  WebKitGTK 2.46 introdujo una regresión que deja vacía la impresión cuando
+  `GtkPageSetup` lleva la orientación `Landscape` (WebKit #286614), y sigue
+  presente al menos en 2.50. Para no depender de la versión que traiga cada
+  distribución, el mismo papel apaisado se expresa con sus medidas intercambiadas
+  y la orientación neutra de GTK. El PDF y la impresora reciben exactamente A4
+  o Carta horizontal, pero WebKit no entra en la ruta que genera páginas vacías.
+
+  En vertical se conserva el papel estándar de GTK. Así el rodeo solo afecta
+  al caso defectuoso y sirve también en versiones antiguas y futuras de WebKit.
+*/
+#[cfg(target_os = "linux")]
+fn print_paper_size(paper: Option<&str>, landscape: bool) -> Option<gtk::PaperSize> {
+    let (name, display_name, width_mm, height_mm) = paper_size_spec(paper)?;
+    if !landscape {
+        return Some(gtk::PaperSize::new(Some(name)));
+    }
+    Some(gtk::PaperSize::new_custom(
+        &format!("edimark_{name}_landscape"),
+        display_name,
+        height_mm,
+        width_mm,
+        gtk::Unit::Mm,
+    ))
+}
+
 /// Los nombres PWG que usa GTK para los dos papeles del editor.
 #[cfg(target_os = "linux")]
-fn paper_size_name(paper: Option<&str>) -> Option<&'static str> {
+fn paper_size_spec(paper: Option<&str>) -> Option<(&'static str, &'static str, f64, f64)> {
     match paper {
-        Some("a4") => Some("iso_a4"),
-        Some("letter") => Some("na_letter"),
+        Some("a4") => Some(("iso_a4", "A4", 210.0, 297.0)),
+        Some("letter") => Some(("na_letter", "Letter", 215.9, 279.4)),
         _ => None,
+    }
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod print_tests {
+    use super::paper_size_spec;
+
+    #[test]
+    fn knows_the_dimensions_of_supported_print_papers() {
+        assert_eq!(
+            paper_size_spec(Some("a4")),
+            Some(("iso_a4", "A4", 210.0, 297.0))
+        );
+        assert_eq!(
+            paper_size_spec(Some("letter")),
+            Some(("na_letter", "Letter", 215.9, 279.4))
+        );
+        assert_eq!(paper_size_spec(Some("legal")), None);
     }
 }
 
