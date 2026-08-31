@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.41.1';
+const APP_VERSION = '2.41.2';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -9579,14 +9579,26 @@ window.onload = async () => {
         const prefix = container.id;
         const blank = [['', blankKey, blankText]];
 
-        const grid = document.createElement('div');
-        grid.className = 'grid gap-4 sm:grid-cols-2';
-        grid.appendChild(buildFormatField('doc_format_field_align', 'Alineación', buildFormatSelect(`${prefix}-align`, [
-            ...blank,
-            ['left', 'doc_format_align_left', 'Izquierda'],
-            ['justify', 'doc_format_align_justify', 'Justificada'],
-            ['right', 'doc_format_align_right', 'Derecha'],
-        ])));
+        const buildGroup = (key, text) => {
+            const section = document.createElement('section');
+            section.className = 'document-format-group';
+            const title = document.createElement('h4');
+            title.className = 'document-format-group-title';
+            title.setAttribute('data-i18n-key', key);
+            title.textContent = getTranslation(key, text);
+            section.appendChild(title);
+            return section;
+        };
+
+        /*
+          Primero lo que da forma al texto, en el orden habitual de cualquier
+          procesador: familia y tamaño, ritmo de línea y alineación, sangría y
+          partición. Antes la alineación abría la lista y el papel aparecía a
+          mitad del mismo bloque, así que no se podía recorrer de una mirada.
+        */
+        const textGroup = buildGroup('doc_format_text_group', 'Texto');
+        const textGrid = document.createElement('div');
+        textGrid.className = 'grid gap-4 sm:grid-cols-2';
         // La tipografía escrita a mano solo la respetan los formatos que sepan
         // resolverla, así que vive escondida hasta que se elige «Otra…», y va
         // dentro de la misma celda que la lista: es su continuación, no un
@@ -9599,30 +9611,66 @@ window.onload = async () => {
             ['other', 'doc_format_font_other', 'Otra…'],
         ]));
         fontField.appendChild(buildFontCustomRow(prefix));
-        grid.appendChild(fontField);
-        grid.appendChild(buildFormatField('doc_format_field_fontsize', 'Tamaño (pt)', buildFormatNumber(`${prefix}-fontsize`, {
+        textGrid.appendChild(fontField);
+        textGrid.appendChild(buildFormatField('doc_format_field_fontsize', 'Tamaño (pt)', buildFormatNumber(`${prefix}-fontsize`, {
             min: 5, max: 72, step: 0.5,
             placeholderKey: 'doc_format_placeholder_blank', placeholderText: '—',
         })));
-        grid.appendChild(buildFormatField('doc_format_field_lineheight', 'Interlineado', buildFormatNumber(`${prefix}-lineheight`, {
+        textGrid.appendChild(buildFormatField('doc_format_field_lineheight', 'Interlineado', buildFormatNumber(`${prefix}-lineheight`, {
             min: 0.8, max: 4, step: 0.05,
             placeholderKey: 'doc_format_placeholder_blank', placeholderText: '—',
         })));
-        // El papel va justo encima de los márgenes, que es lo que recorta: los
-        // dos juntos son la caja donde cabe el texto.
-        grid.appendChild(buildFormatField('doc_format_field_paper', 'Tamaño de papel', buildFormatSelect(`${prefix}-paper`, [
+        textGrid.appendChild(buildFormatField('doc_format_field_align', 'Alineación', buildFormatSelect(`${prefix}-align`, [
+            ...blank,
+            ['left', 'doc_format_align_left', 'Izquierda'],
+            ['justify', 'doc_format_align_justify', 'Justificada'],
+            ['right', 'doc_format_align_right', 'Derecha'],
+        ])));
+        textGrid.appendChild(buildFormatField('doc_format_field_indent', 'Sangría de primera línea', buildFormatSelect(`${prefix}-indent`, [
+            ...blank,
+            ['yes', 'doc_format_yes', 'Sí'],
+            ['no', 'doc_format_no', 'No'],
+        ])));
+        textGrid.appendChild(buildFormatField('doc_format_field_hyphenate', 'Partir palabras con guion', buildFormatSelect(`${prefix}-hyphenate`, [
+            ...blank,
+            ['yes', 'doc_format_yes', 'Sí'],
+            ['no', 'doc_format_no', 'No'],
+        ])));
+        textGroup.appendChild(textGrid);
+
+        const hint = document.createElement('p');
+        hint.className = 'mt-3 text-xs text-slate-500 dark:text-slate-400';
+        hint.setAttribute('data-i18n-key', 'doc_format_hyphenate_hint');
+        hint.textContent = getTranslation(
+            'doc_format_hyphenate_hint',
+            'La partición usa los diccionarios de guiones del sistema: en Linux, LibreOffice necesita el paquete del idioma (por ejemplo, hyphen-es).',
+        );
+        textGroup.appendChild(hint);
+        container.appendChild(textGroup);
+
+        /* Papel, orientación y márgenes forman una sola caja física. */
+        const pageGroup = buildGroup('doc_format_page_group', 'Página');
+        const pageGrid = document.createElement('div');
+        pageGrid.className = 'grid gap-4 sm:grid-cols-3';
+        pageGrid.appendChild(buildFormatField('doc_format_field_paper', 'Tamaño de papel', buildFormatSelect(`${prefix}-paper`, [
             ...blank,
             ['a4', 'doc_format_paper_a4', 'A4 (21 × 29,7 cm)'],
             ['letter', 'doc_format_paper_letter', 'Carta (21,6 × 27,9 cm)'],
         ])));
-        grid.appendChild(buildFormatField('doc_format_field_orientation', 'Orientación', buildFormatSelect(`${prefix}-orientation`, [
+        pageGrid.appendChild(buildFormatField('doc_format_field_orientation', 'Orientación', buildFormatSelect(`${prefix}-orientation`, [
             ...blank,
             ['portrait', 'doc_format_orientation_portrait', 'Vertical'],
             ['landscape', 'doc_format_orientation_landscape', 'Horizontal'],
         ])));
-        container.appendChild(grid);
+        pageGrid.appendChild(buildFormatField('doc_format_field_pagebreak_h1', 'Cada H1 empieza en página nueva', buildFormatSelect(`${prefix}-pagebreak-h1`, [
+            ...blank,
+            ['yes', 'doc_format_yes', 'Sí'],
+            ['no', 'doc_format_no', 'No'],
+        ])));
+        pageGroup.appendChild(pageGrid);
 
         const marginsBlock = document.createElement('div');
+        marginsBlock.className = 'mt-4';
         const marginsLabel = document.createElement('p');
         marginsLabel.className = DOC_FORMAT_LABELS;
         marginsLabel.setAttribute('data-i18n-key', 'doc_format_field_margins');
@@ -9643,35 +9691,8 @@ window.onload = async () => {
             })));
         });
         marginsBlock.appendChild(marginsGrid);
-        container.appendChild(marginsBlock);
-
-        const switches = document.createElement('div');
-        switches.className = 'grid gap-4 sm:grid-cols-2';
-        switches.appendChild(buildFormatField('doc_format_field_indent', 'Sangría de primera línea', buildFormatSelect(`${prefix}-indent`, [
-            ...blank,
-            ['yes', 'doc_format_yes', 'Sí'],
-            ['no', 'doc_format_no', 'No'],
-        ])));
-        switches.appendChild(buildFormatField('doc_format_field_hyphenate', 'Partir palabras con guion', buildFormatSelect(`${prefix}-hyphenate`, [
-            ...blank,
-            ['yes', 'doc_format_yes', 'Sí'],
-            ['no', 'doc_format_no', 'No'],
-        ])));
-        switches.appendChild(buildFormatField('doc_format_field_pagebreak_h1', 'Cada H1 empieza en página nueva', buildFormatSelect(`${prefix}-pagebreak-h1`, [
-            ...blank,
-            ['yes', 'doc_format_yes', 'Sí'],
-            ['no', 'doc_format_no', 'No'],
-        ])));
-        container.appendChild(switches);
-
-        const hint = document.createElement('p');
-        hint.className = 'text-xs text-slate-500 dark:text-slate-400';
-        hint.setAttribute('data-i18n-key', 'doc_format_hyphenate_hint');
-        hint.textContent = getTranslation(
-            'doc_format_hyphenate_hint',
-            'La partición usa los diccionarios de guiones del sistema: en Linux, LibreOffice necesita el paquete del idioma (por ejemplo, hyphen-es).',
-        );
-        container.appendChild(hint);
+        pageGroup.appendChild(marginsBlock);
+        container.appendChild(pageGroup);
 
         const fontSelect = document.getElementById(`${prefix}-font`);
         const custom = document.getElementById(`${prefix}-font-custom-row`);
@@ -10683,7 +10704,7 @@ window.onload = async () => {
         if (general) {
             general.title = getTranslation(
                 'doc_format_open_general_hint',
-                'Abre las opciones de exportación. Este cuadro se cierra sin guardar lo que hayas cambiado aquí.',
+                'Cierra este cuadro sin aplicar cambios y abre las opciones generales.',
             );
         }
         // Siempre desde el documento: cancelar tiene que descartar de verdad.

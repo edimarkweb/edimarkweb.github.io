@@ -748,6 +748,7 @@ body.desktop-mode .markdown-textarea {
     gap: 0.5rem;
     max-height: 13rem;
     overflow-y: auto;
+    container-type: inline-size;
 }
 .base64-hidden-list.hidden {
     display: none;
@@ -818,6 +819,22 @@ body.desktop-mode .markdown-textarea {
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+}
+/*
+  En un panel estrecho los botones caben, pero dejaban la columna del nombre
+  reducida a cero píxeles. La consulta mira el ancho real de la lista —no el
+  de la ventana— porque los dos paneles se pueden repartir libremente.
+*/
+@container (max-width: 34rem) {
+    .base64-hidden-item {
+        display: grid;
+        grid-template-columns: 2.75rem minmax(0, 1fr);
+    }
+    .base64-hidden-item > .base64-hidden-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+        margin-top: 0;
+    }
 }
 .base64-hidden-btn {
     display: inline-flex;
@@ -1731,6 +1748,31 @@ body.desktop-mode .markdown-textarea {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
     border-radius: 0.25rem;
+}
+
+/*
+  Dentro de «Texto y página» hay dos recorridos cortos y reconocibles. Una
+  raya basta para separarlos: otra tarjeta dentro del fieldset gastaría alto
+  y haría que las opciones generales pareciesen más complejas de lo que son.
+*/
+.document-format-group + .document-format-group {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+.document-format-group-title {
+    margin-bottom: 0.75rem;
+    color: #334155;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
+}
+.dark .document-format-group + .document-format-group {
+    border-top-color: #334155;
+}
+.dark .document-format-group-title {
+    color: #cbd5e1;
 }
 
 /* Estilos para pestañas */

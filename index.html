@@ -39,7 +39,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/split.js@1.6.5/dist/split.min.js" integrity="sha384-q2ksSc8z6Q4ZUnxlfZj9AXZLpSdWmD3q/YrId1twTeNHh56fNh98YbJSpppzGUvL" crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" href="style.css?v=2.41.1">
+    <link rel="stylesheet" href="style.css?v=2.41.2">
 </head>
 <body class="p-4 sm:p-6 md:p-8">
 
@@ -275,10 +275,10 @@
                                 <button type="button" id="latex-settings-btn" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
               <span class="flex w-full items-center gap-2">
               <i data-lucide="file-cog" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-              <span class="whitespace-nowrap" data-i18n-key="doc_settings_btn_text">Opciones de exportación…</span>
+              <span class="whitespace-nowrap" data-i18n-key="doc_settings_btn_text">Opciones generales…</span>
             
               </span>
-              <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="menu_hint_export_options">Idioma, autor, portada, índice y formato de lo que generas</span>
+              <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="menu_hint_export_options">Valores de partida para todos los documentos</span>
               </button>
           </div>
         </div>
@@ -421,7 +421,7 @@
     <section id="desktop-release-banner" class="desktop-release-banner" role="status" hidden>
         <i data-lucide="monitor-down" class="desktop-release-banner-icon" aria-hidden="true"></i>
         <div class="desktop-release-banner-content">
-            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.41.1 está disponible para Linux, Windows y macOS.</p>
+            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.41.2 está disponible para Linux, Windows y macOS.</p>
             <a id="desktop-banner-download-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="desktop_banner_download">Ver descargas</a>
             <label class="desktop-release-banner-never">
                 <input id="desktop-banner-never-show" type="checkbox">
@@ -564,7 +564,7 @@
             </div>
             <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
             <div class="flex items-center gap-1">
-                <button id="doc-format-toolbar-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="doc_lang_btn_title" title="Idioma, autor, índice y formato de este documento.">
+                <button id="doc-format-toolbar-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="doc_lang_btn_title" title="Opciones para todo el documento: idioma, autor, índice y formato.">
                     <i data-lucide="sliders-horizontal"></i>
                 </button>
             </div>
@@ -861,12 +861,12 @@
 
     <div id="latex-settings-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center overflow-y-auto p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="latex-settings-modal-title">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-slate-800">
-            <h3 id="latex-settings-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_settings_modal_title">Opciones de exportación</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" data-i18n-key="doc_settings_modal_description">Ajustes que se recuerdan de una sesión a otra. Si tu documento empieza con sus propios metadatos YAML, mandan ellos.</p>
+            <h3 id="latex-settings-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_settings_modal_title">Opciones generales de los documentos</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" data-i18n-key="doc_settings_modal_description">Valores de partida para todos los documentos. Cada documento puede sustituirlos por opciones propias que se guardan con él.</p>
             <div class="space-y-4">
                 <div id="doc-settings-tablist" role="tablist" class="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700">
-                    <button type="button" role="tab" id="doc-settings-tab-document" aria-controls="doc-settings-panel-document" aria-selected="true" class="settings-tab" data-i18n-key="doc_settings_tab_document">Documento</button>
-                    <button type="button" role="tab" id="doc-settings-tab-format" aria-controls="doc-settings-panel-format" aria-selected="false" class="settings-tab" data-i18n-key="doc_settings_tab_format">Formato</button>
+                    <button type="button" role="tab" id="doc-settings-tab-document" aria-controls="doc-settings-panel-document" aria-selected="true" class="settings-tab" data-i18n-key="doc_settings_tab_document">Datos e índice</button>
+                    <button type="button" role="tab" id="doc-settings-tab-format" aria-controls="doc-settings-panel-format" aria-selected="false" class="settings-tab" data-i18n-key="doc_settings_tab_format">Texto y página</button>
                     <button type="button" role="tab" id="doc-settings-tab-epub" aria-controls="doc-settings-panel-epub" aria-selected="false" class="settings-tab" data-i18n-key="doc_settings_tab_epub">EPUB</button>
                     <button type="button" role="tab" id="doc-settings-tab-latex" aria-controls="doc-settings-panel-latex" aria-selected="false" class="settings-tab" data-i18n-key="doc_settings_tab_latex">LaTeX</button>
                 </div>
@@ -929,11 +929,7 @@
                 </div>
 
                 <div id="doc-settings-panel-format" role="tabpanel" aria-labelledby="doc-settings-tab-format" class="hidden">
-                    <fieldset class="rounded-lg border border-slate-200 px-4 pb-4 pt-2 dark:border-slate-700">
-                        <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_format_section">Formato del texto</legend>
-                        <p class="mb-3 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_format_section_hint">Valores de partida para todos los documentos. Cada documento puede fijar los suyos desde el panel Markdown.</p>
-                        <div id="export-format-fields" class="space-y-4"></div>
-                    </fieldset>
+                    <div id="export-format-fields"></div>
                 </div>
 
                 <div id="doc-settings-panel-epub" role="tabpanel" aria-labelledby="doc-settings-tab-epub" class="hidden">
@@ -999,20 +995,19 @@
 
     <div id="doc-format-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center overflow-y-auto p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="doc-format-modal-title">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl my-8 max-h-[90vh] overflow-y-auto dark:bg-slate-800">
-            <h3 id="doc-format-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_format_modal_title">Este documento</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400" data-i18n-key="doc_format_modal_hint">Se guarda en el propio documento y viaja con él. Todo lo que dejes en «Heredado» sigue a las opciones de exportación.</p>
-            <p class="text-sm text-slate-500 dark:text-slate-400" data-i18n-key="doc_format_inherited_hint">Debajo de cada campo vacío se ve el valor que hereda ahora mismo.</p>
+            <h3 id="doc-format-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_format_modal_title">Opciones de este documento</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400" data-i18n-key="doc_format_modal_hint">Se guardan con el documento. Lo que dejes en «Heredado» usa el valor general que se muestra debajo.</p>
             <!--
               Y el camino al otro cuadro: quien mira de dónde hereda un campo
               suele querer cambiarlo para todos, no solo para este documento.
             -->
             <p class="mb-5">
-                <button type="button" id="doc-format-open-general" class="inline-link-btn" data-i18n-key="doc_format_open_general">Cambiar lo que heredan todos los documentos…</button>
+                <button type="button" id="doc-format-open-general" class="inline-link-btn" data-i18n-key="doc_format_open_general">Editar las opciones generales…</button>
             </p>
             <div class="space-y-4">
                 <div id="doc-format-tablist" role="tablist" class="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700">
-                    <button type="button" role="tab" id="doc-format-tab-document" aria-controls="doc-format-panel-document" aria-selected="true" class="settings-tab" data-i18n-key="doc_settings_tab_document">Documento</button>
-                    <button type="button" role="tab" id="doc-format-tab-format" aria-controls="doc-format-panel-format" aria-selected="false" class="settings-tab" data-i18n-key="doc_settings_tab_format">Formato</button>
+                    <button type="button" role="tab" id="doc-format-tab-document" aria-controls="doc-format-panel-document" aria-selected="true" class="settings-tab" data-i18n-key="doc_settings_tab_document">Datos e índice</button>
+                    <button type="button" role="tab" id="doc-format-tab-format" aria-controls="doc-format-panel-format" aria-selected="false" class="settings-tab" data-i18n-key="doc_settings_tab_format">Texto y página</button>
                 </div>
 
                 <div id="doc-format-panel-document" role="tabpanel" aria-labelledby="doc-format-tab-document" class="space-y-4">
@@ -1075,10 +1070,7 @@
                 </div>
 
                 <div id="doc-format-panel-format" role="tabpanel" aria-labelledby="doc-format-tab-format" class="hidden">
-                    <fieldset class="rounded-lg border border-slate-200 px-4 pb-4 pt-2 dark:border-slate-700">
-                        <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" data-i18n-key="doc_settings_format_section">Formato del texto</legend>
-                        <div id="doc-format-fields" class="space-y-4"></div>
-                    </fieldset>
+                    <div id="doc-format-fields"></div>
                 </div>
             </div>
             <div class="mt-6 flex flex-wrap justify-end gap-3">
@@ -1267,11 +1259,11 @@
         </div>
     </div>
 
-    <script src="asset-paths.js?v=2.41.1"></script>
-    <script src="document-format.js?v=2.41.1"></script>
-    <script src="platform-api.js?v=2.41.1"></script>
-    <script src="desktop-updater.js?v=2.41.1"></script>
-    <script type="module" src="pandoc-exporter.js?v=2.41.1"></script>
+    <script src="asset-paths.js?v=2.41.2"></script>
+    <script src="document-format.js?v=2.41.2"></script>
+    <script src="platform-api.js?v=2.41.2"></script>
+    <script src="desktop-updater.js?v=2.41.2"></script>
+    <script type="module" src="pandoc-exporter.js?v=2.41.2"></script>
     <script>
     (function () {
       var ANALYTICS_FALLBACK_ENDPOINT = 'https://bilateria.org/app/estadistica/edimarkweb/track.php';
@@ -1451,8 +1443,8 @@
       });
     })();
     </script>
-    <script src="script.js?v=2.41.1" defer></script>
-    <script src="search.js?v=2.41.1" defer></script>
-    <script src="i18n.js?v=2.41.1" defer></script>
+    <script src="script.js?v=2.41.2" defer></script>
+    <script src="search.js?v=2.41.2" defer></script>
+    <script src="i18n.js?v=2.41.2" defer></script>
 </body>
 </html>

@@ -57,7 +57,7 @@ Logotipoaren ondoan **Fitxategia**, **Esportatu** eta **Ezarpenak** menuak daude
 
 * **Fitxategia**: `Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)` aukerek edukia ekartzen dute; `Gorde (Ctrl+S)` eta `Gorde honela… (Ctrl+Shift+S)` aukerek atera. Mahaigaineko aplikazioan **Irten** aukerarekin amaitzen da, eta horrek itxi aurretik gordetzen du.
 * **Esportatu (Ctrl+Alt+E)**: sei formatuak, bakoitza zertarako den dioen lerro batekin.
-* **Ezarpenak (Ctrl+,)**: interfazearen **Hizkuntza**; **Gaia** (Sistema, Argia edo Iluna, gogoratu egiten da); **Leiho independentea**, EdiMarkWeb fitxarik eta helbide-barrarik gabe irekitzen duena (web bertsioan soilik); **Zuzentzaile ortografikoa**, akatsak ekipoko hiztegiekin azpimarratzen dituena eta dokumentuaren hizkuntza jarraitzen duena; eta **Esportatzeko aukerak…**.
+* **Ezarpenak (Ctrl+,)**: interfazearen **Hizkuntza**; **Gaia** (Sistema, Argia edo Iluna, gogoratu egiten da); **Leiho independentea**, EdiMarkWeb fitxarik eta helbide-barrarik gabe irekitzen duena (web bertsioan soilik); **Zuzentzaile ortografikoa**, akatsak ekipoko hiztegiekin azpimarratzen dituena eta dokumentuaren hizkuntza jarraitzen duena; eta **Aukera orokorrak…**.
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia.
 * **Laguntza**: **Eskuliburua (F1)**, **EdiMarkWebi buruz** —bertsioa, egilea eta lizentziak— eta, mahaigainean, **Bilatu eguneraketak…**.
 
@@ -179,7 +179,7 @@ fontsize: "12pt"
 ---
 ```
 
-Dokumentu bati buruzko datuak gordetzeko modu estandarra da eta programa askok ulertzen dute. Markdown editorean agertzen da, iturburu-kodea baita, baina ez editore bisualean, ez baita edukia. *Heredatua* uzten duzuna **Ezarpenak → Esportatzeko aukerak…** atalari jarraitzen dio, eta koadroak berak esteka bat dakar, *Dokumentu guztiek heredatzen dutena aldatu…*, aukera horiek fitxa beretik irekitzen dituena. *Dena kendu dokumentutik* aukerak ezer propiorik gabe uzten du.
+Dokumentu bati buruzko datuak gordetzeko modu estandarra da eta programa askok ulertzen dute. Markdown editorean agertzen da, iturburu-kodea baita, baina ez editore bisualean, ez baita edukia. *Heredatua* uzten duzuna **Ezarpenak → Aukera orokorrak…** atalari jarraitzen dio, eta koadroak berak esteka bat dakar, *Editatu aukera orokorrak…*, aukera horiek fitxa beretik irekitzen dituena. *Dena kendu dokumentutik* aukerak ezer propiorik gabe uzten du.
 
 Formatua editore bisualari eta esportatzeko bost formatuei aplikatzen zaie, hiru salbuespenekin: **EPUBean** marjinak iradokizun bat dira, liburu-irakurgailuak agintzen baitu; **TEXean**, zure aitzinsolasak jada `geometry` kargatzen badu, zure marjinek agintzen dute eta aplikazioak abisatu egiten du; eta **hitzen banaketak** sistemaren marratxo-hiztegiak erabiltzen ditu (Linuxen, LibreOfficek hizkuntzaren paketea behar du, adibidez `hyphen-eu`).
 
@@ -198,18 +198,18 @@ Formatua editore bisualari eta esportatzeko bost formatuei aplikatzen zaie, hiru
 
 Barran esportatzeko botoi bat ere badago, bere geziarekin, kopiatzekoaren ondoan: botoiak erabili zenuen azken formatua errepikatzen du klik bakarrean —errotulu txiki batean esaten du, eta abiapuntuan DOCX da— eta geziak zerrenda bera irekitzen du.
 
-### Esportatzeko aukerak
+### Dokumentuen aukera orokorrak
 
-**Ezarpenak → Esportatzeko aukerak…** atalak dokumentu guztientzako abiapuntuko balioak gordetzen ditu, eta saio batetik bestera gogoratzen dira. Lau fitxa ditu:
+**Ezarpenak → Aukera orokorrak…** atalak dokumentu guztientzako abiapuntuko balioak gordetzen ditu, eta saio batetik bestera gogoratzen dira. Lau fitxa ditu:
 
-* **Dokumentua**: **hizkuntza** (lehenetsita, interfazearen bera), **egilea** —fitxategiaren propietateetan eta EPUBaren eta LaTeX-en azalean agertzen dena; utzi hutsik Pandoc-ek DOCX eta ODTn izenaren lerroa idaztea nahi ez baduzu—, **aurkibide automatikoa** eta **atalak zenbakitu** (1, 1.1, 1.2…; ODTk ez du zenbakitze hori onartzen).
-* **Formatua**: aurreko ataleko testu-ezarpen berak, abiapuntuko balio gisa. Lau jarrita datoz —**12 pt**, **serifaduna**, **1,5** lerroartea eta **A4** papera—, editore bisualak egia erakusteko behar dituenak baitira: deklaratuta, orrian ikusten dena da bost formatuetan ateratzen dena. Gainerakoak finkatu gabe ateratzen dira.
+* **Datuak eta aurkibidea**: **hizkuntza** (lehenetsita, interfazearen bera), **egilea** —fitxategiaren propietateetan eta EPUBaren eta LaTeX-en azalean agertzen dena; utzi hutsik Pandoc-ek DOCX eta ODTn izenaren lerroa idaztea nahi ez baduzu—, **aurkibide automatikoa** eta **atalak zenbakitu** (1, 1.1, 1.2…; ODTk ez du zenbakitze hori onartzen).
+* **Testua eta orria**: aurreko ataleko testu- eta orri-ezarpen berak, abiapuntuko balio gisa. Lau jarrita datoz —**12 pt**, **serifaduna**, **1,5** lerroartea eta **A4** papera—, editore bisualak egia erakusteko behar dituenak baitira: deklaratuta, orrian ikusten dena da bost formatuetan ateratzen dena. Gainerakoak finkatu gabe ateratzen dira.
 * **EPUB**: **azala**, aplikazioak izenburuarekin eta egilearekin **sortzen duena**, **zure irudi bat** (1 MB arte) edo **bat ere ez** izan daitekeena.
 * **LaTeX**: **klasea** (`article`, `report` edo `book`), bere **aukerak** (`12pt, a4paper`) eta zure **aitzinsolasa**, `\begin{document}` aurretik txertatzen dena. Akatsak dituen aitzinsolasak ez du hemen abisatzen: hutsegitea konpilatzean agertzen da.
 
 > **Aurkibideari buruz**: DOCX eta ODTn testu-prozesadoreak kalkulatzen duen eremu bat da, beraz dokumentua atalen zerrendarekin irekitzen da baina orrialde-zenbakirik gabe. Ager daitezen, eguneratu ezazu: Word-en, eskuineko klika aurkibidean → *Eguneratu eremuak*; LibreOfficen, *Tresnak → Eguneratu → Aurkibideak*.
 
-Sakonerak H1, H1–H2 edo H1–H3 mailetara mugatzeko aukera ematen du. **Formatua** atalean orientazio bertikala edo horizontala ere hauta dezakezu, eta H1 bakoitza, lehena izan ezik, orri berri batean has dadin ezarri; aurrebistak eta esportazioek hiru doikuntzak errespetatzen dituzte.
+Sakonerak H1, H1–H2 edo H1–H3 mailetara mugatzeko aukera ematen du. **Testua eta orria** atalean orientazio bertikala edo horizontala ere hauta dezakezu, eta H1 bakoitza, lehena izan ezik, orri berri batean has dadin ezarri; aurrebistak eta esportazioek hiru doikuntzak errespetatzen dituzte.
 
 Dokumentua bere YAML metadatuekin hasten bada, haiek agintzen dute.
 

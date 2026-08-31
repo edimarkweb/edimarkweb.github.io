@@ -57,7 +57,7 @@ Al costat del logotip hi ha els menús **Fitxer**, **Exportar** i **Configuraci�
 
 * **Fitxer**: `Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)` porten contingut; `Desar (Ctrl+S)` i `Desar com a… (Ctrl+Maj+S)` el treuen. A l'aplicació d'escriptori acaba amb **Sortir**, que desa abans de tancar.
 * **Exportar (Ctrl+Alt+E)**: els sis formats, cadascun amb una línia que diu per a què serveix.
-* **Configuració (Ctrl+,)**: **Idioma** de la interfície; **Tema** (Sistema, Clar o Fosc, es recorda); **Finestra independent**, que obre EdiMarkWeb sense pestanyes ni barra d'adreces (només a la versió web); **Corrector ortogràfic**, que subratlla les faltes amb els diccionaris de l'equip i segueix l'idioma del document; i **Opcions d'exportació…**.
+* **Configuració (Ctrl+,)**: **Idioma** de la interfície; **Tema** (Sistema, Clar o Fosc, es recorda); **Finestra independent**, que obre EdiMarkWeb sense pestanyes ni barra d'adreces (només a la versió web); **Corrector ortogràfic**, que subratlla les faltes amb els diccionaris de l'equip i segueix l'idioma del document; i **Opcions generals…**.
 * **Imprimir (Ctrl+P)**: una vista preparada per a paper o PDF.
 * **Ajuda**: el **Manual (F1)**, **Quant a EdiMarkWeb** —versió, autor i llicències— i, a l'escriptori, **Cercar actualitzacions…**.
 
@@ -179,7 +179,7 @@ fontsize: "12pt"
 ---
 ```
 
-És la manera estàndard de desar dades sobre un document i molts programes l'entenen. Apareix a l'editor Markdown, que és el codi font, però no a l'editor visual, perquè no és contingut. El que deixis en *Heretat* segueix **Configuració → Opcions d'exportació…**, i el mateix quadre duu un enllaç, *Canviar el que hereten tots els documents…*, que obre aquestes opcions per la mateixa pestanya. *Treure-ho tot del document* el deixa sense res propi.
+És la manera estàndard de desar dades sobre un document i molts programes l'entenen. Apareix a l'editor Markdown, que és el codi font, però no a l'editor visual, perquè no és contingut. El que deixis en *Heretat* segueix **Configuració → Opcions generals…**, i el mateix quadre duu un enllaç, *Editar les opcions generals…*, que obre aquestes opcions per la mateixa pestanya. *Treure-ho tot del document* el deixa sense res propi.
 
 El format s'aplica a l'editor visual i als cinc formats d'exportació, amb tres excepcions: a l'**EPUB** els marges són un suggeriment, perquè mana el lector de llibres; en **TEX**, si el teu preàmbul ja carrega `geometry`, manen els teus marges i l'aplicació ho avisa; i la **partició de mots** fa servir els diccionaris de guionets del sistema (a Linux, el LibreOffice necessita el paquet de l'idioma, per exemple `hyphen-ca`).
 
@@ -198,18 +198,18 @@ El format s'aplica a l'editor visual i als cinc formats d'exportació, amb tres 
 
 A la barra hi ha també un botó d'exportar amb la seva fletxa, al costat del de copiar: el botó repeteix d'un clic l'últim format que vas fer servir —ho diu en un rètol petit, i de partida és DOCX— i la fletxa obre aquesta mateixa llista.
 
-### Opcions d'exportació
+### Opcions generals dels documents
 
-**Configuració → Opcions d'exportació…** desa els valors de partida per a tots els documents, i es recorden d'una sessió a l'altra. Té quatre pestanyes:
+**Configuració → Opcions generals…** desa els valors de partida per a tots els documents, i es recorden d'una sessió a l'altra. Té quatre pestanyes:
 
-* **Document**: **idioma** (per omissió, el mateix de la interfície), **autor** —que apareix a les propietats del fitxer i a la portada de l'EPUB i del LaTeX; deixa'l buit si no vols que el Pandoc escrigui la línia del nom en DOCX i ODT—, **índex automàtic** i **numerar els apartats** (1, 1.1, 1.2…; l'ODT no admet aquesta numeració).
-* **Format**: els mateixos ajustos de text de l'apartat anterior, com a valors de partida. Quatre ja vénen posats —**12 pt**, **amb serifa**, interlineat **1,5** i paper **A4**—, perquè són els que l'editor visual necessita per ensenyar la veritat: declarats, el que es veu al full és el que surt en els cinc formats. La resta surten sense fixar.
+* **Dades i índex**: **idioma** (per omissió, el mateix de la interfície), **autor** —que apareix a les propietats del fitxer i a la portada de l'EPUB i del LaTeX; deixa'l buit si no vols que el Pandoc escrigui la línia del nom en DOCX i ODT—, **índex automàtic** i **numerar els apartats** (1, 1.1, 1.2…; l'ODT no admet aquesta numeració).
+* **Text i pàgina**: els mateixos ajustos de text i pàgina de l'apartat anterior, com a valors de partida. Quatre ja vénen posats —**12 pt**, **amb serifa**, interlineat **1,5** i paper **A4**—, perquè són els que l'editor visual necessita per ensenyar la veritat: declarats, el que es veu al full és el que surt en els cinc formats. La resta surten sense fixar.
 * **EPUB**: la **portada**, que pot ser la que **genera** l'aplicació amb el títol i l'autor, **una imatge teva** (fins a 1 MB) o **cap**.
 * **LaTeX**: la **classe** (`article`, `report` o `book`), les seves **opcions** (`12pt, a4paper`) i un **preàmbul** propi, que s'insereix just abans de `\begin{document}`. Un preàmbul amb errors no avisa aquí: la fallada apareix en compilar.
 
 > **Sobre l'índex**: en DOCX i ODT és un camp que calcula el processador de textos, així que el document s'obre amb la llista d'apartats però sense números de pàgina. Perquè surtin, actualitza'l: al Word, clic dret sobre l'índex → *Actualitzar camps*; al LibreOffice, *Eines → Actualitza → Índexs*.
 
-La profunditat permet limitar-lo a H1, H1–H2 o H1–H3. A **Format** també pots triar orientació vertical o horitzontal i fer que cada H1, tret del primer, comenci en una pàgina nova; la vista prèvia i les exportacions respecten els tres ajustos.
+La profunditat permet limitar-lo a H1, H1–H2 o H1–H3. A **Text i pàgina** també pots triar orientació vertical o horitzontal i fer que cada H1, tret del primer, comenci en una pàgina nova; la vista prèvia i les exportacions respecten els tres ajustos.
 
 Si el document comença amb les seves pròpies metadades YAML, manen elles.
 

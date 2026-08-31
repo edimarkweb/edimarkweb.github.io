@@ -57,7 +57,7 @@ Next to the logo sit the **File**, **Export** and **Settings** menus. On the rig
 
 * **File**: `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` bring content in; `Save (Ctrl+S)` and `Save as… (Ctrl+Shift+S)` take it out. In the desktop application it ends with **Quit**, which saves before closing.
 * **Export (Ctrl+Alt+E)**: the six formats, each with a line saying what it is for.
-* **Settings (Ctrl+,)**: interface **Language**; **Theme** (System, Light or Dark, remembered); **Separate window**, which opens EdiMarkWeb with no tabs or address bar (web version only); **Spell checker**, which underlines mistakes using the dictionaries installed on your computer and follows the document language; and **Export options…**.
+* **Settings (Ctrl+,)**: interface **Language**; **Theme** (System, Light or Dark, remembered); **Separate window**, which opens EdiMarkWeb with no tabs or address bar (web version only); **Spell checker**, which underlines mistakes using the dictionaries installed on your computer and follows the document language; and **General document options…**.
 * **Print (Ctrl+P)**: a view ready for paper or PDF.
 * **Help**: the **Manual (F1)**, **About EdiMarkWeb** — version, author and licences — and, on the desktop, **Check for updates…**.
 
@@ -179,7 +179,7 @@ fontsize: "12pt"
 ---
 ```
 
-This is the standard way of storing data about a document and many programs understand it. It appears in the Markdown editor, which is the source, but not in the visual editor, because it is not content. Whatever you leave as *Inherited* follows **Settings → Export options…**, and the dialog itself carries a link, *Change what every document inherits…*, which opens those options on the same tab. *Remove everything from the document* leaves it with nothing of its own.
+This is the standard way of storing data about a document and many programs understand it. It appears in the Markdown editor, which is the source, but not in the visual editor, because it is not content. Whatever you leave as *Inherited* follows **Settings → General document options…**, and the dialog itself carries a link, *Edit general options…*, which opens those options on the same tab. *Remove everything from the document* leaves it with nothing of its own.
 
 The format applies to the visual editor and to all five export formats, with three caveats: in the **EPUB** the margins are a suggestion, because the reading device is in charge; in **TEX**, if your preamble already loads `geometry`, your margins win and the application says so; and **hyphenation** uses the system's hyphenation dictionaries (on Linux, LibreOffice needs the language package, for example `hyphen-en-gb`).
 
@@ -198,18 +198,18 @@ The format applies to the visual editor and to all five export formats, with thr
 
 The toolbar also carries an export button with its arrow, next to the copy one: the button repeats the last format you used with a single click —it says so on a small label, and it starts at DOCX— and the arrow opens this same list.
 
-### Export options
+### General document options
 
-**Settings → Export options…** stores the starting values for every document, and they are remembered between sessions. It has four tabs:
+**Settings → General document options…** stores the starting values for every document, and they are remembered between sessions. It has four tabs:
 
-* **Document**: **language** (by default, the same as the interface), **author** — which appears in the file properties and on the EPUB and LaTeX cover; leave it empty if you do not want Pandoc to write the name line in DOCX and ODT —, **table of contents** and **number the sections** (1, 1.1, 1.2…; ODT does not support that numbering).
-* **Format**: the same text settings as the section above, as starting values. Four come already set —**12 pt**, **serif**, **1.5** line spacing and **A4** paper—, because those are the ones the visual editor needs in order to show the truth: once declared, what you see on the sheet is what comes out in all five formats. The rest start unset.
+* **Details & outline**: **language** (by default, the same as the interface), **author** — which appears in the file properties and on the EPUB and LaTeX cover; leave it empty if you do not want Pandoc to write the name line in DOCX and ODT —, **table of contents** and **number the sections** (1, 1.1, 1.2…; ODT does not support that numbering).
+* **Text & page**: the same text and page settings as the section above, as starting values. Four come already set —**12 pt**, **serif**, **1.5** line spacing and **A4** paper—, because those are the ones the visual editor needs in order to show the truth: once declared, what you see on the sheet is what comes out in all five formats. The rest start unset.
 * **EPUB**: the **cover**, which can be the one the application **generates** with the title and author, **an image of your own** (up to 1 MB) or **none**.
 * **LaTeX**: the **class** (`article`, `report` or `book`), its **options** (`12pt, a4paper`) and a **preamble** of your own, inserted just before `\begin{document}`. A faulty preamble raises no warning here: the error shows up when compiling.
 
 > **About the table of contents**: in DOCX and ODT it is a field the word processor calculates, so the document opens with the list of sections but without page numbers. To get them, update it: in Word, right-click the table of contents → *Update field*; in LibreOffice, *Tools → Update → Indexes and Tables*.
 
-Depth can limit it to H1, H1–H2, or H1–H3. Under **Format** you can also choose portrait or landscape orientation and make every H1 except the first start on a new page; the preview and exports respect all three settings.
+Depth can limit it to H1, H1–H2, or H1–H3. Under **Text & page** you can also choose portrait or landscape orientation and make every H1 except the first start on a new page; the preview and exports respect all three settings.
 
 If the document starts with its own YAML metadata, that is what counts.
 

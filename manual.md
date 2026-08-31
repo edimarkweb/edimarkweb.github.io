@@ -57,7 +57,7 @@ Junto al logotipo están los menús **Archivo**, **Exportar** y **Configuración
 
 * **Archivo**: `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` y `Pegar LaTeX (Ctrl+Mayús+V)` traen contenido; `Guardar (Ctrl+S)` y `Guardar como… (Ctrl+Mayús+S)` lo sacan. En la aplicación de escritorio termina con **Salir**, que guarda antes de cerrar.
 * **Exportar (Ctrl+Alt+E)**: los seis formatos, cada uno con una línea que dice para qué sirve.
-* **Configuración (Ctrl+,)**: **Idioma** de la interfaz; **Tema** (Sistema, Claro u Oscuro, se recuerda); **Ventana independiente**, que abre EdiMarkWeb sin pestañas ni barra de direcciones (solo en la versión web); **Corrector ortográfico**, que subraya las faltas con los diccionarios del equipo y sigue el idioma del documento; y **Opciones de exportación…**.
+* **Configuración (Ctrl+,)**: **Idioma** de la interfaz; **Tema** (Sistema, Claro u Oscuro, se recuerda); **Ventana independiente**, que abre EdiMarkWeb sin pestañas ni barra de direcciones (solo en la versión web); **Corrector ortográfico**, que subraya las faltas con los diccionarios del equipo y sigue el idioma del documento; y **Opciones generales…**.
 * **Imprimir (Ctrl+P)**: una vista lista para papel o PDF.
 * **Ayuda**: el **Manual (F1)**, **Acerca de EdiMarkWeb** —versión, autor y licencias— y, en escritorio, **Buscar actualizaciones…**.
 
@@ -179,7 +179,7 @@ fontsize: "12pt"
 ---
 ```
 
-Es la forma estándar de guardar datos sobre un documento y la entienden muchos programas. Aparece en el editor Markdown, que es el código fuente, pero no en el editor visual, porque no es contenido. Lo que dejes en *Heredado* sigue a **Configuración → Opciones de exportación…**, y el propio cuadro lleva un enlace, *Cambiar lo que heredan todos los documentos…*, que abre esas opciones por la misma pestaña. *Quitar todo del documento* lo deja sin nada propio.
+Es la forma estándar de guardar datos sobre un documento y la entienden muchos programas. Aparece en el editor Markdown, que es el código fuente, pero no en el editor visual, porque no es contenido. Lo que dejes en *Heredado* sigue a **Configuración → Opciones generales…**, y el propio cuadro lleva un enlace, *Editar las opciones generales…*, que abre esas opciones por la misma pestaña. *Quitar todo del documento* lo deja sin nada propio.
 
 El formato se aplica al editor visual y a los cinco formatos de exportación, con tres salvedades: en el **EPUB** los márgenes son una sugerencia, porque manda el lector de libros; en **TEX**, si tu preámbulo ya carga `geometry`, mandan tus márgenes y la aplicación avisa; y la **partición de palabras** usa los diccionarios de guiones del sistema (en Linux, LibreOffice necesita el paquete del idioma, por ejemplo `hyphen-es`).
 
@@ -198,18 +198,18 @@ El formato se aplica al editor visual y a los cinco formatos de exportación, co
 
 En la barra hay además un botón de exportar con su flecha, junto al de copiar: el botón repite de un clic el último formato que usaste —lo dice en un rótulo pequeño, y de partida es DOCX— y la flecha abre esta misma lista.
 
-### Opciones de exportación
+### Opciones generales de los documentos
 
-**Configuración → Opciones de exportación…** guarda los valores de partida para todos los documentos, y se recuerdan de una sesión a otra. Tiene cuatro pestañas:
+**Configuración → Opciones generales…** guarda los valores de partida para todos los documentos, y se recuerdan de una sesión a otra. Tiene cuatro pestañas:
 
-* **Documento**: **idioma** (por omisión, el mismo de la interfaz), **autor** —que aparece en las propiedades del archivo y en la portada del EPUB y del LaTeX; déjalo vacío si no quieres que Pandoc escriba la línea del nombre en DOCX y ODT—, **índice automático** y **numerar los apartados** (1, 1.1, 1.2…; el ODT no admite esa numeración).
-* **Formato**: los mismos ajustes de texto de la sección anterior, como valores de partida. Cuatro vienen puestos —**12 pt**, **con remates**, interlineado **1,5** y papel **A4**—, porque son los que la vista previa necesita para enseñar la verdad: declarados, lo que se ve en la hoja es lo que sale en los cinco formatos. Los demás salen sin fijar.
+* **Datos e índice**: **idioma** (por omisión, el mismo de la interfaz), **autor** —que aparece en las propiedades del archivo y en la portada del EPUB y del LaTeX; déjalo vacío si no quieres que Pandoc escriba la línea del nombre en DOCX y ODT—, **índice automático** y **numerar los apartados** (1, 1.1, 1.2…; el ODT no admite esa numeración).
+* **Texto y página**: los mismos ajustes de texto y página de la sección anterior, como valores de partida. Cuatro vienen puestos —**12 pt**, **con remates**, interlineado **1,5** y papel **A4**—, porque son los que la vista previa necesita para enseñar la verdad: declarados, lo que se ve en la hoja es lo que sale en los cinco formatos. Los demás salen sin fijar.
 * **EPUB**: la **portada**, que puede ser la que **genera** la aplicación con el título y el autor, **una imagen tuya** (hasta 1 MB) o **ninguna**.
 * **LaTeX**: la **clase** (`article`, `report` o `book`), sus **opciones** (`12pt, a4paper`) y un **preámbulo** propio, que se inserta justo antes de `\begin{document}`. Un preámbulo con errores no avisa aquí: el fallo aparece al compilar.
 
 > **Sobre el índice**: en DOCX y ODT es un campo que calcula el procesador de textos, así que el documento se abre con la lista de apartados pero sin números de página. Para que salgan, actualízalo: en Word, clic derecho sobre el índice → *Actualizar campos*; en LibreOffice, *Herramientas → Actualizar → Índices*.
 
-La profundidad permite limitarlo a H1, H1–H2 o H1–H3. En **Formato** también puedes elegir orientación vertical u horizontal y hacer que cada H1, salvo el primero, empiece en una página nueva; la vista previa y las exportaciones respetan los tres ajustes.
+La profundidad permite limitarlo a H1, H1–H2 o H1–H3. En **Texto y página** también puedes elegir orientación vertical u horizontal y hacer que cada H1, salvo el primero, empiece en una página nueva; la vista previa y las exportaciones respetan los tres ajustes.
 
 Si el documento empieza con sus propios metadatos YAML, mandan ellos.
 

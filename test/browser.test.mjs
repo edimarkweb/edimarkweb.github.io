@@ -1242,7 +1242,7 @@ test('los nuevos atajos abren sus acciones y los iconos explican su función', a
   const { context, page } = await openApp();
   t.after(() => context.close());
 
-  assert.equal(await page.locator('#doc-format-toolbar-btn').getAttribute('title'), 'Idioma, autor, índice y formato de este documento.');
+  assert.equal(await page.locator('#doc-format-toolbar-btn').getAttribute('title'), 'Opciones para todo el documento: idioma, autor, índice y formato.');
   assert.equal(await page.locator('#doc-format-toolbar-btn [data-lucide="sliders-horizontal"]').count(), 1);
   assert.equal(await page.locator('#doc-lang-btn').count(), 0);
   assert.equal(await page.locator('#toggle-replace-btn').getAttribute('title'), 'Mostrar opciones de reemplazo');
@@ -2167,6 +2167,21 @@ test('el formato del documento se escribe en el archivo y se ve en la vista prev
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
   // El formato del texto vive en su propia pestaña.
   await page.locator('#doc-format-tab-format').click();
+  assert.deepEqual(
+    await page.locator('#doc-format-fields .document-format-group-title').allTextContents(),
+    ['Texto', 'Página'],
+    'texto y página deben poder recorrerse como dos grupos distintos',
+  );
+  assert.deepEqual(
+    await page.locator('#doc-format-fields .document-format-group').first().locator('label').allTextContents(),
+    ['Tipo de letra', 'Nombre de la tipografía', 'Tamaño (pt)', 'Interlineado', 'Alineación', 'Sangría de primera línea', 'Partir palabras con guion'],
+    'los ajustes de texto deben seguir el orden habitual de un procesador',
+  );
+  assert.deepEqual(
+    await page.locator('#doc-format-fields .document-format-group').nth(1).locator('label').allTextContents(),
+    ['Tamaño de papel', 'Orientación', 'Cada H1 empieza en página nueva', 'Superior', 'Derecho', 'Inferior', 'Izquierdo'],
+    'papel, orientación, salto y márgenes deben quedar juntos',
+  );
   await page.locator('#doc-format-fields-align').selectOption('justify');
   await page.locator('#doc-format-fields-font').selectOption('serif');
   await page.locator('#doc-format-fields-fontsize').fill('13');
@@ -2739,6 +2754,25 @@ test('las imágenes enlazadas desde disco se pueden ver, incrustar y quitar', as
   await page.waitForFunction(() => document.querySelector('.base64-hidden-thumb img')?.src.startsWith('blob:'));
   assert.equal(await items.count(), 2, 'el ejemplo escrito como código no entra en la lista');
 
+  // En dos paneles estrechos, las acciones pasan debajo: antes reducían el
+  // nombre y la ruta a una columna de cero píxeles y el texto se desmontaba.
+  await page.setViewportSize({ width: 800, height: 800 });
+  const cardLayout = await items.first().evaluate(item => {
+    const itemRect = item.getBoundingClientRect();
+    const detailsRect = item.querySelector('.base64-hidden-details').getBoundingClientRect();
+    const actionsRect = item.querySelector('.base64-hidden-actions').getBoundingClientRect();
+    return {
+      itemRight: itemRect.right,
+      detailsWidth: detailsRect.width,
+      detailsBottom: detailsRect.bottom,
+      actionsTop: actionsRect.top,
+      actionsRight: actionsRect.right,
+    };
+  });
+  assert.ok(cardLayout.detailsWidth >= 100, `el texto solo conserva ${cardLayout.detailsWidth}px`);
+  assert.ok(cardLayout.actionsTop >= cardLayout.detailsBottom, 'los botones no pasaron debajo del texto');
+  assert.ok(cardLayout.actionsRight <= cardLayout.itemRight + 1, 'los botones salen de la ficha');
+
   await items.first().locator('.base64-hidden-thumb').click();
   await page.locator('#base64-preview-overlay').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#base64-preview-title').textContent(), 'una');
@@ -3008,7 +3042,7 @@ test('los márgenes del documento se escriben para el papel', async (t) => {
   );
   const escrita = await regla();
   assert.match(escrita, /@media print \{ @page \{/);
-  assert.match(escrita, /size: Letter;/);
+  assert.match(escrita, /size: Letter portrait;/);
   assert.match(escrita, /margin-left: 3cm;/);
   assert.match(escrita, /margin-right: 2\.5cm;/);
 });
@@ -3053,7 +3087,7 @@ test('lo que no hereda nada lo dice, en el cuadro y en el resumen', async (t) =>
 
 /*
   De lo de este documento a lo de todos: el cuadro dice que lo heredado sale de
-  las opciones de exportación, y lleva a ellas por la misma pestaña, que es lo
+  las opciones generales, y lleva a ellas por la misma pestaña, que es lo
   que se busca cuando uno se pregunta de dónde viene un valor.
 */
 test('el cuadro del documento lleva a las opciones generales por su misma pestaña', async (t) => {
@@ -3063,8 +3097,21 @@ test('el cuadro del documento lleva a las opciones generales por su misma pesta�
   // Desde la pestaña del formato, a la del formato.
   await page.locator('#doc-format-status').click();
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#doc-format-modal-title').textContent(), 'Opciones de este documento');
+  assert.deepEqual(
+    await page.locator('#doc-format-tablist [role="tab"]').allTextContents(),
+    ['Datos e índice', 'Texto y página'],
+  );
   await page.locator('#doc-format-open-general').click();
   await page.locator('#doc-format-modal-overlay').waitFor({ state: 'hidden' });
+  assert.equal(
+    await page.locator('#latex-settings-modal-title').textContent(),
+    'Opciones generales de los documentos',
+  );
+  assert.deepEqual(
+    await page.locator('#doc-settings-tablist [role="tab"]').allTextContents(),
+    ['Datos e índice', 'Texto y página', 'EPUB', 'LaTeX'],
+  );
   assert.equal(await page.locator('#doc-settings-tab-format').getAttribute('aria-selected'), 'true');
   assert.equal(await page.locator('#doc-settings-panel-format').isVisible(), true);
   await page.locator('#latex-settings-cancel-btn').click();

@@ -57,7 +57,7 @@ Xunto ao logotipo están os menús **Ficheiro**, **Exportar** e **Configuración
 
 * **Ficheiro**: `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` e `Pegar LaTeX (Ctrl+Maiús+V)` traen contido; `Gardar (Ctrl+S)` e `Gardar como… (Ctrl+Maiús+S)` sácano. Na aplicación de escritorio remata con **Saír**, que garda antes de pechar.
 * **Exportar (Ctrl+Alt+E)**: os seis formatos, cada un cunha liña que di para que serve.
-* **Configuración (Ctrl+,)**: **Idioma** da interface; **Tema** (Sistema, Claro ou Escuro, lémbrase); **Xanela independente**, que abre EdiMarkWeb sen lapelas nin barra de enderezos (só na versión web); **Corrector ortográfico**, que subliña as faltas cos dicionarios do equipo e segue o idioma do documento; e **Opcións de exportación…**.
+* **Configuración (Ctrl+,)**: **Idioma** da interface; **Tema** (Sistema, Claro ou Escuro, lémbrase); **Xanela independente**, que abre EdiMarkWeb sen lapelas nin barra de enderezos (só na versión web); **Corrector ortográfico**, que subliña as faltas cos dicionarios do equipo e segue o idioma do documento; e **Opcións xerais…**.
 * **Imprimir (Ctrl+P)**: unha vista lista para papel ou PDF.
 * **Axuda**: o **Manual (F1)**, **Acerca de EdiMarkWeb** —versión, autor e licenzas— e, no escritorio, **Buscar actualizacións…**.
 
@@ -179,7 +179,7 @@ fontsize: "12pt"
 ---
 ```
 
-É a forma estándar de gardar datos sobre un documento e enténdena moitos programas. Aparece no editor Markdown, que é o código fonte, pero non no editor visual, porque non é contido. O que deixes en *Herdado* segue **Configuración → Opcións de exportación…**, e o propio cadro leva unha ligazón, *Cambiar o que herdan todos os documentos…*, que abre esas opcións pola mesma lapela. *Quitar todo do documento* déixao sen nada propio.
+É a forma estándar de gardar datos sobre un documento e enténdena moitos programas. Aparece no editor Markdown, que é o código fonte, pero non no editor visual, porque non é contido. O que deixes en *Herdado* segue **Configuración → Opcións xerais…**, e o propio cadro leva unha ligazón, *Editar as opcións xerais…*, que abre esas opcións pola mesma lapela. *Quitar todo do documento* déixao sen nada propio.
 
 O formato aplícase ao editor visual e aos cinco formatos de exportación, con tres salvidades: no **EPUB** as marxes son unha suxestión, porque manda o lector de libros; en **TEX**, se o teu preámbulo xa carga `geometry`, mandan as túas marxes e a aplicación avisa; e a **partición de palabras** usa os dicionarios de guións do sistema (en Linux, LibreOffice precisa o paquete do idioma, por exemplo `hyphen-gl`).
 
@@ -198,18 +198,18 @@ O formato aplícase ao editor visual e aos cinco formatos de exportación, con t
 
 Na barra hai tamén un botón de exportar coa súa frecha, xunto ao de copiar: o botón repite dun clic o último formato que usaches —dío nun rótulo pequeno, e de partida é DOCX— e a frecha abre esta mesma lista.
 
-### Opcións de exportación
+### Opcións xerais dos documentos
 
-**Configuración → Opcións de exportación…** garda os valores de partida para todos os documentos, e lémbranse dunha sesión a outra. Ten catro lapelas:
+**Configuración → Opcións xerais…** garda os valores de partida para todos os documentos, e lémbranse dunha sesión a outra. Ten catro lapelas:
 
-* **Documento**: **idioma** (por omisión, o mesmo da interface), **autor** —que aparece nas propiedades do ficheiro e na portada do EPUB e do LaTeX; déixao baleiro se non queres que Pandoc escriba a liña do nome en DOCX e ODT—, **índice automático** e **numerar os apartados** (1, 1.1, 1.2…; o ODT non admite esa numeración).
-* **Formato**: os mesmos axustes de texto do apartado anterior, como valores de partida. Catro veñen postos —**12 pt**, **con remates**, interliñado **1,5** e papel **A4**—, porque son os que o editor visual precisa para amosar a verdade: declarados, o que se ve na folla é o que sae nos cinco formatos. Os demais saen sen fixar.
+* **Datos e índice**: **idioma** (por omisión, o mesmo da interface), **autor** —que aparece nas propiedades do ficheiro e na portada do EPUB e do LaTeX; déixao baleiro se non queres que Pandoc escriba a liña do nome en DOCX e ODT—, **índice automático** e **numerar os apartados** (1, 1.1, 1.2…; o ODT non admite esa numeración).
+* **Texto e páxina**: os mesmos axustes de texto e páxina do apartado anterior, como valores de partida. Catro veñen postos —**12 pt**, **con remates**, interliñado **1,5** e papel **A4**—, porque son os que o editor visual precisa para amosar a verdade: declarados, o que se ve na folla é o que sae nos cinco formatos. Os demais saen sen fixar.
 * **EPUB**: a **portada**, que pode ser a que **xera** a aplicación co título e o autor, **unha imaxe túa** (ata 1 MB) ou **ningunha**.
 * **LaTeX**: a **clase** (`article`, `report` ou `book`), as súas **opcións** (`12pt, a4paper`) e un **preámbulo** propio, que se insire xusto antes de `\begin{document}`. Un preámbulo con erros non avisa aquí: o fallo aparece ao compilar.
 
 > **Sobre o índice**: en DOCX e ODT é un campo que calcula o procesador de textos, así que o documento ábrese coa lista de apartados pero sen números de páxina. Para que saian, actualízao: en Word, clic dereito sobre o índice → *Actualizar campos*; en LibreOffice, *Ferramentas → Actualizar → Índices*.
 
-A profundidade permite limitalo a H1, H1–H2 ou H1–H3. En **Formato** tamén podes escoller orientación vertical ou horizontal e facer que cada H1, agás o primeiro, comece nunha páxina nova; a vista previa e as exportacións respectan os tres axustes.
+A profundidade permite limitalo a H1, H1–H2 ou H1–H3. En **Texto e páxina** tamén podes escoller orientación vertical ou horizontal e facer que cada H1, agás o primeiro, comece nunha páxina nova; a vista previa e as exportacións respectan os tres axustes.
 
 Se o documento comeza cos seus propios metadatos YAML, mandan eles.
 
