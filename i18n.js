@@ -132,6 +132,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.__refreshDocLanguageIndicator === 'function') {
       window.__refreshDocLanguageIndicator();
     }
+    if (typeof window.__refreshBibliographyPreview === 'function') {
+      window.__refreshBibliographyPreview();
+    }
   };
 
   /*

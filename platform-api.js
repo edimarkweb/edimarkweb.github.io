@@ -418,6 +418,12 @@
         return null;
       },
 
+      async readDocumentResource(documentPath, relativePath) {
+        if (!desktop || !app || typeof app.readDocumentResource !== 'function') return null;
+        const text = await app.readDocumentResource(documentPath, relativePath);
+        return typeof text === 'string' ? text : null;
+      },
+
       /*
         Corrector ortográfico del sistema. En Linux el webview lo trae apagado y
         hay que encenderlo desde Rust indicando el idioma; en el navegador y en
@@ -621,6 +627,12 @@
         const targetDirectory = directoryFromPath(path);
         for (const file of files) {
           const bytes = await toBytes(root, file.contents);
+          const extension = extensionFromName(file.path);
+          if (app && typeof app.writeDocumentResource === 'function'
+              && ['bib', 'json', 'csl'].includes(extension)) {
+            await app.writeDocumentResource(path, file.path, bytes);
+            continue;
+          }
           if (app && typeof app.writeDocumentAsset === 'function') {
             await app.writeDocumentAsset(path, file.path, bytes);
             continue;

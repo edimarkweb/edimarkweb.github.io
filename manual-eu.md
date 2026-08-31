@@ -61,7 +61,7 @@ Logotipoaren ondoan **Fitxategia**, **Esportatu** eta **Ezarpenak** menuak daude
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia.
 * **Laguntza**: **Eskuliburua (F1)**, **EdiMarkWebi buruz** —bertsioa, egilea eta lizentziak— eta, mahaigainean, **Bilatu eguneraketak…**.
 
-Tresna-barrak, aurrekoaren azpian, desegin eta berregin, lodia, etzana, izenburuak (H1…H6), zerrendak, aipuak, kodea, estekak, irudiak, taulak, **Itsatsi** eta formulak biltzen ditu. Botoi bakoitzak, sagua gainetik pasatzean, zer egiten duen eta zein lasterbiderekin esaten du. Pantaila txikietan bi botoitan tolesten da: **Ekintzak** eta **Formatua**.
+Tresna-barrak, aurrekoaren azpian, desegin eta berregin, lodia, etzana, izenburuak (H1…H6), zerrendak, aipuak, kodea, estekak, irudiak, taulak, **bibliografia-aipuak**, **Itsatsi** eta formulak biltzen ditu. Botoi bakoitzak, sagua gainetik pasatzean, zer egiten duen eta zein lasterbiderekin esaten du. Pantaila txikietan bi botoitan tolesten da: **Ekintzak** eta **Formatua**.
 
 ---
 
@@ -86,7 +86,7 @@ Mahaigaineko aplikazioan, `Ctrl+S` teklek ireki duzun fitxategiaren gainean idaz
 
 **Irudien kudeatzailea.** Markdown editorearen azpian, zerrenda batek dokumentuko irudiak biltzen ditu. Guztiak **ikus**, arbeletik itsatsitako, diskotik aukeratutako edo URL baten bidez adierazitako beste irudi batekin **ordeztu**, eta **dokumentutik kendu** daitezke. Estekatutakoek bidea edo URLa erakusten dute, eta Base64 gisa ere **txerta** daitezke; erreferentzia kentzeak ez du jatorrizko fitxategia edo urruneko irudia ezabatzen. Sareko irudietan, bihurketa zerbitzariak haiek deskargatzea baimentzearen mende dago; blokeatzen badu, dokumentua ez da aldatzen. Lehendik txertatuta daudenek formatua eta tamaina erakusten dituzte, eta kodea ikusi edo kopiatzeko aukera ematen dute.
 
-Base64 kodeak milaka karaktere hartzen ditu; horregatik, EdiMarkWebek tolestu eta `__EDIMARK_B64_1__` moduko marka labur bat uzten du editorean, baina benetako edukia oso-osorik mantentzen da gordetzean, kopiatzean eta esportatzean. **Txertatutako irudiak karpetara eraman** botoiak itzulerako bidea egiten du: irudi bakoitza fitxategi bihurtzen da dokumentuaren izena duen karpeta batean (`nire-fitxategia.md` → `nire-fitxategia/`) eta Markdown-ean bere bidea geratzen da. Fitxategiak dokumentua gordetzean idazten dira, eta `Ctrl+Z` teklek aldaketa desegiten dute.
+Base64 kodeak milaka karaktere hartzen ditu; horregatik, EdiMarkWebek tolestu eta `__EDIMARK_B64_1__` moduko marka labur bat uzten du editorean, baina benetako edukia oso-osorik mantentzen da gordetzean, kopiatzean eta esportatzean. **Txertatutako irudiak karpetara eraman** botoiak itzulerako bidea egiten du: irudi bakoitza fitxategi bihurtzen da dokumentuaren baliabideen azpikarpetan (`nire-fitxategia.md` → `nire-fitxategia/images/`) eta Markdown-ean bere bidea geratzen da. Fitxategiak dokumentua gordetzean idazten dira, eta `Ctrl+Z` teklek aldaketa desegiten dute.
 
 ---
 
@@ -148,6 +148,16 @@ Greziar letrak ($\alpha$, $\beta$, $\Omega$), azpiindizeak ($H_2O$), konparazioa
 
 ---
 
+## Aipuak eta bibliografia
+
+**Ezarpenak → Aukera orokorrak… → Aipuak** atalean **BibTeX** (`.bib`) edo **CSL JSON** (`.json`) liburutegi bat karga dezakezu. Funtzioa probatu nahi baduzu, **Kargatu adibideko bibliografia** aukerak hezkuntzari, gaitasun digitalari eta ikaskuntzari buruzko lau erreferentzia oso prestatzen ditu. **APA 7** da hasierako estiloa; Chicago egile-data, MLA 9 edo IEEE ere aukeratu daitezke, baita norberaren **CSL** (`.csl`) fitxategia kargatu ere. Aukera horietan bibliografiaren izenburua —«Erreferentziak» lehenespenez— eta H1–H6 maila ere alda daitezke. Fitxategiak ez dira inongo zerbitzutara bidaltzen.
+
+Liburuaren botoiak —edo `Ctrl+Alt+B`— egilearen, izenburuaren, urtearen edo gakoaren araberako bilaketa irekitzen du. Hautatu erreferentzia bat edo gehiago eta sakatu **Txertatu aipua**: Markdown-ak Pandoc-ekin bateragarria den aipu bat jasoko du, adibidez `[@garcia2024]` edo `[@garcia2024; @doe2023]`. Kurtsorea edo hautapena aipu baten barruan badago, botoi berak editatzeko irekitzen du. Aurrebistan zatika editatu ezin den fitxa irakurgarri gisa agertzen da; erreferentziak aldatzeko ere saka daiteke. Amaierako bibliografia aurrebistaren behealdean agertzen da, eta DOCX, ODT, EPUB, HTML, TEX edo PDFra esportatzean izenburu, maila eta estilo berarekin sortzen da.
+
+`nire-fitxategia.md` gordetzean, EdiMarkWebek liburutegia `nire-fitxategia/references.bib` fitxategira —edo `references.json` fitxategira— kopiatzen du eta bide hori YAML metadatuetan adierazten du. Bere irudiak `nire-fitxategia/images/` karpetan biltzen dira. Lana lekuz aldatzeko, nahikoa da Markdown fitxategia eta haren `nire-fitxategia` karpeta elkarrekin mantentzea. Mahaigaineko aplikazioak liburutegia automatikoki berreskuratzen du; segurtasunagatik, web bertsioan **Lotu baliabideen karpeta…** sakatu eta `nire-fitxategia` aukeratu behar da beste nabigatzaile edo ordenagailu batean irekitzean. CSL estilo pertsonalizatuak gailuko hobespen lokala izaten jarraitzen du.
+
+---
+
 ## Bilatu eta ordezkatu
 
 Lupak (edo `Ctrl+F`) bilatzailea irekitzen du, eta zauden panelean lan egiten du:
@@ -198,13 +208,16 @@ Formatua editore bisualari eta esportatzeko bost formatuei aplikatzen zaie, hiru
 
 Barran esportatzeko botoi bat ere badago, bere geziarekin, kopiatzekoaren ondoan: botoiak erabili zenuen azken formatua errepikatzen du klik bakarrean —errotulu txiki batean esaten du, eta abiapuntuan DOCX da— eta geziak zerrenda bera irekitzen du.
 
+Bibliografia bat kargatu baduzu, formatu guztiek `[@gakoa]` aipuak ebazten dituzte eta erreferentzien zerrenda gehitzen dute aukeratutako CSL estiloarekin.
+
 ### Dokumentuen aukera orokorrak
 
-**Ezarpenak → Aukera orokorrak…** atalak dokumentu guztientzako abiapuntuko balioak gordetzen ditu, eta saio batetik bestera gogoratzen dira. Lau fitxa ditu:
+**Ezarpenak → Aukera orokorrak…** atalak dokumentu guztientzako abiapuntuko balioak gordetzen ditu, eta saio batetik bestera gogoratzen dira. Bost fitxa ditu:
 
 * **Datuak eta aurkibidea**: **hizkuntza** (lehenetsita, interfazearen bera), **egilea** —fitxategiaren propietateetan eta EPUBaren eta LaTeX-en azalean agertzen dena; utzi hutsik Pandoc-ek DOCX eta ODTn izenaren lerroa idaztea nahi ez baduzu—, **aurkibide automatikoa** eta **atalak zenbakitu** (1, 1.1, 1.2…; ODTk ez du zenbakitze hori onartzen).
 * **Testua eta orria**: aurreko ataleko testu- eta orri-ezarpen berak, abiapuntuko balio gisa. Lau jarrita datoz —**12 pt**, **serifaduna**, **1,5** lerroartea eta **A4** papera—, editore bisualak egia erakusteko behar dituenak baitira: deklaratuta, orrian ikusten dena da bost formatuetan ateratzen dena. Gainerakoak finkatu gabe ateratzen dira.
 * **EPUB**: **azala**, aplikazioak izenburuarekin eta egilearekin **sortzen duena**, **zure irudi bat** (1 MB arte) edo **bat ere ez** izan daitekeena.
+* **Aipuak**: BibTeX edo CSL JSON liburutegia eta, aukeran, esportatzean aplikatuko den CSL estiloa.
 * **LaTeX**: **klasea** (`article`, `report` edo `book`), bere **aukerak** (`12pt, a4paper`) eta zure **aitzinsolasa**, `\begin{document}` aurretik txertatzen dena. Akatsak dituen aitzinsolasak ez du hemen abisatzen: hutsegitea konpilatzean agertzen da.
 
 > **Aurkibideari buruz**: DOCX eta ODTn testu-prozesadoreak kalkulatzen duen eremu bat da, beraz dokumentua atalen zerrendarekin irekitzen da baina orrialde-zenbakirik gabe. Ager daitezen, eguneratu ezazu: Word-en, eskuineko klika aurkibidean → *Eguneratu eremuak*; LibreOfficen, *Tresnak → Eguneratu → Aurkibideak*.

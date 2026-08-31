@@ -180,6 +180,65 @@ function documentSettings() {
 }
 
 /*
+  La bibliografía y el estilo viven en los ajustes locales. Pandoc se ejecuta
+  dentro de WASM y no ve el disco: bibliography.js les da un nombre fijo, los
+  convierte en bytes y devuelve las opciones que apuntan a esos archivos.
+*/
+const BUILTIN_CSL_FILES = {
+  apa: 'apa.csl',
+  'chicago-author-date': 'chicago-author-date.csl',
+  'modern-language-association': 'modern-language-association.csl',
+  ieee: 'ieee.csl',
+};
+const cslStyleCache = new Map();
+
+async function builtInCsl(style) {
+  const filename = BUILTIN_CSL_FILES[style] || BUILTIN_CSL_FILES.apa;
+  if (cslStyleCache.has(filename)) return cslStyleCache.get(filename);
+  const response = await fetch(`csl/${filename}`);
+  if (!response.ok) throw new Error(`csl_http_${response.status}`);
+  const content = await response.text();
+  cslStyleCache.set(filename, content);
+  return content;
+}
+
+async function citationResources() {
+  const api = window.EdiMarkBibliography;
+  if (!api || typeof api.pandocResources !== 'function') return { args: '', files: {} };
+  const settings = documentSettings();
+  const custom = settings.citationStyle === 'custom' && String(settings.cslContent || '').trim();
+  if (custom) return api.pandocResources(settings);
+  const resources = api.pandocResources({ ...settings, cslContent: '', cslName: '' });
+  if (!resources.args) return resources;
+  const content = await builtInCsl(settings.citationStyle || 'apa');
+  resources.files['style.csl'] = new TextEncoder().encode(content);
+  resources.args += ' --csl=/style.csl';
+  return resources;
+}
+
+function bibliographySectionTitle() {
+  const custom = String(documentSettings().bibliographyTitle || '').replace(/[\r\n]+/g, ' ').trim();
+  return custom || translate('bibliography_default_title', 'Referencias');
+}
+
+function withBibliographySection(markdown, citations) {
+  if (!citations.args || !/\[[^\]\n]*@[^\]\n]+\]/.test(markdown)) return markdown;
+  // Si el documento ya reservó el lugar de citeproc, respetamos su estructura.
+  if (/^:::\s*\{[^}]*#refs\b[^}]*\}\s*$/m.test(markdown)) return markdown;
+  const level = Math.min(6, Math.max(1, Number(documentSettings().bibliographyHeadingLevel) || 2));
+  const title = bibliographySectionTitle().replace(/([\\`*_[\]{}<>])/g, '\\$1');
+  return `${markdown.replace(/\s+$/, '')}\n\n${'#'.repeat(level)} ${title}\n\n::: {#refs}\n:::\n`;
+}
+
+function withoutPortableBibliographyMetadata(markdown) {
+  const { frontMatter, body } = splitFrontMatter(markdown);
+  if (!frontMatter || !/^bibliography\s*:/mi.test(frontMatter)) return markdown;
+  const kept = frontMatter.split('\n').slice(1, -1)
+    .filter(line => !/^bibliography\s*:/i.test(line));
+  return kept.length ? `---\n${kept.join('\n')}\n---\n\n${body}` : body;
+}
+
+/*
   Idioma del documento exportado. Por omisión sigue al de la interfaz: fijarlo
   al valor de hoy dejaría los documentos de mañana en un idioma que el usuario
   ya no está usando y no sabría de dónde sale.
@@ -755,11 +814,15 @@ async function exportDocument({
       titleFromHeading,
       ...outline,
     });
+    const citations = await citationResources();
+    pandocArgs += citations.args;
+    normalized = withoutPortableBibliographyMetadata(normalized);
+    normalized = withBibliographySection(normalized, citations);
     /*
       La portada solo existe en el EPUB, y la imagen tiene que estar montada en
       el sistema de ficheros del WASM para que Pandoc la encuentre.
     */
-    const extraFiles = {};
+    const extraFiles = { ...citations.files };
     if (normalizedFormat === 'epub') {
       const cover = epubCoverFile({
         title: extractMarkdownTitle(normalized) || String(documentTitle || '').trim(),
@@ -838,7 +901,7 @@ async function generateHtml({
     la página acababa titulada «in» en la pestaña del navegador y en las
     búsquedas. El primer encabezado, o el nombre de la pestaña, lo arreglan.
   */
-  const withLanguage = standalone
+  let withLanguage = standalone
     ? ensureExportMetadata(normalized, {
       lang: documentLanguage(),
       author: documentAuthor(),
@@ -861,7 +924,11 @@ async function generateHtml({
       pandocArgs += ` --toc-depth=${tocDepth}`;
       if (numberSections) pandocArgs += ' --number-sections';
     }
-    const resultadoBytes = await pandoc(pandocArgs, withLanguage, base64);
+    const citations = await citationResources();
+    pandocArgs += citations.args;
+    withLanguage = withoutPortableBibliographyMetadata(withLanguage);
+    withLanguage = withBibliographySection(withLanguage, citations);
+    const resultadoBytes = await pandoc(pandocArgs, withLanguage, base64, citations.files);
     if (!resultadoBytes || resultadoBytes.length === 0) {
       throw new Error('pandoc_empty_output');
     }
@@ -951,7 +1018,11 @@ async function generateLatex({
       pandocArgs += ` --toc-depth=${tocDepth}`;
       if (numberSections) pandocArgs += ' --number-sections';
     }
-    const resultadoBytes = await pandoc(pandocArgs, normalized, base64);
+    const citations = await citationResources();
+    pandocArgs += citations.args;
+    normalized = withoutPortableBibliographyMetadata(normalized);
+    normalized = withBibliographySection(normalized, citations);
+    const resultadoBytes = await pandoc(pandocArgs, normalized, base64, citations.files);
     if (!resultadoBytes || resultadoBytes.length === 0) {
       throw new Error('pandoc_empty_output');
     }

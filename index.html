@@ -39,7 +39,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/split.js@1.6.5/dist/split.min.js" integrity="sha384-q2ksSc8z6Q4ZUnxlfZj9AXZLpSdWmD3q/YrId1twTeNHh56fNh98YbJSpppzGUvL" crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" href="style.css?v=2.41.2">
+    <link rel="stylesheet" href="style.css?v=2.42.0">
 </head>
 <body class="p-4 sm:p-6 md:p-8">
 
@@ -421,7 +421,7 @@
     <section id="desktop-release-banner" class="desktop-release-banner" role="status" hidden>
         <i data-lucide="monitor-down" class="desktop-release-banner-icon" aria-hidden="true"></i>
         <div class="desktop-release-banner-content">
-            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.41.2 está disponible para Linux, Windows y macOS.</p>
+            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.42.0 está disponible para Linux, Windows y macOS.</p>
             <a id="desktop-banner-download-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="desktop_banner_download">Ver descargas</a>
             <label class="desktop-release-banner-never">
                 <input id="desktop-banner-never-show" type="checkbox">
@@ -513,6 +513,7 @@
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="link" data-i18n-key="link_btn_title" title="Enlace (Ctrl+K)"><i data-lucide="link"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="image" data-i18n-key="image_btn_title" title="Imagen (Ctrl+Shift+I)"><i data-lucide="image"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="table" data-i18n-key="table_btn_title" title="Tabla (Ctrl+Shift+T)"><i data-lucide="table"></i></button>
+                <button id="citation-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="citation_btn_title" title="Insertar cita (Ctrl+Alt+B)" aria-keyshortcuts="Control+Alt+B"><i data-lucide="book-open"></i></button>
             </div>
             <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
             <div class="flex items-center gap-1">
@@ -859,6 +860,30 @@
         </div>
     </div>
 
+    <div id="citation-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="citation-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-slate-800">
+            <h3 id="citation-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="citation_modal_title">Insertar cita bibliográfica</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" data-i18n-key="citation_modal_description">Selecciona una o varias referencias. Se insertarán con la sintaxis Markdown de Pandoc.</p>
+            <div id="citation-library-ready">
+                <label for="citation-search" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="citation_search_label">Buscar en la bibliografía</label>
+                <input type="search" id="citation-search" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" data-i18n-key="citation_search_placeholder" placeholder="Autor, título, año o clave…">
+                <p id="citation-result-count" class="mt-2 text-xs text-slate-500 dark:text-slate-400" role="status" aria-live="polite"></p>
+                <div id="citation-results" class="mt-2 max-h-80 overflow-y-auto rounded-md border border-slate-200 dark:border-slate-700" role="group" aria-label="Referencias" data-i18n-key="citation_results_label"></div>
+            </div>
+            <div id="citation-library-empty" class="hidden rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
+                <p data-i18n-key="citation_no_library">Todavía no hay ninguna bibliografía cargada.</p>
+                <div class="mt-3 flex flex-wrap gap-3">
+                    <button type="button" id="citation-open-settings-btn" class="inline-link-btn" data-i18n-key="citation_open_settings">Cargar mi bibliografía…</button>
+                    <button type="button" id="citation-load-example-btn" class="text-xs text-slate-500 underline decoration-dotted underline-offset-2 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-400 dark:hover:text-slate-200" data-i18n-key="bibliography_load_example">Cargar bibliografía de ejemplo</button>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="citation-cancel-btn" type="button" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
+                <button id="citation-insert-btn" type="button" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50" data-i18n-key="citation_insert_btn" disabled>Insertar cita</button>
+            </div>
+        </div>
+    </div>
+
     <div id="latex-settings-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center overflow-y-auto p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="latex-settings-modal-title">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-slate-800">
             <h3 id="latex-settings-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="doc_settings_modal_title">Opciones generales de los documentos</h3>
@@ -866,6 +891,7 @@
             <div class="space-y-4">
                 <div id="doc-settings-tablist" role="tablist" class="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700">
                     <button type="button" role="tab" id="doc-settings-tab-document" aria-controls="doc-settings-panel-document" aria-selected="true" class="settings-tab" data-i18n-key="doc_settings_tab_document">Datos e índice</button>
+                    <button type="button" role="tab" id="doc-settings-tab-bibliography" aria-controls="doc-settings-panel-bibliography" aria-selected="false" class="settings-tab" data-i18n-key="doc_settings_tab_bibliography">Citas</button>
                     <button type="button" role="tab" id="doc-settings-tab-format" aria-controls="doc-settings-panel-format" aria-selected="false" class="settings-tab" data-i18n-key="doc_settings_tab_format">Texto y página</button>
                     <button type="button" role="tab" id="doc-settings-tab-epub" aria-controls="doc-settings-panel-epub" aria-selected="false" class="settings-tab" data-i18n-key="doc_settings_tab_epub">EPUB</button>
                     <button type="button" role="tab" id="doc-settings-tab-latex" aria-controls="doc-settings-panel-latex" aria-selected="false" class="settings-tab" data-i18n-key="doc_settings_tab_latex">LaTeX</button>
@@ -926,6 +952,60 @@
                             </label>
                         </div>
                     </fieldset>
+                </div>
+
+                <div id="doc-settings-panel-bibliography" role="tabpanel" aria-labelledby="doc-settings-tab-bibliography" class="hidden space-y-4">
+                    <fieldset class="rounded-lg border border-slate-200 px-4 pb-4 pt-2 dark:border-slate-700">
+                        <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" data-i18n-key="bibliography_section">Bibliografía</legend>
+                        <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n-key="bibliography_hint">Carga una biblioteca BibTeX (.bib) o CSL JSON. Al guardar, viajará como nombre-del-documento/references.bib y se declarará en el Markdown.</p>
+                        <div class="mt-3 flex flex-wrap items-center gap-3">
+                            <button type="button" id="bibliography-choose-btn" class="px-3 py-1.5 text-sm bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="bibliography_choose">Elegir bibliografía…</button>
+                            <button type="button" id="bibliography-example-btn" class="px-2 py-1 text-xs text-slate-500 rounded hover:text-slate-700 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700/50" data-i18n-key="bibliography_load_example">Cargar bibliografía de ejemplo</button>
+                            <button type="button" id="bibliography-remove-btn" class="hidden px-3 py-1.5 text-sm text-red-700 rounded-md hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-500 dark:text-red-300 dark:hover:bg-red-500/10" data-i18n-key="bibliography_remove">Quitar</button>
+                            <input type="file" id="bibliography-input" class="hidden" accept=".bib,.json,application/json,text/plain">
+                        </div>
+                        <p id="bibliography-summary" class="mt-2 text-sm text-slate-600 dark:text-slate-300" data-i18n-key="bibliography_none">Ninguna bibliografía cargada.</p>
+                        <button type="button" id="bibliography-link-folder-btn" class="mt-2 text-xs text-slate-500 underline decoration-dotted underline-offset-2 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-400 dark:hover:text-slate-200" data-i18n-key="bibliography_link_folder">Vincular carpeta de recursos…</button>
+                        <div class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
+                            <div>
+                                <label for="bibliography-title" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_title_label">Título de la bibliografía</label>
+                                <input type="text" id="bibliography-title" maxlength="160" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" data-i18n-key="bibliography_default_title" placeholder="Referencias">
+                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="bibliography_title_hint">Si queda vacío se usa «Referencias».</p>
+                            </div>
+                            <div>
+                                <label for="bibliography-heading-level" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_heading_level_label">Nivel del título</label>
+                                <select id="bibliography-heading-level" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                    <option value="1">H1</option>
+                                    <option value="2" selected>H2</option>
+                                    <option value="3">H3</option>
+                                    <option value="4">H4</option>
+                                    <option value="5">H5</option>
+                                    <option value="6">H6</option>
+                                </select>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset class="rounded-lg border border-slate-200 px-4 pb-4 pt-2 dark:border-slate-700">
+                        <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" data-i18n-key="csl_section">Estilo de citas</legend>
+                        <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n-key="csl_hint">APA 7 es el estilo predeterminado. Puedes elegir otro estilo incluido o cargar un archivo CSL propio.</p>
+                        <label for="citation-style-select" class="mt-3 block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="citation_style_label">Estilo bibliográfico</label>
+                        <select id="citation-style-select" class="mt-1 block w-full max-w-md rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                            <option value="apa" data-i18n-key="citation_style_apa">APA 7.ª edición</option>
+                            <option value="chicago-author-date" data-i18n-key="citation_style_chicago">Chicago, autor-fecha</option>
+                            <option value="modern-language-association" data-i18n-key="citation_style_mla">MLA 9.ª edición</option>
+                            <option value="ieee" data-i18n-key="citation_style_ieee">IEEE</option>
+                            <option value="custom" data-i18n-key="citation_style_custom">Archivo CSL propio…</option>
+                        </select>
+                        <div id="csl-custom-picker" class="mt-3 hidden">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <button type="button" id="csl-choose-btn" class="px-3 py-1.5 text-sm bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="csl_choose">Elegir archivo CSL…</button>
+                                <button type="button" id="csl-remove-btn" class="hidden px-3 py-1.5 text-sm text-red-700 rounded-md hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-500 dark:text-red-300 dark:hover:bg-red-500/10" data-i18n-key="csl_remove">Quitar</button>
+                                <input type="file" id="csl-input" class="hidden" accept=".csl,application/xml,text/xml">
+                            </div>
+                            <p id="csl-summary" class="mt-2 text-sm text-slate-600 dark:text-slate-300" data-i18n-key="csl_none">Ningún archivo CSL cargado.</p>
+                        </div>
+                    </fieldset>
+                    <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n-key="bibliography_local_hint">La bibliografía se guarda junto al documento para que sea portable. El CSL personalizado permanece en este dispositivo. Nada se envía a ningún servicio.</p>
                 </div>
 
                 <div id="doc-settings-panel-format" role="tabpanel" aria-labelledby="doc-settings-tab-format" class="hidden">
@@ -1259,11 +1339,12 @@
         </div>
     </div>
 
-    <script src="asset-paths.js?v=2.41.2"></script>
-    <script src="document-format.js?v=2.41.2"></script>
-    <script src="platform-api.js?v=2.41.2"></script>
-    <script src="desktop-updater.js?v=2.41.2"></script>
-    <script type="module" src="pandoc-exporter.js?v=2.41.2"></script>
+    <script src="asset-paths.js?v=2.42.0"></script>
+    <script src="bibliography.js?v=2.42.0"></script>
+    <script src="document-format.js?v=2.42.0"></script>
+    <script src="platform-api.js?v=2.42.0"></script>
+    <script src="desktop-updater.js?v=2.42.0"></script>
+    <script type="module" src="pandoc-exporter.js?v=2.42.0"></script>
     <script>
     (function () {
       var ANALYTICS_FALLBACK_ENDPOINT = 'https://bilateria.org/app/estadistica/edimarkweb/track.php';
@@ -1443,8 +1524,8 @@
       });
     })();
     </script>
-    <script src="script.js?v=2.41.2" defer></script>
-    <script src="search.js?v=2.41.2" defer></script>
-    <script src="i18n.js?v=2.41.2" defer></script>
+    <script src="script.js?v=2.42.0" defer></script>
+    <script src="search.js?v=2.42.0" defer></script>
+    <script src="i18n.js?v=2.42.0" defer></script>
 </body>
 </html>

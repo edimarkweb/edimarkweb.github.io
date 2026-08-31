@@ -61,7 +61,7 @@ Xunto ao logotipo están os menús **Ficheiro**, **Exportar** e **Configuración
 * **Imprimir (Ctrl+P)**: unha vista lista para papel ou PDF.
 * **Axuda**: o **Manual (F1)**, **Acerca de EdiMarkWeb** —versión, autor e licenzas— e, no escritorio, **Buscar actualizacións…**.
 
-A barra de ferramentas, baixo a anterior, reúne desfacer e refacer, negra, cursiva, cabeceiras (H1…H6), listas, citas, código, ligazóns, imaxes, táboas, **Pegar** e as fórmulas. Cada botón di ao pasar o rato que fai e con que atallo. En pantallas pequenas pregase en dous botóns, **Accións** e **Formato**.
+A barra de ferramentas, baixo a anterior, reúne desfacer e refacer, negra, cursiva, cabeceiras (H1…H6), listas, citas, código, ligazóns, imaxes, táboas, **citas bibliográficas**, **Pegar** e as fórmulas. Cada botón di ao pasar o rato que fai e con que atallo. En pantallas pequenas pregase en dous botóns, **Accións** e **Formato**.
 
 ---
 
@@ -86,7 +86,7 @@ O botón **Imaxe** admite un ficheiro do disco ou unha URL, e pregunta como inse
 
 **Xestor de imaxes.** Baixo o editor Markdown, unha lista reúne as imaxes do documento. Todas poden **verse**, **substituírse** por outra pegada desde o portapapeis, escollida do disco ou indicada mediante un URL, e **eliminarse do documento**. As ligadas mostran a ruta ou o URL e tamén poden **incrustarse** en Base64; eliminar a referencia non borra o ficheiro orixinal nin a imaxe remota. Nas imaxes en liña, a conversión depende de que o servidor permita descargalas; se a bloquea, o documento non cambia. As que xa están incrustadas mostran o formato e o tamaño e permiten ver ou copiar o seu código.
 
-O código Base64 ocupa milleiros de caracteres, polo que EdiMarkWeb o prega e deixa no editor unha marca curta como `__EDIMARK_B64_1__`; o contido real consérvase intacto ao gardar, copiar e exportar. O botón **Pasar as incrustadas ao cartafol** fai o camiño de volta: cada imaxe convértese nun ficheiro dentro dun cartafol co nome do documento (`o-meu-ficheiro.md` → `o-meu-ficheiro/`) e no Markdown queda a súa ruta. Os ficheiros escríbense ao gardar, e `Ctrl+Z` desfai o cambio.
+O código Base64 ocupa milleiros de caracteres, polo que EdiMarkWeb o prega e deixa no editor unha marca curta como `__EDIMARK_B64_1__`; o contido real consérvase intacto ao gardar, copiar e exportar. O botón **Pasar as incrustadas ao cartafol** fai o camiño de volta: cada imaxe convértese nun ficheiro dentro do subcartafol de recursos do documento (`o-meu-ficheiro.md` → `o-meu-ficheiro/images/`) e no Markdown queda a súa ruta. Os ficheiros escríbense ao gardar, e `Ctrl+Z` desfai o cambio.
 
 ---
 
@@ -148,6 +148,16 @@ Letras gregas ($\alpha$, $\beta$, $\Omega$), subíndices ($H_2O$), comparacións
 
 ---
 
+## Citas e bibliografía
+
+En **Configuración → Opcións xerais… → Citas** podes cargar unha biblioteca **BibTeX** (`.bib`) ou **CSL JSON** (`.json`). Se só queres probar a función, **Cargar bibliografía de exemplo** prepara catro referencias completas sobre educación, competencia dixital e aprendizaxe. **APA 7** é o estilo inicial; tamén podes escoller Chicago autor-data, MLA 9, IEEE ou cargar un ficheiro **CSL** (`.csl`) propio. Nestas opcións tamén se poden cambiar o título da bibliografía —«Referencias» por defecto— e o nivel H1–H6. Os ficheiros non se envían a ningún servizo.
+
+O botón do libro —ou `Ctrl+Alt+B`— abre un buscador por autor, título, ano ou clave. Marca unha ou varias referencias e preme **Inserir a cita**: o Markdown recibe unha cita compatible con Pandoc, como `[@garcia2024]` ou `[@garcia2024; @doe2023]`. Se o cursor ou unha selección están dentro dunha cita, o mesmo botón ábrea para editala. Na vista previa aparece como unha ficha lexible que non se pode editar por partes; tamén se pode premer para cambiar as referencias. A bibliografía final móstrase ao pé da vista previa e, ao exportar a DOCX, ODT, EPUB, HTML, TEX ou PDF, reprodúcese co mesmo título, nivel e estilo.
+
+Ao gardar `o-meu-ficheiro.md`, EdiMarkWeb copia a biblioteca en `o-meu-ficheiro/references.bib` —ou `references.json`— e declara esa ruta nos metadatos YAML. As imaxes propias agrúpanse en `o-meu-ficheiro/images/`. Para trasladar o traballo abonda con conservar xuntos o Markdown e o seu cartafol `o-meu-ficheiro`. A aplicación de escritorio recupera a biblioteca automaticamente; por seguridade, na versión web hai que premer **Vincular o cartafol de recursos…** e escoller `o-meu-ficheiro` ao abrilo noutro navegador ou ordenador. O estilo CSL personalizado continúa sendo unha preferencia local do dispositivo.
+
+---
+
 ## Buscar e substituír
 
 A lupa (ou `Ctrl+F`) abre o buscador, que traballa no panel onde esteas:
@@ -198,13 +208,16 @@ O formato aplícase ao editor visual e aos cinco formatos de exportación, con t
 
 Na barra hai tamén un botón de exportar coa súa frecha, xunto ao de copiar: o botón repite dun clic o último formato que usaches —dío nun rótulo pequeno, e de partida é DOCX— e a frecha abre esta mesma lista.
 
+Se cargaches unha bibliografía, todos os formatos resolven as citas `[@clave]` e engaden a lista de referencias co estilo CSL escollido.
+
 ### Opcións xerais dos documentos
 
-**Configuración → Opcións xerais…** garda os valores de partida para todos os documentos, e lémbranse dunha sesión a outra. Ten catro lapelas:
+**Configuración → Opcións xerais…** garda os valores de partida para todos os documentos, e lémbranse dunha sesión a outra. Ten cinco lapelas:
 
 * **Datos e índice**: **idioma** (por omisión, o mesmo da interface), **autor** —que aparece nas propiedades do ficheiro e na portada do EPUB e do LaTeX; déixao baleiro se non queres que Pandoc escriba a liña do nome en DOCX e ODT—, **índice automático** e **numerar os apartados** (1, 1.1, 1.2…; o ODT non admite esa numeración).
 * **Texto e páxina**: os mesmos axustes de texto e páxina do apartado anterior, como valores de partida. Catro veñen postos —**12 pt**, **con remates**, interliñado **1,5** e papel **A4**—, porque son os que o editor visual precisa para amosar a verdade: declarados, o que se ve na folla é o que sae nos cinco formatos. Os demais saen sen fixar.
 * **EPUB**: a **portada**, que pode ser a que **xera** a aplicación co título e o autor, **unha imaxe túa** (ata 1 MB) ou **ningunha**.
+* **Citas**: a biblioteca BibTeX ou CSL JSON e, opcionalmente, o estilo CSL que se aplicará ao exportar.
 * **LaTeX**: a **clase** (`article`, `report` ou `book`), as súas **opcións** (`12pt, a4paper`) e un **preámbulo** propio, que se insire xusto antes de `\begin{document}`. Un preámbulo con erros non avisa aquí: o fallo aparece ao compilar.
 
 > **Sobre o índice**: en DOCX e ODT é un campo que calcula o procesador de textos, así que o documento ábrese coa lista de apartados pero sen números de páxina. Para que saian, actualízao: en Word, clic dereito sobre o índice → *Actualizar campos*; en LibreOffice, *Ferramentas → Actualizar → Índices*.

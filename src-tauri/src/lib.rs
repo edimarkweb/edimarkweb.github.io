@@ -1,5 +1,8 @@
 use std::path::{Path, PathBuf};
-use std::sync::{atomic::{AtomicBool, Ordering}, Mutex};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Mutex,
+};
 
 #[cfg(desktop)]
 use tauri::{Emitter, Manager};
@@ -49,7 +52,9 @@ fn initial_markdown_paths(state: tauri::State<'_, PendingOpenPaths>) -> Vec<Stri
 
 /// Extensiones que la aplicación sabe abrir al soltarlas: el Markdown se abre
 /// tal cual y el resto pasa por Pandoc, igual que en el navegador.
-const DROPPABLE_EXTENSIONS: [&str; 8] = ["md", "markdown", "docx", "odt", "epub", "html", "htm", "tex"];
+const DROPPABLE_EXTENSIONS: [&str; 8] = [
+    "md", "markdown", "docx", "odt", "epub", "html", "htm", "tex",
+];
 
 fn droppable_extension(path: &Path) -> Option<String> {
     let extension = path.extension()?.to_string_lossy().to_ascii_lowercase();
@@ -82,7 +87,9 @@ fn collect_droppable(path: &Path, depth: usize, found: &mut Vec<PathBuf>) {
         return;
     };
     // En orden: dos carpetas iguales tienen que abrir sus pestañas igual.
-    let mut children: Vec<PathBuf> = entries.filter_map(|entry| entry.ok().map(|e| e.path())).collect();
+    let mut children: Vec<PathBuf> = entries
+        .filter_map(|entry| entry.ok().map(|e| e.path()))
+        .collect();
     children.sort();
     for child in children {
         collect_droppable(&child, depth + 1, found);
@@ -375,6 +382,64 @@ fn document_asset_bytes(path: &str) -> Result<Vec<u8>, String> {
     std::fs::read(candidate).map_err(|error| error.to_string())
 }
 
+const DOCUMENT_RESOURCE_EXTENSIONS: [&str; 3] = ["bib", "json", "csl"];
+
+fn document_resource_path(document_path: &str, relative_path: &str) -> Result<PathBuf, String> {
+    use std::path::Component;
+
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let document = markdown_path(document_path, &cwd)
+        .ok_or_else(|| "La ruta no corresponde a un documento Markdown válido.".to_string())?;
+    let document_directory = document
+        .parent()
+        .ok_or_else(|| "El documento no tiene una carpeta válida.".to_string())?;
+    let relative = Path::new(relative_path);
+    if relative.is_absolute()
+        || relative
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_)))
+    {
+        return Err("El recurso debe quedar dentro de la carpeta del documento.".to_string());
+    }
+    let extension = relative
+        .extension()
+        .map(|ext| ext.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
+    if !DOCUMENT_RESOURCE_EXTENSIONS.contains(&extension.as_str()) {
+        return Err("Solo se admiten recursos bibliográficos o CSL.".to_string());
+    }
+    Ok(document_directory.join(relative))
+}
+
+fn document_resource_text(document_path: &str, relative_path: &str) -> Result<String, String> {
+    const MAX_BYTES: u64 = 2 * 1024 * 1024;
+    let document = markdown_path(
+        document_path,
+        &std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
+    )
+    .ok_or_else(|| "La ruta no corresponde a un documento Markdown válido.".to_string())?;
+    let root = document
+        .parent()
+        .ok_or_else(|| "El documento no tiene una carpeta válida.".to_string())?;
+    let candidate = document_resource_path(document_path, relative_path)?;
+    let canonical = candidate
+        .canonicalize()
+        .map_err(|error| error.to_string())?;
+    if !canonical.starts_with(root) {
+        return Err("El recurso sale de la carpeta del documento.".to_string());
+    }
+    let metadata = std::fs::metadata(&canonical).map_err(|error| error.to_string())?;
+    if !metadata.is_file() || metadata.len() > MAX_BYTES {
+        return Err("El recurso no es un archivo válido o es demasiado grande.".to_string());
+    }
+    std::fs::read_to_string(canonical).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn read_document_resource(document_path: String, relative_path: String) -> Result<String, String> {
+    document_resource_text(&document_path, &relative_path)
+}
+
 fn decode_ipc_header(value: &str) -> Result<String, String> {
     fn hex_value(byte: u8) -> Option<u8> {
         match byte {
@@ -451,9 +516,13 @@ fn write_document_asset_bytes(
             };
             let candidate = safe_parent.join(name);
             if candidate.exists() {
-                let canonical = candidate.canonicalize().map_err(|error| error.to_string())?;
+                let canonical = candidate
+                    .canonicalize()
+                    .map_err(|error| error.to_string())?;
                 if !canonical.starts_with(document_directory) || !canonical.is_dir() {
-                    return Err("La carpeta de la imagen sale de la carpeta del documento.".to_string());
+                    return Err(
+                        "La carpeta de la imagen sale de la carpeta del documento.".to_string()
+                    );
                 }
                 safe_parent = canonical;
             } else {
@@ -475,6 +544,63 @@ fn write_document_asset_bytes(
         }
     }
     std::fs::write(destination, bytes).map_err(|error| error.to_string())
+}
+
+fn write_document_resource_bytes(
+    document_path: &str,
+    relative_path: &str,
+    bytes: &[u8],
+) -> Result<(), String> {
+    use std::path::Component;
+
+    const MAX_BYTES: usize = 2 * 1024 * 1024;
+    if bytes.len() > MAX_BYTES {
+        return Err("El recurso es demasiado grande para guardarlo.".to_string());
+    }
+    let destination = document_resource_path(document_path, relative_path)?;
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let document = markdown_path(document_path, &cwd)
+        .ok_or_else(|| "La ruta no corresponde a un documento Markdown válido.".to_string())?;
+    let document_directory = document
+        .parent()
+        .ok_or_else(|| "El documento no tiene una carpeta válida.".to_string())?;
+    let relative = Path::new(relative_path);
+    let mut safe_parent = document_directory.to_path_buf();
+    if let Some(relative_parent) = relative.parent() {
+        for component in relative_parent.components() {
+            let Component::Normal(name) = component else {
+                return Err("La carpeta del recurso no es válida.".to_string());
+            };
+            let candidate = safe_parent.join(name);
+            if candidate.exists() {
+                let canonical = candidate
+                    .canonicalize()
+                    .map_err(|error| error.to_string())?;
+                if !canonical.starts_with(document_directory) || !canonical.is_dir() {
+                    return Err(
+                        "La carpeta del recurso sale de la carpeta del documento.".to_string()
+                    );
+                }
+                safe_parent = canonical;
+            } else {
+                std::fs::create_dir(&candidate).map_err(|error| error.to_string())?;
+                safe_parent = candidate;
+            }
+        }
+    }
+    let file_name = destination
+        .file_name()
+        .ok_or_else(|| "El recurso no tiene un nombre válido.".to_string())?;
+    let safe_destination = safe_parent.join(file_name);
+    if safe_destination.exists() {
+        let canonical = safe_destination
+            .canonicalize()
+            .map_err(|error| error.to_string())?;
+        if !canonical.starts_with(document_directory) {
+            return Err("El recurso existente sale de la carpeta del documento.".to_string());
+        }
+    }
+    std::fs::write(safe_destination, bytes).map_err(|error| error.to_string())
 }
 
 /// Copia una imagen recuperada junto al `.md` recién guardado. La ruta del
@@ -501,6 +627,27 @@ fn write_document_asset(request: tauri::ipc::Request<'_>) -> Result<(), String> 
     write_document_asset_bytes(&document_path, &relative_path, bytes)
 }
 
+#[tauri::command]
+fn write_document_resource(request: tauri::ipc::Request<'_>) -> Result<(), String> {
+    let document_path = request
+        .headers()
+        .get("x-document-path")
+        .and_then(|value| value.to_str().ok())
+        .ok_or_else(|| "Falta la ruta del documento.".to_string())
+        .and_then(decode_ipc_header)?;
+    let relative_path = request
+        .headers()
+        .get("x-relative-path")
+        .and_then(|value| value.to_str().ok())
+        .ok_or_else(|| "Falta la ruta del recurso.".to_string())
+        .and_then(decode_ipc_header)?;
+    let bytes = match request.body() {
+        tauri::ipc::InvokeBody::Raw(bytes) => bytes,
+        _ => return Err("El recurso debe enviarse en binario.".to_string()),
+    };
+    write_document_resource_bytes(&document_path, &relative_path, bytes)
+}
+
 /// Sistema y arquitectura del binario en marcha, para elegir el instalador
 /// adecuado entre los adjuntos de la publicación de GitHub.
 #[tauri::command]
@@ -513,7 +660,10 @@ const INSTALLER_EXTENSIONS: [&str; 5] = ["deb", "appimage", "msi", "exe", "dmg"]
 fn safe_installer_name(file_name: &str) -> Option<String> {
     // Solo el nombre: un adjunto malicioso no debe poder escribir fuera de la
     // carpeta de descargas mediante `../` ni rutas absolutas.
-    let name = Path::new(file_name).file_name()?.to_string_lossy().into_owned();
+    let name = Path::new(file_name)
+        .file_name()?
+        .to_string_lossy()
+        .into_owned();
     if name.is_empty() || name.starts_with('.') {
         return None;
     }
@@ -523,7 +673,10 @@ fn safe_installer_name(file_name: &str) -> Option<String> {
     {
         return None;
     }
-    let extension = Path::new(&name).extension()?.to_string_lossy().to_ascii_lowercase();
+    let extension = Path::new(&name)
+        .extension()?
+        .to_string_lossy()
+        .to_ascii_lowercase();
     if !INSTALLER_EXTENSIONS.contains(&extension.as_str()) {
         return None;
     }
@@ -647,7 +800,10 @@ fn spell_checking_candidates(lang: &str) -> Vec<String> {
         ("zh", &["CN", "TW"]),
     ];
 
-    let mut parts = lang.trim().split(['-', '_']).filter(|part| !part.is_empty());
+    let mut parts = lang
+        .trim()
+        .split(['-', '_'])
+        .filter(|part| !part.is_empty());
     let Some(language) = parts.next().map(str::to_ascii_lowercase) else {
         return Vec::new();
     };
@@ -756,42 +912,47 @@ pub fn run() {
             write_markdown_document,
             print_document,
             read_document_asset,
+            read_document_resource,
             write_document_asset,
+            write_document_resource,
             update_target,
             install_downloaded_update,
             set_spell_checking
         ])
         .build(tauri::generate_context!())
         .expect("error al preparar EdiMarkWeb")
-        .run(|#[allow(unused_variables)] app, #[allow(unused_variables)] event| {
-            // Finder entrega los documentos asociados mediante el evento
-            // nativo Opened, no como argumentos de línea de órdenes.
-            #[cfg(target_os = "macos")]
-            if let tauri::RunEvent::Opened { urls } = event {
-                let paths = urls
-                    .into_iter()
-                    .filter_map(|url| url.to_file_path().ok())
-                    .filter(|path| {
-                        matches!(
-                            path.extension()
-                                .map(|ext| ext.to_string_lossy().to_ascii_lowercase()),
-                            Some(ext) if matches!(ext.as_str(), "md" | "markdown")
-                        )
-                    })
-                    .map(|path| path.to_string_lossy().into_owned())
-                    .collect();
-                deliver_markdown_paths(app, paths);
-                // Finder ya trae la aplicación al frente, pero si estaba
-                // minimizada el documento se abriría sin verse.
-                bring_main_window_to_front(app);
-            }
-        });
+        .run(
+            |#[allow(unused_variables)] app, #[allow(unused_variables)] event| {
+                // Finder entrega los documentos asociados mediante el evento
+                // nativo Opened, no como argumentos de línea de órdenes.
+                #[cfg(target_os = "macos")]
+                if let tauri::RunEvent::Opened { urls } = event {
+                    let paths = urls
+                        .into_iter()
+                        .filter_map(|url| url.to_file_path().ok())
+                        .filter(|path| {
+                            matches!(
+                                path.extension()
+                                    .map(|ext| ext.to_string_lossy().to_ascii_lowercase()),
+                                Some(ext) if matches!(ext.as_str(), "md" | "markdown")
+                            )
+                        })
+                        .map(|path| path.to_string_lossy().into_owned())
+                        .collect();
+                    deliver_markdown_paths(app, paths);
+                    // Finder ya trae la aplicación al frente, pero si estaba
+                    // minimizada el documento se abriría sin verse.
+                    bring_main_window_to_front(app);
+                }
+            },
+        );
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        decode_ipc_header, document_asset_bytes, markdown_target_path, write_document_asset_bytes,
+        decode_ipc_header, document_asset_bytes, document_resource_text, markdown_target_path,
+        write_document_asset_bytes, write_document_resource_bytes,
     };
 
     /// Carpeta de trabajo con un documento y su imagen al lado, como la de
@@ -860,6 +1021,28 @@ mod tests {
         let _ = std::fs::remove_dir_all(raiz);
     }
 
+    #[test]
+    fn lee_y_guarda_la_bibliografia_portable_del_documento() {
+        let raiz = carpeta_con_imagen("bibliografia-portable");
+        let documento = raiz.join("apuntes.md");
+        let bib = b"@book{mayer2009, title={Multimedia Learning}}";
+        write_document_resource_bytes(&documento.to_string_lossy(), "apuntes/references.bib", bib)
+            .expect("debería guardar la bibliografía");
+        assert_eq!(
+            document_resource_text(&documento.to_string_lossy(), "apuntes/references.bib",)
+                .expect("debería leer la bibliografía"),
+            String::from_utf8_lossy(bib),
+        );
+        assert!(document_resource_text(&documento.to_string_lossy(), "../fuera.bib").is_err());
+        assert!(write_document_resource_bytes(
+            &documento.to_string_lossy(),
+            "apuntes/notas.txt",
+            b"no",
+        )
+        .is_err());
+        let _ = std::fs::remove_dir_all(raiz);
+    }
+
     #[cfg(unix)]
     #[test]
     fn no_sigue_enlaces_simbolicos_fuera_de_la_carpeta_del_documento() {
@@ -870,12 +1053,10 @@ mod tests {
         std::fs::create_dir_all(&fuera).expect("no se pudo crear el destino externo");
         symlink(&fuera, raiz.join("enlace")).expect("no se pudo crear el enlace");
         let documento = raiz.join("apuntes.md");
-        assert!(write_document_asset_bytes(
-            &documento.to_string_lossy(),
-            "enlace/fuera.png",
-            &[1]
-        )
-        .is_err());
+        assert!(
+            write_document_asset_bytes(&documento.to_string_lossy(), "enlace/fuera.png", &[1])
+                .is_err()
+        );
         assert!(!fuera.join("fuera.png").exists());
         let _ = std::fs::remove_dir_all(raiz);
         let _ = std::fs::remove_dir_all(fuera);

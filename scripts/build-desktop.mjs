@@ -8,6 +8,7 @@ const outputRoot = join(projectRoot, 'dist');
 
 const appFiles = [
   'asset-paths.js',
+  'bibliography.js',
   'desktop-updater.js',
   'document-format.js',
   'favicon.ico',
@@ -39,7 +40,7 @@ const appFiles = [
   'zip-writer.js',
 ];
 
-const directories = ['locales', 'vendor/edicuatex'];
+const directories = ['csl', 'locales', 'vendor/edicuatex'];
 
 const vendorFiles = new Map([
   ['node_modules/marked/lib/marked.umd.js', 'vendor/marked.umd.js'],

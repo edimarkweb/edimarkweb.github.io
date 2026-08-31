@@ -155,6 +155,41 @@ test('en escritorio copia las imágenes relativas junto al Markdown guardado', a
   assert.equal(result.companionCount, 1);
 });
 
+test('en escritorio lee y guarda una bibliografía mediante el canal restringido de recursos', async () => {
+  const writes = [];
+  const platform = createPlatformApi({
+    Blob,
+    __EDIMARK_TAURI__: {
+      dialog: { save: async () => '/tmp/copia/tema.md' },
+      fs: { writeTextFile: async (path, contents) => writes.push(['text', path, contents]) },
+      app: {
+        readDocumentResource: async (documentPath, relativePath) => {
+          assert.equal(documentPath, '/tmp/copia/tema.md');
+          assert.equal(relativePath, 'tema/references.bib');
+          return '@book{demo, title={Demo}}';
+        },
+        writeDocumentResource: async (documentPath, relativePath, contents) => {
+          writes.push(['resource', documentPath, relativePath, new TextDecoder().decode(contents)]);
+        },
+        writeDocumentAsset: async () => assert.fail('la bibliografía no debe pasar por el lector de imágenes'),
+      },
+    },
+  });
+
+  assert.equal(
+    await platform.readDocumentResource('/tmp/copia/tema.md', 'tema/references.bib'),
+    '@book{demo, title={Demo}}',
+  );
+  await platform.saveFile({
+    suggestedName: 'tema.md',
+    contents: '---\nbibliography: "tema/references.bib"\n---',
+    companionFiles: [{ relativePath: 'tema/references.bib', contents: '@book{demo}' }],
+  });
+  assert.deepEqual(writes[1], [
+    'resource', '/tmp/copia/tema.md', 'tema/references.bib', '@book{demo}',
+  ]);
+});
+
 test('cancelar el diálogo no escribe ni marca el documento como guardado', async () => {
   const platform = createPlatformApi({
     Blob,

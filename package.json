@@ -1,6 +1,6 @@
 {
   "name": "edimarkweb.github.io",
-  "version": "2.41.2",
+  "version": "2.42.0",
   "description": "> **Nota**   > Este repositorio ha sido trasladado a [edimarkweb/edimarkweb.github.io](https://github.com/edimarkweb/edimarkweb.github.io). La aplicación se publica ahora en [https://edimarkweb.github.io/](https://edimarkweb.github.io/).",
   "main": "i18n.js",
   "scripts": {
@@ -13,11 +13,12 @@
     "test:assets": "node --test test/asset-paths.test.mjs",
     "test:format": "node --test test/document-format.test.mjs",
     "test:office": "node --test test/office-format.test.mjs",
+    "test:bibliography": "node --test test/bibliography.test.mjs",
     "test:platform": "node --test test/platform-api.test.mjs",
     "test:updater": "node --test test/desktop-updater.test.mjs",
     "test:browser": "node --test --test-concurrency=1 test/browser.test.mjs",
     "test:export": "node --test --test-concurrency=1 test/epub-export.test.mjs",
-    "test:all": "npm run test && npm run test:assets && npm run test:format && npm run test:office && npm run test:platform && npm run test:updater && npm run test:export"
+    "test:all": "npm run test && npm run test:assets && npm run test:format && npm run test:office && npm run test:bibliography && npm run test:platform && npm run test:updater && npm run test:export"
   },
   "repository": {
     "type": "git",

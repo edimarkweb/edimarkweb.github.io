@@ -758,6 +758,46 @@ test('un nombre de documento con marcado no se interpreta como HTML', async (t) 
   assert.equal(await page.evaluate(() => window.__injected === true), false);
 });
 
+test('una pestaña cruza varias posiciones en un solo arrastre y conserva el cursor', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.evaluate(() => {
+    ['uno.md', 'dos.md', 'tres.md', 'cuatro.md', 'cinco.md']
+      .forEach(name => newDoc(name, '', { activate: false }));
+  });
+
+  const names = () => page.locator('.tab-name').allTextContents();
+  const drag = async (source, clientX) => {
+    const box = await source.boundingBox();
+    assert.ok(box, 'la pestaña que se arrastra debe estar visible');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    // Un único movimiento largo: no debe depender de encadenar intercambios
+    // con cada pestaña vecina.
+    await page.mouse.move(clientX, box.y + box.height / 2);
+    assert.equal(await page.locator('html').evaluate(el => el.classList.contains('is-tab-dragging')), true);
+    assert.equal(await page.locator('body').evaluate(el => getComputedStyle(el).cursor), 'grabbing');
+    await page.mouse.up();
+    assert.equal(await page.locator('html').evaluate(el => el.classList.contains('is-tab-dragging')), false);
+  };
+
+  const firstBox = await page.locator('.tab').first().boundingBox();
+  assert.ok(firstBox);
+  await drag(page.locator('.tab').filter({ hasText: 'cinco.md' }), firstBox.x + 2);
+  assert.equal((await names())[0], 'cinco.md');
+
+  const lastBox = await page.locator('.tab').last().boundingBox();
+  assert.ok(lastBox);
+  await drag(page.locator('.tab').first(), lastBox.x + lastBox.width - 2);
+  assert.equal((await names()).at(-1), 'cinco.md');
+  assert.deepEqual(
+    await page.evaluate(() => docs.map(doc => doc.name)),
+    await names(),
+    'el orden persistido debe coincidir con el de la barra',
+  );
+});
+
 test('el texto alternativo se lee del Markdown que rodea al marcador base64', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
@@ -1653,7 +1693,7 @@ test('en escritorio Guardar como copia las imágenes relativas del documento ori
     && JSON.stringify(call[3]) === '[1,2,3,4]'));
 });
 
-test('en escritorio Guardar como renombra la carpeta propia de imágenes', async (t) => {
+test('en escritorio Guardar como renombra la carpeta propia de imágenes y bibliografía', async (t) => {
   const { context, page } = await openApp({
     initStorage: () => {
       window.__desktopOwnFolderSaveCalls = [];
@@ -1663,7 +1703,15 @@ test('en escritorio Guardar como renombra la carpeta propia de imágenes', async
           save: async () => '/destino/resumen.md',
         },
         fs: {
-          readTextFile: async () => '# Tema\n\n![Gráfico](tema/grafico.png)',
+          readTextFile: async () => [
+            '---',
+            'bibliography: "tema/references.bib"',
+            '---',
+            '',
+            '# Tema',
+            '',
+            '![Gráfico](tema/images/grafico.png)',
+          ].join('\n'),
           writeTextFile: async (path, contents) => {
             window.__desktopOwnFolderSaveCalls.push(['text', path, contents]);
           },
@@ -1674,9 +1722,18 @@ test('en escritorio Guardar como renombra la carpeta propia de imágenes', async
             window.__desktopOwnFolderSaveCalls.push(['read-image', path]);
             return [1, 2, 3, 4];
           },
+          readDocumentResource: async (documentPath, relativePath) => {
+            window.__desktopOwnFolderSaveCalls.push(['read-resource', documentPath, relativePath]);
+            return '@book{demo, title={Demo}}';
+          },
           writeDocumentAsset: async (documentPath, relativePath, contents) => {
             window.__desktopOwnFolderSaveCalls.push([
               'write-image', documentPath, relativePath, [...contents],
+            ]);
+          },
+          writeDocumentResource: async (documentPath, relativePath, contents) => {
+            window.__desktopOwnFolderSaveCalls.push([
+              'write-resource', documentPath, relativePath, new TextDecoder().decode(contents),
             ]);
           },
         },
@@ -1687,18 +1744,26 @@ test('en escritorio Guardar como renombra la carpeta propia de imágenes', async
 
   await page.keyboard.press('Control+o');
   await page.locator('.tab-name').getByText('tema.md', { exact: true }).waitFor();
+  await page.waitForFunction(() => window.__desktopOwnFolderSaveCalls.some(call => call[0] === 'read-resource'));
   await page.keyboard.press('Control+Shift+s');
-  await page.waitForFunction(() => window.__desktopOwnFolderSaveCalls.some(call => call[0] === 'write-image'));
+  await page.waitForFunction(() => window.__desktopOwnFolderSaveCalls.some(call => call[0] === 'write-resource'));
 
   const calls = await page.evaluate(() => window.__desktopOwnFolderSaveCalls);
   assert.ok(calls.some(call => call[0] === 'text'
     && call[1] === '/destino/resumen.md'
-    && call[2] === '# Tema\n\n![Gráfico](resumen/grafico.png)'));
-  assert.ok(calls.some(call => call[0] === 'read-image' && call[1] === '/origen/tema/grafico.png'));
+    && call[2].includes('bibliography: "resumen/references.bib"')
+    && call[2].includes('![Gráfico](resumen/images/grafico.png)')));
+  assert.ok(calls.some(call => call[0] === 'read-image' && call[1] === '/origen/tema/images/grafico.png'));
   assert.ok(calls.some(call => call[0] === 'write-image'
     && call[1] === '/destino/resumen.md'
-    && call[2] === 'resumen/grafico.png'));
-  assert.equal(await page.locator('#markdown-input').inputValue(), '# Tema\n\n![Gráfico](resumen/grafico.png)');
+    && call[2] === 'resumen/images/grafico.png'));
+  assert.ok(calls.some(call => call[0] === 'write-resource'
+    && call[1] === '/destino/resumen.md'
+    && call[2] === 'resumen/references.bib'
+    && call[3] === '@book{demo, title={Demo}}'));
+  const savedMarkdown = await page.locator('#markdown-input').inputValue();
+  assert.match(savedMarkdown, /bibliography: "resumen\/references\.bib"/);
+  assert.match(savedMarkdown, /!\[Gráfico\]\(resumen\/images\/grafico\.png\)/);
 });
 
 test('pegar detecta imágenes publicadas solo en clipboardData.items', async (t) => {
@@ -1829,6 +1894,13 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
       epubCover: 'auto',
       epubCoverImage: '',
       epubCoverName: '',
+      bibliographyContent: '',
+      bibliographyName: '',
+      bibliographyTitle: '',
+      bibliographyHeadingLevel: 2,
+      citationStyle: 'apa',
+      cslContent: '',
+      cslName: '',
       documentClass: 'report',
       classOptions: '12pt, a4paper',
       preamble: '\\usepackage{amsthm}',
@@ -1872,6 +1944,249 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
     await page.evaluate(() => window.__edimarkLatexSettings.preamble),
     '\\usepackage{amsthm}'
   );
+});
+
+test('carga una bibliografía, busca referencias e inserta una cita múltiple', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const bibliography = `
+@article{garcia2024,
+  author = {García López, Ana},
+  title = {IA generativa en el aula},
+  year = {2024}
+}
+@book{doe2023,
+  author = {John Doe},
+  title = {Teaching with Markdown},
+  year = {2023}
+}`;
+  const csl = '<?xml version="1.0"?><style xmlns="http://purl.org/net/xbiblio/csl" version="1.0"><info><title>Prueba</title><id>http://example.com/test</id></info><citation><layout><text variable="title"/></layout></citation><bibliography><layout><text variable="title"/></layout></bibliography></style>';
+
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  await page.locator('#doc-settings-tab-bibliography').click();
+  assert.equal(await page.locator('#citation-style-select').inputValue(), 'apa');
+  await page.locator('#bibliography-example-btn').click();
+  assert.match(await page.locator('#bibliography-summary').textContent(), /bibliografia-ejemplo\.bib.*4 referencias/);
+  await page.locator('#bibliography-input').setInputFiles({
+    name: 'fuentes.bib',
+    mimeType: 'text/plain',
+    buffer: Buffer.from(bibliography),
+  });
+  await page.waitForFunction(() => document.getElementById('bibliography-summary')?.textContent.includes('fuentes.bib'));
+  await page.locator('#csl-input').setInputFiles({
+    name: 'estilo.csl',
+    mimeType: 'application/xml',
+    buffer: Buffer.from(csl),
+  });
+  await page.waitForFunction(() => document.getElementById('csl-summary')?.textContent.includes('estilo.csl'));
+  assert.equal(await page.locator('#citation-style-select').inputValue(), 'custom');
+  await page.locator('#bibliography-title').fill('Fuentes consultadas');
+  await page.locator('#bibliography-heading-level').selectOption('3');
+  assert.match(await page.locator('#bibliography-summary').textContent(), /fuentes\.bib.*2 referencias/);
+  assert.equal(await page.locator('#csl-summary').textContent(), 'Estilo: estilo.csl');
+  await page.locator('#latex-settings-save-btn').click();
+
+  await page.evaluate(() => {
+    window.PandocExporter.generateHtml = async () => '<p><span class="citation">IA generativa en el aulaTeaching with Markdown</span></p><div id="refs"><div class="csl-entry">Bibliografía compuesta</div></div>';
+  });
+  await page.locator('#markdown-input').fill('# Trabajo\n\nSegún ');
+  await page.locator('#citation-btn').click();
+  await page.locator('#citation-search').fill('garcia');
+  await page.locator('#citation-results input[value="garcia2024"]').check();
+  await page.locator('#citation-search').fill('markdown');
+  await page.locator('#citation-results input[value="doe2023"]').check();
+  await page.locator('#citation-insert-btn').click();
+  assert.equal(await page.locator('#markdown-input').inputValue(), '# Trabajo\n\nSegún [@garcia2024; @doe2023]');
+  await page.locator('#html-output .edimark-preview-bibliography').waitFor();
+  assert.equal(await page.locator('#html-output .edimark-preview-bibliography h3').textContent(), 'Fuentes consultadas');
+
+  // El PDF compone las citas justo antes de imprimir y después devuelve la
+  // vista editable, que conserva las claves Markdown.
+  await page.evaluate(() => {
+    window.PandocExporter.generateHtml = async () => '<h1>Trabajo</h1><p>Según <span class="citation">(García, 2024; Doe, 2023)</span></p><div id="refs">Bibliografía compuesta</div>';
+    window.__printedHtml = '';
+    window.print = () => { window.__printedHtml = document.getElementById('html-output').innerHTML; };
+  });
+  await page.locator('#export-menu-btn').click();
+  await page.locator('#export-menu [data-export-format="pdf"]').click();
+  await page.waitForFunction(() => window.__printedHtml.includes('Bibliografía compuesta'));
+  assert.match(await page.evaluate(() => window.__printedHtml), /class="citation"/);
+  await page.waitForFunction(() => document.querySelector('#html-output .edimark-preview-citation'));
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.__edimarkReady === true);
+  assert.equal(await page.evaluate(() => window.__edimarkLatexSettings.bibliographyName), 'fuentes.bib');
+  assert.equal(await page.evaluate(() => window.__edimarkLatexSettings.cslName), 'estilo.csl');
+  assert.equal(await page.evaluate(() => window.__edimarkLatexSettings.bibliographyTitle), 'Fuentes consultadas');
+  assert.equal(await page.evaluate(() => window.__edimarkLatexSettings.bibliographyHeadingLevel), 3);
+});
+
+test('la bibliografía de ejemplo se carga desde el selector de citas sin archivos', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').fill('Fuente: ');
+  await page.evaluate(() => {
+    window.PandocExporter.generateHtml = async ({ markdown }) => {
+      const mayer = markdown.includes('mayer2009multimedia');
+      const label = mayer ? '(Mayer, 2009)' : '(UNESCO, 2023)';
+      const reference = mayer ? 'Mayer, R. E. (2009). Multimedia learning.' : 'UNESCO. (2023). Guidance for generative AI.';
+      return `<p><span class="citation">${label}</span></p><div id="refs" class="references csl-bib-body"><div class="csl-entry">${reference}</div></div>`;
+    };
+  });
+  await page.locator('#citation-btn').click();
+  await page.locator('#citation-library-empty').waitFor({ state: 'visible' });
+  await page.locator('#citation-load-example-btn').click();
+  await page.locator('#citation-library-ready').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#citation-result-count').textContent(), '4 referencias');
+  await page.locator('#citation-search').fill('UNESCO');
+  await page.locator('#citation-results input[value="unesco2023ia"]').check();
+  await page.locator('#citation-insert-btn').click();
+
+  assert.match(
+    await page.locator('#markdown-input').inputValue(),
+    /^---\nbibliography: "Manual\/references\.bib"\n---\n\nFuente: \[@unesco2023ia\]$/,
+  );
+  const previewCitation = page.locator('#html-output .edimark-preview-citation');
+  await previewCitation.waitFor();
+  assert.equal(await previewCitation.textContent(), '(UNESCO, 2023)');
+  assert.equal(await previewCitation.getAttribute('contenteditable'), 'false');
+  await page.locator('#html-output .edimark-preview-bibliography').waitFor();
+  assert.equal(await page.locator('#html-output .edimark-preview-bibliography h2').textContent(), 'Referencias');
+  assert.match(await page.locator('#html-output .edimark-preview-bibliography').textContent(), /Guidance for generative AI/);
+  assert.doesNotMatch(await page.evaluate(() => window.buildHtmlWithTex()), /edimark-preview-bibliography|Guidance for generative AI/);
+
+  // La ficha es indivisible, pero al pulsarla se edita con el mismo selector.
+  await previewCitation.click();
+  assert.equal(await page.locator('#citation-modal-title').textContent(), 'Editar cita bibliográfica');
+  assert.equal(await page.locator('#citation-results input[value="unesco2023ia"]').isChecked(), true);
+  await page.locator('#citation-results input[value="unesco2023ia"]').uncheck();
+  await page.locator('#citation-search').fill('Mayer');
+  await page.locator('#citation-results input[value="mayer2009multimedia"]').check();
+  await page.locator('#citation-insert-btn').click();
+  assert.match(
+    await page.locator('#markdown-input').inputValue(),
+    /Fuente: \[@mayer2009multimedia\]$/,
+  );
+  assert.equal(await page.locator('#html-output .edimark-preview-citation').textContent(), '(Mayer, 2009)');
+
+  // En Markdown, el botón del libro reconoce la cita bajo el cursor.
+  await page.locator('#markdown-input').focus();
+  await page.locator('#markdown-input').evaluate((textarea) => {
+    const position = textarea.value.indexOf('mayer2009') + 3;
+    textarea.setSelectionRange(position, position);
+  });
+  await page.locator('#citation-btn').click();
+  assert.equal(await page.locator('#citation-modal-title').textContent(), 'Editar cita bibliográfica');
+  assert.equal(await page.locator('#citation-results input[value="mayer2009multimedia"]').isChecked(), true);
+  await page.locator('#citation-cancel-btn').click();
+
+  // También funciona si solo está seleccionada una parte de la clave.
+  await page.locator('#markdown-input').evaluate((textarea) => {
+    const start = textarea.value.indexOf('mayer2009') + 2;
+    textarea.setSelectionRange(start, start + 5);
+  });
+  await page.locator('#citation-btn').click();
+  assert.equal(await page.locator('#citation-modal-title').textContent(), 'Editar cita bibliográfica');
+  assert.equal(await page.locator('#citation-results input[value="mayer2009multimedia"]').isChecked(), true);
+  await page.locator('#citation-cancel-btn').click();
+  assert.match(
+    await page.evaluate(() => window.__edimarkLatexSettings.bibliographyName),
+    /\/references\.bib$/,
+  );
+});
+
+test('al guardar, la bibliografía viaja en la carpeta propia y queda declarada en el Markdown', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__portableBibliographyWrites = [];
+      const directory = (prefix = '') => ({
+        getDirectoryHandle: async name => directory(`${prefix}${name}/`),
+        getFileHandle: async name => ({
+          createWritable: async () => ({
+            write: async contents => {
+              window.__portableBibliographyWrites.push([
+                `${prefix}${name}`,
+                contents instanceof Blob ? await contents.text() : String(contents),
+              ]);
+            },
+            close: async () => {},
+          }),
+        }),
+      });
+      Object.defineProperty(window, 'showDirectoryPicker', {
+        configurable: true,
+        value: async () => directory(),
+      });
+    },
+  });
+  t.after(() => context.close());
+
+  await page.evaluate(() => {
+    const doc = newDoc('cosa.md', 'Texto [@unesco2023ia].');
+    attachBibliographyToDocument(doc, {
+      content: window.EdiMarkBibliography.EXAMPLE_BIBLIOGRAPHY,
+      name: 'origen.bib',
+    });
+  });
+  await page.keyboard.press('Control+s');
+  await page.waitForFunction(() => window.__portableBibliographyWrites.length === 2);
+
+  const writes = new Map(await page.evaluate(() => window.__portableBibliographyWrites));
+  assert.match(writes.get('cosa.md'), /^---\nbibliography: "cosa\/references\.bib"\n---/);
+  assert.match(writes.get('cosa.md'), /\[@unesco2023ia\]/);
+  assert.match(writes.get('cosa/references.bib'), /@book\{unesco2023ia,/);
+});
+
+test('la carpeta de recursos recupera references.bib aunque no contenga imágenes', async (t) => {
+  const parent = await mkdtemp(join(tmpdir(), 'edimark-proyecto-'));
+  const project = join(parent, 'cosa');
+  await mkdir(project, { recursive: true });
+  await writeFile(join(project, 'references.bib'), `
+@book{mayer2009,
+  author = {Mayer, Richard E.},
+  title = {Multimedia Learning},
+  year = {2009}
+}`);
+  t.after(() => rm(parent, { recursive: true, force: true }));
+
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.evaluate(() => newDoc(
+    'cosa.md',
+    '---\nbibliography: "cosa/references.bib"\n---\n\nTexto [@mayer2009].',
+  ));
+  await page.locator('#assets-folder-input').setInputFiles(project);
+  await page.waitForFunction(() => window.__edimarkLatexSettings.bibliographyContent.includes('mayer2009'));
+  await page.locator('#citation-btn').click();
+  await page.locator('#citation-results input[value="mayer2009"]').waitFor();
+});
+
+test('en escritorio se carga automáticamente la bibliografía declarada junto al Markdown', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__EDIMARK_TAURI__ = {
+        dialog: { open: async () => '/docs/cosa.md' },
+        fs: {
+          readTextFile: async () => '---\nbibliography: "cosa/references.bib"\n---\n\nTexto [@mayer2009].',
+        },
+        app: {
+          readDocumentResource: async (documentPath, relativePath) => {
+            if (documentPath !== '/docs/cosa.md' || relativePath !== 'cosa/references.bib') throw new Error('ruta inesperada');
+            return '@book{mayer2009, author={Mayer, Richard E.}, title={Multimedia Learning}, year={2009}}';
+          },
+        },
+      };
+    },
+  });
+  t.after(() => context.close());
+
+  await page.keyboard.press('Control+o');
+  await page.waitForFunction(() => window.__edimarkLatexSettings.bibliographyContent.includes('mayer2009'));
+  await page.locator('#citation-btn').click();
+  await page.locator('#citation-results input[value="mayer2009"]').waitFor();
 });
 
 /*
@@ -3110,7 +3425,7 @@ test('el cuadro del documento lleva a las opciones generales por su misma pesta�
   );
   assert.deepEqual(
     await page.locator('#doc-settings-tablist [role="tab"]').allTextContents(),
-    ['Datos e índice', 'Texto y página', 'EPUB', 'LaTeX'],
+    ['Datos e índice', 'Citas', 'Texto y página', 'EPUB', 'LaTeX'],
   );
   assert.equal(await page.locator('#doc-settings-tab-format').getAttribute('aria-selected'), 'true');
   assert.equal(await page.locator('#doc-settings-panel-format').isVisible(), true);
@@ -4390,7 +4705,7 @@ test('las imágenes incrustadas se pueden pasar a la carpeta del documento', asy
     en un `![](...)` cortarían el enlace—, para que dos `.md` vecinos no se
     pisen las imágenes.
   */
-  assert.match(markdown, /!\[Un gráfico\]\(Mi-archivo\/02\.png\)/);
+  assert.match(markdown, /!\[Un gráfico\]\(Mi-archivo\/images\/01\.png\)/);
   assert.match(markdown, /!\[Ya suelta\]\(Mi-archivo\/01\.png\)/);
 
   // Ya no quedan Base64: el gestor conserva las dos imágenes, ahora como
@@ -4401,7 +4716,7 @@ test('las imágenes incrustadas se pueden pasar a la carpeta del documento', asy
     src: img.getAttribute('src'),
     original: img.dataset.edimarkSrc || '',
   })));
-  const extraida = imagenes.find(imagen => imagen.original === 'Mi-archivo/02.png');
+  const extraida = imagenes.find(imagen => imagen.original === 'Mi-archivo/images/01.png');
   assert.ok(extraida, 'la imagen extraída debería seguir en la vista previa');
   assert.match(extraida.src, /^blob:/);
 });
@@ -4436,15 +4751,15 @@ test('las imágenes pasadas a la carpeta se escriben al guardar', async (t) => {
   await documentoConImagenIncrustada(page);
   await nombrarDocumento(page, 'tema-3');
   await page.locator('#base64-extract-btn').click();
-  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('tema-3/01.png'));
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('tema-3/images/01.png'));
 
   await page.keyboard.press('Control+s');
-  await page.waitForFunction(() => window.__webSaveCalls.some(call => call[1] === 'tema-3/01.png'));
+  await page.waitForFunction(() => window.__webSaveCalls.some(call => call[1] === 'tema-3/images/01.png'));
 
   const llamadas = await page.evaluate(() => window.__webSaveCalls);
   const markdown = llamadas.find(call => String(call[1]).endsWith('.md'));
   assert.ok(!markdown[2].includes('base64,'), 'el Markdown guardado no debe llevar la imagen dentro');
-  const imagen = llamadas.find(call => call[1] === 'tema-3/01.png');
+  const imagen = llamadas.find(call => call[1] === 'tema-3/images/01.png');
   assert.deepEqual(imagen[2], [...PNG_PIXEL], 'la imagen escrita debe ser la original, byte a byte');
 });
 

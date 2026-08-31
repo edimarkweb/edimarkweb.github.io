@@ -61,7 +61,7 @@ Al costat del logotip hi ha els menús **Fitxer**, **Exportar** i **Configuraci�
 * **Imprimir (Ctrl+P)**: una vista preparada per a paper o PDF.
 * **Ajuda**: el **Manual (F1)**, **Quant a EdiMarkWeb** —versió, autor i llicències— i, a l'escriptori, **Cercar actualitzacions…**.
 
-La barra d'eines, sota l'anterior, reuneix desfer i refer, negreta, cursiva, encapçalaments (H1…H6), llistes, cites, codi, enllaços, imatges, taules, **Enganxar** i les fórmules. Cada botó diu, en passar-hi el ratolí, què fa i amb quina drecera. A les pantalles petites es plega en dos botons, **Accions** i **Format**.
+La barra d'eines, sota l'anterior, reuneix desfer i refer, negreta, cursiva, encapçalaments (H1…H6), llistes, cites, codi, enllaços, imatges, taules, **citacions bibliogràfiques**, **Enganxar** i les fórmules. Cada botó diu, en passar-hi el ratolí, què fa i amb quina drecera. A les pantalles petites es plega en dos botons, **Accions** i **Format**.
 
 ---
 
@@ -86,7 +86,7 @@ El botó **Imatge** admet un fitxer del disc o una URL, i pregunta com inserir-l
 
 **Gestor d'imatges.** Sota l'editor Markdown, una llista reuneix les imatges del document. Totes es poden **veure**, **reemplaçar** per una altra enganxada des del porta-retalls, triada del disc o indicada mitjançant un URL, i **eliminar del document**. Les enllaçades mostren la ruta o l'URL i també es poden **incrustar** en Base64; eliminar la referència no esborra el fitxer original ni la imatge remota. En les imatges en línia, la conversió depèn que el servidor permeti descarregar-les; si la bloqueja, el document no canvia. Les que ja estan incrustades mostren el format i la mida i permeten veure'n o copiar-ne el codi.
 
-El codi Base64 ocupa milers de caràcters, per això EdiMarkWeb el plega i deixa a l'editor una marca curta com ara `__EDIMARK_B64_1__`; el contingut real es conserva intacte en desar, copiar i exportar. El botó **Passar les incrustades a la carpeta** fa el camí de tornada: cada imatge es converteix en un fitxer dins d'una carpeta amb el nom del document (`el-meu-fitxer.md` → `el-meu-fitxer/`) i al Markdown hi queda la seva ruta. Els fitxers s'escriuen en desar, i `Ctrl+Z` desfà el canvi.
+El codi Base64 ocupa milers de caràcters, per això EdiMarkWeb el plega i deixa a l'editor una marca curta com ara `__EDIMARK_B64_1__`; el contingut real es conserva intacte en desar, copiar i exportar. El botó **Passar les incrustades a la carpeta** fa el camí de tornada: cada imatge es converteix en un fitxer dins de la subcarpeta de recursos del document (`el-meu-fitxer.md` → `el-meu-fitxer/images/`) i al Markdown hi queda la seva ruta. Els fitxers s'escriuen en desar, i `Ctrl+Z` desfà el canvi.
 
 ---
 
@@ -148,6 +148,16 @@ Lletres gregues ($\alpha$, $\beta$, $\Omega$), subíndexs ($H_2O$), comparacions
 
 ---
 
+## Citacions i bibliografia
+
+A **Configuració → Opcions generals… → Citacions** pots carregar una biblioteca **BibTeX** (`.bib`) o **CSL JSON** (`.json`). Si només vols provar la funció, **Carrega una bibliografia d'exemple** prepara quatre referències completes sobre educació, competència digital i aprenentatge. **APA 7** és l'estil inicial; també pots triar Chicago autor-data, MLA 9, IEEE o carregar un fitxer **CSL** (`.csl`) propi. En aquestes opcions també es poden canviar el títol de la bibliografia —«Referències» per defecte— i el nivell H1–H6. Els fitxers no s'envien a cap servei.
+
+El botó del llibre —o `Ctrl+Alt+B`— obre un cercador per autor, títol, any o clau. Marca una referència o més i prem **Insereix la citació**: el Markdown rep una citació compatible amb Pandoc, com `[@garcia2024]` o `[@garcia2024; @doe2023]`. Si el cursor o una selecció són dins d'una citació, el mateix botó l'obre per editar-la. A la vista prèvia apareix com una fitxa llegible que no es pot editar per parts; també es pot prémer per canviar-ne les referències. La bibliografia final es mostra al peu de la vista prèvia i, en exportar a DOCX, ODT, EPUB, HTML, TEX o PDF, es reprodueix amb el mateix títol, nivell i estil.
+
+En desar `el-meu-fitxer.md`, EdiMarkWeb copia la biblioteca a `el-meu-fitxer/references.bib` —o `references.json`— i declara aquesta ruta a les metadades YAML. Les imatges pròpies s'agrupen a `el-meu-fitxer/images/`. Per traslladar el treball n'hi ha prou de conservar junts el Markdown i la carpeta `el-meu-fitxer`. L'aplicació d'escriptori recupera la biblioteca automàticament; per seguretat, a la versió web cal prémer **Vincula la carpeta de recursos…** i triar `el-meu-fitxer` en obrir-lo en un altre navegador o ordinador. L'estil CSL personalitzat continua sent una preferència local del dispositiu.
+
+---
+
 ## Cercar i reemplaçar
 
 La lupa (o `Ctrl+F`) obre el cercador, que treballa al plafó on siguis:
@@ -198,13 +208,16 @@ El format s'aplica a l'editor visual i als cinc formats d'exportació, amb tres 
 
 A la barra hi ha també un botó d'exportar amb la seva fletxa, al costat del de copiar: el botó repeteix d'un clic l'últim format que vas fer servir —ho diu en un rètol petit, i de partida és DOCX— i la fletxa obre aquesta mateixa llista.
 
+Si has carregat una bibliografia, tots els formats resolen les citacions `[@clau]` i afegeixen la llista de referències amb l'estil CSL triat.
+
 ### Opcions generals dels documents
 
-**Configuració → Opcions generals…** desa els valors de partida per a tots els documents, i es recorden d'una sessió a l'altra. Té quatre pestanyes:
+**Configuració → Opcions generals…** desa els valors de partida per a tots els documents, i es recorden d'una sessió a l'altra. Té cinc pestanyes:
 
 * **Dades i índex**: **idioma** (per omissió, el mateix de la interfície), **autor** —que apareix a les propietats del fitxer i a la portada de l'EPUB i del LaTeX; deixa'l buit si no vols que el Pandoc escrigui la línia del nom en DOCX i ODT—, **índex automàtic** i **numerar els apartats** (1, 1.1, 1.2…; l'ODT no admet aquesta numeració).
 * **Text i pàgina**: els mateixos ajustos de text i pàgina de l'apartat anterior, com a valors de partida. Quatre ja vénen posats —**12 pt**, **amb serifa**, interlineat **1,5** i paper **A4**—, perquè són els que l'editor visual necessita per ensenyar la veritat: declarats, el que es veu al full és el que surt en els cinc formats. La resta surten sense fixar.
 * **EPUB**: la **portada**, que pot ser la que **genera** l'aplicació amb el títol i l'autor, **una imatge teva** (fins a 1 MB) o **cap**.
+* **Citacions**: la biblioteca BibTeX o CSL JSON i, opcionalment, l'estil CSL que s'aplicarà en exportar.
 * **LaTeX**: la **classe** (`article`, `report` o `book`), les seves **opcions** (`12pt, a4paper`) i un **preàmbul** propi, que s'insereix just abans de `\begin{document}`. Un preàmbul amb errors no avisa aquí: la fallada apareix en compilar.
 
 > **Sobre l'índex**: en DOCX i ODT és un camp que calcula el processador de textos, així que el document s'obre amb la llista d'apartats però sense números de pàgina. Perquè surtin, actualitza'l: al Word, clic dret sobre l'índex → *Actualitzar camps*; al LibreOffice, *Eines → Actualitza → Índexs*.

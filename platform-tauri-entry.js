@@ -105,7 +105,17 @@ if (window.__TAURI_INTERNALS__) {
       writeMarkdownDocument: (path, contents) => invoke('write_markdown_document', { path, contents }),
       printDocument: (page) => invoke('print_document', { page: page || null }),
       readDocumentAsset: path => invoke('read_document_asset', { path }),
+      readDocumentResource: (documentPath, relativePath) => invoke('read_document_resource', {
+        documentPath,
+        relativePath,
+      }),
       writeDocumentAsset: (documentPath, relativePath, bytes) => invoke('write_document_asset', bytes, {
+        headers: {
+          'x-document-path': encodeURIComponent(documentPath),
+          'x-relative-path': encodeURIComponent(relativePath),
+        },
+      }),
+      writeDocumentResource: (documentPath, relativePath, bytes) => invoke('write_document_resource', bytes, {
         headers: {
           'x-document-path': encodeURIComponent(documentPath),
           'x-relative-path': encodeURIComponent(relativePath),

@@ -10,6 +10,7 @@
 */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import { runPandoc, readZipEntries } from './helpers/pandoc-runner.mjs';
 import {
@@ -832,4 +833,44 @@ test('el ciclo completo de EPUB devuelve el documento reconocible', { timeout: 1
   assert.match(markdown, /\n---\n/, `raya perdida:\n${markdown}`);
   assert.doesNotMatch(markdown, /-{10,}/, 'la raya volvió como una fila de guiones');
   assert.match(markdown, /\$\$\n[^$]*\\frac\{-b[^$]*\n\$\$/, `fórmula en bloque aplastada:\n${markdown}`);
+});
+
+test('citeproc aplica APA 7 y escribe el título elegido de la bibliografía en HTML y DOCX', { timeout: 180000 }, async () => {
+  const bibliography = new TextEncoder().encode(`
+    @book{garcia2024,
+      author = {García, Ana},
+      title = {Didáctica digital},
+      year = {2024},
+      publisher = {Aula Abierta}
+    }
+  `);
+  const apa = new Uint8Array(await readFile(new URL('../csl/apa.csl', import.meta.url)));
+  const markdown = '# Trabajo\n\nLa propuesta se apoya en una fuente [@garcia2024].\n\n### Fuentes consultadas\n\n::: {#refs}\n:::\n';
+  const extraFiles = { 'references.bib': bibliography, 'style.csl': apa };
+  const citationArgs = ' --citeproc --bibliography=/references.bib --csl=/style.csl';
+
+  const html = await runPandoc(
+    `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html${citationArgs}`,
+    markdown,
+    extraFiles,
+  );
+  const htmlText = new TextDecoder().decode(html.bytes);
+  assert.ok(html.bytes.length > 0, `HTML vacío: ${html.stderr.join(' | ')}`);
+  assert.match(htmlText, /class="citation"/);
+  assert.match(htmlText, /\(García, 2024\)/);
+  assert.match(htmlText, /<h3>Fuentes consultadas<\/h3>/);
+  assert.match(htmlText, /id="refs"/);
+  assert.match(htmlText, /Didáctica [Dd]igital/);
+
+  const docx = await runPandoc(
+    `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t docx${citationArgs}`,
+    markdown,
+    extraFiles,
+  );
+  assert.ok(docx.bytes.length > 0, `DOCX vacío: ${docx.stderr.join(' | ')}`);
+  const entries = readZipEntries(docx.bytes);
+  const documentXml = entries.get('word/document.xml')?.toString('utf8') || '';
+  assert.match(documentXml, /Fuentes consultadas/);
+  assert.match(documentXml, /Didáctica [Dd]igital/);
+  assert.doesNotMatch(documentXml, /@garcia2024/);
 });

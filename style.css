@@ -1179,6 +1179,54 @@ body.desktop-mode .markdown-textarea {
     color: #60a5fa; /* Tailwind blue-400 */
 }
 
+#html-output .edimark-preview-citation {
+  display: inline;
+  padding: 0.08em 0.28em;
+  border-radius: 0.3em;
+  color: #1e40af;
+  background: #eff6ff;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  cursor: pointer;
+}
+
+#html-output .edimark-preview-citation:hover,
+#html-output .edimark-preview-citation:focus-visible {
+  color: #1d4ed8;
+  background: #dbeafe;
+  outline: 2px solid #60a5fa;
+  outline-offset: 1px;
+}
+
+.dark #html-output .edimark-preview-citation {
+  color: #bfdbfe;
+  background: rgb(30 64 175 / 0.28);
+}
+
+.dark #html-output .edimark-preview-citation:hover,
+.dark #html-output .edimark-preview-citation:focus-visible {
+  color: #dbeafe;
+  background: rgb(37 99 235 / 0.4);
+}
+
+#html-output .edimark-preview-bibliography {
+  margin-top: 2.5em;
+}
+
+#html-output .edimark-preview-bibliography [id="refs"] {
+  margin-top: 1em;
+}
+
+#html-output .edimark-preview-bibliography .csl-entry + .csl-entry {
+  margin-top: 0.65em;
+}
+
+#html-output .edimark-preview-bibliography .hanging-indent .csl-entry,
+#html-output .edimark-preview-bibliography .csl-entry[role="doc-biblioentry"] {
+  padding-left: 1.5em;
+  text-indent: -1.5em;
+}
+
 .status-toast {
     position: fixed;
     top: 50%;
@@ -1781,7 +1829,7 @@ body.desktop-mode .markdown-textarea {
     border-bottom: 1px solid #e2e8f0;
     background-color: #e2e8f0;
     color: #64748b;
-    cursor: pointer;
+    cursor: grab;
     user-select: none;
     touch-action: pan-y;
 }
@@ -1793,6 +1841,9 @@ body.desktop-mode .markdown-textarea {
 .tab:not([aria-selected="true"]):hover {
     background-color: #cbd5e1;
     color: #334155;
+}
+.tab:active {
+    cursor: grabbing;
 }
 .dark .tab:not([aria-selected="true"]):hover {
     background-color: #334155;
@@ -1822,6 +1873,7 @@ body.desktop-mode .markdown-textarea {
 .tab-close {
     opacity: 0.5;
     transition: opacity 0.2s;
+    cursor: pointer;
 }
 .tab:hover .tab-close {
     opacity: 1;
@@ -1829,6 +1881,16 @@ body.desktop-mode .markdown-textarea {
 
 .tab.is-dragging {
     opacity: 0.75;
+    cursor: grabbing !important;
+}
+
+/*
+  La pestaña se recoloca bajo el puntero durante el arrastre. El cursor no debe
+  depender entonces del elemento que quede accidentalmente debajo: toda la
+  ventana conserva la mano cerrada hasta soltar.
+*/
+html.is-tab-dragging,
+html.is-tab-dragging * {
     cursor: grabbing !important;
 }
 

@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.41.2';
+const APP_VERSION = '2.42.0';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -3061,9 +3061,10 @@ function initializeTabDragAndDrop(tabBar) {
         try { state.tab.releasePointerCapture(state.pointerId); } catch (_) {}
         state.tab.classList.remove('is-dragging');
         state.tab.removeAttribute('aria-grabbed');
-        state.tab.removeEventListener('pointermove', handlePointerMove);
-        state.tab.removeEventListener('pointerup', handlePointerUp);
-        state.tab.removeEventListener('pointercancel', handlePointerUp);
+        document.documentElement.classList.remove('is-tab-dragging');
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerup', handlePointerUp);
+        window.removeEventListener('pointercancel', handlePointerUp);
         state.tab = null;
         state.pointerId = null;
         state.dragging = false;
@@ -3082,12 +3083,20 @@ function initializeTabDragAndDrop(tabBar) {
                 break;
             }
         }
+        let moved = false;
         if (insertBefore) {
             if (draggingTab !== insertBefore && draggingTab.nextSibling !== insertBefore) {
                 tabBar.insertBefore(draggingTab, insertBefore);
+                moved = true;
             }
         } else if (draggingTab !== tabBar.lastElementChild) {
             tabBar.appendChild(draggingTab);
+            moved = true;
+        }
+        if (moved) {
+            // Reinsertar un nodo puede soltar su captura en algunos motores.
+            // Renovarla permite atravesar más pestañas sin perder el arrastre.
+            try { draggingTab.setPointerCapture(state.pointerId); } catch (_) {}
         }
     };
 
@@ -3098,6 +3107,7 @@ function initializeTabDragAndDrop(tabBar) {
             state.dragging = true;
             state.tab.classList.add('is-dragging');
             state.tab.setAttribute('aria-grabbed', 'true');
+            document.documentElement.classList.add('is-tab-dragging');
         }
         if (!state.dragging) return;
         event.preventDefault();
@@ -3130,9 +3140,9 @@ function initializeTabDragAndDrop(tabBar) {
         state.startX = event.clientX;
         state.dragging = false;
         try { tab.setPointerCapture(event.pointerId); } catch (_) {}
-        tab.addEventListener('pointermove', handlePointerMove);
-        tab.addEventListener('pointerup', handlePointerUp);
-        tab.addEventListener('pointercancel', handlePointerUp);
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
     };
 
     tabBar.addEventListener('pointerdown', handlePointerDown);
@@ -3330,7 +3340,14 @@ function switchTo(id) {
     updateUndoRedoButtons();
     doc.md = markdownEditor.getValue();
     doc.lastSaved = normalizeNewlines(doc.lastSaved || doc.md);
+    publishLatexSettings(effectiveLatexSettings(doc));
     updateHtml();
+    if (!doc.bibliographyHydrationStarted && window.EdiMarkPlatform?.isDesktop && doc.filePath) {
+        doc.bibliographyHydrationStarted = true;
+        hydrateDocumentBibliography(doc).catch(error => {
+            console.debug('No se pudo cargar la bibliografía del documento:', error);
+        });
+    }
     markdownEditor.focus();
     restoreDocView(doc.view);
     updateDirtyIndicator(id, doc.md !== doc.lastSaved);
@@ -3520,6 +3537,36 @@ function splitDocumentFrontMatter(markdown) {
     return { frontMatter: '', body: typeof markdown === 'string' ? markdown : '', keys: [], lang: '' };
 }
 
+function unquoteYamlScalar(value) {
+    const text = String(value || '').trim();
+    if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'"))) {
+        return text.slice(1, -1).replace(text[0] === '"' ? /\\"/g : /''/g, text[0]);
+    }
+    return text.replace(/\s+#.*$/, '').trim();
+}
+
+function bibliographyPathFromMarkdown(markdown) {
+    const { frontMatter } = splitDocumentFrontMatter(markdown);
+    const match = frontMatter && frontMatter.match(/^bibliography\s*:\s*(.+)$/mi);
+    if (!match) return '';
+    const value = unquoteYamlScalar(match[1]).replace(/\\/g, '/');
+    if (!/\.(?:bib|json)$/i.test(value) || value.startsWith('/') || /^[a-zA-Z]:/.test(value)) return '';
+    const segments = value.split('/');
+    if (segments.some(segment => !segment || segment === '.' || segment === '..')) return '';
+    return segments.join('/');
+}
+
+function setBibliographyPathInMarkdown(markdown, path = '') {
+    const source = String(markdown || '');
+    const { frontMatter, body } = splitDocumentFrontMatter(source);
+    const cleanPath = String(path || '').trim();
+    const lines = frontMatter ? frontMatter.split('\n').slice(1, -1) : [];
+    const kept = lines.filter(line => !/^bibliography\s*:/i.test(line));
+    if (cleanPath) kept.push(`bibliography: "${cleanPath.replace(/"/g, '\\"')}"`);
+    if (!kept.length) return body || (frontMatter ? '' : source);
+    return `---\n${kept.join('\n')}\n---\n\n${body || (frontMatter ? '' : source)}`;
+}
+
 /*
   ---------------------------------------------------------------------------
   Imágenes con ruta relativa
@@ -3677,7 +3724,8 @@ function registerAssetFolder(files, { docId = null, folderName = '' } = {}) {
   Una imagen pegada entra en el documento como `data:image/png;base64,…`: viaja
   con el texto y no se pierde, pero engorda el `.md` un tercio más que el
   archivo original y lo vuelve incómodo de leer y de versionar. Este es el
-  camino de vuelta: cada imagen pasa a ser un archivo en `imagenes/` y en el
+  camino de vuelta: cada imagen pasa a `images/` dentro de la carpeta propia de
+  recursos del documento, y en el
   texto queda su ruta, que es como guarda las imágenes cualquier `.md`.
 
   Los archivos no se escriben aquí, sino al guardar el documento, por el mismo
@@ -3688,7 +3736,7 @@ function registerAssetFolder(files, { docId = null, folderName = '' } = {}) {
 */
 /*
   La carpeta se llama como el documento: `mi-archivo.md` saca sus imágenes a
-  `mi-archivo/`. Antes todos los documentos usaban la misma `imagenes/`, y dos
+  `mi-archivo/images/`. Antes todos los documentos usaban la misma `imagenes/`, y dos
   `.md` guardados uno al lado del otro se pisaban las imágenes sin avisar: los
   archivos se numeran desde `01` en cada documento, así que el segundo escribía
   su `01.png` encima del primero. Con el nombre delante también se sabe de quién
@@ -3790,7 +3838,7 @@ async function extractBase64Images() {
         let relativePath = '';
         do {
             counter += 1;
-            relativePath = `${folder}/${String(counter).padStart(2, '0')}.${extension}`;
+            relativePath = `${folder}/images/${String(counter).padStart(2, '0')}.${extension}`;
         } while (used.has(relativePath));
         used.add(relativePath);
         extracted.push({
@@ -3813,7 +3861,7 @@ async function extractBase64Images() {
     reportStatus(formatTranslation(
         extracted.length === 1 ? 'base64_extract_done_one' : 'base64_extract_done_many',
         '{count} imágenes pasadas a «{folder}». Se escribirán al guardar el documento.',
-        { count: extracted.length, folder: `${folder}/` },
+        { count: extracted.length, folder: `${folder}/images/` },
     ));
     return extracted.length;
 }
@@ -4281,6 +4329,158 @@ function fitWidePreformattedBlocks(container) {
     });
 }
 
+function previewCitationEntries() {
+    const api = window.EdiMarkBibliography;
+    if (!api || typeof api.parseBibliography !== 'function') return [];
+    const settings = effectiveLatexSettings();
+    return api.parseBibliography(settings.bibliographyContent || '', settings.bibliographyName || '');
+}
+
+function previewCitationLabel(source, entries = previewCitationEntries()) {
+    const api = window.EdiMarkBibliography;
+    if (!api || typeof api.formatPreviewCitation !== 'function') return '';
+    return api.formatPreviewCitation(source, entries);
+}
+
+/*
+  La hoja enseña una cita humana en lugar de la sintaxis de Pandoc, pero la
+  conserva en data-edimark-citation. Es una ficha indivisible: al editar desde
+  la hoja se sustituye completa y Turndown recupera después el Markdown exacto.
+*/
+function renderPreviewCitations(container) {
+    if (!container || typeof document.createTreeWalker !== 'function') return;
+    const entries = previewCitationEntries();
+    if (!entries.length) return;
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+    const citationPattern = /\[[^\]\n]*@[^\]\n]+\]/g;
+
+    textNodes.forEach((textNode) => {
+        const parent = textNode.parentElement;
+        if (!parent || parent.closest('code, pre, a, script, style, textarea, .edimark-preview-citation')) return;
+        const text = textNode.data;
+        citationPattern.lastIndex = 0;
+        let match;
+        let cursor = 0;
+        let changed = false;
+        const fragment = document.createDocumentFragment();
+        while ((match = citationPattern.exec(text))) {
+            const label = previewCitationLabel(match[0], entries);
+            if (!label) continue;
+            fragment.append(document.createTextNode(text.slice(cursor, match.index)));
+            const citation = document.createElement('span');
+            citation.className = 'edimark-preview-citation';
+            citation.dataset.edimarkCitation = match[0];
+            citation.textContent = label;
+            citation.contentEditable = 'false';
+            citation.tabIndex = 0;
+            citation.setAttribute('role', 'button');
+            const hint = getTranslation('citation_preview_edit', 'Cita bibliográfica. Pulsa para editarla.');
+            citation.title = hint;
+            citation.setAttribute('aria-label', `${label}. ${hint}`);
+            fragment.append(citation);
+            cursor = match.index + match[0].length;
+            changed = true;
+        }
+        if (!changed) return;
+        fragment.append(document.createTextNode(text.slice(cursor)));
+        textNode.replaceWith(fragment);
+    });
+}
+
+let previewBibliographyTimer = null;
+let previewBibliographyGeneration = 0;
+let previewBibliographyCache = { signature: '', rendered: null };
+
+function effectiveBibliographyTitle(settings = effectiveLatexSettings()) {
+    const custom = String(settings.bibliographyTitle || '').trim();
+    return custom || getTranslation('bibliography_default_title', 'Referencias');
+}
+
+function applyCiteprocPreview(container, sources, rendered) {
+    if (!container || !container.isConnected) return;
+    const citations = Array.from(container.querySelectorAll('.edimark-preview-citation'));
+    if (citations.length !== sources.length
+        || citations.some((node, index) => node.dataset.edimarkCitation !== sources[index])) return;
+    rendered.labels.forEach((label, index) => {
+        if (!label || !citations[index]) return;
+        citations[index].textContent = label;
+        const hint = getTranslation('citation_preview_edit', 'Cita bibliográfica. Pulsa para editarla.');
+        citations[index].setAttribute('aria-label', `${label}. ${hint}`);
+    });
+    container.querySelectorAll('[data-edimark-bibliography]').forEach(node => node.remove());
+    if (rendered.referencesHtml) {
+        const settings = effectiveLatexSettings();
+        const section = document.createElement('section');
+        section.className = 'edimark-preview-bibliography';
+        section.dataset.edimarkBibliography = '';
+        section.contentEditable = 'false';
+        const level = Math.min(6, Math.max(1, Number(settings.bibliographyHeadingLevel) || 2));
+        const heading = document.createElement(`h${level}`);
+        heading.textContent = effectiveBibliographyTitle(settings);
+        section.append(heading);
+        const references = document.createElement('div');
+        references.className = 'edimark-preview-references';
+        references.innerHTML = rendered.referencesHtml;
+        section.append(references);
+        container.append(section);
+    }
+    if (typeof window.__schedulePageBreaks === 'function') window.__schedulePageBreaks();
+}
+
+/*
+  citeproc es la única fuente fiable para APA, Chicago, MLA o IEEE. Se ejecuta
+  con demora y solo cuando cambian las citas o sus ajustes; mientras tanto se
+  mantiene la etiqueta rápida local. El bloque final es una proyección de la
+  bibliografía y buildHtmlWithTex lo retira antes de sincronizar o exportar.
+*/
+function schedulePreviewBibliography(container) {
+    if (!container) return;
+    const sources = Array.from(container.querySelectorAll('.edimark-preview-citation'))
+        .map(node => node.dataset.edimarkCitation || '');
+    container.querySelectorAll('[data-edimark-bibliography]').forEach(node => node.remove());
+    clearTimeout(previewBibliographyTimer);
+    previewBibliographyGeneration += 1;
+    const generation = previewBibliographyGeneration;
+    const settings = effectiveLatexSettings();
+    if (!sources.length || !settings.bibliographyContent) return;
+    const exporter = window.PandocExporter;
+    if (!exporter || typeof exporter.generateHtml !== 'function') return;
+    const signature = JSON.stringify({
+        sources,
+        bibliographyContent: settings.bibliographyContent,
+        bibliographyName: settings.bibliographyName,
+        citationStyle: settings.citationStyle,
+        cslContent: settings.cslContent,
+        documentLanguage: settings.documentLanguage,
+        interfaceLanguage: document.documentElement.lang,
+    });
+    const cached = previewBibliographyCache.signature === signature
+        ? previewBibliographyCache.rendered
+        : null;
+    if (cached) {
+        applyCiteprocPreview(container, sources, cached);
+        return;
+    }
+    previewBibliographyTimer = setTimeout(async () => {
+        try {
+            const html = await exporter.generateHtml({ markdown: sources.join('\n\n'), standalone: false });
+            if (generation !== previewBibliographyGeneration) return;
+            const template = document.createElement('template');
+            template.innerHTML = html;
+            const labels = Array.from(template.content.querySelectorAll('.citation'))
+                .map(node => node.textContent.replace(/\s+/g, ' ').trim());
+            const refs = template.content.querySelector('#refs');
+            const rendered = { labels, referencesHtml: refs ? refs.outerHTML : '' };
+            previewBibliographyCache = { signature, rendered };
+            applyCiteprocPreview(container, sources, rendered);
+        } catch (error) {
+            console.warn('No se pudo componer la bibliografía de la vista previa:', error);
+        }
+    }, 300);
+}
+
 // --- Funciones principales ---
 function updateHtml() {
     if (isUpdating) return;
@@ -4328,6 +4528,8 @@ function updateHtml() {
                 setTimeout(releaseHtmlSync, 0);
             }
         }
+        renderPreviewCitations(htmlOutput);
+        schedulePreviewBibliography(htmlOutput);
     }
 
     try {
@@ -4362,6 +4564,7 @@ function updateHtml() {
     }
     isUpdating = false;
 }
+window.__refreshBibliographyPreview = updateHtml;
 
 function updateMarkdown() {
     if (isUpdating) return;
@@ -5137,6 +5340,13 @@ const LATEX_SETTINGS_DEFAULTS = {
     documentToc: false,
     documentTocDepth: 3,
     documentNumberSections: false,
+    bibliographyContent: '',
+    bibliographyName: '',
+    bibliographyTitle: '',
+    bibliographyHeadingLevel: 2,
+    citationStyle: 'apa',
+    cslContent: '',
+    cslName: '',
     // La portada generada es el valor de partida: un EPUB sin imagen aparece
     // con el icono genérico en la estantería del lector.
     epubCover: 'auto',
@@ -5226,6 +5436,17 @@ function readLatexSettings() {
                 ? Number(parsed.documentTocDepth)
                 : LATEX_SETTINGS_DEFAULTS.documentTocDepth,
             documentNumberSections: parsed.documentNumberSections === true,
+            bibliographyContent: typeof parsed.bibliographyContent === 'string' ? parsed.bibliographyContent : '',
+            bibliographyName: typeof parsed.bibliographyName === 'string' ? parsed.bibliographyName : '',
+            bibliographyTitle: typeof parsed.bibliographyTitle === 'string' ? parsed.bibliographyTitle : '',
+            bibliographyHeadingLevel: [1, 2, 3, 4, 5, 6].includes(Number(parsed.bibliographyHeadingLevel))
+                ? Number(parsed.bibliographyHeadingLevel)
+                : 2,
+            citationStyle: ['apa', 'chicago-author-date', 'modern-language-association', 'ieee', 'custom'].includes(parsed.citationStyle)
+                ? parsed.citationStyle
+                : (parsed.cslContent ? 'custom' : 'apa'),
+            cslContent: typeof parsed.cslContent === 'string' ? parsed.cslContent : '',
+            cslName: typeof parsed.cslName === 'string' ? parsed.cslName : '',
             epubCover: ['none', 'auto', 'custom'].includes(parsed.epubCover) ? parsed.epubCover : LATEX_SETTINGS_DEFAULTS.epubCover,
             epubCoverImage: typeof parsed.epubCoverImage === 'string' ? parsed.epubCoverImage : '',
             epubCoverName: typeof parsed.epubCoverName === 'string' ? parsed.epubCoverName : '',
@@ -5238,6 +5459,99 @@ function readLatexSettings() {
         console.warn('Ajustes del documento ilegibles, se usan los predeterminados:', error);
         return defaultLatexSettings();
     }
+}
+
+function portableBibliographyFilename(name = '', content = '') {
+    const json = /\.json$/i.test(String(name || '')) || /^\s*[\[{]/.test(String(content || ''));
+    return json ? 'references.json' : 'references.bib';
+}
+
+function defaultPortableBibliographyPath(doc, name = '', content = '') {
+    return `${extractedAssetsFolder(doc)}/${portableBibliographyFilename(name, content)}`;
+}
+
+function effectiveLatexSettings(doc = docs.find(candidate => candidate.id === currentId)) {
+    const settings = readLatexSettings();
+    if (!doc || (!doc.bibliographyPath && !doc.bibliographyContent)) return settings;
+    return {
+        ...settings,
+        bibliographyContent: doc.bibliographyContent || '',
+        bibliographyName: doc.bibliographyPath || doc.bibliographyName || '',
+    };
+}
+
+function bibliographyIsValid(content, name = '') {
+    const api = window.EdiMarkBibliography;
+    return Boolean(api && typeof api.parseBibliography === 'function'
+        && api.parseBibliography(content || '', name || '').length);
+}
+
+function attachBibliographyToDocument(doc, {
+    content = '',
+    name = '',
+    path = '',
+    writeMetadata = true,
+} = {}) {
+    if (!doc) return false;
+    const valid = Boolean(content) && bibliographyIsValid(content, name || path);
+    const currentMarkdown = doc.id === currentId && markdownEditor ? markdownEditor.getValue() : doc.md;
+    const existingPath = bibliographyPathFromMarkdown(currentMarkdown);
+    const chosenPath = valid
+        ? (path || existingPath || defaultPortableBibliographyPath(doc, name, content))
+        : '';
+    doc.bibliographyContent = valid ? String(content) : '';
+    doc.bibliographyName = valid ? (name || chosenPath.split('/').pop()) : '';
+    doc.bibliographyPath = chosenPath;
+
+    if (writeMetadata) {
+        const rewritten = setBibliographyPathInMarkdown(currentMarkdown, chosenPath);
+        doc.md = rewritten;
+        if (doc.id === currentId && markdownEditor && markdownEditor.getValue() !== rewritten) {
+            markdownEditor.setValue(rewritten);
+        }
+    }
+    if (doc.id === currentId) {
+        publishLatexSettings(effectiveLatexSettings(doc));
+        updateHtml();
+    }
+    return valid;
+}
+
+async function hydrateDocumentBibliography(doc, files = null) {
+    if (!doc) return false;
+    const declaredPath = bibliographyPathFromMarkdown(doc.md);
+    const expectedPath = declaredPath || defaultPortableBibliographyPath(doc);
+    let content = '';
+    let name = expectedPath.split('/').pop();
+
+    if (Array.isArray(files) && files.length) {
+        const normalizedExpected = expectedPath.replace(/\\/g, '/').toLowerCase();
+        const match = files.find(file => {
+            const candidate = String(file.__edimarkPath || file.webkitRelativePath || file.name || '')
+                .replace(/\\/g, '/').toLowerCase();
+            return candidate === normalizedExpected || candidate.endsWith(`/${normalizedExpected}`);
+        });
+        if (!match || match.size > 2 * 1024 * 1024) return false;
+        content = await match.text();
+        name = match.name || name;
+    } else {
+        const platform = window.EdiMarkPlatform;
+        if (!platform?.isDesktop || !doc.filePath || typeof platform.readDocumentResource !== 'function') return false;
+        try {
+            content = await platform.readDocumentResource(doc.filePath, expectedPath) || '';
+        } catch (_) {
+            return false;
+        }
+    }
+    if (!bibliographyIsValid(content, name)) return false;
+    return attachBibliographyToDocument(doc, {
+        content,
+        name,
+        path: expectedPath,
+        // La detección por convención no ensucia el documento al abrirlo; la
+        // ruta estándar se escribirá la próxima vez que se guarde.
+        writeMetadata: Boolean(declaredPath),
+    });
 }
 
 function publishLatexSettings(settings) {
@@ -5281,9 +5595,9 @@ async function loadLatexSettingsFromDisk() {
 }
 
 function storeLatexSettings(settings) {
-    publishLatexSettings(settings);
     safeLocalStorageSet(LATEX_SETTINGS_KEY, JSON.stringify(settings));
     persistLatexSettingsToDisk(settings);
+    publishLatexSettings(effectiveLatexSettings());
     // Los documentos sin idioma propio siguen al general: el indicador cambia.
     if (typeof window.__refreshDocLanguageIndicator === 'function') {
         window.__refreshDocLanguageIndicator();
@@ -5415,6 +5729,25 @@ async function collectLinkedDocumentAssets(doc, content) {
     return assets;
 }
 
+function preparePortableBibliographyForSave(doc, content) {
+    const settings = effectiveLatexSettings(doc);
+    const hasCitations = /\[[^\]\n]*@[^\]\n]+\]/.test(content);
+    const declaredPath = bibliographyPathFromMarkdown(content);
+    if (!settings.bibliographyContent || (!declaredPath && !hasCitations && !doc?.bibliographyPath)) {
+        return { contents: content, companionFiles: [] };
+    }
+    const path = declaredPath
+        || doc?.bibliographyPath
+        || defaultPortableBibliographyPath(doc, settings.bibliographyName, settings.bibliographyContent);
+    return {
+        contents: setBibliographyPathInMarkdown(content, path),
+        companionFiles: [{ relativePath: path, contents: settings.bibliographyContent }],
+        path,
+        name: path.split('/').pop(),
+        bibliographyContent: settings.bibliographyContent,
+    };
+}
+
 /*
   Las imágenes extraídas de base64 viven en una carpeta que lleva el nombre
   del documento. «Guardar como» cambia también esa carpeta y las referencias
@@ -5440,7 +5773,15 @@ function renameOwnAssetFolderForSave(doc, content, companionFiles, savedName) {
     });
     if (!hasOwnAssets) return { contents: content, companionFiles };
 
-    const rewritten = String(content).replace(
+    let rewritten = String(content);
+    const bibliographyPath = bibliographyPathFromMarkdown(rewritten);
+    if (bibliographyPath.startsWith(prefix)) {
+        rewritten = setBibliographyPathInMarkdown(
+            rewritten,
+            `${newFolder}/${bibliographyPath.slice(prefix.length)}`,
+        );
+    }
+    rewritten = rewritten.replace(
         /(!\[[^\]]*?\]\(\s*)([^)\s]+)/g,
         (match, opening, source) => {
             const normalized = assetPathUtils?.normalizeRelativePath(source) || '';
@@ -5454,15 +5795,20 @@ function renameOwnAssetFolderForSave(doc, content, companionFiles, savedName) {
 }
 
 async function saveCurrentDocument({ saveAs = false } = {}) {
-    const content = markdownEditor.getValue();
-    let savedContent = content;
+    let content = markdownEditor.getValue();
     const doc = docs.find(d => d.id === currentId);
+    const portableBibliography = preparePortableBibliographyForSave(doc, content);
+    content = portableBibliography.contents;
+    let savedContent = content;
     const rawName = doc && typeof doc.name === 'string' ? doc.name.trim() : '';
     const cleanName = rawName.replace(/\.md$/i, '') || 'documento';
     const filename = `${cleanName}.md`;
     const assetEntry = doc ? documentAssetEntry(doc.id) : null;
     try {
-        const companionFiles = await collectLinkedDocumentAssets(doc, content);
+        const companionFiles = [
+            ...(await collectLinkedDocumentAssets(doc, content)),
+            ...portableBibliography.companionFiles,
+        ];
         const existingPath = saveAs ? '' : (doc?.filePath || '');
         const options = {
             existingPath,
@@ -5502,6 +5848,12 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
             doc.filePath = result.path || doc.filePath || '';
             doc.md = savedContent;
             doc.lastSaved = savedContent;
+            const savedBibliographyPath = bibliographyPathFromMarkdown(savedContent);
+            if (savedBibliographyPath && portableBibliography.bibliographyContent) {
+                doc.bibliographyPath = savedBibliographyPath;
+                doc.bibliographyName = savedBibliographyPath.split('/').pop();
+                doc.bibliographyContent = portableBibliography.bibliographyContent;
+            }
             const tabNameEl = document.querySelector(`.tab[data-id="${currentId}"] .tab-name`);
             if (tabNameEl) tabNameEl.textContent = savedName;
             updateDirtyIndicator(currentId, false);
@@ -5520,7 +5872,7 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
         if (result.archiveName) {
             reportStatus(getTranslation(
                 'save_file_bundle_done',
-                'Documento e imágenes guardados en {name}; descomprímelo para mantener sus carpetas.'
+                'Documento y recursos guardados en {name}; descomprímelo para mantener sus carpetas.'
             ).replace('{name}', result.archiveName));
         } else {
             reportStatus(getTranslation('save_file_done', 'Documento guardado.'));
@@ -6252,7 +6604,7 @@ function buildHtmlWithTex() {
     de que la hoja se convierta en Markdown, en HTML o en lo que sea que salga
     de ella. El índice de verdad lo pone Pandoc al exportar.
   */
-  clone.querySelectorAll('[data-edimark-toc]').forEach(nodo => nodo.remove());
+  clone.querySelectorAll('[data-edimark-toc], [data-edimark-bibliography]').forEach(nodo => nodo.remove());
   const inlineFallback = tex => `$${tex}$`;
   const displayFallback = tex => `\n\\[\n${tex}\n\\]\n`;
   const replaceNode = (node, fallbackBuilder) => {
@@ -6938,6 +7290,32 @@ window.onload = async () => {
     const docTocCheckbox = document.getElementById('doc-toc');
     const docTocDepthSelect = document.getElementById('doc-toc-depth');
     const docNumberingCheckbox = document.getElementById('doc-number-sections');
+    const bibliographyChooseBtn = document.getElementById('bibliography-choose-btn');
+    const bibliographyExampleBtn = document.getElementById('bibliography-example-btn');
+    const bibliographyRemoveBtn = document.getElementById('bibliography-remove-btn');
+    const bibliographyInput = document.getElementById('bibliography-input');
+    const bibliographySummary = document.getElementById('bibliography-summary');
+    const bibliographyLinkFolderBtn = document.getElementById('bibliography-link-folder-btn');
+    const bibliographyTitleInput = document.getElementById('bibliography-title');
+    const bibliographyHeadingLevelSelect = document.getElementById('bibliography-heading-level');
+    const cslChooseBtn = document.getElementById('csl-choose-btn');
+    const cslRemoveBtn = document.getElementById('csl-remove-btn');
+    const cslInput = document.getElementById('csl-input');
+    const cslSummary = document.getElementById('csl-summary');
+    const citationStyleSelect = document.getElementById('citation-style-select');
+    const cslCustomPicker = document.getElementById('csl-custom-picker');
+    const citationBtn = document.getElementById('citation-btn');
+    const citationOverlay = document.getElementById('citation-modal-overlay');
+    const citationModalTitle = document.getElementById('citation-modal-title');
+    const citationSearch = document.getElementById('citation-search');
+    const citationResults = document.getElementById('citation-results');
+    const citationResultCount = document.getElementById('citation-result-count');
+    const citationLibraryReady = document.getElementById('citation-library-ready');
+    const citationLibraryEmpty = document.getElementById('citation-library-empty');
+    const citationLoadExampleBtn = document.getElementById('citation-load-example-btn');
+    const citationOpenSettingsBtn = document.getElementById('citation-open-settings-btn');
+    const citationInsertBtn = document.getElementById('citation-insert-btn');
+    const citationCancelBtn = document.getElementById('citation-cancel-btn');
     const coverRadios = Array.from(document.querySelectorAll('input[name="epub-cover"]'));
     const coverPicker = document.getElementById('epub-cover-picker');
     const coverBtn = document.getElementById('epub-cover-btn');
@@ -6949,6 +7327,14 @@ window.onload = async () => {
     // importa. Para la miniatura de una estantería, esto sobra.
     const MAX_COVER_BYTES = 1024 * 1024;
     let pendingCover = { image: '', name: '' };
+    const MAX_BIBLIOGRAPHY_BYTES = 2 * 1024 * 1024;
+    const MAX_CSL_BYTES = 1024 * 1024;
+    let pendingBibliography = { content: '', name: '', entries: [] };
+    let pendingCsl = { content: '', name: '' };
+    let citationEntries = [];
+    let selectedCitationIds = new Set();
+    let editingCitationElement = null;
+    let editingCitationRange = null;
     const latexClassSelect = document.getElementById('latex-documentclass');
     const latexClassOptionsInput = document.getElementById('latex-classoption');
     const latexPreambleTextarea = document.getElementById('latex-preamble');
@@ -8517,6 +8903,10 @@ window.onload = async () => {
             bulletListMarker: '-',
             emDelimiter: '*',
         });
+        turndownService.addRule('edimarkCitation', {
+            filter: node => node.nodeName === 'SPAN' && node.hasAttribute('data-edimark-citation'),
+            replacement: (content, node) => node.getAttribute('data-edimark-citation') || content,
+        });
         if (window.turndownPluginGfm) {
             if (typeof window.turndownPluginGfm.gfm === 'function') {
                 turndownService.use(window.turndownPluginGfm.gfm);
@@ -8772,6 +9162,7 @@ window.onload = async () => {
     // cuanto se ha leído: lo que dependa de ello se vuelve a pintar.
     loadLatexSettingsFromDisk().then((settings) => {
         if (!settings) return;
+        publishLatexSettings(effectiveLatexSettings());
         if (typeof window.__refreshDocLanguageIndicator === 'function') {
             window.__refreshDocLanguageIndicator();
         }
@@ -9094,23 +9485,79 @@ window.onload = async () => {
       exportación lleva aquí su entrada de PDF en vez de a Pandoc, que sin un
       motor LaTeX no sabe hacer PDF.
     */
-    function printPreview() {
+    async function prepareCitationsForPrint() {
+        const settings = effectiveLatexSettings();
+        const markdown = markdownEditor.getValue();
+        const hasCitation = /\[[^\]\n]*@[^\]\n]+\]|(?:^|[\s(])@[A-Za-z0-9][\w:./#$%&?+<>-]*/m.test(markdown);
+        if (!settings.bibliographyContent || !hasCitation) return false;
+        const exporter = window.PandocExporter;
+        if (!exporter || typeof exporter.generateHtml !== 'function') return false;
+
+        let previewChanged = false;
+        try {
+            updateExportStatus(getTranslation('citation_print_preparing', 'Resolviendo citas para el PDF, espera...'));
+            const currentDoc = docs.find(doc => doc.id === currentId);
+            const documentTitle = String(currentDoc?.name || 'documento').replace(/\.[^.]+$/, '');
+            const citedHtml = await exporter.generateHtml({
+                markdown,
+                documentTitle,
+                standalone: false,
+                onStatus: updateExportStatus,
+                onNotification: notifyUser,
+            });
+            const htmlOutput = document.getElementById('html-output');
+            htmlOutput.innerHTML = citedHtml;
+            previewChanged = true;
+            fitWidePreformattedBlocks(htmlOutput);
+            applyRelativeImageSources(htmlOutput, docs.find(doc => doc.id === currentId));
+            if (window.renderMathInElement) {
+                renderMathInElement(htmlOutput, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '\\[', right: '\\]', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                    ],
+                    throwOnError: false,
+                });
+            }
+            refreshDocumentToc();
+            schedulePageBreaks();
+            await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+            return true;
+        } catch (error) {
+            console.warn('No se pudieron resolver las citas para imprimir:', error);
+            if (previewChanged) updateHtml();
+            notifyUser(getTranslation('citation_print_error', 'No se pudieron resolver las citas; se imprimirá la vista previa sin procesarlas.'));
+            return false;
+        }
+    }
+
+    async function printPreview() {
         closeActionsMenu();
         closeSettingsMenu();
         closeExportMenu();
+        const citedPreview = await prepareCitationsForPrint();
         const preview = getPreviewScroller();
         if (preview) {
             preview.scrollTop = 0;
             preview.scrollLeft = 0;
         }
         // La espera deja que se cierren los menús antes de congelar la página.
-        window.setTimeout(() => {
+        window.setTimeout(async () => {
             const platform = window.EdiMarkPlatform;
-            if (platform && typeof platform.print === 'function') {
-                platform.print(paginaParaImprimir()).catch(error => console.warn('No se pudo imprimir:', error));
-                return;
+            try {
+                if (platform && typeof platform.print === 'function') {
+                    await platform.print(paginaParaImprimir());
+                } else if (typeof window.print === 'function') {
+                    window.print();
+                }
+            } catch (error) {
+                console.warn('No se pudo imprimir:', error);
+            } finally {
+                if (citedPreview) updateHtml();
+                updateExportStatus('');
             }
-            if (typeof window.print === 'function') window.print();
         }, 50);
     }
     printBtn.addEventListener('click', printPreview);
@@ -9300,6 +9747,64 @@ window.onload = async () => {
         if (coverName) coverName.textContent = pendingCover.name || '';
     }
 
+    function bibliographyApi() {
+        return window.EdiMarkBibliography || null;
+    }
+
+    function bibliographyEntries(content, name) {
+        const api = bibliographyApi();
+        if (!api || typeof api.parseBibliography !== 'function') return [];
+        return api.parseBibliography(content, name);
+    }
+
+    function exampleBibliography() {
+        const api = bibliographyApi();
+        if (!api || !api.EXAMPLE_BIBLIOGRAPHY) return null;
+        const content = api.EXAMPLE_BIBLIOGRAPHY;
+        const name = api.EXAMPLE_BIBLIOGRAPHY_NAME || 'bibliografia-ejemplo.bib';
+        return { content, name, entries: bibliographyEntries(content, name) };
+    }
+
+    function loadExampleIntoSettings() {
+        const example = exampleBibliography();
+        if (!example) return false;
+        pendingBibliography = example;
+        syncBibliographyFields();
+        return true;
+    }
+
+    function syncBibliographyFields() {
+        const hasBibliography = Boolean(pendingBibliography.content);
+        if (bibliographyRemoveBtn) bibliographyRemoveBtn.classList.toggle('hidden', !hasBibliography);
+        if (bibliographySummary) {
+            if (hasBibliography) {
+                bibliographySummary.removeAttribute('data-i18n-key');
+                bibliographySummary.textContent = formatTranslation(
+                    'bibliography_loaded',
+                    '{name} · {count} referencias',
+                    { name: pendingBibliography.name, count: pendingBibliography.entries.length },
+                );
+            } else {
+                bibliographySummary.setAttribute('data-i18n-key', 'bibliography_none');
+                bibliographySummary.textContent = getTranslation('bibliography_none', 'Ninguna bibliografía cargada.');
+            }
+        }
+
+        const hasCsl = Boolean(pendingCsl.content);
+        const customStyle = citationStyleSelect?.value === 'custom';
+        if (cslCustomPicker) cslCustomPicker.classList.toggle('hidden', !customStyle);
+        if (cslRemoveBtn) cslRemoveBtn.classList.toggle('hidden', !hasCsl);
+        if (cslSummary) {
+            if (hasCsl) {
+                cslSummary.removeAttribute('data-i18n-key');
+                cslSummary.textContent = formatTranslation('csl_loaded', 'Estilo: {name}', { name: pendingCsl.name });
+            } else {
+                cslSummary.setAttribute('data-i18n-key', 'csl_none');
+                cslSummary.textContent = getTranslation('csl_none', 'Ningún archivo CSL cargado.');
+            }
+        }
+    }
+
     function fillLatexSettingsForm(settings) {
         const language = settings.documentLanguage || 'auto';
         const listed = LISTED_DOC_LANGUAGES.includes(language);
@@ -9314,6 +9819,16 @@ window.onload = async () => {
         if (docTocCheckbox) docTocCheckbox.checked = settings.documentToc === true;
         if (docTocDepthSelect) docTocDepthSelect.value = String(settings.documentTocDepth || 3);
         if (docNumberingCheckbox) docNumberingCheckbox.checked = settings.documentNumberSections === true;
+        pendingBibliography = {
+            content: settings.bibliographyContent || '',
+            name: settings.bibliographyName || '',
+            entries: bibliographyEntries(settings.bibliographyContent || '', settings.bibliographyName || ''),
+        };
+        pendingCsl = { content: settings.cslContent || '', name: settings.cslName || '' };
+        if (bibliographyTitleInput) bibliographyTitleInput.value = settings.bibliographyTitle || '';
+        if (bibliographyHeadingLevelSelect) bibliographyHeadingLevelSelect.value = String(settings.bibliographyHeadingLevel || 2);
+        if (citationStyleSelect) citationStyleSelect.value = settings.citationStyle || 'apa';
+        syncBibliographyFields();
         if (latexClassSelect) latexClassSelect.value = settings.documentClass || 'article';
         if (latexClassOptionsInput) latexClassOptionsInput.value = settings.classOptions || '';
         if (latexPreambleTextarea) latexPreambleTextarea.value = settings.preamble || '';
@@ -9322,6 +9837,286 @@ window.onload = async () => {
     }
 
     coverRadios.forEach(radio => radio.addEventListener('change', syncCoverPicker));
+
+    async function readSettingsTextFile(file, maxBytes, tooBigKey, invalidKey, validate) {
+        if (!file) return null;
+        if (file.size > maxBytes) {
+            notifyUser(formatTranslation(
+                tooBigKey,
+                'El archivo ocupa {size} y es demasiado grande.',
+                { size: formatBytes(file.size) },
+            ));
+            return null;
+        }
+        try {
+            const content = await file.text();
+            if (!content.trim() || (typeof validate === 'function' && !validate(content))) {
+                notifyUser(getTranslation(invalidKey, 'El archivo no tiene un formato válido.'));
+                return null;
+            }
+            return content;
+        } catch (error) {
+            console.warn('No se pudo leer el archivo bibliográfico:', error);
+            notifyUser(getTranslation(invalidKey, 'El archivo no tiene un formato válido.'));
+            return null;
+        }
+    }
+
+    if (bibliographyChooseBtn && bibliographyInput) {
+        bibliographyChooseBtn.addEventListener('click', () => bibliographyInput.click());
+        bibliographyInput.addEventListener('change', async () => {
+            const file = bibliographyInput.files && bibliographyInput.files[0];
+            bibliographyInput.value = '';
+            const content = await readSettingsTextFile(
+                file,
+                MAX_BIBLIOGRAPHY_BYTES,
+                'bibliography_too_big',
+                'bibliography_invalid',
+                text => bibliographyEntries(text, file?.name).length > 0,
+            );
+            if (content === null) return;
+            const entries = bibliographyEntries(content, file.name);
+            pendingBibliography = { content, name: file.name, entries };
+            syncBibliographyFields();
+        });
+    }
+    if (bibliographyExampleBtn) {
+        bibliographyExampleBtn.addEventListener('click', loadExampleIntoSettings);
+    }
+    if (bibliographyLinkFolderBtn) {
+        bibliographyLinkFolderBtn.addEventListener('click', () => {
+            document.getElementById('assets-folder-input')?.click();
+        });
+    }
+    if (bibliographyRemoveBtn) {
+        bibliographyRemoveBtn.addEventListener('click', () => {
+            pendingBibliography = { content: '', name: '', entries: [] };
+            syncBibliographyFields();
+        });
+    }
+    if (cslChooseBtn && cslInput) {
+        cslChooseBtn.addEventListener('click', () => cslInput.click());
+        cslInput.addEventListener('change', async () => {
+            const file = cslInput.files && cslInput.files[0];
+            cslInput.value = '';
+            const api = bibliographyApi();
+            const content = await readSettingsTextFile(
+                file,
+                MAX_CSL_BYTES,
+                'csl_too_big',
+                'csl_invalid',
+                text => api && typeof api.isCslStyle === 'function' && api.isCslStyle(text),
+            );
+            if (content === null) return;
+            pendingCsl = { content, name: file.name };
+            if (citationStyleSelect) citationStyleSelect.value = 'custom';
+            syncBibliographyFields();
+        });
+    }
+    if (citationStyleSelect) citationStyleSelect.addEventListener('change', syncBibliographyFields);
+    if (cslRemoveBtn) {
+        cslRemoveBtn.addEventListener('click', () => {
+            pendingCsl = { content: '', name: '' };
+            if (citationStyleSelect) citationStyleSelect.value = 'apa';
+            syncBibliographyFields();
+        });
+    }
+
+    function updateCitationInsertButton() {
+        if (citationInsertBtn) citationInsertBtn.disabled = selectedCitationIds.size === 0;
+    }
+
+    function citationResultLabel(entry) {
+        const parts = [entry.author, entry.year, entry.id].filter(Boolean);
+        return parts.join(' · ');
+    }
+
+    function renderCitationResults() {
+        if (!citationResults) return;
+        const api = bibliographyApi();
+        const query = citationSearch ? citationSearch.value : '';
+        const matches = api && typeof api.searchBibliography === 'function'
+            ? api.searchBibliography(citationEntries, query)
+            : citationEntries;
+        const visible = matches.slice(0, 100);
+        citationResults.replaceChildren();
+
+        if (citationResultCount) {
+            const key = matches.length === 1 ? 'citation_result_count_one' : 'citation_result_count_many';
+            const fallback = matches.length === 1 ? '1 referencia' : '{count} referencias';
+            citationResultCount.textContent = formatTranslation(key, fallback, { count: matches.length });
+        }
+        if (!visible.length) {
+            const empty = document.createElement('p');
+            empty.className = 'p-4 text-sm text-slate-500 dark:text-slate-400';
+            empty.textContent = getTranslation('citation_no_results', 'No hay referencias que coincidan.');
+            citationResults.appendChild(empty);
+            updateCitationInsertButton();
+            return;
+        }
+
+        visible.forEach((entry) => {
+            const label = document.createElement('label');
+            label.className = 'flex cursor-pointer items-start gap-3 border-b border-slate-100 px-3 py-2 last:border-b-0 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/60';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = entry.id;
+            checkbox.checked = selectedCitationIds.has(entry.id);
+            checkbox.className = 'mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700';
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) selectedCitationIds.add(entry.id);
+                else selectedCitationIds.delete(entry.id);
+                updateCitationInsertButton();
+            });
+            const text = document.createElement('span');
+            text.className = 'min-w-0';
+            const title = document.createElement('span');
+            title.className = 'block text-sm font-medium text-slate-800 dark:text-slate-100';
+            title.textContent = entry.title || entry.id;
+            const meta = document.createElement('span');
+            meta.className = 'block text-xs text-slate-500 dark:text-slate-400';
+            meta.textContent = citationResultLabel(entry);
+            text.append(title, meta);
+            label.append(checkbox, text);
+            citationResults.appendChild(label);
+        });
+        updateCitationInsertButton();
+    }
+
+    function markdownCitationAtSelection() {
+        if (!markdownTextareaEl || isPreviewFormatTarget()) return null;
+        const markdown = markdownEditor.getValue();
+        const selectionStart = markdownTextareaEl.selectionStart;
+        const selectionEnd = markdownTextareaEl.selectionEnd;
+        const pattern = /\[[^\]\n]*@[^\]\n]+\]/g;
+        let match;
+        while ((match = pattern.exec(markdown))) {
+            const start = match.index;
+            const end = start + match[0].length;
+            const touches = selectionStart === selectionEnd
+                ? selectionStart >= start && selectionStart <= end
+                : selectionStart < end && selectionEnd > start;
+            if (touches) return { source: match[0], start, end };
+        }
+        return null;
+    }
+
+    function toggleCitationModal(show, { editElement = null, markdownRange = null } = {}) {
+        if (!citationOverlay) return;
+        citationOverlay.style.display = show ? 'flex' : 'none';
+        if (!show) {
+            editingCitationElement = null;
+            editingCitationRange = null;
+            return;
+        }
+        editingCitationElement = editElement && editElement.isConnected ? editElement : null;
+        editingCitationRange = markdownRange || null;
+        const settings = effectiveLatexSettings();
+        citationEntries = bibliographyEntries(settings.bibliographyContent || '', settings.bibliographyName || '');
+        const api = bibliographyApi();
+        const editingSource = editingCitationElement
+            ? editingCitationElement.dataset.edimarkCitation || ''
+            : editingCitationRange?.source || '';
+        const currentIds = editingSource && api && typeof api.citationIds === 'function'
+            ? api.citationIds(editingSource)
+            : [];
+        selectedCitationIds = new Set(currentIds);
+        if (citationSearch) citationSearch.value = '';
+        const editing = Boolean(editingCitationElement || editingCitationRange);
+        if (citationModalTitle) {
+            const key = editing ? 'citation_modal_edit_title' : 'citation_modal_title';
+            citationModalTitle.setAttribute('data-i18n-key', key);
+            citationModalTitle.textContent = getTranslation(key, editing ? 'Editar cita bibliográfica' : 'Insertar cita bibliográfica');
+        }
+        if (citationInsertBtn) {
+            const key = editing ? 'citation_apply_btn' : 'citation_insert_btn';
+            citationInsertBtn.setAttribute('data-i18n-key', key);
+            citationInsertBtn.textContent = getTranslation(key, editing ? 'Aplicar cambios' : 'Insertar cita');
+        }
+        const ready = citationEntries.length > 0;
+        if (citationLibraryReady) citationLibraryReady.classList.toggle('hidden', !ready);
+        if (citationLibraryEmpty) citationLibraryEmpty.classList.toggle('hidden', ready);
+        if (ready) {
+            renderCitationResults();
+            focusModalField(citationSearch);
+        } else {
+            updateCitationInsertButton();
+            focusModalField(citationOpenSettingsBtn || citationLoadExampleBtn);
+        }
+    }
+
+    if (citationSearch) citationSearch.addEventListener('input', renderCitationResults);
+    if (citationBtn) {
+        citationBtn.addEventListener('click', () => {
+            toggleCitationModal(true, { markdownRange: markdownCitationAtSelection() });
+        });
+    }
+    if (citationCancelBtn) citationCancelBtn.addEventListener('click', () => toggleCitationModal(false));
+    if (citationInsertBtn) {
+        citationInsertBtn.addEventListener('click', () => {
+            const api = bibliographyApi();
+            const citation = api && typeof api.buildCitation === 'function'
+                ? api.buildCitation(Array.from(selectedCitationIds))
+                : '';
+            if (!citation) return;
+            if (editingCitationElement && editingCitationElement.isConnected) {
+                editingCitationElement.dataset.edimarkCitation = citation;
+                editingCitationElement.textContent = previewCitationLabel(citation, citationEntries) || citation;
+                notifyPreviewEdited({ repaint: true });
+            } else if (editingCitationRange && markdownTextareaEl) {
+                markdownTextareaEl.setSelectionRange(editingCitationRange.start, editingCitationRange.end);
+                markdownEditor.replaceSelection(citation);
+            } else {
+                insertMarkdownContent(citation, { inline: true });
+            }
+            toggleCitationModal(false);
+        });
+    }
+    if (citationOpenSettingsBtn) {
+        citationOpenSettingsBtn.addEventListener('click', () => {
+            toggleCitationModal(false);
+            toggleLatexSettingsModal(true, { tab: 'bibliography' });
+        });
+    }
+    if (citationLoadExampleBtn) {
+        citationLoadExampleBtn.addEventListener('click', () => {
+            const example = exampleBibliography();
+            if (!example) return;
+            const settings = effectiveLatexSettings();
+            storeLatexSettings({
+                ...settings,
+                bibliographyContent: example.content,
+                bibliographyName: example.name,
+            });
+            attachBibliographyToDocument(docs.find(doc => doc.id === currentId), example);
+            toggleCitationModal(true);
+        });
+    }
+    if (htmlOutput) {
+        const openPreviewCitation = (event) => {
+            const citation = event.target.closest?.('.edimark-preview-citation');
+            if (!citation) return false;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            toggleCitationModal(true, { editElement: citation });
+            return true;
+        };
+        htmlOutput.addEventListener('click', openPreviewCitation);
+        htmlOutput.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            openPreviewCitation(event);
+        });
+    }
+    if (citationOverlay) {
+        citationOverlay.addEventListener('click', (event) => {
+            if (event.target === citationOverlay) toggleCitationModal(false);
+        });
+    }
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !citationOverlay) return;
+        if (citationOverlay.style.display === 'flex') toggleCitationModal(false);
+    });
+
     if (coverBtn && coverInput) {
         coverBtn.addEventListener('click', () => coverInput.click());
         coverInput.addEventListener('change', () => {
@@ -10494,6 +11289,7 @@ window.onload = async () => {
             refreshPageBreaks();
         });
     }
+    window.__schedulePageBreaks = schedulePageBreaks;
     if (typeof ResizeObserver === 'function') {
         const observador = new ResizeObserver(schedulePageBreaks);
         ['html-output', 'preview-desk'].forEach((id) => {
@@ -10868,7 +11664,7 @@ window.onload = async () => {
             const elegida = pedida || (tablist && tablist.querySelector('[role="tab"]'));
             if (selectSettingsTab && elegida) selectSettingsTab(elegida);
             // Siempre desde lo guardado: cancelar tiene que descartar de verdad.
-            fillLatexSettingsForm(readLatexSettings());
+            fillLatexSettingsForm(effectiveLatexSettings());
             // El foco, en su pestaña: el antiguo primer campo vive ahora en la
             // de LaTeX, y enfocarlo la abriría sin querer.
             setTimeout(() => {
@@ -10902,7 +11698,7 @@ window.onload = async () => {
     }
     if (latexSettingsSaveBtn) {
         latexSettingsSaveBtn.addEventListener('click', () => {
-            storeLatexSettings({
+            const settings = {
                 documentLanguage: readDocLanguageFromForm(),
                 documentAuthor: docAuthorInput ? docAuthorInput.value.trim() : '',
                 epubCover: readCoverMode(),
@@ -10911,12 +11707,25 @@ window.onload = async () => {
                 documentToc: docTocCheckbox ? docTocCheckbox.checked : false,
                 documentTocDepth: docTocDepthSelect ? Number(docTocDepthSelect.value) : 3,
                 documentNumberSections: docNumberingCheckbox ? docNumberingCheckbox.checked : false,
+                bibliographyContent: pendingBibliography.content,
+                bibliographyName: pendingBibliography.name,
+                bibliographyTitle: bibliographyTitleInput ? bibliographyTitleInput.value.trim() : '',
+                bibliographyHeadingLevel: bibliographyHeadingLevelSelect ? Number(bibliographyHeadingLevelSelect.value) : 2,
+                citationStyle: citationStyleSelect ? citationStyleSelect.value : 'apa',
+                cslContent: pendingCsl.content,
+                cslName: pendingCsl.name,
                 documentClass: latexClassSelect ? latexClassSelect.value : 'article',
                 classOptions: latexClassOptionsInput ? latexClassOptionsInput.value.trim() : '',
                 preamble: latexPreambleTextarea ? latexPreambleTextarea.value : '',
                 documentFormat: readDocumentFormatFields('export-format-fields'),
+            };
+            storeLatexSettings(settings);
+            attachBibliographyToDocument(docs.find(doc => doc.id === currentId), {
+                content: pendingBibliography.content,
+                name: pendingBibliography.name,
             });
             applyDocumentFormatToPreview();
+            updateHtml();
             toggleLatexSettingsModal(false);
             updateExportStatus(getTranslation('doc_settings_saved', 'Ajustes del documento guardados.'));
         });
@@ -11008,15 +11817,21 @@ window.onload = async () => {
             if (!doc || !files.length) return;
             const folderName = (files[0].webkitRelativePath || '').split('/')[0] || '';
             const count = registerAssetFolder(files, { docId: doc.id, folderName });
-            if (!count) {
-                reportStatus(getTranslation('missing_assets_folder_empty', 'En esa carpeta no hay ninguna imagen.'));
+            const bibliographyLoaded = await hydrateDocumentBibliography(doc, files);
+            if (!count && !bibliographyLoaded) {
+                reportStatus(getTranslation('missing_assets_folder_empty', 'En esa carpeta no hay imágenes ni una bibliografía del documento.'));
                 return;
             }
-            reportStatus(getTranslation('missing_assets_folder_linked', 'Carpeta vinculada: {name} ({count} imágenes).')
+            reportStatus(getTranslation(
+                bibliographyLoaded ? 'missing_assets_folder_linked_with_bibliography' : 'missing_assets_folder_linked',
+                bibliographyLoaded
+                    ? 'Carpeta vinculada: {name} ({count} imágenes y bibliografía).'
+                    : 'Carpeta vinculada: {name} ({count} imágenes).',
+            )
                 .replace('{name}', folderName)
                 .replace('{count}', String(count)));
             updateHtml();
-            await persistLinkedDocumentAssets(doc, markdownEditor.getValue());
+            if (count) await persistLinkedDocumentAssets(doc, markdownEditor.getValue());
         });
     }
 
@@ -11389,6 +12204,7 @@ window.onload = async () => {
             if (!accel) return;
             if (e.altKey) {
                 switch (e.key.toLowerCase()) {
+                    case 'b': e.preventDefault(); citationBtn?.click(); return;
                     case 'o': e.preventDefault(); importFileBtn?.click(); return;
                     case 'e': e.preventDefault(); openExportMenu(); return;
                     case 'm': e.preventDefault(); openEdicuatexBtn?.click(); return;

@@ -61,7 +61,7 @@ Next to the logo sit the **File**, **Export** and **Settings** menus. On the rig
 * **Print (Ctrl+P)**: a view ready for paper or PDF.
 * **Help**: the **Manual (F1)**, **About EdiMarkWeb** — version, author and licences — and, on the desktop, **Check for updates…**.
 
-The toolbar below gathers undo and redo, bold, italics, headings (H1…H6), lists, quotes, code, links, images, tables, **Paste** and the formulas. Each button says what it does, and its shortcut, when you hover over it. On small screens it folds into two buttons, **Actions** and **Format**.
+The toolbar below gathers undo and redo, bold, italics, headings (H1…H6), lists, quotes, code, links, images, tables, **bibliographic citations**, **Paste** and formulas. Each button says what it does, and its shortcut, when you hover over it. On small screens it folds into two buttons, **Actions** and **Format**.
 
 ---
 
@@ -86,7 +86,7 @@ The **Image** button takes a file from disk or a URL, and asks how to insert it:
 
 **Image manager.** Under the Markdown editor, a list brings together the images in the document. Every image can be **viewed**, **replaced** with another pasted from the clipboard, chosen from disk or entered as a URL, and **removed from the document**. Linked images show their path or URL and can also be **embedded** as Base64; removing the reference does not delete the original file or remote image. For online images, conversion depends on the server allowing the browser to download them; if it blocks the request, the document does not change. Images that are already embedded show their format and size and let you view or copy their code.
 
-Base64 code takes thousands of characters, so EdiMarkWeb folds it away and leaves a short marker such as `__EDIMARK_B64_1__` in the editor; the real content is kept intact when saving, copying and exporting. The **Move embedded images to the folder** button goes the other way: each image becomes a file inside a folder named after the document (`my-file.md` → `my-file/`) and the Markdown keeps its path. The files are written when you save, and `Ctrl+Z` undoes the change.
+Base64 code takes thousands of characters, so EdiMarkWeb folds it away and leaves a short marker such as `__EDIMARK_B64_1__` in the editor; the real content is kept intact when saving, copying and exporting. The **Move embedded images to the folder** button goes the other way: each image becomes a file inside the document resource subfolder (`my-file.md` → `my-file/images/`) and the Markdown keeps its path. The files are written when you save, and `Ctrl+Z` undoes the change.
 
 ---
 
@@ -148,6 +148,16 @@ Greek letters ($\alpha$, $\beta$, $\Omega$), subscripts ($H_2O$), comparisons ($
 
 ---
 
+## Citations and bibliography
+
+Under **Settings → General document options… → Citations**, load a **BibTeX** (`.bib`) or **CSL JSON** (`.json`) library. If you only want to try the feature, **Load example bibliography** prepares four complete references on education, digital competence and learning. **APA 7** is the initial style; you can also choose Chicago author-date, MLA 9, IEEE, or load your own **CSL** (`.csl`) file. These options also let you change the bibliography title—“References” by default—and its H1–H6 level. Files are not sent to any service.
+
+The book button —or `Ctrl+Alt+B`— opens a search by author, title, year or key. Select one or more references and press **Insert citation**: the Markdown receives Pandoc-compatible syntax such as `[@garcia2024]` or `[@garcia2024; @doe2023]`. If the cursor or a selection is inside a citation, the same button opens it for editing. In the preview it is a readable token that cannot be edited in pieces; it can also be pressed to change its references. The final bibliography appears at the foot of the preview, and DOCX, ODT, EPUB, HTML, TEX and PDF exports reproduce the same title, level and style.
+
+When `my-file.md` is saved, EdiMarkWeb copies the library to `my-file/references.bib`—or `references.json`—and declares that path in the YAML metadata. Its own images are grouped under `my-file/images/`. To move the work, keep the Markdown and its `my-file` folder together. The desktop app retrieves the library automatically; for security, in the web version press **Link resource folder…** and choose `my-file` after opening it in another browser or computer. A custom CSL style remains a local device preference.
+
+---
+
 ## Search and replace
 
 The magnifier (or `Ctrl+F`) opens the search box, which works in whichever pane you are in:
@@ -198,13 +208,16 @@ The format applies to the visual editor and to all five export formats, with thr
 
 The toolbar also carries an export button with its arrow, next to the copy one: the button repeats the last format you used with a single click —it says so on a small label, and it starts at DOCX— and the arrow opens this same list.
 
+With a bibliography loaded, every format resolves `[@key]` citations and adds the reference list in the chosen CSL style.
+
 ### General document options
 
-**Settings → General document options…** stores the starting values for every document, and they are remembered between sessions. It has four tabs:
+**Settings → General document options…** stores the starting values for every document, and they are remembered between sessions. It has five tabs:
 
 * **Details & outline**: **language** (by default, the same as the interface), **author** — which appears in the file properties and on the EPUB and LaTeX cover; leave it empty if you do not want Pandoc to write the name line in DOCX and ODT —, **table of contents** and **number the sections** (1, 1.1, 1.2…; ODT does not support that numbering).
 * **Text & page**: the same text and page settings as the section above, as starting values. Four come already set —**12 pt**, **serif**, **1.5** line spacing and **A4** paper—, because those are the ones the visual editor needs in order to show the truth: once declared, what you see on the sheet is what comes out in all five formats. The rest start unset.
 * **EPUB**: the **cover**, which can be the one the application **generates** with the title and author, **an image of your own** (up to 1 MB) or **none**.
+* **Citations**: the BibTeX or CSL JSON library and, optionally, the CSL style applied on export.
 * **LaTeX**: the **class** (`article`, `report` or `book`), its **options** (`12pt, a4paper`) and a **preamble** of your own, inserted just before `\begin{document}`. A faulty preamble raises no warning here: the error shows up when compiling.
 
 > **About the table of contents**: in DOCX and ODT it is a field the word processor calculates, so the document opens with the list of sections but without page numbers. To get them, update it: in Word, right-click the table of contents → *Update field*; in LibreOffice, *Tools → Update → Indexes and Tables*.
