@@ -191,6 +191,8 @@ fontsize: "12pt"
 
 This is the standard way of storing data about a document and many programs understand it. It appears in the Markdown editor, which is the source, but not in the visual editor, because it is not content. Whatever you leave as *Inherited* follows **Settings → General document options…**, and the dialog itself carries a link, *Edit general options…*, which opens those options on the same tab. *Remove everything from the document* leaves it with nothing of its own.
 
+**Format profiles.** If you repeat the same settings across several works, save them once: at the top of the dialog, *Save as profile…* asks for a name—“thesis”, “notes”—and remembers the text, page and contents settings as they stand. In another document, pick it and press *Apply profile*: it fills the fields the profile sets and leaves the rest as they are, so you can still adjust before confirming. Nothing reaches the document until you press *Apply*, and *Cancel* discards it as always. Saving under the name of an existing profile updates it. Profiles stay on this computer; they do not travel inside the `.md`.
+
 The format applies to the visual editor and to all five export formats, with three caveats: in the **EPUB** the margins are a suggestion, because the reading device is in charge; in **TEX**, if your preamble already loads `geometry`, your margins win and the application says so; and **hyphenation** uses the system's hyphenation dictionaries (on Linux, LibreOffice needs the language package, for example `hyphen-en-gb`).
 
 ---

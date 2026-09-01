@@ -2552,6 +2552,87 @@ test('el autor se guarda como ajuste general y por documento', async (t) => {
   assert.equal(await page.locator('#markdown-input').inputValue(), '# Notas\n\nTexto.\n');
 });
 
+test('un perfil de formato se guarda una vez y se aplica a otros documentos', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').fill('# Trabajo\n\nTexto.\n');
+  await page.locator('#doc-format-toolbar-btn').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'visible' });
+
+  // Sin perfiles guardados no hay nada que aplicar ni que borrar.
+  assert.equal(await page.locator('#doc-format-profile-apply').isDisabled(), true);
+  assert.equal(await page.locator('#doc-format-profile-delete').isDisabled(), true);
+
+  // Se guarda lo que digan los campos, sin escribirlo dos veces.
+  await page.locator('#doc-format-tab-format').click();
+  await page.locator('#doc-format-fields-fontsize').fill('13');
+  await page.locator('#doc-format-fields-margin-left').fill('2,5');
+  await page.locator('#doc-format-tab-document').click();
+  await page.locator('#doc-own-numbersections').selectOption('yes');
+  await page.locator('#doc-format-profile-save').click();
+  await page.locator('#doc-format-profile-name').fill('TFG');
+  await page.locator('#doc-format-profile-form button[type="submit"]').click();
+  await page.locator('#doc-format-profile-form').waitFor({ state: 'hidden' });
+  assert.equal(await page.locator('#doc-format-profile').inputValue(), 'TFG');
+  await page.locator('#doc-format-save-btn').click();
+
+  // Otro documento: el perfil rellena los campos y no toca lo que no fija.
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('# Otro\n\nTexto.\n');
+  await page.locator('#doc-format-toolbar-btn').click();
+  await page.locator('#doc-format-tab-format').click();
+  await page.locator('#doc-format-fields-align').selectOption('justify');
+  await page.locator('#doc-format-profile').selectOption('TFG');
+  await page.locator('#doc-format-profile-apply').click();
+  assert.equal(await page.locator('#doc-format-fields-fontsize').inputValue(), '13');
+  assert.equal(await page.locator('#doc-format-fields-margin-left').inputValue(), '2.5');
+  assert.equal(await page.locator('#doc-format-fields-align').inputValue(), 'justify', 'el perfil no fija la alineación');
+
+  // Aplicar el perfil no escribe nada por su cuenta: cancelar descarta.
+  await page.locator('#doc-format-cancel-btn').click();
+  assert.equal(await page.locator('#markdown-input').inputValue(), '# Otro\n\nTexto.\n');
+
+  // Es el botón de siempre el que lo lleva al documento.
+  await page.locator('#doc-format-toolbar-btn').click();
+  await page.locator('#doc-format-profile').selectOption('TFG');
+  await page.locator('#doc-format-profile-apply').click();
+  await page.locator('#doc-format-save-btn').click();
+  await page.locator('#doc-format-modal-overlay').waitFor({ state: 'hidden' });
+  const markdown = await page.locator('#markdown-input').inputValue();
+  assert.match(markdown, /fontsize: "13pt"/);
+  assert.match(markdown, /margin-left: "2.5cm"/);
+  assert.match(markdown, /numbersections: true/);
+
+  // Guardar con un nombre que ya existe actualiza ese perfil, no crea otro.
+  await page.locator('#doc-format-toolbar-btn').click();
+  await page.locator('#doc-format-tab-format').click();
+  await page.locator('#doc-format-fields-fontsize').fill('11');
+  await page.locator('#doc-format-profile').selectOption('TFG');
+  await page.locator('#doc-format-profile-save').click();
+  assert.equal(await page.locator('#doc-format-profile-name').inputValue(), 'TFG', 'propone el perfil elegido');
+  await page.locator('#doc-format-profile-form button[type="submit"]').click();
+  await page.locator('#doc-format-profile-form').waitFor({ state: 'hidden' });
+  assert.deepEqual(await page.locator('#doc-format-profile option').allTextContents(), ['Ninguno', 'TFG']);
+
+  // Un perfil sin nombre no se guarda.
+  await page.locator('#doc-format-profile-save').click();
+  await page.locator('#doc-format-profile-name').fill('   ');
+  await page.locator('#doc-format-profile-form button[type="submit"]').click();
+  await page.locator('#doc-format-profile-error').waitFor({ state: 'visible' });
+  assert.match(await page.locator('#doc-format-profile-error').textContent(), /nombre/);
+  await page.locator('#doc-format-profile-cancel').click();
+
+  // Borrar pregunta antes y deja el documento como estaba.
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('#doc-format-profile').selectOption('TFG');
+  await page.locator('#doc-format-profile-delete').click();
+  await page.waitForFunction(() => document.querySelectorAll('#doc-format-profile option').length === 1);
+  assert.equal(await page.locator('#doc-format-profile-apply').isDisabled(), true);
+  await page.locator('#doc-format-cancel-btn').click();
+  assert.match(await page.locator('#markdown-input').inputValue(), /fontsize: "13pt"/);
+});
+
 test('el índice y la numeración se recuerdan como ajuste', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());

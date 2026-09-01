@@ -1205,9 +1205,36 @@
               Y el camino al otro cuadro: quien mira de dónde hereda un campo
               suele querer cambiarlo para todos, no solo para este documento.
             -->
-            <p class="mb-5">
+            <p class="mb-3">
                 <button type="button" id="doc-format-open-general" class="inline-link-btn" data-i18n-key="doc_format_open_general">Editar las opciones generales…</button>
             </p>
+            <!--
+              Perfiles: el mismo juego de ajustes reutilizado en otros
+              documentos. Aplicar uno solo rellena los campos de abajo; nada se
+              escribe hasta pulsar «Aplicar», para que cancelar siga descartando
+              de verdad.
+            -->
+            <div class="mb-5 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+                <div class="flex flex-wrap items-end gap-2">
+                    <div class="min-w-[9rem] flex-1">
+                        <label for="doc-format-profile" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="profile_label">Perfil de formato</label>
+                        <select id="doc-format-profile" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"></select>
+                    </div>
+                    <button type="button" id="doc-format-profile-apply" class="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500/20" data-i18n-key="profile_apply_btn">Aplicar perfil</button>
+                    <button type="button" id="doc-format-profile-save" class="px-3 py-1.5 text-sm text-slate-600 rounded-md hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-700" data-i18n-key="profile_save_btn">Guardar como perfil…</button>
+                    <button type="button" id="doc-format-profile-delete" class="px-3 py-1.5 text-sm text-slate-600 rounded-md hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-700" data-i18n-key="profile_delete_btn">Borrar</button>
+                </div>
+                <form id="doc-format-profile-form" class="hidden mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-slate-600 dark:bg-slate-800/40">
+                    <label for="doc-format-profile-name" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="profile_name_label">Nombre del perfil</label>
+                    <input type="text" id="doc-format-profile-name" maxlength="60" autocomplete="off" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="TFG">
+                    <p id="doc-format-profile-error" role="alert" class="hidden mt-2 text-xs text-red-700 dark:text-red-300"></p>
+                    <div class="mt-3 flex justify-end gap-2">
+                        <button type="button" id="doc-format-profile-cancel" class="px-3 py-1.5 text-sm text-slate-600 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-700" data-i18n-key="bibliography_article_cancel">Cancelar</button>
+                        <button type="submit" class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="profile_save_confirm">Guardar perfil</button>
+                    </div>
+                </form>
+                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="profile_hint">Un perfil guarda el texto, la página y el índice para reutilizarlos en otro documento. Aplicarlo solo rellena los campos: nada cambia hasta que pulses «Aplicar».</p>
+            </div>
             <div class="space-y-4">
                 <div id="doc-format-tablist" role="tablist" class="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700">
                     <button type="button" role="tab" id="doc-format-tab-document" aria-controls="doc-format-panel-document" aria-selected="true" class="settings-tab" data-i18n-key="doc_settings_tab_document">Datos e índice</button>
@@ -1466,6 +1493,7 @@
     <script src="asset-paths.js?v=2.44.0"></script>
     <script src="bibliography.js?v=2.44.0"></script>
     <script src="document-format.js?v=2.44.0"></script>
+    <script src="format-profiles.js?v=2.44.0"></script>
     <script src="platform-api.js?v=2.44.0"></script>
     <script src="desktop-updater.js?v=2.44.0"></script>
     <script type="module" src="pandoc-exporter.js?v=2.44.0"></script>

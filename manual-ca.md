@@ -191,6 +191,8 @@ fontsize: "12pt"
 
 És la manera estàndard de desar dades sobre un document i molts programes l'entenen. Apareix a l'editor Markdown, que és el codi font, però no a l'editor visual, perquè no és contingut. El que deixis en *Heretat* segueix **Configuració → Opcions generals…**, i el mateix quadre duu un enllaç, *Editar les opcions generals…*, que obre aquestes opcions per la mateixa pestanya. *Treure-ho tot del document* el deixa sense res propi.
 
+**Perfils de format.** Si repeteixes els mateixos ajustos en diversos treballs, desa'ls una vegada: a la part de dalt del quadre, *Desa com a perfil…* demana un nom —«TFG», «apunts»— i recorda el text, la pàgina i l'índex tal com estiguin en aquell moment. En un altre document només cal triar-lo i prémer *Aplica el perfil*: omple els camps que el perfil fixa i deixa els altres com estan, així que encara pots retocar abans de confirmar. Res no arriba al document fins que prems *Aplica*, i *Cancel·la* ho descarta com sempre. Desar amb el nom d'un perfil que ja existeix l'actualitza. Els perfils es queden en aquest equip, no viatgen dins del `.md`.
+
 El format s'aplica a l'editor visual i als cinc formats d'exportació, amb tres excepcions: a l'**EPUB** els marges són un suggeriment, perquè mana el lector de llibres; en **TEX**, si el teu preàmbul ja carrega `geometry`, manen els teus marges i l'aplicació ho avisa; i la **partició de mots** fa servir els diccionaris de guionets del sistema (a Linux, el LibreOffice necessita el paquet de l'idioma, per exemple `hyphen-ca`).
 
 ---

@@ -191,6 +191,8 @@ fontsize: "12pt"
 
 Dokumentu bati buruzko datuak gordetzeko modu estandarra da eta programa askok ulertzen dute. Markdown editorean agertzen da, iturburu-kodea baita, baina ez editore bisualean, ez baita edukia. *Heredatua* uzten duzuna **Ezarpenak → Aukera orokorrak…** atalari jarraitzen dio, eta koadroak berak esteka bat dakar, *Editatu aukera orokorrak…*, aukera horiek fitxa beretik irekitzen dituena. *Dena kendu dokumentutik* aukerak ezer propiorik gabe uzten du.
 
+**Formatu-profilak.** Ezarpen berberak lan askotan errepikatzen badituzu, gorde itzazu behin: koadroaren goiko aldean, *Gorde profil gisa…* aukerak izen bat eskatzen du —«TFG», «apunteak»— eta testua, orria eta aurkibidea une horretan dauden bezala gogoratzen ditu. Beste dokumentu batean nahikoa da hura hautatu eta *Aplikatu profila* sakatzea: profilak finkatzen dituen eremuak betetzen ditu eta gainerakoak dauden bezala uzten ditu, beraz oraindik uki ditzakezu berretsi aurretik. Ezer ez da dokumentura iristen *Aplikatu* sakatu arte, eta *Utzi* aukerak beti bezala baztertzen du. Lehendik dagoen profil baten izenarekin gordetzeak hura eguneratzen du. Profilak ekipo honetan geratzen dira, ez dira `.md` barruan bidaiatzen.
+
 Formatua editore bisualari eta esportatzeko bost formatuei aplikatzen zaie, hiru salbuespenekin: **EPUBean** marjinak iradokizun bat dira, liburu-irakurgailuak agintzen baitu; **TEXean**, zure aitzinsolasak jada `geometry` kargatzen badu, zure marjinek agintzen dute eta aplikazioak abisatu egiten du; eta **hitzen banaketak** sistemaren marratxo-hiztegiak erabiltzen ditu (Linuxen, LibreOfficek hizkuntzaren paketea behar du, adibidez `hyphen-eu`).
 
 ---

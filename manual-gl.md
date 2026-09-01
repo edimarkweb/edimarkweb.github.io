@@ -191,6 +191,8 @@ fontsize: "12pt"
 
 É a forma estándar de gardar datos sobre un documento e enténdena moitos programas. Aparece no editor Markdown, que é o código fonte, pero non no editor visual, porque non é contido. O que deixes en *Herdado* segue **Configuración → Opcións xerais…**, e o propio cadro leva unha ligazón, *Editar as opcións xerais…*, que abre esas opcións pola mesma lapela. *Quitar todo do documento* déixao sen nada propio.
 
+**Perfís de formato.** Se repites os mesmos axustes en varios traballos, gárdaos unha vez: na parte de arriba do cadro, *Gardar como perfil…* pide un nome —«TFG», «apuntamentos»— e lembra o texto, a páxina e o índice tal como estean nese momento. Noutro documento abonda con escollelo e premer *Aplicar o perfil*: enche os campos que o perfil fixa e deixa os demais como están, así que aínda podes retocar antes de confirmar. Nada chega ao documento ata que premas *Aplicar*, e *Cancelar* descártao como sempre. Gardar co nome dun perfil que xa existe actualízao. Os perfís quedan neste equipo, non viaxan dentro do `.md`.
+
 O formato aplícase ao editor visual e aos cinco formatos de exportación, con tres salvidades: no **EPUB** as marxes son unha suxestión, porque manda o lector de libros; en **TEX**, se o teu preámbulo xa carga `geometry`, mandan as túas marxes e a aplicación avisa; e a **partición de palabras** usa os dicionarios de guións do sistema (en Linux, LibreOffice precisa o paquete do idioma, por exemplo `hyphen-gl`).
 
 ---

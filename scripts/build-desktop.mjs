@@ -11,6 +11,7 @@ const appFiles = [
   'bibliography.js',
   'desktop-updater.js',
   'document-format.js',
+  'format-profiles.js',
   'favicon.ico',
   'i18n.js',
   'index.html',

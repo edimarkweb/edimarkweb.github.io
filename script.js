@@ -7307,6 +7307,14 @@ window.onload = async () => {
     const docFormatSaveBtn = document.getElementById('doc-format-save-btn');
     const docFormatCancelBtn = document.getElementById('doc-format-cancel-btn');
     const docFormatResetBtn = document.getElementById('doc-format-reset-btn');
+    const docFormatProfileSelect = document.getElementById('doc-format-profile');
+    const docFormatProfileApplyBtn = document.getElementById('doc-format-profile-apply');
+    const docFormatProfileSaveBtn = document.getElementById('doc-format-profile-save');
+    const docFormatProfileDeleteBtn = document.getElementById('doc-format-profile-delete');
+    const docFormatProfileForm = document.getElementById('doc-format-profile-form');
+    const docFormatProfileName = document.getElementById('doc-format-profile-name');
+    const docFormatProfileError = document.getElementById('doc-format-profile-error');
+    const docFormatProfileCancelBtn = document.getElementById('doc-format-profile-cancel');
     const tableModalOverlay = document.getElementById('table-modal-overlay');
     const createTableBtn = document.getElementById('create-table-btn');
     const cancelTableBtn = document.getElementById('cancel-table-btn');
@@ -11850,6 +11858,162 @@ window.onload = async () => {
       `tab` dice con cuál de las dos se abre: quien viene de la píldora del
       formato quiere el formato, y hacerle pulsar la pestaña cada vez sobra.
     */
+    /*
+      ---------------------------------------------------------------------
+      Perfiles de formato
+      ---------------------------------------------------------------------
+
+      Un perfil es el mismo juego de ajustes con un nombre, para no repetirlo
+      documento a documento. Aplicarlo no escribe en el Markdown: rellena los
+      campos de este cuadro y deja que sea el botón «Aplicar» de siempre quien
+      lo lleve al documento, de modo que cancelar sigue descartando de verdad y
+      no hay dos caminos distintos para escribir lo mismo.
+
+      Viven en `localStorage`, como las opciones generales: son de quien usa el
+      programa, no del documento, y por eso no viajan con él.
+    */
+    const FORMAT_PROFILES_KEY = 'edimarkweb-format-profiles';
+
+    function formatProfilesApi() {
+        return window.EdiMarkFormatProfiles;
+    }
+
+    function readFormatProfiles() {
+        const api = formatProfilesApi();
+        if (!api) return [];
+        const raw = safeLocalStorageGet(FORMAT_PROFILES_KEY);
+        if (!raw) return [];
+        try {
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            return parsed
+                .map(entry => api.normalizeProfile(entry))
+                .filter(profile => profile.name && !api.isEmptyProfile(profile))
+                .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }));
+        } catch (error) {
+            console.warn('Perfiles de formato ilegibles, se ignoran:', error);
+            return [];
+        }
+    }
+
+    function storeFormatProfiles(profiles) {
+        return safeLocalStorageSet(FORMAT_PROFILES_KEY, JSON.stringify(profiles));
+    }
+
+    function findFormatProfile(name) {
+        const wanted = String(name || '').trim().toLowerCase();
+        return readFormatProfiles().find(profile => profile.name.toLowerCase() === wanted) || null;
+    }
+
+    /* Lo que dicen ahora mismo los campos del cuadro, en forma de perfil. */
+    function profileFromDocFormatFields(name = '') {
+        const api = formatProfilesApi();
+        if (!api) return null;
+        const outline = readOwnOutlineFromFields();
+        return api.profileFromSettings({
+            documentFormat: readDocumentFormatFields('doc-format-fields'),
+            documentToc: outline.toc,
+            documentTocDepth: outline.tocDepth,
+            documentNumberSections: outline.numberSections,
+        }, name);
+    }
+
+    function syncFormatProfileButtons() {
+        const chosen = Boolean(docFormatProfileSelect && docFormatProfileSelect.value);
+        if (docFormatProfileApplyBtn) docFormatProfileApplyBtn.disabled = !chosen;
+        if (docFormatProfileDeleteBtn) docFormatProfileDeleteBtn.disabled = !chosen;
+    }
+
+    function renderFormatProfiles(selected = null) {
+        if (!docFormatProfileSelect) return;
+        const wanted = selected === null ? docFormatProfileSelect.value : selected;
+        const profiles = readFormatProfiles();
+        docFormatProfileSelect.replaceChildren();
+        const none = document.createElement('option');
+        none.value = '';
+        none.textContent = getTranslation('profile_none', 'Ninguno');
+        docFormatProfileSelect.appendChild(none);
+        profiles.forEach((profile) => {
+            const option = document.createElement('option');
+            option.value = profile.name;
+            option.textContent = profile.name;
+            docFormatProfileSelect.appendChild(option);
+        });
+        docFormatProfileSelect.value = profiles.some(profile => profile.name === wanted) ? wanted : '';
+        syncFormatProfileButtons();
+    }
+
+    function showFormatProfileError(key, fallback) {
+        if (!docFormatProfileError) return;
+        docFormatProfileError.textContent = getTranslation(key, fallback);
+        docFormatProfileError.classList.remove('hidden');
+    }
+
+    function toggleFormatProfileForm(show) {
+        if (!docFormatProfileForm) return;
+        docFormatProfileForm.classList.toggle('hidden', !show);
+        docFormatProfileSaveBtn?.setAttribute('aria-expanded', String(show));
+        if (docFormatProfileError) {
+            docFormatProfileError.classList.add('hidden');
+            docFormatProfileError.textContent = '';
+        }
+        if (!show) {
+            docFormatProfileForm.reset();
+            return;
+        }
+        // Guardar sobre un perfil elegido es lo más habitual: se propone su
+        // nombre para actualizarlo sin tener que escribirlo otra vez.
+        if (docFormatProfileName) {
+            docFormatProfileName.value = docFormatProfileSelect ? docFormatProfileSelect.value : '';
+            docFormatProfileName.focus();
+            docFormatProfileName.select();
+        }
+    }
+
+    /* Lo que el perfil fija sustituye al campo; lo que deja vacío se queda. */
+    function applyFormatProfileToFields(profile) {
+        const api = formatProfilesApi();
+        if (!api || !profile) return;
+        const outline = readOwnOutlineFromFields();
+        const applied = api.applyProfileToSettings({
+            documentFormat: readDocumentFormatFields('doc-format-fields'),
+            documentToc: outline.toc,
+            documentTocDepth: outline.tocDepth,
+            documentNumberSections: outline.numberSections,
+        }, profile);
+        fillDocumentFormatFields('doc-format-fields', applied.documentFormat);
+        if (docOwnToc) docOwnToc.value = outlineFieldValue(applied.documentToc);
+        if (docOwnTocDepth) docOwnTocDepth.value = applied.documentTocDepth === '' ? '' : String(applied.documentTocDepth);
+        if (docOwnNumberSections) docOwnNumberSections.value = outlineFieldValue(applied.documentNumberSections);
+        refreshInheritedDocumentHints();
+    }
+
+    function saveFormatProfileFromFields(name) {
+        const api = formatProfilesApi();
+        if (!api) return false;
+        const clean = String(name || '').trim();
+        if (!clean) {
+            showFormatProfileError('profile_name_required', 'Escribe un nombre para el perfil.');
+            return false;
+        }
+        const profile = profileFromDocFormatFields(clean);
+        if (!profile || api.isEmptyProfile(profile)) {
+            showFormatProfileError('profile_empty', 'No hay ningún ajuste propio que guardar en un perfil.');
+            return false;
+        }
+        const others = readFormatProfiles().filter(entry => entry.name.toLowerCase() !== clean.toLowerCase());
+        const replaced = others.length !== readFormatProfiles().length;
+        if (!storeFormatProfiles([...others, profile])) return false;
+        renderFormatProfiles(profile.name);
+        toggleFormatProfileForm(false);
+        notifyUser(formatTranslation(
+            replaced ? 'profile_updated' : 'profile_saved',
+            replaced ? 'Perfil «{name}» actualizado.' : 'Perfil «{name}» guardado.',
+            { name: profile.name },
+        ));
+        return true;
+    }
+
     function toggleDocFormatModal(show, { tab = 'document' } = {}) {
         if (!docFormatOverlay) return;
         docFormatOverlay.style.display = show ? 'flex' : 'none';
@@ -11881,6 +12045,8 @@ window.onload = async () => {
         // Siempre desde el documento: cancelar tiene que descartar de verdad.
         fillDocumentFormatFields('doc-format-fields', currentDocumentFormat());
         fillDocumentOwnFields();
+        renderFormatProfiles('');
+        toggleFormatProfileForm(false);
         refreshInheritedDocumentHints();
         // El foco, en la pestaña con la que se abre y no en la primera: es la
         // que va a recorrer con las flechas quien acaba de elegirla.
@@ -11928,6 +12094,49 @@ window.onload = async () => {
     if (docFormatCancelBtn) {
         docFormatCancelBtn.addEventListener('click', () => toggleDocFormatModal(false));
     }
+    if (docFormatProfileSelect) {
+        docFormatProfileSelect.addEventListener('change', syncFormatProfileButtons);
+    }
+    if (docFormatProfileApplyBtn) {
+        docFormatProfileApplyBtn.addEventListener('click', () => {
+            const profile = findFormatProfile(docFormatProfileSelect ? docFormatProfileSelect.value : '');
+            if (!profile) return;
+            applyFormatProfileToFields(profile);
+            toggleFormatProfileForm(false);
+        });
+    }
+    if (docFormatProfileSaveBtn) {
+        docFormatProfileSaveBtn.setAttribute('aria-controls', 'doc-format-profile-form');
+        docFormatProfileSaveBtn.setAttribute('aria-expanded', 'false');
+        docFormatProfileSaveBtn.addEventListener('click', () => {
+            toggleFormatProfileForm(docFormatProfileForm?.classList.contains('hidden'));
+        });
+    }
+    if (docFormatProfileCancelBtn) {
+        docFormatProfileCancelBtn.addEventListener('click', () => toggleFormatProfileForm(false));
+    }
+    if (docFormatProfileForm) {
+        docFormatProfileForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            saveFormatProfileFromFields(docFormatProfileName ? docFormatProfileName.value : '');
+        });
+    }
+    if (docFormatProfileDeleteBtn) {
+        docFormatProfileDeleteBtn.addEventListener('click', async () => {
+            const profile = findFormatProfile(docFormatProfileSelect ? docFormatProfileSelect.value : '');
+            if (!profile) return;
+            const confirmed = await confirmAction(formatTranslation(
+                'profile_delete_confirm',
+                '¿Borrar el perfil «{name}»? Los documentos que lo usaron no cambian.',
+                { name: profile.name },
+            ));
+            if (!confirmed) return;
+            const others = readFormatProfiles().filter(entry => entry.name !== profile.name);
+            if (!storeFormatProfiles(others)) return;
+            renderFormatProfiles('');
+            toggleFormatProfileForm(false);
+        });
+    }
     if (docFormatResetBtn) {
         // Deja el documento sin nada propio: vuelve a seguir a los generales.
         docFormatResetBtn.addEventListener('click', () => {
@@ -11949,8 +12158,10 @@ window.onload = async () => {
       fuera el valor se iba con él. Parecía que el ajuste no se guardaba salvo
       que antes se cambiara el foco de campo, que es cuando el botón se busca.
 
-      Quedan fuera el preámbulo de LaTeX —ahí Intro es un salto de línea— y los
-      botones y enlaces, que el navegador ya activa por su cuenta.
+      Quedan fuera el preámbulo de LaTeX —ahí Intro es un salto de línea—, los
+      botones y enlaces, que el navegador ya activa por su cuenta, y los campos
+      de un formulario propio, como el de las referencias o el del nombre de un
+      perfil: allí Intro tiene que enviar ese formulario, no el cuadro entero.
     */
     function confirmarConIntro(overlay, saveButton) {
         if (!overlay || !saveButton) return;
@@ -11958,7 +12169,7 @@ window.onload = async () => {
             if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
             const target = event.target;
             if (!target || typeof target.closest !== 'function') return;
-            if (target.closest('textarea, button, a, [role="tab"]')) return;
+            if (target.closest('textarea, button, a, [role="tab"], form')) return;
             event.preventDefault();
             saveButton.click();
         });
