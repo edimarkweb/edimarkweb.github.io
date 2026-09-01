@@ -4051,6 +4051,71 @@ function restoreOriginalImageSources(root) {
 }
 
 /*
+  El vídeo incrustado, en la aplicación de escritorio.
+
+  La ventana no se sirve por http sino por el esquema propio de Tauri, y el
+  reproductor de YouTube exige un origen web de verdad: incrustado aquí se
+  planta con su «error 153» y una tarjeta negra. Así que en el escritorio el
+  marco se cambia por una tarjeta con la miniatura del vídeo, que al pulsarla
+  lo abre en el navegador del sistema —de eso ya se encarga el gestor de
+  enlaces externos, porque la tarjeta es un enlace con target="_blank"—.
+
+  El iframe original viaja dentro de la tarjeta, en un atributo, y vuelve a su
+  sitio antes de que la hoja se convierta en Markdown o se exporte: lo que el
+  documento dice no cambia por cómo se esté mirando. Es lo mismo que se hace
+  con las rutas de las imágenes.
+*/
+const EMBED_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com',
+    'youtube-nocookie.com', 'www.youtube-nocookie.com']);
+
+function youtubeIdFromSrc(src) {
+    let url;
+    try { url = new URL(src, 'https://www.youtube.com'); } catch { return ''; }
+    if (!EMBED_HOSTS.has(url.hostname)) return '';
+    const id = url.pathname.replace(/^\/embed\//, '').split('/')[0];
+    return /^[\w-]{6,}$/.test(id) ? id : '';
+}
+
+function applyDesktopEmbedCards(container) {
+    if (!container || !window.EdiMarkPlatform?.isDesktop) return;
+    container.querySelectorAll('iframe[src]').forEach(frame => {
+        const id = youtubeIdFromSrc(frame.getAttribute('src') || '');
+        if (!id) return;
+        const card = document.createElement('a');
+        card.className = 'embed-card';
+        card.href = `https://www.youtube.com/watch?v=${id}`;
+        card.target = '_blank';
+        card.rel = 'noopener';
+        card.contentEditable = 'false';
+        card.dataset.edimarkEmbed = frame.outerHTML;
+        const titulo = frame.getAttribute('title') || '';
+        if (titulo) card.title = titulo;
+        const miniatura = document.createElement('img');
+        miniatura.src = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+        miniatura.alt = titulo;
+        const marca = document.createElement('span');
+        marca.className = 'embed-card-play';
+        marca.setAttribute('aria-hidden', 'true');
+        const pie = document.createElement('span');
+        pie.className = 'embed-card-label';
+        pie.textContent = getTranslation('embed_open_youtube', 'Ver en YouTube');
+        card.append(miniatura, marca, pie);
+        frame.replaceWith(card);
+    });
+}
+
+function restoreOriginalEmbeds(root) {
+    if (!root || typeof root.querySelectorAll !== 'function') return root;
+    root.querySelectorAll('[data-edimark-embed]').forEach(card => {
+        const plantilla = document.createElement('template');
+        plantilla.innerHTML = card.dataset.edimarkEmbed;
+        const original = plantilla.content.firstElementChild;
+        if (original) card.replaceWith(original); else card.remove();
+    });
+    return root;
+}
+
+/*
   Aviso de las imágenes que no se han podido encontrar, con el botón para
   vincular la carpeta del documento. En el navegador es el único camino posible:
   ninguna página puede leer una carpeta del disco sin que el usuario la elija.
@@ -4532,6 +4597,7 @@ function updateHtml() {
         // Las rutas relativas se resuelven sobre el DOM ya montado; el HTML
         // que acaba de recibir el editor conserva las originales.
         applyRelativeImageSources(htmlOutput, docs.find(d => d.id === currentId));
+        applyDesktopEmbedCards(htmlOutput);
 
         htmlOutput.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
           if (!h.id) {
@@ -9122,6 +9188,26 @@ window.onload = async () => {
             bulletListMarker: '-',
             emDelimiter: '*',
         });
+        /*
+          El HTML que Markdown no sabe escribir se conserva tal cual: un
+          reproductor de audio, un vídeo o un marco incrustado se escriben a
+          mano en el documento, y al volver de la hoja Turndown los tiraba por
+          no tener equivalente en Markdown. Bastaba con escribir una letra en
+          el editor visual para que el pódcast de un artículo se quedara en el
+          texto de su pie y el vídeo desapareciera sin dejar nada. En pantalla
+          no se notaba, porque la hoja conserva lo que ya estaba pintado: la
+          pérdida solo se veía al mirar el Markdown, o al guardar.
+
+          Se conserva también la figura que los envuelve, para que su pie
+          vuelva con ellos; la de una imagen no entra aquí, que esa sí tiene
+          su forma en Markdown.
+        */
+        const MEDIOS_CRUDOS = new Set(['AUDIO', 'VIDEO', 'IFRAME', 'EMBED', 'OBJECT']);
+        turndownService.keep(node => {
+            if (MEDIOS_CRUDOS.has(node.nodeName)) return true;
+            return node.nodeName === 'FIGURE'
+                && Boolean(node.querySelector('audio, video, iframe, embed, object'));
+        });
         turndownService.addRule('edimarkCitation', {
             filter: node => node.nodeName === 'SPAN' && node.hasAttribute('data-edimark-citation'),
             replacement: (content, node) => node.getAttribute('data-edimark-citation') || content,
@@ -12886,15 +12972,15 @@ window.onload = async () => {
         repeatKey: 'm',
         hint: () => getTranslation(
             'formula_chord_hint',
-            'Fórmula: 1 $…$ · 2 $$…$$ · 3 \\(…\\) · 4 \\[…\\] · Esc cancela',
+            'Fórmula: 1 \\(…\\) · 2 \\[…\\] · 3 $…$ · 4 $$…$$ · Esc cancela',
         ),
         options: {
-            '1': () => applyFormat('latex-inline-dollar'),
-            '2': () => applyFormat('latex-block-dollar'),
-            '3': () => applyFormat('latex-inline-paren'),
-            '4': () => applyFormat('latex-block-bracket'),
+            '1': () => applyFormat('latex-inline-paren'),
+            '2': () => applyFormat('latex-block-bracket'),
+            '3': () => applyFormat('latex-inline-dollar'),
+            '4': () => applyFormat('latex-block-dollar'),
         },
-        fallback: () => applyFormat('latex-inline-dollar'),
+        fallback: () => applyFormat('latex-inline-paren'),
     };
 
     // Copiar no espera a nada: la opción de siempre es la última que se usó,

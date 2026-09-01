@@ -3260,6 +3260,39 @@ test('el audio y el vídeo escritos a mano sobreviven a escribir en la hoja', as
 });
 
 /*
+  El vídeo incrustado en la aplicación de escritorio. La ventana no se sirve
+  por http, así que el reproductor de YouTube se planta con su error 153: en
+  su lugar va una tarjeta con la miniatura que abre el vídeo en el navegador.
+  Lo que no puede pasar es que esa tarjeta llegue al documento: el iframe
+  vuelve a su sitio antes de convertir la hoja.
+*/
+test('en el escritorio el vídeo de YouTube se ve como tarjeta, y el documento conserva el iframe', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.evaluate(() => {
+    window.EdiMarkPlatform = { ...(window.EdiMarkPlatform || {}), isDesktop: true };
+  });
+  const marco = '<figure><iframe width="560" height="315" '
+    + 'src="https://www.youtube.com/embed/MQftUe8Y2ds" title="Vídeo" '
+    + 'frameborder="0" allowfullscreen></iframe></figure>';
+  await page.locator('#markdown-input').fill(`# Prueba\n\n${marco}\n`);
+  await page.locator('#html-output .embed-card').waitFor();
+
+  assert.equal(await page.locator('#html-output iframe').count(), 0, 'el marco no debe quedar en pantalla');
+  const tarjeta = page.locator('#html-output .embed-card');
+  assert.equal(await tarjeta.getAttribute('href'), 'https://www.youtube.com/watch?v=MQftUe8Y2ds');
+  // El gestor de enlaces externos abre en el navegador lo que lleve target.
+  assert.equal(await tarjeta.getAttribute('target'), '_blank');
+  assert.match(await page.locator('#html-output .embed-card img').getAttribute('src'), /MQftUe8Y2ds/);
+
+  // Lo que sale de la hoja es el marco original, no la tarjeta.
+  const html = await page.evaluate(() => buildHtmlWithTex());
+  assert.match(html, /youtube\.com\/embed\/MQftUe8Y2ds/);
+  assert.doesNotMatch(html, /embed-card/);
+});
+
+/*
   El índice y la numeración eran de la aplicación entera: activarlos para un
   manual se los ponía también a la nota de dos líneas del día siguiente. Ahora
   cada documento puede decir lo suyo, y decirlo también para quitárselos.

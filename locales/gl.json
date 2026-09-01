@@ -103,6 +103,7 @@
   "shortcut_formula_inline_paren": "Ctrl+M 1",
   "shortcut_formula_block_bracket": "Ctrl+M 2",
   "formula_chord_hint": "Fórmula: 1 \\(…\\) · 2 \\[…\\] · 3 $…$ · 4 $$…$$ · Esc cancela",
+  "embed_open_youtube": "Ver en YouTube",
   "export_menu_hint_docx": "Microsoft Word e compatibles",
   "export_menu_hint_odt": "LibreOffice e OpenOffice",
   "export_menu_hint_epub": "Libro dixital para lectores electrónicos",
