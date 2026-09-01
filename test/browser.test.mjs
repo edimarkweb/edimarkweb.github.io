@@ -1949,6 +1949,43 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
   );
 });
 
+test('amplía la bibliografía de ejemplo con un artículo desde la interfaz', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  await page.locator('#doc-settings-tab-bibliography').click();
+  await page.locator('#bibliography-example-btn').click();
+  await page.locator('#bibliography-add-article-btn').click();
+  await page.locator('#bibliography-article-key').fill('deharo2026ia');
+  await page.locator('#bibliography-article-year').fill('2026');
+  await page.locator('#bibliography-article-author').fill('de Haro, Juan José; García, Ana');
+  await page.locator('#bibliography-article-title').fill('Inteligencia artificial y aprendizaje');
+  await page.locator('#bibliography-article-journal').fill('Educación Digital');
+  await page.locator('#bibliography-article-doi').fill('10.1234/ed.2026.1');
+  await page.locator('#bibliography-article-form button[type="submit"]').click();
+  assert.match(await page.locator('#bibliography-summary').textContent(), /bibliografia-ejemplo\.bib.*8 referencias/);
+  assert.equal(await page.locator('#bibliography-article-form').isHidden(), true);
+
+  // La clave es el identificador estable de la cita y no se puede repetir.
+  await page.locator('#bibliography-add-article-btn').click();
+  await page.locator('#bibliography-article-key').fill('deharo2026ia');
+  await page.locator('#bibliography-article-year').fill('2026');
+  await page.locator('#bibliography-article-author').fill('de Haro, Juan José');
+  await page.locator('#bibliography-article-title').fill('Otro título');
+  await page.locator('#bibliography-article-journal').fill('Educación Digital');
+  await page.locator('#bibliography-article-form button[type="submit"]').click();
+  await page.locator('#bibliography-article-error').waitFor({ state: 'visible' });
+  assert.match(await page.locator('#bibliography-article-error').textContent(), /Ya existe/);
+  await page.locator('#bibliography-article-cancel-btn').click();
+  await page.locator('#latex-settings-save-btn').click();
+
+  await page.locator('#citation-btn').click();
+  await page.locator('#citation-search').fill('inteligencia artificial');
+  assert.equal(await page.locator('#citation-results input[value="deharo2026ia"]').count(), 1);
+});
+
 test('carga una bibliografía, busca referencias e inserta una cita múltiple', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
@@ -1971,7 +2008,7 @@ test('carga una bibliografía, busca referencias e inserta una cita múltiple', 
   await page.locator('#doc-settings-tab-bibliography').click();
   assert.equal(await page.locator('#citation-style-select').inputValue(), 'apa');
   await page.locator('#bibliography-example-btn').click();
-  assert.match(await page.locator('#bibliography-summary').textContent(), /bibliografia-ejemplo\.bib.*4 referencias/);
+  assert.match(await page.locator('#bibliography-summary').textContent(), /bibliografia-ejemplo\.bib.*7 referencias/);
   await page.locator('#bibliography-input').setInputFiles({
     name: 'fuentes.bib',
     mimeType: 'text/plain',
@@ -2043,7 +2080,7 @@ test('la bibliografía de ejemplo se carga desde el selector de citas sin archiv
   await page.locator('#citation-library-empty').waitFor({ state: 'visible' });
   await page.locator('#citation-load-example-btn').click();
   await page.locator('#citation-library-ready').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('#citation-result-count').textContent(), '4 referencias');
+  assert.equal(await page.locator('#citation-result-count').textContent(), '7 referencias');
   await page.locator('#citation-search').fill('UNESCO');
   await page.locator('#citation-results input[value="unesco2023ia"]').check();
   await page.locator('#citation-insert-btn').click();

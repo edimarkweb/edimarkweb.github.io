@@ -5,6 +5,7 @@ import bibliography from '../bibliography.js';
 
 const {
   parseBibliography,
+  appendArticle,
   searchBibliography,
   buildCitation,
   isCslStyle,
@@ -73,16 +74,78 @@ test('reconoce un estilo CSL y prepara archivos locales para Pandoc', () => {
 
 test('la bibliografía de ejemplo está completa y lista para buscar y citar', () => {
   const entries = parseBibliography(EXAMPLE_BIBLIOGRAPHY, EXAMPLE_BIBLIOGRAPHY_NAME);
-  assert.equal(entries.length, 4);
+  assert.equal(entries.length, 7);
   assert.deepEqual(
     entries.map(entry => entry.id).sort(),
-    ['mayer2009multimedia', 'redecker2017digcompedu', 'sweller1988cognitive', 'unesco2023ia'],
+    [
+      'deharo2009redes',
+      'freeman2014active',
+      'mayer2009multimedia',
+      'redecker2017digcompedu',
+      'roediger2006testing',
+      'sweller1988cognitive',
+      'unesco2023ia',
+    ],
   );
   entries.forEach((entry) => {
     assert.ok(entry.title, `falta título en ${entry.id}`);
     assert.ok(entry.author, `falta autor en ${entry.id}`);
     assert.match(entry.year, /^\d{4}$/);
   });
+  assert.deepEqual(
+    entries.find(entry => entry.id === 'deharo2009redes'),
+    {
+      id: 'deharo2009redes',
+      type: 'article',
+      title: 'Las redes sociales aplicadas a la práctica docente',
+      author: 'Juan José de Haro',
+      year: '2009',
+      search: 'deharo2009redes juan jose de haro las redes sociales aplicadas a la practica docente 2009 article',
+    },
+  );
+});
+
+test('añade un artículo a una biblioteca BibTeX y evita claves repetidas', () => {
+  const article = {
+    id: 'deharo2026ia',
+    author: 'de Haro, Juan José; García, Ana',
+    title: 'Inteligencia artificial y aprendizaje',
+    journal: 'Educación Digital',
+    year: '2026',
+    doi: '10.1234/ed.2026.1',
+    url: 'https://example.com/articulo',
+  };
+  const result = appendArticle(EXAMPLE_BIBLIOGRAPHY, EXAMPLE_BIBLIOGRAPHY_NAME, article);
+  assert.equal(result.ok, true);
+  assert.equal(result.entries.length, 8);
+  assert.match(result.content, /@article\{deharo2026ia,/);
+  assert.match(result.content, /author = \{de Haro, Juan José and García, Ana\}/);
+  assert.equal(result.entries.find(entry => entry.id === article.id).author, 'Juan José de Haro; Ana García');
+  assert.deepEqual(
+    appendArticle(result.content, result.name, article),
+    { ok: false, error: 'duplicate-key' },
+  );
+});
+
+test('crea una biblioteca nueva y amplía CSL JSON sin cambiar su formato', () => {
+  const article = {
+    id: 'lopez2025',
+    author: 'López, Marta',
+    title: 'Aprender con fuentes',
+    journal: 'Aula Abierta',
+    year: '2025',
+  };
+  const created = appendArticle('', '', article);
+  assert.equal(created.ok, true);
+  assert.equal(created.name, 'bibliografia.bib');
+  assert.equal(created.entries.length, 1);
+
+  const json = appendArticle('{"items":[]}', 'fuentes.json', article);
+  assert.equal(json.ok, true);
+  assert.equal(json.entries.length, 1);
+  const parsed = JSON.parse(json.content);
+  assert.equal(parsed.items[0]['container-title'], 'Aula Abierta');
+  assert.deepEqual(parsed.items[0].author, [{ family: 'López', given: 'Marta' }]);
 });
 
 test('compone una etiqueta breve para la vista previa', () => {

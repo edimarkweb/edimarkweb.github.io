@@ -7292,9 +7292,20 @@ window.onload = async () => {
     const docNumberingCheckbox = document.getElementById('doc-number-sections');
     const bibliographyChooseBtn = document.getElementById('bibliography-choose-btn');
     const bibliographyExampleBtn = document.getElementById('bibliography-example-btn');
+    const bibliographyAddArticleBtn = document.getElementById('bibliography-add-article-btn');
     const bibliographyRemoveBtn = document.getElementById('bibliography-remove-btn');
     const bibliographyInput = document.getElementById('bibliography-input');
     const bibliographySummary = document.getElementById('bibliography-summary');
+    const bibliographyArticleForm = document.getElementById('bibliography-article-form');
+    const bibliographyArticleCancelBtn = document.getElementById('bibliography-article-cancel-btn');
+    const bibliographyArticleError = document.getElementById('bibliography-article-error');
+    const bibliographyArticleKey = document.getElementById('bibliography-article-key');
+    const bibliographyArticleAuthor = document.getElementById('bibliography-article-author');
+    const bibliographyArticleTitle = document.getElementById('bibliography-article-title');
+    const bibliographyArticleJournal = document.getElementById('bibliography-article-journal');
+    const bibliographyArticleYear = document.getElementById('bibliography-article-year');
+    const bibliographyArticleDoi = document.getElementById('bibliography-article-doi');
+    const bibliographyArticleUrl = document.getElementById('bibliography-article-url');
     const bibliographyLinkFolderBtn = document.getElementById('bibliography-link-folder-btn');
     const bibliographyTitleInput = document.getElementById('bibliography-title');
     const bibliographyHeadingLevelSelect = document.getElementById('bibliography-heading-level');
@@ -9773,6 +9784,24 @@ window.onload = async () => {
         return true;
     }
 
+    function toggleBibliographyArticleForm(show) {
+        if (!bibliographyArticleForm) return;
+        bibliographyArticleForm.classList.toggle('hidden', !show);
+        bibliographyAddArticleBtn?.setAttribute('aria-expanded', String(show));
+        if (bibliographyArticleError) {
+            bibliographyArticleError.classList.add('hidden');
+            bibliographyArticleError.textContent = '';
+        }
+        if (!show) bibliographyArticleForm.reset();
+        else bibliographyArticleKey?.focus();
+    }
+
+    function showBibliographyArticleError(key, fallback) {
+        if (!bibliographyArticleError) return;
+        bibliographyArticleError.textContent = getTranslation(key, fallback);
+        bibliographyArticleError.classList.remove('hidden');
+    }
+
     function syncBibliographyFields() {
         const hasBibliography = Boolean(pendingBibliography.content);
         if (bibliographyRemoveBtn) bibliographyRemoveBtn.classList.toggle('hidden', !hasBibliography);
@@ -9825,6 +9854,7 @@ window.onload = async () => {
             entries: bibliographyEntries(settings.bibliographyContent || '', settings.bibliographyName || ''),
         };
         pendingCsl = { content: settings.cslContent || '', name: settings.cslName || '' };
+        toggleBibliographyArticleForm(false);
         if (bibliographyTitleInput) bibliographyTitleInput.value = settings.bibliographyTitle || '';
         if (bibliographyHeadingLevelSelect) bibliographyHeadingLevelSelect.value = String(settings.bibliographyHeadingLevel || 2);
         if (citationStyleSelect) citationStyleSelect.value = settings.citationStyle || 'apa';
@@ -9882,6 +9912,47 @@ window.onload = async () => {
     }
     if (bibliographyExampleBtn) {
         bibliographyExampleBtn.addEventListener('click', loadExampleIntoSettings);
+    }
+    if (bibliographyAddArticleBtn) {
+        bibliographyAddArticleBtn.setAttribute('aria-controls', 'bibliography-article-form');
+        bibliographyAddArticleBtn.setAttribute('aria-expanded', 'false');
+        bibliographyAddArticleBtn.addEventListener('click', () => {
+            toggleBibliographyArticleForm(bibliographyArticleForm?.classList.contains('hidden'));
+        });
+    }
+    if (bibliographyArticleCancelBtn) {
+        bibliographyArticleCancelBtn.addEventListener('click', () => toggleBibliographyArticleForm(false));
+    }
+    if (bibliographyArticleForm) {
+        bibliographyArticleForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const api = bibliographyApi();
+            if (!api || typeof api.appendArticle !== 'function') return;
+            const result = api.appendArticle(pendingBibliography.content, pendingBibliography.name, {
+                id: bibliographyArticleKey?.value,
+                author: bibliographyArticleAuthor?.value,
+                title: bibliographyArticleTitle?.value,
+                journal: bibliographyArticleJournal?.value,
+                year: bibliographyArticleYear?.value,
+                doi: bibliographyArticleDoi?.value,
+                url: bibliographyArticleUrl?.value,
+            });
+            if (!result.ok) {
+                const errors = {
+                    'required-fields': ['bibliography_article_required', 'Completa todos los campos obligatorios.'],
+                    'invalid-key': ['bibliography_article_invalid_key', 'La clave debe empezar por una letra o un número y no puede contener espacios.'],
+                    'invalid-year': ['bibliography_article_invalid_year', 'Escribe el año con cuatro cifras.'],
+                    'duplicate-key': ['bibliography_article_duplicate_key', 'Ya existe una referencia con esa clave.'],
+                    'invalid-library': ['bibliography_article_invalid_library', 'No se puede ampliar esta biblioteca.'],
+                };
+                showBibliographyArticleError(...(errors[result.error] || errors['invalid-library']));
+                return;
+            }
+            pendingBibliography = result;
+            syncBibliographyFields();
+            toggleBibliographyArticleForm(false);
+            notifyUser(getTranslation('bibliography_article_added', 'Artículo añadido a la bibliografía.'));
+        });
     }
     if (bibliographyLinkFolderBtn) {
         bibliographyLinkFolderBtn.addEventListener('click', () => {

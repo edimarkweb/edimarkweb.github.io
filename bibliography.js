@@ -52,6 +52,39 @@
   number = {2},
   pages = {257--285},
   doi = {10.1207/s15516709cog1202_4}
+}
+
+@article{deharo2009redes,
+  author = {de Haro, Juan José},
+  title = {Las redes sociales aplicadas a la práctica docente},
+  journal = {Didáctica, Innovación y Multimedia},
+  year = {2009},
+  number = {13},
+  pages = {1--8},
+  issn = {1699-3748},
+  url = {https://dialnet.unirioja.es/servlet/articulo?codigo=2934817}
+}
+
+@article{freeman2014active,
+  author = {Freeman, Scott and Eddy, Sarah L. and McDonough, Miles and Smith, Michelle K. and Okoroafor, Nnadozie and Jordt, Hannah and Wenderoth, Mary Pat},
+  title = {Active Learning Increases Student Performance in Science, Engineering, and Mathematics},
+  journal = {Proceedings of the National Academy of Sciences},
+  year = {2014},
+  volume = {111},
+  number = {23},
+  pages = {8410--8415},
+  doi = {10.1073/pnas.1319030111}
+}
+
+@article{roediger2006testing,
+  author = {Roediger, Henry L. and Karpicke, Jeffrey D.},
+  title = {Test-Enhanced Learning: Taking Memory Tests Improves Long-Term Retention},
+  journal = {Psychological Science},
+  year = {2006},
+  volume = {17},
+  number = {3},
+  pages = {249--255},
+  doi = {10.1111/j.1467-9280.2006.01693.x}
 }`;
 
   function normalizeText(value) {
@@ -238,6 +271,93 @@
       });
   }
 
+  function articleAuthors(value) {
+    return normalizeText(value)
+      .split(/\s*;\s*/)
+      .map(author => author.trim())
+      .filter(Boolean);
+  }
+
+  function cslAuthor(name) {
+    const comma = name.indexOf(',');
+    if (comma === -1) return { literal: name };
+    const family = name.slice(0, comma).trim();
+    const given = name.slice(comma + 1).trim();
+    return { family, ...(given ? { given } : {}) };
+  }
+
+  function bibValue(value) {
+    return normalizeText(value)
+      .replace(/\\/g, '\\\\')
+      .replace(/([{}&%#$])/g, '\\$1');
+  }
+
+  function appendArticle(source, name = '', article = {}) {
+    const normalized = {
+      id: normalizeText(article.id),
+      author: normalizeText(article.author),
+      title: normalizeText(article.title),
+      journal: normalizeText(article.journal),
+      year: normalizeText(article.year),
+      doi: normalizeText(article.doi),
+      url: normalizeText(article.url),
+    };
+    if (!normalized.id || !normalized.author || !normalized.title
+      || !normalized.journal || !normalized.year) {
+      return { ok: false, error: 'required-fields' };
+    }
+    if (!/^[A-Za-z0-9][A-Za-z0-9_.:+/-]*$/.test(normalized.id)) {
+      return { ok: false, error: 'invalid-key' };
+    }
+    if (!/^\d{4}$/.test(normalized.year)) return { ok: false, error: 'invalid-year' };
+
+    const text = String(source ?? '');
+    const outputName = normalizeText(name) || 'bibliografia.bib';
+    if (parseBibliography(text, outputName).some(entry => entry.id === normalized.id)) {
+      return { ok: false, error: 'duplicate-key' };
+    }
+
+    let content;
+    if (bibliographyFormat(outputName, text) === 'json') {
+      let parsed;
+      try {
+        parsed = text.trim() ? JSON.parse(text) : [];
+      } catch (_) {
+        return { ok: false, error: 'invalid-library' };
+      }
+      const items = Array.isArray(parsed) ? parsed : parsed?.items;
+      if (!Array.isArray(items)) return { ok: false, error: 'invalid-library' };
+      items.push({
+        id: normalized.id,
+        type: 'article-journal',
+        title: normalized.title,
+        author: articleAuthors(normalized.author).map(cslAuthor),
+        'container-title': normalized.journal,
+        issued: { 'date-parts': [[Number(normalized.year)]] },
+        ...(normalized.doi ? { DOI: normalized.doi } : {}),
+        ...(normalized.url ? { URL: normalized.url } : {}),
+      });
+      content = `${JSON.stringify(parsed, null, 2)}\n`;
+    } else {
+      const fields = [
+        `  author = {${bibValue(articleAuthors(normalized.author).join(' and '))}}`,
+        `  title = {${bibValue(normalized.title)}}`,
+        `  journal = {${bibValue(normalized.journal)}}`,
+        `  year = {${normalized.year}}`,
+      ];
+      if (normalized.doi) fields.push(`  doi = {${bibValue(normalized.doi)}}`);
+      if (normalized.url) fields.push(`  url = {${bibValue(normalized.url)}}`);
+      const entry = `@article{${normalized.id},\n${fields.join(',\n')}\n}`;
+      content = `${text.trimEnd()}${text.trim() ? '\n\n' : ''}${entry}\n`;
+    }
+    return {
+      ok: true,
+      content,
+      name: outputName,
+      entries: parseBibliography(content, outputName),
+    };
+  }
+
   function searchBibliography(entries, query) {
     const needle = searchable(query);
     if (!needle) return Array.from(entries || []);
@@ -327,6 +447,7 @@
     parseBibTeX,
     parseCslJson,
     parseBibliography,
+    appendArticle,
     searchBibliography,
     buildCitation,
     citationIds,
