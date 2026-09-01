@@ -21,7 +21,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https:; img-src 'self' asset: http://asset.localhost blob: data: https:; media-src 'self' blob: data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; font-src 'self' data:; frame-src 'self' https://edicuatex.github.io; object-src 'none'; base-uri 'self'"
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https:; img-src 'self' asset: http://asset.localhost blob: data: https:; media-src 'self' blob: data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; font-src 'self' data:; frame-src 'self' https:; object-src 'none'; base-uri 'self'"
     }
   },
   "bundle": {
