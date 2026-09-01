@@ -120,7 +120,7 @@
     return { saved: true, name: fileHandle.name || suggestedName, fileHandle };
   }
 
-  async function browserSaveWithPicker(root, contents, suggestedName, mimeType) {
+  async function browserSaveWithPicker(root, contents, suggestedName, mimeType, prepareForSave) {
     if (typeof root.showSaveFilePicker !== 'function') return null;
     let fileHandle;
     try {
@@ -133,8 +133,26 @@
       console.warn('No se pudo abrir el diálogo de guardado del navegador:', error);
       return null;
     }
-    await writeFileHandle(fileHandle, contents);
-    return { saved: true, name: fileHandle.name || suggestedName, fileHandle };
+    // El diálogo del navegador también deja cambiar el nombre, y de él depende
+    // cómo se llama la carpeta propia del documento.
+    const name = fileHandle.name || suggestedName;
+    let finalContents = contents;
+    if (typeof prepareForSave === 'function') {
+      const prepared = await prepareForSave({ path: '', name, contents, companionFiles: [] });
+      if (prepared && typeof prepared === 'object'
+        && Object.prototype.hasOwnProperty.call(prepared, 'contents')) {
+        finalContents = prepared.contents;
+      }
+    }
+    await writeFileHandle(fileHandle, finalContents);
+    return {
+      saved: true,
+      name,
+      fileHandle,
+      // Solo cuando el nombre elegido ha cambiado lo que se escribe: así el
+      // resultado no crece para quien no lo necesita.
+      ...(finalContents === contents ? {} : { contents: finalContents }),
+    };
   }
 
   async function toBytes(root, contents) {
@@ -552,12 +570,13 @@
             });
           }
           const picked = (fileHandle && await browserSaveToHandle(fileHandle, contents, suggestedName))
-            || await browserSaveWithPicker(root, contents, suggestedName, mimeType);
+            || await browserSaveWithPicker(root, contents, suggestedName, mimeType, prepareForSave);
           if (picked) {
             return {
               saved: picked.saved,
               path: '',
               name: picked.name || suggestedName,
+              ...(picked.contents === undefined ? {} : { contents: picked.contents }),
               ...(picked.fileHandle ? { fileHandle: picked.fileHandle } : {}),
             };
           }

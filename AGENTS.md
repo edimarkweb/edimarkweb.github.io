@@ -19,7 +19,7 @@ EdiMarkWeb is a vanilla-JS Markdown editor shipped two ways from one frontend: a
 - `npm run test:export`: slow end-to-end conversions through the real `pandoc.b64` (~68 MB of base64-decoded WASM).
 - `npm run test:all` = unit + platform + updater + export. It does **not** include `test:browser`; CI runs browser tests as a separate matrix job.
 - `npm run test:browser`: Playwright against real Chromium/Firefox. Select with `BROWSER=firefox` (default chromium); it starts its own static server, so no manual server needed. Requires `npx playwright install --with-deps <browser>` once.
-- `python -m http.server`: serve locally for manual checks (`file://` breaks things).
+- `python -m http.server`: serve locally for manual checks (`file://` breaks things). Open it as **`http://localhost:8080`**, never `http://0.0.0.0:8080`: Chrome counts `localhost`, `127.0.0.1` and HTTPS as secure contexts but not `0.0.0.0`, so the File System Access API disappears and saving a document with its own folder silently falls back to the ZIP path meant for Firefox.
 - Desktop: `npm run desktop:dev` / `desktop:build`. Needs Rust plus Linux native packages listed in README.
 - There is no lint or typecheck setup; verification means tests plus opening the app in Chromium and Firefox.
 

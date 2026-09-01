@@ -5012,6 +5012,92 @@ test('las imágenes pasadas a la carpeta se escriben al guardar', async (t) => {
   assert.deepEqual(imagen[2], [...PNG_PIXEL], 'la imagen escrita debe ser la original, byte a byte');
 });
 
+/*
+  El primer guardado es justo donde el nombre siempre cambia: el documento llega
+  al diálogo llamándose «Documento sin título» y sale con el que elija quien
+  guarda. Su carpeta de imágenes tiene que seguirle en el mismo paso.
+*/
+test('al guardar por primera vez la carpeta propia toma el nombre elegido', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__desktopFirstSaveCalls = [];
+      window.__EDIMARK_TAURI__ = {
+        dialog: { save: async () => '/destino/apuntes.md' },
+        fs: {
+          writeTextFile: async (path, contents) => {
+            window.__desktopFirstSaveCalls.push(['text', path, contents]);
+          },
+          writeFile: async () => {},
+        },
+        app: {
+          writeDocumentAsset: async (documentPath, relativePath, contents) => {
+            window.__desktopFirstSaveCalls.push(['write-image', relativePath, [...contents]]);
+          },
+        },
+      };
+    },
+  });
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await documentoConImagenIncrustada(page);
+  await page.locator('#base64-extract-btn').click();
+  // Sin nombre todavía: la carpeta se llama como la pestaña.
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('/images/01.png'));
+  assert.match(await page.locator('#markdown-input').inputValue(), /!\[Un gráfico\]\(Documento-sin-título\/images\/01\.png\)/);
+
+  await page.keyboard.press('Control+s');
+  await page.waitForFunction(() => window.__desktopFirstSaveCalls.some(call => call[0] === 'write-image'));
+
+  const calls = await page.evaluate(() => window.__desktopFirstSaveCalls);
+  const escrito = calls.find(call => call[0] === 'text');
+  assert.equal(escrito[1], '/destino/apuntes.md');
+  assert.match(escrito[2], /!\[Un gráfico\]\(apuntes\/images\/01\.png\)/, 'la carpeta debe seguir al nombre elegido');
+  assert.ok(calls.some(call => call[0] === 'write-image' && call[1] === 'apuntes/images/01.png'));
+  // Y el editor se queda con lo que se ha guardado, no con el nombre viejo.
+  assert.match(await page.locator('#markdown-input').inputValue(), /!\[Un gráfico\]\(apuntes\/images\/01\.png\)/);
+});
+
+/*
+  El manual trae su propio logotipo, que no está en el disco de quien lo guarda
+  sino junto a la aplicación: si no viaja con el `.md`, el archivo guardado
+  enseña un hueco donde estaba la imagen.
+*/
+test('al guardar el manual se lleva consigo su imagen', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__manualSaveCalls = [];
+      window.__EDIMARK_TAURI__ = {
+        dialog: { save: async () => '/destino/manual.md' },
+        fs: {
+          writeTextFile: async (path, contents) => {
+            window.__manualSaveCalls.push(['text', path, contents]);
+          },
+          writeFile: async () => {},
+        },
+        app: {
+          writeDocumentAsset: async (documentPath, relativePath, contents) => {
+            window.__manualSaveCalls.push(['write-image', relativePath, contents.length]);
+          },
+        },
+      };
+    },
+  });
+  t.after(() => context.close());
+
+  await page.keyboard.press('F1');
+  await page.locator('#html-output h1').getByText('Manual de EdiMarkWeb', { exact: true }).waitFor();
+  await page.keyboard.press('Control+s');
+  await page.waitForFunction(() => window.__manualSaveCalls.some(call => call[0] === 'write-image'));
+
+  const calls = await page.evaluate(() => window.__manualSaveCalls);
+  const imagen = calls.find(call => call[0] === 'write-image');
+  assert.equal(imagen[1], 'logo_100px.png');
+  assert.ok(imagen[2] > 0, 'la imagen guardada no puede ir vacía');
+  const escrito = calls.find(call => call[0] === 'text');
+  assert.match(escrito[2], /!\[Logotipo de EdiMarkWeb\]\(logo_100px\.png\)/);
+});
+
 test('los esquemas preformateados se reducen para caber sin alterar el Markdown', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());

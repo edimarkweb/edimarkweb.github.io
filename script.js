@@ -5694,6 +5694,28 @@ async function saveFile(filename, content, type, {
   código. Las rutas que suben con `../` no pueden copiarse de forma segura a la
   carpeta de destino y se dejan como estaban.
 */
+/*
+  Las imágenes que trae la propia aplicación —el logotipo del manual, por
+  ejemplo— no están en el disco del usuario ni en ninguna carpeta vinculada: se
+  cargan desde donde vive el programa. Se piden ahí para que viajen junto al
+  `.md` al guardarlo; si no, el archivo guardado enseñaría un hueco.
+*/
+async function readApplicationAsset(relativePath) {
+    try {
+        const response = await fetch(relativePath);
+        if (!response.ok) return null;
+        const type = String(response.headers.get('content-type') || '').toLowerCase();
+        // Sin esto, un servidor que responda con su página de inicio a lo que no
+        // encuentra guardaría un HTML disfrazado de imagen.
+        if (!type.startsWith('image/')) return null;
+        const buffer = await response.arrayBuffer();
+        return buffer.byteLength ? new Uint8Array(buffer) : null;
+    } catch (error) {
+        console.debug('No se pudo leer la imagen de la aplicación:', relativePath, error);
+        return null;
+    }
+}
+
 async function collectLinkedDocumentAssets(doc, content) {
     const platform = window.EdiMarkPlatform;
     if (!doc || !assetPathUtils || !window.marked) return [];
@@ -5714,6 +5736,15 @@ async function collectLinkedDocumentAssets(doc, content) {
         if (file) {
             assets.push({ relativePath, contents: file });
             continue;
+        }
+        // Un documento que todavía no está en el disco solo puede tener imágenes
+        // de la propia aplicación: las del usuario pasan por `lookupAssetFile`.
+        if (!doc.filePath) {
+            const appAsset = await readApplicationAsset(relativePath);
+            if (appAsset) {
+                assets.push({ relativePath, contents: appAsset });
+                continue;
+            }
         }
         if (platform?.isDesktop && doc.filePath && typeof platform.readDocumentAsset === 'function') {
             const baseDir = assetPathUtils.directoryOf(doc.filePath);
@@ -5816,7 +5847,16 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
             companionFiles,
             directoryHandle: saveAs ? null : (assetEntry?.saveDirectoryHandle || null),
             fileHandle: saveAs ? null : (assetEntry?.saveFileHandle || null),
-            prepareForSave: saveAs && window.EdiMarkPlatform?.isDesktop
+            /*
+              Siempre que el nombre pueda cambiar, no solo en «Guardar como»:
+              un documento nuevo llega al diálogo llamándose «Documento sin
+              nombre» y sale con el que elija el usuario, y su carpeta de
+              imágenes y bibliografía tiene que seguirle. Antes esto solo
+              ocurría al reguardar en el escritorio, así que el primer guardado
+              —justo el caso en el que el nombre siempre cambia— dejaba la
+              carpeta con el nombre provisional.
+            */
+            prepareForSave: saveAs || !existingPath
                 ? ({ name }) => {
                     const prepared = renameOwnAssetFolderForSave(doc, content, companionFiles, name);
                     savedContent = prepared.contents;
@@ -5841,6 +5881,7 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
         if (!result || !result.saved) return false;
         if (doc) {
             const savedName = String(result.name || filename).replace(/\.md$/i, '') || cleanName;
+            if (typeof result.contents === 'string') savedContent = result.contents;
             if (savedContent !== content) {
                 markdownEditor.setValue(savedContent);
             }
