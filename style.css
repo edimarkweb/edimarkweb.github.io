@@ -1072,7 +1072,14 @@ body.desktop-mode .markdown-textarea {
   Con las hojas dibujadas debajo, el contenido va sobre ellas y sin fondo
   propio: si lo llevara, taparía los huecos entre páginas.
 */
-.preview-sheet.is-paginated {
+/*
+  Y el modo oscuro también: `.dark .preview-sheet` pinta el fondo más abajo y
+  con la misma especificidad, así que ganaba por ir después y volvía a tapar los
+  huecos entre hojas —el salto de página no se veía, solo un vacío detrás del
+  título—. Con la clase de la paginación en el propio selector gana este.
+*/
+.preview-sheet.is-paginated,
+.dark .preview-sheet.is-paginated {
     position: relative;
     z-index: 1;
     background-color: transparent;
@@ -1163,6 +1170,19 @@ body.desktop-mode .markdown-textarea {
 .dark .prose h4, .dark .prose h5, .dark .prose h6,
 .dark .prose strong { color: #f1f5f9; }
 .dark .prose code { color: #e2e8f0; }
+/*
+  El bloque de código, un escalón por debajo de la hoja. Tailwind Typography lo
+  pinta de `#1f2937`, que sobre el `#1e293b` de la hoja oscura es el mismo
+  color: la caja del código desaparecía y el listado quedaba flotando sobre el
+  texto. En claro no pasa porque ahí la hoja es blanca.
+
+  Y el `code` de dentro, sin fondo propio: la pastilla gris que lleva el código
+  suelto se dibujaba también dentro del bloque —solo en oscuro, porque es donde
+  `.dark code` gana a la regla de Typography— y ponía un recuadro más claro
+  detrás de cada línea.
+*/
+.dark .prose pre { background-color: #0f172a; }
+.dark pre code { background-color: transparent; }
 .dark .prose blockquote { border-left-color: #475569; color: #94a3b8;}
 .dark .prose a { color: #93c5fd; }
 .dark .prose table thead th { color: #f8fafc; }

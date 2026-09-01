@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.42.0';
+const APP_VERSION = '2.42.1';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -11173,9 +11173,13 @@ window.onload = async () => {
         let inicioPagina = margenSuperior;
         let paginas = 1;
         let vistoPrimerH1 = false;
+        // Qué bloque estrenó la página en curso: un encabezado no se puede
+        // arrastrar a la página siguiente si es él quien la abre.
+        let indiceInicioPagina = 0;
         // Qué página estrena cada bloque, para poder afinarlo después: con un
         // bloque más alto que la hoja, el orden ya no coincide con la página.
         const inicios = [];
+        const esEncabezado = bloque => /^H[1-6]$/.test(bloque.tagName);
         medidas.forEach(({ bloque, alto, desde }, indice) => {
             let relativo = desde - inicioPagina;
             const esH1 = bloque.tagName === 'H1';
@@ -11183,12 +11187,35 @@ window.onload = async () => {
                 && esH1 && vistoPrimerH1 && relativo > 0.5;
             if (esH1) vistoPrimerH1 = true;
             if (indice > 0 && (saltoForzado || relativo + alto > altoUtil)) {
-                bloque.setAttribute('data-page-start', '');
-                bloque.style.setProperty('--page-jump', `${altoUtil + salto - relativo}px`);
-                inicioPagina = desde;
-                relativo = 0;
+                /*
+                  Un título no se queda solo al pie de la página. Si lo que baja
+                  a la hoja siguiente venía justo detrás de un encabezado, el
+                  salto se adelanta hasta el encabezado y bajan juntos, que es lo
+                  que hace cualquier procesador de textos. Se recorren varios
+                  seguidos —un título y su subtítulo— y solo mientras quepan: si
+                  arrastrarlos no ahorra el hueco, no se toca nada. El salto
+                  forzado del H1 queda fuera: ahí la página la estrena el H1 y no
+                  lo que hubiera antes.
+                */
+                let arranque = indice;
+                if (!saltoForzado) {
+                    while (arranque - 1 > indiceInicioPagina
+                        && esEncabezado(medidas[arranque - 1].bloque)
+                        && desde + alto - medidas[arranque - 1].desde <= altoUtil) {
+                        arranque -= 1;
+                    }
+                }
+                const primero = medidas[arranque];
+                primero.bloque.setAttribute('data-page-start', '');
+                primero.bloque.style.setProperty(
+                    '--page-jump',
+                    `${altoUtil + salto - (primero.desde - inicioPagina)}px`,
+                );
+                inicioPagina = primero.desde;
+                relativo = desde - inicioPagina;
                 paginas += 1;
-                inicios.push({ bloque, pagina: paginas });
+                indiceInicioPagina = arranque;
+                inicios.push({ bloque: primero.bloque, pagina: paginas });
             }
             /*
               Un bloque más alto que la caja de texto no cabe en ninguna página

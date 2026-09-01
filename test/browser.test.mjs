@@ -89,10 +89,13 @@ function permisosDelNavegador(permissions) {
   return admitidos.length ? admitidos : null;
 }
 
-async function openApp({ locale = 'es-ES', initStorage, permissions, userAgent } = {}) {
+async function openApp({ locale = 'es-ES', colorScheme, initStorage, permissions, userAgent } = {}) {
   const permisos = permisosDelNavegador(permissions);
   const context = await browser.newContext({
     locale,
+    // El tema por defecto es el del sistema, así que esto es lo que enciende el
+    // modo oscuro de la aplicación sin tocar sus ajustes.
+    ...(colorScheme ? { colorScheme } : {}),
     ...(permisos ? { permissions: permisos } : {}),
     // Para hacerse pasar por el motor de la aplicación de escritorio, que en
     // Linux es WebKitGTK y no imprime como Chromium.
@@ -3594,9 +3597,13 @@ test('el editor visual enseña el índice del documento con sus páginas', async
   assert.equal(indice.titulo, 'Índice');
   assert.equal(indice.editable, 'false', 'el índice no debería poder editarse');
   assert.deepEqual(indice.entradas.map(([texto]) => texto), ['Primero', 'Sub A', 'Segundo']);
-  // El primero abre el documento; los otros dos caen más allá de la página uno.
-  assert.equal(indice.entradas[0][1], '1');
-  assert.ok(Number(indice.entradas[2][1]) > 1, `«Segundo» debería caer en otra página: ${indice.entradas[2][1]}`);
+  /*
+    El índice se queda solo en la primera página: el texto de «Primero» no cabe
+    ya detrás de él y, como un título no se queda suelto al pie de la página, el
+    encabezado baja con su texto a la segunda. El índice cuenta eso mismo.
+  */
+  assert.equal(indice.entradas[0][1], '2');
+  assert.ok(Number(indice.entradas[2][1]) > 2, `«Segundo» debería caer más adelante: ${indice.entradas[2][1]}`);
 
   // No es contenido: ni en el Markdown ni en lo que se copia de la hoja.
   const markdown = await page.locator('#markdown-input').inputValue();
@@ -3666,6 +3673,89 @@ test('lo que en pantalla salta de página, en el papel también', async (t) => {
   assert.equal(enPapel.hueco, '0px', 'el hueco de pantalla se imprimiría');
   assert.equal(enPapel.hojasVisibles, 'none');
   assert.equal(enPapel.bloquesEnteros, 'avoid', 'el papel podría partir un párrafo que la pantalla no parte');
+});
+
+/*
+  Un título al pie de la página, con lo suyo en la página siguiente, es el hueco
+  que dejaba el reparto antes: el bloque que no cabía bajaba solo. Ahora baja el
+  encabezado con él.
+*/
+test('un título no se queda solo al pie de la página', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.locator('#new-tab-btn').click();
+
+  /*
+    El relleno se busca a tientas: el corte tiene que caer justo entre el título
+    y su lista, y cuántos párrafos hacen falta depende de la tipografía. Se
+    prueban unos cuantos y vale el primero que deje la lista estrenando página.
+  */
+  const lista = '1. uno\n2. dos\n3. tres\n4. cuatro\n5. cinco';
+  let hueco = null;
+  for (let relleno = 20; relleno <= 70 && !hueco; relleno += 1) {
+    const cuerpo = [
+      '# Documento',
+      ...Array.from({ length: relleno }, (_, i) => `Párrafo de relleno número ${i + 1}.`),
+      '## Añadir idiomas',
+      lista,
+      'Cola final.',
+    ].join('\n\n');
+    await page.locator('#markdown-input').fill(cuerpo);
+    // La vista previa y el reparto van por detrás del tecleo: sin esperar a que
+    // el documento entero esté puesto se leería el reparto de la vuelta pasada.
+    await page.waitForFunction(
+      esperados => document.querySelectorAll('#html-output > p').length === esperados
+        && document.querySelectorAll('.page-sheet').length > 1,
+      relleno + 1,
+    );
+    await page.waitForTimeout(150);
+    hueco = await page.evaluate(() => {
+      const hoja = document.getElementById('html-output');
+      const bloques = [...hoja.children];
+      const titulo = bloques.find(bloque => bloque.tagName === 'H2');
+      const siguiente = bloques[bloques.indexOf(titulo) + 1];
+      // Solo interesa la vuelta en la que el corte cae en ese título o detrás.
+      if (!titulo.hasAttribute('data-page-start') && !siguiente.hasAttribute('data-page-start')) {
+        return null;
+      }
+      const arriba = titulo.getBoundingClientRect();
+      return {
+        separacion: siguiente.getBoundingClientRect().top - (arriba.top + arriba.height),
+        tituloEstrena: titulo.hasAttribute('data-page-start'),
+        listaEstrena: siguiente.hasAttribute('data-page-start'),
+      };
+    });
+  }
+
+  assert.ok(hueco, 'no se dio con un reparto que cortara junto al título');
+  assert.equal(hueco.listaEstrena, false, 'la lista bajó de página y dejó el título solo arriba');
+  assert.ok(hueco.separacion < 60, `el título quedó con un hueco detrás: ${hueco.separacion}px`);
+});
+
+/*
+  Las hojas se dibujan debajo del texto y el hueco entre ellas es lo que enseña
+  el salto de página: si la hoja del texto vuelve a pintar su fondo por encima
+  —como hacía el modo oscuro—, el salto desaparece y solo se ve un vacío.
+*/
+test('el salto de página también se ve en el modo oscuro', async (t) => {
+  const { context, page } = await openApp({ colorScheme: 'dark' });
+  t.after(() => context.close());
+
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.locator('#layout-switch [data-layout="html"]').click();
+  await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length > 1);
+
+  const fondo = await page.evaluate(() => ({
+    oscuro: document.documentElement.classList.contains('dark'),
+    hoja: getComputedStyle(document.getElementById('html-output')).backgroundColor,
+    sombra: getComputedStyle(document.getElementById('html-output')).boxShadow,
+  }));
+
+  assert.equal(fondo.oscuro, true, 'la prueba no llegó a estar en modo oscuro');
+  assert.equal(fondo.hoja, 'rgba(0, 0, 0, 0)', 'el fondo de la hoja tapa los huecos entre páginas');
+  assert.equal(fondo.sombra, 'none', 'la sombra de la hoja se dibuja sobre las páginas');
 });
 
 /*

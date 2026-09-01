@@ -159,12 +159,46 @@ function docxHeadingPageBreak(xml, setting) {
   );
 }
 
+/*
+  El código no se justifica nunca. La alineación del documento va en
+  `docDefaults`, así que la hereda todo, y «Source Code» —que no dice nada al
+  respecto— la heredaba también: Word escribe el bloque entero como un solo
+  párrafo con saltos de línea dentro, de modo que justificarlo estira cada
+  línea hasta el margen y deshace las columnas de un texto de ancho fijo. En el
+  ODT apenas se nota la justificación porque allí cada línea de código es un
+  párrafo suyo, pero una línea que se parta sí se estiraría. Por lo mismo se le
+  quita la sangría de primera línea, que en DOCX movería la primera y en ODT
+  mueve todas.
+*/
+function docxCodeAlignment(xml, styles) {
+  const alineado = styles.align && styles.align !== 'left';
+  const sangrado = styles.indent === 'yes';
+  if (!alineado && !sangrado) return xml;
+  const propias = [
+    ...(alineado ? ['<w:jc w:val="start" />'] : []),
+    ...(sangrado ? ['<w:ind w:firstLine="0" />'] : []),
+  ];
+  return xml.replace(
+    /<w:style\b[^>]*w:styleId="SourceCode"[\s\S]*?<\/w:style>/,
+    (style) => {
+      const pPr = style.match(/<w:pPr>([\s\S]*?)<\/w:pPr>/);
+      const previas = ((pPr ? pPr[1] : '').match(/<[\w:]+[^>]*\/>|<([\w:]+)[^>]*>[\s\S]*?<\/\2>/g) || [])
+        .filter(element => !['w:jc', 'w:ind'].includes(docxElementName(element)));
+      const cuerpo = `<w:pPr>${sortDocxParagraphChildren([...previas, ...propias]).join('')}</w:pPr>`;
+      if (pPr) return style.replace(/<w:pPr>[\s\S]*?<\/w:pPr>/, cuerpo);
+      if (/<w:pPr\s*\/>/.test(style)) return style.replace(/<w:pPr\s*\/>/, cuerpo);
+      return style.replace(/(<w:rPr\b|<\/w:style>)/, `${cuerpo}$1`);
+    },
+  );
+}
+
 export function applyDocxStyles(stylesXml, styles) {
   if (typeof stylesXml !== 'string' || !stylesXml) return stylesXml;
   let updated = docxRunDefaults(stylesXml, styles);
   updated = docxParagraphDefaults(updated, styles);
   updated = docxHeadingSizes(updated, styles.headingScale);
   updated = docxHeadingPageBreak(updated, styles.pageBreakBeforeH1);
+  updated = docxCodeAlignment(updated, styles);
   return updated;
 }
 
@@ -284,6 +318,43 @@ function odtTextProperties(styles) {
 }
 
 /*
+  `Preformatted_20_Text` hereda de `Standard`. Pandoc escribe cada línea de
+  código del ODT en su propio párrafo, de modo que la sangría de primera línea
+  desplaza el bloque entero. La justificación solo se aprecia si una línea se
+  parte, pero entonces también deshace las columnas del texto de ancho fijo.
+*/
+function odtCodeAlignment(xml, styles) {
+  const attributes = [];
+  if (styles.indent === 'yes') attributes.push('fo:text-indent="0cm"');
+  if (styles.align && styles.align !== 'left') attributes.push('fo:text-align="start"');
+  if (!attributes.length) return xml;
+
+  const addAttributes = tag => attributes.reduce((updated, declaration) => {
+    const name = declaration.slice(0, declaration.indexOf('='));
+    const existing = new RegExp(`\\s${name.replace(':', '\\:')}="[^"]*"`);
+    if (existing.test(updated)) return updated.replace(existing, ` ${declaration}`);
+    return updated.replace(/\s*(\/?>)$/, ` ${declaration} $1`);
+  }, tag);
+
+  return xml.replace(
+    /<style:style\b(?=[^>]*style:name="Preformatted_20_Text")[^>]*(?:\/>|>[\s\S]*?<\/style:style>)/,
+    (style) => {
+      if (/^<style:style\b[^>]*\/>$/.test(style)) {
+        const open = style.replace(/\s*\/>$/, '>');
+        return `${open}<style:paragraph-properties ${attributes.join(' ')} /></style:style>`;
+      }
+      if (/<style:paragraph-properties\b[^>]*\/\>/.test(style)) {
+        return style.replace(/<style:paragraph-properties\b[^>]*\/\>/, addAttributes);
+      }
+      if (/<style:paragraph-properties\b[^>]*>/.test(style)) {
+        return style.replace(/<style:paragraph-properties\b[^>]*>/, addAttributes);
+      }
+      return style.replace(/(<style:text-properties\b|<\/style:style>)/, `<style:paragraph-properties ${attributes.join(' ')} />$1`);
+    },
+  );
+}
+
+/*
   Todo cuelga de `Standard`, que Pandoc deja vacío y autocerrado. Los
   encabezados heredan de `Heading`, cuyo tamaño sí es absoluto: los `115%` de
   «Heading 1» se miden contra él, así que basta con estirar ese.
@@ -364,7 +435,7 @@ export function applyOdtStyles(stylesXml, styles) {
       },
     );
   }
-  return updated;
+  return odtCodeAlignment(updated, styles);
 }
 
 /*

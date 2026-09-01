@@ -21,12 +21,17 @@ const DOCX_STYLES = `<w:styles><w:docDefaults><w:rPrDefault><w:rPr>`
   + `</w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="200" /></w:pPr></w:pPrDefault>`
   + `</w:docDefaults>`
   + `<w:style w:styleId="Heading1" w:type="paragraph"><w:rPr><w:sz w:val="40" /><w:szCs w:val="40" /></w:rPr></w:style>`
+  + `<w:style w:type="paragraph" w:customStyle="1" w:styleId="SourceCode"><w:name w:val="Source Code" />`
+  + `<w:basedOn w:val="Normal" /><w:pPr><w:wordWrap w:val="off" /></w:pPr></w:style>`
   + `<w:style w:styleId="Heading2" w:type="paragraph"><w:rPr><w:sz w:val="32" /><w:szCs w:val="32" /></w:rPr></w:style>`
   + `</w:styles>`;
 
 const ODT_STYLES = `<office:document-styles><office:font-face-decls>`
   + `<style:font-face style:name="Arial" svg:font-family="Arial" /></office:font-face-decls>`
   + `<office:styles><style:style style:family="paragraph" style:name="Standard" />`
+  + `<style:style style:family="paragraph" style:name="Preformatted_20_Text" style:parent-style-name="Standard">`
+  + `<style:paragraph-properties style:contextual-spacing="false" fo:margin-bottom="0in" fo:margin-top="0in" />`
+  + `<style:text-properties fo:font-family="monospace" /></style:style>`
   + `<style:style style:family="paragraph" style:name="Heading" style:parent-style-name="Standard">`
   + `<style:text-properties style:font-name="Arial" style:font-name-asian="Lucida Sans Unicode"`
   + ` style:font-size-asian="14pt" fo:font-size="14pt" /></style:style></office:styles>`
@@ -68,6 +73,32 @@ test('el párrafo por omisión respeta el orden que exige el esquema', () => {
 test('quitar la sangría es fijarla en cero, no callarse', () => {
   const result = applyDocxStyles(DOCX_STYLES, { indent: 'no' });
   assert.match(result, /<w:ind w:firstLine="0" \/>/);
+});
+
+/*
+  El escritor de DOCX de Pandoc escribe el bloque de código entero como un solo
+  párrafo con saltos de línea dentro, así que justificarlo estira todas sus
+  líneas menos la última y descuadra un texto de ancho fijo.
+*/
+test('el código del DOCX no hereda la justificación ni la sangría del documento', () => {
+  const result = applyDocxStyles(DOCX_STYLES, { align: 'justify', indent: 'yes' });
+  const code = result.match(/<w:style\b[^>]*w:styleId="SourceCode"[\s\S]*?<\/w:style>/)[0];
+  assert.match(code, /<w:jc w:val="start" \/>/);
+  assert.match(code, /<w:ind w:firstLine="0" \/>/);
+  // Lo que el estilo ya traía sigue ahí, y en el orden que exige el esquema.
+  assert.deepEqual(
+    [...code.match(/<w:pPr>([\s\S]*?)<\/w:pPr>/)[1].matchAll(/<w:(\w+)/g)].map(match => match[1]),
+    ['wordWrap', 'ind', 'jc'],
+  );
+  // Y el documento conserva la suya: solo se protege el código.
+  assert.match(result, /<w:pPrDefault>[\s\S]*<w:jc w:val="both" \/>/);
+});
+
+test('con el documento alineado a la izquierda el código se queda como estaba', () => {
+  const result = applyDocxStyles(DOCX_STYLES, { align: 'left' });
+  const code = result.match(/<w:style\b[^>]*w:styleId="SourceCode"[\s\S]*?<\/w:style>/)[0];
+  assert.equal(/<w:jc/.test(code), false, 'se tocó el código sin necesidad');
+  assert.equal(/<w:ind/.test(code), false);
 });
 
 test('los encabezados del DOCX se estiran con el cuerpo para no perder la jerarquía', () => {
@@ -123,6 +154,25 @@ test('el estilo Standard del ODT viene vacío y hay que abrirlo', () => {
   assert.match(standard, /fo:hyphenation-remain-char-count="2"/);
   assert.match(standard, /style:font-name="Georgia"/);
   assert.match(standard, /fo:font-size="13pt"/);
+});
+
+test('el código del ODT no hereda la justificación ni la sangría del documento', () => {
+  const result = applyOdtStyles(ODT_STYLES, { align: 'justify', indent: 'yes' });
+  const code = result.match(/<style:style\b(?=[^>]*style:name="Preformatted_20_Text")[^>]*>[\s\S]*?<\/style:style>/)[0];
+  const standard = result.match(/<style:style\b(?=[^>]*style:name="Standard")[^>]*>[\s\S]*?<\/style:style>/)[0];
+  assert.match(code, /fo:text-indent="0cm"/);
+  assert.match(code, /fo:text-align="start"/);
+  assert.match(code, /style:contextual-spacing="false"/);
+  assert.match(code, /fo:margin-bottom="0in"/);
+  assert.match(code, /fo:margin-top="0in"/);
+  assert.match(standard, new RegExp(`fo:text-indent="${INDENT_CM}cm"`));
+  assert.match(standard, /fo:text-align="justify"/);
+});
+
+test('alineado a la izquierda y sin sangría deja intacto el código del ODT', () => {
+  const result = applyOdtStyles(ODT_STYLES, { align: 'left', indent: '' });
+  const pattern = /<style:style\b(?=[^>]*style:name="Preformatted_20_Text")[^>]*>[\s\S]*?<\/style:style>/;
+  assert.equal(result.match(pattern)[0], ODT_STYLES.match(pattern)[0]);
 });
 
 test('una tipografía nueva se declara antes de usarse', () => {
