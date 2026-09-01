@@ -10178,8 +10178,19 @@ window.onload = async () => {
         }
     }
 
+    /*
+      El apellido delante, que es por donde está ordenada la lista: con el
+      nombre de pila primero, un listado alfabético por apellido parece
+      desordenado. Los demás autores se quedan como se leen.
+    */
     function citationResultLabel(entry) {
-        const parts = [entry.author, entry.year, entry.id].filter(Boolean);
+        const authors = String(entry.author || '').split(';').map(name => name.trim()).filter(Boolean);
+        const first = authors[0] || '';
+        // Solo el primero, que es el que ordena; una institución se queda entera.
+        if (entry.family && first !== entry.family && first.endsWith(entry.family)) {
+            authors[0] = `${entry.family}, ${first.slice(0, -entry.family.length).trim()}`;
+        }
+        const parts = [authors.join('; '), entry.year, entry.id].filter(Boolean);
         return parts.join(' · ');
     }
 

@@ -137,6 +137,7 @@
 
   function readBibFields(source) {
     const fields = {};
+    const raw = {};
     let index = 0;
     while (index < source.length) {
       while (index < source.length && /[\s,]/.test(source[index])) index += 1;
@@ -149,10 +150,10 @@
       index += nameMatch[0].length;
       while (index < source.length && /\s/.test(source[index])) index += 1;
 
-      let raw = '';
+      let rawValue = '';
       if (source[index] === '{') {
         const result = balancedValue(source, index, '{', '}');
-        raw = result.value;
+        rawValue = result.value;
         index = result.end;
       } else if (source[index] === '"') {
         let escaped = false;
@@ -166,16 +167,40 @@
           if (!escaped && char === '\\') escaped = true;
           else escaped = false;
         }
-        raw = source.slice(index, end);
+        rawValue = source.slice(index, end);
         index = end;
       } else {
         const end = source.indexOf(',', index);
-        raw = source.slice(index, end === -1 ? source.length : end);
+        rawValue = source.slice(index, end === -1 ? source.length : end);
         index = end === -1 ? source.length : end;
       }
-      fields[name] = stripBibValue(raw);
+      fields[name] = stripBibValue(rawValue);
+      raw[name] = rawValue;
     }
-    return fields;
+    return { fields, raw };
+  }
+
+  /*
+    El apellido del primer autor, que es por donde se busca en una lista de
+    referencias. `bibAuthor` invierte el nombre para enseñarlo («Juan José de
+    Haro»), así que ordenar por ese campo dejaba la lista alfabetizada por el
+    nombre de pila: Christine, Henry, John, Juan José…
+  */
+  function bibFamily(value, rawValue = '') {
+    const first = normalizeText(value).split(/\s+and\s+/i)[0] || '';
+    if (!first) return '';
+    // `author = {{UNESCO}}` es como BibTeX marca a una institución: se ordena
+    // por su nombre entero, no por la última palabra.
+    if (/^\s*\{\s*\{/.test(String(rawValue || ''))) return normalizeText(value);
+    if (first.includes(',')) return first.split(',')[0].trim();
+    const parts = first.split(/\s+/);
+    return parts.length > 1 ? parts[parts.length - 1] : first;
+  }
+
+  function cslFamily(names) {
+    const first = (Array.isArray(names) ? names : [])[0];
+    if (!first || typeof first !== 'object') return '';
+    return normalizeText(first.family || first.literal);
   }
 
   function bibAuthor(value) {
@@ -207,10 +232,12 @@
       if (comma === -1) continue;
       const id = inner.slice(0, comma).trim();
       if (!id || /[\s\[\];]/.test(id)) continue;
+      const { fields, raw } = readBibFields(inner.slice(comma + 1));
       blocks.push({
         id,
         type,
-        fields: readBibFields(inner.slice(comma + 1)),
+        fields,
+        raw,
         source: text.slice(match.index, block.end),
       });
     }
@@ -218,11 +245,12 @@
   }
 
   function parseBibTeX(source) {
-    return bibEntryBlocks(source).map(({ id, type, fields }) => ({
+    return bibEntryBlocks(source).map(({ id, type, fields, raw }) => ({
       id,
       type,
       title: fields.title || fields.booktitle || fields.journal || '',
       author: bibAuthor(fields.author || fields.editor || ''),
+      family: bibFamily(fields.author || fields.editor || '', raw.author || raw.editor || ''),
       year: normalizeText(fields.year || fields.date || '').slice(0, 10),
     }));
   }
@@ -258,6 +286,7 @@
         type: normalizeText(item.type),
         title: normalizeText(item.title || item['container-title']),
         author: cslNames(item.author || item.editor),
+        family: cslFamily(item.author || item.editor),
         year: cslYear(item),
       }));
   }
@@ -277,10 +306,19 @@
       .map(entry => ({ ...entry, search: searchable([
         entry.id, entry.author, entry.title, entry.year, entry.type,
       ].join(' ')) }))
+      /*
+        Como se lee una bibliografía: por el apellido del primer autor y, a
+        igualdad, del trabajo más antiguo al más reciente. Lo que no tiene autor
+        —una web institucional, una norma— se coloca por su título, en el mismo
+        alfabeto, en vez de amontonarse al principio.
+      */
       .sort((left, right) => {
-        const a = left.author || left.title || left.id;
-        const b = right.author || right.title || right.id;
-        return a.localeCompare(b, undefined, { sensitivity: 'base' });
+        const compare = (a, b) => String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
+        const byAuthor = compare(left.family || left.title || left.id, right.family || right.title || right.id);
+        if (byAuthor) return byAuthor;
+        const byYear = compare(left.year || '', right.year || '');
+        if (byYear) return byYear;
+        return compare(left.title || left.id, right.title || right.id);
       });
   }
 

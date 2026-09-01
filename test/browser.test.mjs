@@ -2028,9 +2028,15 @@ test('crea una referencia sin salir del diálogo de citas', async (t) => {
   await page.locator('#citation-insert-btn').click();
   assert.match(await page.locator('#markdown-input').inputValue(), /\[@deharo2026citar\]/);
 
+  // La lista se lee como una bibliografía: apellido delante y por orden.
+  await page.locator('#citation-btn').click();
+  await page.locator('#citation-results input[value="deharo2026citar"]').waitFor();
+  await page.locator('#citation-cancel-btn').click();
+
   // Con referencias ya cargadas la opción sigue estando disponible.
   await page.locator('#citation-btn').click();
   assert.equal(await page.locator('#citation-add-reference-btn').isVisible(), true);
+  assert.match(await page.locator('#citation-style-summary').textContent(), /APA 7/);
   await page.locator('#citation-add-reference-btn').click();
   assert.equal(await page.locator('#bibliography-article-form').isVisible(), true);
   await page.locator('#citation-cancel-btn').click();
@@ -2043,12 +2049,30 @@ test('crea una referencia sin salir del diálogo de citas', async (t) => {
   assert.equal(await page.locator('#bibliography-article-form').isVisible(), true);
   assert.match(await page.locator('#bibliography-summary').textContent(), /1 referencia/);
 
-  // El ejemplo se suma a lo que ya había en vez de sustituirlo.
+  // El ejemplo se suma a lo que ya había en vez de sustituirlo, y la lista
+  // queda ordenada por el apellido del primer autor.
   await page.locator('#bibliography-example-btn').click();
   assert.match(await page.locator('#bibliography-summary').textContent(), /8 referencias/);
+  await page.locator('#citation-style-select').selectOption('ieee');
   await page.locator('#latex-settings-save-btn').click();
   await page.locator('#citation-btn').click();
   assert.equal(await page.locator('#citation-results input[value="deharo2026citar"]').count(), 1);
+  // El resumen sigue al estilo elegido en las opciones generales.
+  assert.match(await page.locator('#citation-style-summary').textContent(), /IEEE/);
+  assert.deepEqual(
+    await page.locator('#citation-results label span.block.text-xs').allTextContents(),
+    [
+      'de Haro, Juan José · 2009 · deharo2009redes',
+      'de Haro, Juan José · 2026 · deharo2026citar',
+      'Freeman, Scott; Sarah L. Eddy; Miles McDonough; Michelle K. Smith; Nnadozie Okoroafor; Hannah Jordt; Mary Pat Wenderoth · 2014 · freeman2014active',
+      'Mayer, Richard E. · 2009 · mayer2009multimedia',
+      'Redecker, Christine · 2017 · redecker2017digcompedu',
+      'Roediger, Henry L.; Jeffrey D. Karpicke · 2006 · roediger2006testing',
+      'Sweller, John · 1988 · sweller1988cognitive',
+      'UNESCO · 2023 · unesco2023ia',
+    ],
+    'por apellido y, con el mismo autor, del trabajo más antiguo al más reciente',
+  );
   await page.locator('#citation-cancel-btn').click();
 });
 

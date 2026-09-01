@@ -34,6 +34,7 @@ test('lee BibTeX con campos anidados, autores y claves', () => {
     type: 'book',
     title: 'Enseñar IA en el aula',
     author: 'Ana García; Luis López',
+    family: 'García',
     year: '2024',
     search: 'garcia2024 ana garcia; luis lopez ensenar ia en el aula 2024 book',
   });
@@ -125,6 +126,7 @@ test('la bibliografía de ejemplo está completa y lista para buscar y citar', (
       type: 'article',
       title: 'Las redes sociales aplicadas a la práctica docente',
       author: 'Juan José de Haro',
+      family: 'de Haro',
       year: '2009',
       search: 'deharo2009redes juan jose de haro las redes sociales aplicadas a la practica docente 2009 article',
     },
@@ -271,4 +273,29 @@ test('el ejemplo se suma a la bibliografía cargada en lugar de sustituirla', ()
   const empty = mergeBibliography('', '', EXAMPLE_BIBLIOGRAPHY, EXAMPLE_BIBLIOGRAPHY_NAME);
   assert.equal(empty.name, EXAMPLE_BIBLIOGRAPHY_NAME);
   assert.equal(empty.entries.length, 7);
+});
+
+test('la lista se ordena por apellido y, a igualdad, por año', () => {
+  const source = `@book{zzz2020, author = {{Ministerio de Educación}}, title = {Normativa}, year = {2020}, publisher = {BOE}}
+
+@article{haro2015, author = {de Haro, Juan José}, title = {Redes en el aula}, journal = {DIM}, year = {2015}}
+
+@article{haro2009, author = {de Haro, Juan José and García, Ana}, title = {Redes sociales}, journal = {DIM}, year = {2009}}
+
+@book{sinautor, title = {Anuario de la educación}, year = {2001}, publisher = {CIDE}}
+
+@article{mayer2009, author = {Mayer, Richard E.}, title = {Multimedia}, journal = {AP}, year = {2009}}`;
+  const entries = parseBibliography(source, 'orden.bib');
+
+  assert.deepEqual(entries.map(entry => entry.id), [
+    'sinautor',   // «Anuario…», sin autor, va por su título
+    'haro2009',   // de Haro, del más antiguo al más reciente
+    'haro2015',
+    'mayer2009',
+    'zzz2020',    // «Ministerio de Educación», por el nombre completo
+  ]);
+
+  // El apellido ordena aunque el autor se enseñe con el nombre por delante.
+  assert.equal(entries[1].author, 'Juan José de Haro; Ana García');
+  assert.equal(entries[1].family, 'de Haro');
 });
