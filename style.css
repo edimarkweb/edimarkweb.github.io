@@ -182,6 +182,29 @@
     pointer-events: none;
 }
 
+/*
+  Nombre y versión caben dentro de los 36 px que ya mide el logotipo: la
+  segunda línea informa sin hacer crecer verticalmente la cabecera.
+*/
+.app-brand-label {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1;
+}
+
+.app-brand-label h1 {
+    line-height: 1.15;
+}
+
+.app-brand-version {
+    margin-top: 0.125rem;
+    font-size: 0.625rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.025em;
+}
+
 #main-container.focus-mode #workspace-shell {
     padding-top: 0;
 }

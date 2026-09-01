@@ -226,7 +226,7 @@ test('la aplicación nativa aprovecha toda la ventana y comparte el cuadro Acerc
   await page.locator('#help-menu-btn').click();
   await page.locator('#about-btn').click();
   await page.locator('#about-modal-overlay').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('[data-app-version]').textContent(), packageVersion);
+  assert.equal(await page.locator('#about-modal-overlay [data-app-version]').textContent(), packageVersion);
   assert.match(await page.locator('#about-modal-overlay').innerText(), /Juan José de Haro/);
   assert.match(await page.locator('#about-modal-overlay').innerText(), /GNU AGPL v3/);
   assert.equal(await page.locator('#about-web-link').getAttribute('href'), 'https://edimarkweb.github.io/');
@@ -1003,7 +1003,7 @@ test('Acerca de muestra la versión de package.json en cada idioma', async (t) =
   await page.locator('#help-menu-btn').click();
   await page.locator('#about-btn').click();
   await page.locator('#about-modal-overlay').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('[data-app-version]').textContent(), packageVersion);
+  assert.equal(await page.locator('#about-modal-overlay [data-app-version]').textContent(), packageVersion);
   assert.equal(await page.locator('#about-web-link').innerText(), 'Open the web version');
   assert.equal(await page.locator('#about-desktop-link').innerText(), 'Download the desktop version');
 });
@@ -2600,9 +2600,27 @@ test('copiar funciona sin navigator.clipboard', async (t) => {
 test('la cabecera separa los menús de las acciones del documento', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
+  const packageVersion = JSON.parse(await readFile(resolve(repoRoot, 'package.json'), 'utf8')).version;
 
   // Los menús, con su nombre y sin icono, junto a la marca.
   const menus = page.locator('#header-menus');
+  const marca = await page.evaluate(() => {
+    const cabecera = document.querySelector('#main-container > header');
+    const logo = cabecera.querySelector(':scope > div:first-child img');
+    const texto = cabecera.querySelector('.app-brand-label');
+    return {
+      version: texto.querySelector('.app-brand-version').textContent,
+      altoTexto: texto.getBoundingClientRect().height,
+      altoLogo: logo.getBoundingClientRect().height,
+      altoCabecera: cabecera.getBoundingClientRect().height,
+      altoContenido: Math.max(...[...cabecera.children].map(elemento => elemento.getBoundingClientRect().height)),
+    };
+  });
+  assert.equal(marca.version, `v${packageVersion}`);
+  assert.ok(marca.altoTexto <= marca.altoLogo, `la versión hizo crecer la marca: ${JSON.stringify(marca)}`);
+  // El hijo más alto, 8 px de relleno arriba y abajo y el borde inferior.
+  assert.equal(marca.altoCabecera, marca.altoContenido + 17, `la versión hizo crecer la cabecera: ${JSON.stringify(marca)}`);
+
   assert.equal(await menus.locator('#actions-menu-btn').count(), 1);
   assert.equal(await menus.locator('#settings-menu-btn').count(), 1);
   assert.equal(await menus.locator('[data-lucide="folder"], [data-lucide="settings"]').count(), 0);
