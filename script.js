@@ -7320,7 +7320,6 @@ window.onload = async () => {
     const bibliographyReferencePlace = document.getElementById('bibliography-reference-place');
     const bibliographyReferenceIsbn = document.getElementById('bibliography-reference-isbn');
     const bibliographyReferenceAccessed = document.getElementById('bibliography-reference-accessed');
-    const bibliographyLinkFolderBtn = document.getElementById('bibliography-link-folder-btn');
     const bibliographyTitleInput = document.getElementById('bibliography-title');
     const bibliographyHeadingLevelSelect = document.getElementById('bibliography-heading-level');
     const cslChooseBtn = document.getElementById('csl-choose-btn');
@@ -7341,6 +7340,8 @@ window.onload = async () => {
     const citationLibraryEmpty = document.getElementById('citation-library-empty');
     const citationLoadExampleBtn = document.getElementById('citation-load-example-btn');
     const citationOpenSettingsBtn = document.getElementById('citation-open-settings-btn');
+    const citationAddReferenceBtn = document.getElementById('citation-add-reference-btn');
+    const citationReferenceSlot = document.getElementById('citation-reference-slot');
     const citationInsertBtn = document.getElementById('citation-insert-btn');
     const citationCancelBtn = document.getElementById('citation-cancel-btn');
     const coverRadios = Array.from(document.querySelectorAll('input[name="epub-cover"]'));
@@ -9792,10 +9793,23 @@ window.onload = async () => {
         return { content, name, entries: bibliographyEntries(content, name) };
     }
 
-    function loadExampleIntoSettings() {
+    // El ejemplo se suma a lo que ya hubiera: nunca sustituye las referencias
+    // que el usuario haya cargado o escrito.
+    function bibliographyWithExample(content, name) {
         const example = exampleBibliography();
-        if (!example) return false;
-        pendingBibliography = example;
+        if (!example) return null;
+        const api = bibliographyApi();
+        const merged = api && typeof api.mergeBibliography === 'function'
+            ? api.mergeBibliography(content, name, example.content, example.name)
+            : null;
+        if (!merged || !merged.ok) return example;
+        return { content: merged.content, name: merged.name, entries: merged.entries };
+    }
+
+    function loadExampleIntoSettings() {
+        const merged = bibliographyWithExample(pendingBibliography.content, pendingBibliography.name);
+        if (!merged) return false;
+        pendingBibliography = merged;
         syncBibliographyFields();
         return true;
     }
@@ -9845,10 +9859,29 @@ window.onload = async () => {
         }
     }
 
+    // El formulario de referencia vive en las opciones del documento, pero se
+    // presta al diálogo de citas para poder crear una referencia sin salir de él.
+    let bibliographyFormHost = 'settings';
+    const bibliographyArticleFormAnchor = bibliographyArticleForm
+        ? bibliographyArticleForm.parentNode.insertBefore(document.createComment('bibliography-article-form'), bibliographyArticleForm)
+        : null;
+
+    function moveBibliographyArticleForm(host) {
+        if (!bibliographyArticleForm) return;
+        bibliographyFormHost = host === 'citation' && citationReferenceSlot ? 'citation' : 'settings';
+        if (bibliographyFormHost === 'citation') citationReferenceSlot.appendChild(bibliographyArticleForm);
+        else if (bibliographyArticleFormAnchor) {
+            bibliographyArticleFormAnchor.parentNode.insertBefore(bibliographyArticleForm, bibliographyArticleFormAnchor.nextSibling);
+        }
+    }
+
     function toggleBibliographyArticleForm(show) {
         if (!bibliographyArticleForm) return;
         bibliographyArticleForm.classList.toggle('hidden', !show);
-        bibliographyAddArticleBtn?.setAttribute('aria-expanded', String(show));
+        const owner = bibliographyFormHost === 'citation' ? citationAddReferenceBtn : bibliographyAddArticleBtn;
+        bibliographyAddArticleBtn?.setAttribute('aria-expanded', 'false');
+        citationAddReferenceBtn?.setAttribute('aria-expanded', 'false');
+        owner?.setAttribute('aria-expanded', String(show));
         if (bibliographyArticleError) {
             bibliographyArticleError.classList.add('hidden');
             bibliographyArticleError.textContent = '';
@@ -9916,6 +9949,7 @@ window.onload = async () => {
             entries: bibliographyEntries(settings.bibliographyContent || '', settings.bibliographyName || ''),
         };
         pendingCsl = { content: settings.cslContent || '', name: settings.cslName || '' };
+        moveBibliographyArticleForm('settings');
         toggleBibliographyArticleForm(false);
         if (bibliographyTitleInput) bibliographyTitleInput.value = settings.bibliographyTitle || '';
         if (bibliographyHeadingLevelSelect) bibliographyHeadingLevelSelect.value = String(settings.bibliographyHeadingLevel || 2);
@@ -9979,7 +10013,9 @@ window.onload = async () => {
         bibliographyAddArticleBtn.setAttribute('aria-controls', 'bibliography-article-form');
         bibliographyAddArticleBtn.setAttribute('aria-expanded', 'false');
         bibliographyAddArticleBtn.addEventListener('click', () => {
-            toggleBibliographyArticleForm(bibliographyArticleForm?.classList.contains('hidden'));
+            const show = bibliographyArticleForm?.classList.contains('hidden') || bibliographyFormHost !== 'settings';
+            moveBibliographyArticleForm('settings');
+            toggleBibliographyArticleForm(show);
         });
     }
     if (bibliographyReferenceType) {
@@ -9995,7 +10031,12 @@ window.onload = async () => {
             const api = bibliographyApi();
             if (!api || typeof api.appendReference !== 'function') return;
             const fieldValue = input => (input && !input.disabled ? input.value : '');
-            const result = api.appendReference(pendingBibliography.content, pendingBibliography.name, {
+            const fromCitation = bibliographyFormHost === 'citation';
+            const settings = fromCitation ? effectiveLatexSettings() : null;
+            const base = fromCitation
+                ? { content: settings.bibliographyContent || '', name: settings.bibliographyName || '' }
+                : pendingBibliography;
+            const result = api.appendReference(base.content, base.name, {
                 type: bibliographyReferenceType?.value,
                 id: bibliographyArticleKey?.value,
                 author: bibliographyArticleAuthor?.value,
@@ -10026,15 +10067,24 @@ window.onload = async () => {
                 showBibliographyArticleError(...(errors[result.error] || errors['invalid-library']));
                 return;
             }
-            pendingBibliography = result;
-            syncBibliographyFields();
-            toggleBibliographyArticleForm(false);
+            if (fromCitation) {
+                storeLatexSettings({
+                    ...settings,
+                    bibliographyContent: result.content,
+                    bibliographyName: result.name,
+                });
+                attachBibliographyToDocument(docs.find(doc => doc.id === currentId), {
+                    content: result.content,
+                    name: result.name,
+                });
+                toggleBibliographyArticleForm(false);
+                refreshCitationLibrary(result.entries);
+            } else {
+                pendingBibliography = result;
+                syncBibliographyFields();
+                toggleBibliographyArticleForm(false);
+            }
             notifyUser(getTranslation('bibliography_reference_added', 'Referencia añadida a la bibliografía.'));
-        });
-    }
-    if (bibliographyLinkFolderBtn) {
-        bibliographyLinkFolderBtn.addEventListener('click', () => {
-            document.getElementById('assets-folder-input')?.click();
         });
     }
     if (bibliographyRemoveBtn) {
@@ -10174,6 +10224,8 @@ window.onload = async () => {
     function toggleCitationModal(show, { editElement = null, markdownRange = null } = {}) {
         if (!citationOverlay) return;
         citationOverlay.style.display = show ? 'flex' : 'none';
+        moveBibliographyArticleForm(show ? 'citation' : 'settings');
+        toggleBibliographyArticleForm(false);
         if (!show) {
             editingCitationElement = null;
             editingCitationRange = null;
@@ -10206,16 +10258,24 @@ window.onload = async () => {
             citationInsertBtn.setAttribute('data-i18n-key', key);
             citationInsertBtn.textContent = getTranslation(key, editing ? 'Aplicar cambios' : 'Insertar cita');
         }
+        if (refreshCitationLibrary(citationEntries)) focusModalField(citationSearch);
+        else focusModalField(citationOpenSettingsBtn || citationLoadExampleBtn || citationAddReferenceBtn);
+    }
+
+    // Deja el diálogo al día tras cargar o crear referencias sin cerrarlo.
+    function refreshCitationLibrary(entries = null) {
+        if (Array.isArray(entries)) {
+            citationEntries = entries;
+        } else {
+            const settings = effectiveLatexSettings();
+            citationEntries = bibliographyEntries(settings.bibliographyContent || '', settings.bibliographyName || '');
+        }
         const ready = citationEntries.length > 0;
         if (citationLibraryReady) citationLibraryReady.classList.toggle('hidden', !ready);
         if (citationLibraryEmpty) citationLibraryEmpty.classList.toggle('hidden', ready);
-        if (ready) {
-            renderCitationResults();
-            focusModalField(citationSearch);
-        } else {
-            updateCitationInsertButton();
-            focusModalField(citationOpenSettingsBtn || citationLoadExampleBtn);
-        }
+        if (ready) renderCitationResults();
+        else updateCitationInsertButton();
+        return ready;
     }
 
     if (citationSearch) citationSearch.addEventListener('input', renderCitationResults);
@@ -10254,18 +10314,31 @@ window.onload = async () => {
             toggleLatexSettingsModal(true, { tab: 'bibliography' });
         });
     }
+    if (citationAddReferenceBtn) {
+        citationAddReferenceBtn.setAttribute('aria-controls', 'bibliography-article-form');
+        citationAddReferenceBtn.setAttribute('aria-expanded', 'false');
+        citationAddReferenceBtn.addEventListener('click', () => {
+            const show = bibliographyArticleForm?.classList.contains('hidden') || bibliographyFormHost !== 'citation';
+            moveBibliographyArticleForm('citation');
+            toggleBibliographyArticleForm(show);
+        });
+    }
     if (citationLoadExampleBtn) {
         citationLoadExampleBtn.addEventListener('click', () => {
-            const example = exampleBibliography();
-            if (!example) return;
             const settings = effectiveLatexSettings();
+            const merged = bibliographyWithExample(settings.bibliographyContent || '', settings.bibliographyName || '');
+            if (!merged) return;
             storeLatexSettings({
                 ...settings,
-                bibliographyContent: example.content,
-                bibliographyName: example.name,
+                bibliographyContent: merged.content,
+                bibliographyName: merged.name,
             });
-            attachBibliographyToDocument(docs.find(doc => doc.id === currentId), example);
-            toggleCitationModal(true);
+            attachBibliographyToDocument(docs.find(doc => doc.id === currentId), {
+                content: merged.content,
+                name: merged.name,
+            });
+            refreshCitationLibrary(merged.entries);
+            focusModalField(citationSearch);
         });
     }
     if (htmlOutput) {

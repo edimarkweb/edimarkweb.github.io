@@ -2005,6 +2005,53 @@ test('amplía la bibliografía con distintos tipos de referencia desde la interf
   assert.equal(await page.locator('#citation-results input[value="deharo2026libro"]').count(), 1);
 });
 
+test('crea una referencia sin salir del diálogo de citas', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  // Sin bibliografía cargada el diálogo ya ofrece escribir la referencia a mano.
+  await page.locator('#citation-btn').click();
+  assert.equal(await page.locator('#citation-library-empty').isVisible(), true);
+  await page.locator('#citation-add-reference-btn').click();
+  // Sin clave: la compone el programa con el apellido, el año y el título.
+  await page.locator('#bibliography-article-year').fill('2026');
+  await page.locator('#bibliography-article-author').fill('de Haro, Juan José');
+  await page.locator('#bibliography-article-title').fill('Citar sin salir del diálogo');
+  await page.locator('#bibliography-article-journal').fill('Educación Digital');
+  await page.locator('#bibliography-article-form button[type="submit"]').click();
+
+  // La lista se actualiza en el sitio: ya se puede marcar e insertar la cita.
+  await page.locator('#citation-results input[value="deharo2026citar"]').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#citation-library-empty').isHidden(), true);
+  assert.equal(await page.locator('#bibliography-article-form').isHidden(), true);
+  await page.locator('#citation-results input[value="deharo2026citar"]').check();
+  await page.locator('#citation-insert-btn').click();
+  assert.match(await page.locator('#markdown-input').inputValue(), /\[@deharo2026citar\]/);
+
+  // Con referencias ya cargadas la opción sigue estando disponible.
+  await page.locator('#citation-btn').click();
+  assert.equal(await page.locator('#citation-add-reference-btn').isVisible(), true);
+  await page.locator('#citation-add-reference-btn').click();
+  assert.equal(await page.locator('#bibliography-article-form').isVisible(), true);
+  await page.locator('#citation-cancel-btn').click();
+
+  // El formulario vuelve a su sitio en las opciones del documento.
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  await page.locator('#doc-settings-tab-bibliography').click();
+  await page.locator('#bibliography-add-article-btn').click();
+  assert.equal(await page.locator('#bibliography-article-form').isVisible(), true);
+  assert.match(await page.locator('#bibliography-summary').textContent(), /1 referencia/);
+
+  // El ejemplo se suma a lo que ya había en vez de sustituirlo.
+  await page.locator('#bibliography-example-btn').click();
+  assert.match(await page.locator('#bibliography-summary').textContent(), /8 referencias/);
+  await page.locator('#latex-settings-save-btn').click();
+  await page.locator('#citation-btn').click();
+  assert.equal(await page.locator('#citation-results input[value="deharo2026citar"]').count(), 1);
+  await page.locator('#citation-cancel-btn').click();
+});
+
 test('carga una bibliografía, busca referencias e inserta una cita múltiple', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
