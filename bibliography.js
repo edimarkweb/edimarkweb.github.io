@@ -292,18 +292,39 @@
       .replace(/([{}&%#$])/g, '\\$1');
   }
 
-  function appendArticle(source, name = '', article = {}) {
+  const REFERENCE_TYPES = {
+    article: { bib: 'article', csl: 'article-journal', required: ['container'] },
+    book: { bib: 'book', csl: 'book', required: ['publisher'] },
+    chapter: { bib: 'incollection', csl: 'chapter', required: ['container', 'publisher'] },
+    report: { bib: 'techreport', csl: 'report', required: ['institution'] },
+    web: { bib: 'misc', csl: 'webpage', required: ['url'] },
+    thesis: { bib: 'phdthesis', csl: 'thesis', required: ['institution'] },
+    conference: { bib: 'inproceedings', csl: 'paper-conference', required: ['container'] },
+  };
+
+  function appendReference(source, name = '', reference = {}) {
+    const type = REFERENCE_TYPES[reference.type] ? reference.type : 'article';
     const normalized = {
-      id: normalizeText(article.id),
-      author: normalizeText(article.author),
-      title: normalizeText(article.title),
-      journal: normalizeText(article.journal),
-      year: normalizeText(article.year),
-      doi: normalizeText(article.doi),
-      url: normalizeText(article.url),
+      id: normalizeText(reference.id),
+      author: normalizeText(reference.author),
+      editor: normalizeText(reference.editor),
+      title: normalizeText(reference.title),
+      container: normalizeText(reference.container || reference.journal),
+      year: normalizeText(reference.year),
+      publisher: normalizeText(reference.publisher),
+      institution: normalizeText(reference.institution),
+      volume: normalizeText(reference.volume),
+      number: normalizeText(reference.number),
+      pages: normalizeText(reference.pages),
+      edition: normalizeText(reference.edition),
+      place: normalizeText(reference.place),
+      isbn: normalizeText(reference.isbn),
+      accessed: normalizeText(reference.accessed),
+      doi: normalizeText(reference.doi),
+      url: normalizeText(reference.url),
     };
-    if (!normalized.id || !normalized.author || !normalized.title
-      || !normalized.journal || !normalized.year) {
+    if (!normalized.id || !normalized.author || !normalized.title || !normalized.year
+      || REFERENCE_TYPES[type].required.some(field => !normalized[field])) {
       return { ok: false, error: 'required-fields' };
     }
     if (!/^[A-Za-z0-9][A-Za-z0-9_.:+/-]*$/.test(normalized.id)) {
@@ -327,27 +348,55 @@
       }
       const items = Array.isArray(parsed) ? parsed : parsed?.items;
       if (!Array.isArray(items)) return { ok: false, error: 'invalid-library' };
-      items.push({
+      const item = {
         id: normalized.id,
-        type: 'article-journal',
+        type: REFERENCE_TYPES[type].csl,
         title: normalized.title,
         author: articleAuthors(normalized.author).map(cslAuthor),
-        'container-title': normalized.journal,
         issued: { 'date-parts': [[Number(normalized.year)]] },
-        ...(normalized.doi ? { DOI: normalized.doi } : {}),
-        ...(normalized.url ? { URL: normalized.url } : {}),
-      });
+      };
+      if (normalized.editor) item.editor = articleAuthors(normalized.editor).map(cslAuthor);
+      if (normalized.container) item['container-title'] = normalized.container;
+      if (normalized.publisher) item.publisher = normalized.publisher;
+      if (normalized.institution) item.publisher = normalized.institution;
+      if (normalized.volume) item.volume = normalized.volume;
+      if (normalized.number) item.issue = normalized.number;
+      if (normalized.pages) item.page = normalized.pages;
+      if (normalized.edition) item.edition = normalized.edition;
+      if (normalized.place) item['publisher-place'] = normalized.place;
+      if (normalized.isbn) item.ISBN = normalized.isbn;
+      if (normalized.accessed && /^\d{4}-\d{2}-\d{2}$/.test(normalized.accessed)) {
+        item.accessed = { 'date-parts': [normalized.accessed.split('-').map(Number)] };
+      }
+      if (normalized.doi) item.DOI = normalized.doi;
+      if (normalized.url) item.URL = normalized.url;
+      items.push(item);
       content = `${JSON.stringify(parsed, null, 2)}\n`;
     } else {
       const fields = [
         `  author = {${bibValue(articleAuthors(normalized.author).join(' and '))}}`,
         `  title = {${bibValue(normalized.title)}}`,
-        `  journal = {${bibValue(normalized.journal)}}`,
-        `  year = {${normalized.year}}`,
       ];
+      if (normalized.editor) fields.push(`  editor = {${bibValue(articleAuthors(normalized.editor).join(' and '))}}`);
+      if (normalized.container) {
+        fields.push(`  ${type === 'article' ? 'journal' : (type === 'web' ? 'howpublished' : 'booktitle')} = {${bibValue(normalized.container)}}`);
+      }
+      fields.push(`  year = {${normalized.year}}`);
+      if (normalized.publisher) fields.push(`  publisher = {${bibValue(normalized.publisher)}}`);
+      if (normalized.institution) {
+        const field = type === 'thesis' ? 'school' : 'institution';
+        fields.push(`  ${field} = {${bibValue(normalized.institution)}}`);
+      }
+      if (normalized.volume) fields.push(`  volume = {${bibValue(normalized.volume)}}`);
+      if (normalized.number) fields.push(`  number = {${bibValue(normalized.number)}}`);
+      if (normalized.pages) fields.push(`  pages = {${bibValue(normalized.pages)}}`);
+      if (normalized.edition) fields.push(`  edition = {${bibValue(normalized.edition)}}`);
+      if (normalized.place) fields.push(`  address = {${bibValue(normalized.place)}}`);
+      if (normalized.isbn) fields.push(`  isbn = {${bibValue(normalized.isbn)}}`);
+      if (normalized.accessed) fields.push(`  urldate = {${bibValue(normalized.accessed)}}`);
       if (normalized.doi) fields.push(`  doi = {${bibValue(normalized.doi)}}`);
       if (normalized.url) fields.push(`  url = {${bibValue(normalized.url)}}`);
-      const entry = `@article{${normalized.id},\n${fields.join(',\n')}\n}`;
+      const entry = `@${REFERENCE_TYPES[type].bib}{${normalized.id},\n${fields.join(',\n')}\n}`;
       content = `${text.trimEnd()}${text.trim() ? '\n\n' : ''}${entry}\n`;
     }
     return {
@@ -358,19 +407,49 @@
     };
   }
 
+  function appendArticle(source, name = '', article = {}) {
+    return appendReference(source, name, { ...article, type: 'article' });
+  }
+
   function searchBibliography(entries, query) {
     const needle = searchable(query);
     if (!needle) return Array.from(entries || []);
     return (entries || []).filter(entry => String(entry.search || '').includes(needle));
   }
 
-  function buildCitation(ids) {
+  function cleanLocator(value) {
+    return normalizeText(value).replace(/[\[\]]/g, '');
+  }
+
+  function buildCitation(ids, options = {}) {
     const unique = [];
     (Array.isArray(ids) ? ids : [ids]).forEach((id) => {
       const clean = normalizeText(id);
       if (clean && !/[\s\[\];]/.test(clean) && !unique.includes(clean)) unique.push(clean);
     });
-    return unique.length ? `[${unique.map(id => `@${id}`).join('; ')}]` : '';
+    if (!unique.length) return '';
+    let mode = ['parenthetical', 'narrative', 'suppress-author'].includes(options.mode)
+      ? options.mode : 'parenthetical';
+    let locator = cleanLocator(options.locator);
+    if (unique.length !== 1 && mode !== 'parenthetical') mode = 'parenthetical';
+    if (unique.length !== 1) locator = '';
+    if (mode === 'narrative') return `@${unique[0]}${locator ? ` [${locator}]` : ''}`;
+    const marker = mode === 'suppress-author' ? `-@${unique[0]}` : unique.map(id => `@${id}`).join('; ');
+    return `[${marker}${locator ? `, ${locator}` : ''}]`;
+  }
+
+  function citationDetails(source) {
+    const text = String(source || '').trim();
+    const ids = citationIds(text);
+    let mode = 'parenthetical';
+    if (!text.startsWith('[')) mode = 'narrative';
+    else if (/^\[\s*-@/.test(text)) mode = 'suppress-author';
+    let locator = '';
+    if (ids.length === 1) {
+      if (mode === 'narrative') locator = text.match(/\s+\[([^\]\n]+)\]\s*$/)?.[1] || '';
+      else locator = text.match(/@[^,;\]]+,\s*([^\]\n]+)\]\s*$/)?.[1] || '';
+    }
+    return { ids, mode, locator: cleanLocator(locator) };
   }
 
   function citationIds(source) {
@@ -388,7 +467,9 @@
     const surname = name => {
       const parts = name.split(/\s+/).filter(Boolean);
       if (parts.length === 1 || name === name.toLocaleUpperCase()) return name;
-      return parts[parts.length - 1];
+      const particle = parts.length > 1 && /^(?:de|del|da|do|dos|van|von)$/i.test(parts[parts.length - 2])
+        ? `${parts[parts.length - 2]} ` : '';
+      return `${particle}${parts[parts.length - 1]}`;
     };
     if (!names.length) return '';
     if (names.length === 1) return surname(names[0]);
@@ -400,14 +481,20 @@
     const byId = new Map((entries || []).map(entry => [entry.id, entry]));
     const ids = citationIds(source);
     if (!ids.length || ids.some(id => !byId.has(id))) return '';
+    const details = citationDetails(source);
     const labels = ids.map((id) => {
       const entry = byId.get(id);
-      const suppressAuthor = String(source).includes(`-@${id}`);
+      const suppressAuthor = details.mode === 'suppress-author';
       return [suppressAuthor ? '' : shortAuthor(entry.author), entry.year].filter(Boolean).join(', ')
         || entry.title
         || id;
     });
-    return `(${labels.join('; ')})`;
+    const locator = details.locator ? `, ${details.locator}` : '';
+    if (details.mode === 'narrative') {
+      const entry = byId.get(ids[0]);
+      return `${shortAuthor(entry.author) || entry.title || ids[0]} (${entry.year || ''}${locator})`;
+    }
+    return `(${labels.join('; ')}${locator})`;
   }
 
   function isCslStyle(source) {
@@ -447,9 +534,12 @@
     parseBibTeX,
     parseCslJson,
     parseBibliography,
+    REFERENCE_TYPES,
+    appendReference,
     appendArticle,
     searchBibliography,
     buildCitation,
+    citationDetails,
     citationIds,
     formatPreviewCitation,
     bibliographyFormat,

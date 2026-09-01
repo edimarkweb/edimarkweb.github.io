@@ -5,9 +5,11 @@ import bibliography from '../bibliography.js';
 
 const {
   parseBibliography,
+  appendReference,
   appendArticle,
   searchBibliography,
   buildCitation,
+  citationDetails,
   isCslStyle,
   pandocResources,
   EXAMPLE_BIBLIOGRAPHY,
@@ -56,6 +58,28 @@ test('busca sin distinguir mayúsculas ni tildes', () => {
 test('construye citas múltiples sin repetir claves inseguras', () => {
   assert.equal(buildCitation(['uno', 'dos', 'uno', 'clave mala']), '[@uno; @dos]');
   assert.equal(buildCitation([]), '');
+});
+
+test('construye y vuelve a leer citas narrativas, parentéticas y sin autor', () => {
+  assert.equal(buildCitation('deharo2009redes', { mode: 'narrative' }), '@deharo2009redes');
+  assert.equal(
+    buildCitation('deharo2009redes', { mode: 'narrative', locator: 'p. 5' }),
+    '@deharo2009redes [p. 5]',
+  );
+  assert.equal(
+    buildCitation('deharo2009redes', { mode: 'suppress-author', locator: 'pp. 5–7' }),
+    '[-@deharo2009redes, pp. 5–7]',
+  );
+  assert.deepEqual(citationDetails('@deharo2009redes [cap. 3]'), {
+    ids: ['deharo2009redes'], mode: 'narrative', locator: 'cap. 3',
+  });
+  assert.deepEqual(citationDetails('[-@deharo2009redes, p. 5]'), {
+    ids: ['deharo2009redes'], mode: 'suppress-author', locator: 'p. 5',
+  });
+  assert.equal(
+    buildCitation(['uno', 'dos'], { mode: 'narrative', locator: 'p. 5' }),
+    '[@uno; @dos]',
+  );
 });
 
 test('reconoce un estilo CSL y prepara archivos locales para Pandoc', () => {
@@ -148,6 +172,34 @@ test('crea una biblioteca nueva y amplía CSL JSON sin cambiar su formato', () =
   assert.deepEqual(parsed.items[0].author, [{ family: 'López', given: 'Marta' }]);
 });
 
+test('crea los siete tipos de referencia con sus campos propios', () => {
+  const cases = [
+    ['article', { container: 'Revista', volume: '12', number: '2', pages: '5--9' }, '@article', 'article-journal'],
+    ['book', { publisher: 'Editorial', edition: '2', isbn: '978-1' }, '@book', 'book'],
+    ['chapter', { container: 'Libro colectivo', publisher: 'Editorial', editor: 'Pérez, Marta' }, '@incollection', 'chapter'],
+    ['report', { institution: 'UNESCO', number: '42' }, '@techreport', 'report'],
+    ['web', { url: 'https://example.com', accessed: '2026-09-01' }, '@misc', 'webpage'],
+    ['thesis', { institution: 'Universidad' }, '@phdthesis', 'thesis'],
+    ['conference', { container: 'Actas del Congreso', pages: '10--15' }, '@inproceedings', 'paper-conference'],
+  ];
+  cases.forEach(([type, extra, bibType, cslType], index) => {
+    const reference = {
+      type,
+      id: `ref${index}`,
+      author: 'García, Ana',
+      title: `Título ${index}`,
+      year: '2026',
+      ...extra,
+    };
+    const result = appendReference('', '', reference);
+    assert.equal(result.ok, true, type);
+    assert.match(result.content, new RegExp(`^${bibType}\\{ref${index},`));
+    const json = appendReference('[]', 'references.json', reference);
+    assert.equal(json.ok, true, `${type} CSL`);
+    assert.equal(JSON.parse(json.content)[0].type, cslType);
+  });
+});
+
 test('compone una etiqueta breve para la vista previa', () => {
   const entries = parseBibliography(EXAMPLE_BIBLIOGRAPHY, EXAMPLE_BIBLIOGRAPHY_NAME);
   assert.equal(
@@ -155,4 +207,6 @@ test('compone una etiqueta breve para la vista previa', () => {
     '(Redecker, 2017; Sweller, 1988)',
   );
   assert.equal(formatPreviewCitation('[@no-existe]', entries), '');
+  assert.equal(formatPreviewCitation('@deharo2009redes [p. 5]', entries), 'de Haro (2009, p. 5)');
+  assert.equal(formatPreviewCitation('[-@deharo2009redes, p. 5]', entries), '(2009, p. 5)');
 });

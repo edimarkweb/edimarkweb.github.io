@@ -1949,7 +1949,7 @@ test('los ajustes del documento se guardan y se recuperan al volver', async (t) 
   );
 });
 
-test('amplía la bibliografía de ejemplo con un artículo desde la interfaz', async (t) => {
+test('amplía la bibliografía con distintos tipos de referencia desde la interfaz', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
 
@@ -1979,11 +1979,30 @@ test('amplía la bibliografía de ejemplo con un artículo desde la interfaz', a
   await page.locator('#bibliography-article-error').waitFor({ state: 'visible' });
   assert.match(await page.locator('#bibliography-article-error').textContent(), /Ya existe/);
   await page.locator('#bibliography-article-cancel-btn').click();
+
+  // El tipo cambia los campos: un libro pide editorial, pero no revista.
+  await page.locator('#bibliography-add-article-btn').click();
+  await page.locator('#bibliography-reference-type').selectOption('book');
+  assert.equal(await page.locator('#bibliography-article-journal').isDisabled(), true);
+  assert.equal(await page.locator('#bibliography-reference-publisher').isVisible(), true);
+  await page.locator('#bibliography-article-key').fill('deharo2026libro');
+  await page.locator('#bibliography-article-year').fill('2026');
+  await page.locator('#bibliography-article-author').fill('de Haro, Juan José');
+  await page.locator('#bibliography-article-title').fill('Escribir y citar con Markdown');
+  await page.locator('#bibliography-reference-publisher').fill('Editorial Educativa');
+  await page.locator('#bibliography-reference-isbn').fill('978-84-0000-000-0');
+  await page.locator('#bibliography-article-form button[type="submit"]').click();
+  assert.match(await page.locator('#bibliography-summary').textContent(), /9 referencias/);
   await page.locator('#latex-settings-save-btn').click();
 
+  assert.match(
+    await page.evaluate(() => window.__edimarkLatexSettings.bibliographyContent),
+    /@book\{deharo2026libro,[\s\S]*publisher = \{Editorial Educativa\}/,
+  );
+
   await page.locator('#citation-btn').click();
-  await page.locator('#citation-search').fill('inteligencia artificial');
-  assert.equal(await page.locator('#citation-results input[value="deharo2026ia"]').count(), 1);
+  await page.locator('#citation-search').fill('escribir y citar');
+  assert.equal(await page.locator('#citation-results input[value="deharo2026libro"]').count(), 1);
 });
 
 test('carga una bibliografía, busca referencias e inserta una cita múltiple', async (t) => {
@@ -2136,6 +2155,44 @@ test('la bibliografía de ejemplo se carga desde el selector de citas sin archiv
     await page.evaluate(() => window.__edimarkLatexSettings.bibliographyName),
     /\/references\.bib$/,
   );
+});
+
+test('inserta y edita citas narrativas, sin autor y con localizador', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').fill('Tal como afirma ');
+  await page.locator('#citation-btn').click();
+  await page.locator('#citation-load-example-btn').click();
+  await page.locator('#citation-search').fill('redes sociales');
+  await page.locator('#citation-results input[value="deharo2009redes"]').check();
+  await page.locator('#citation-mode').selectOption('narrative');
+  await page.locator('#citation-locator').fill('p. 5');
+  await page.locator('#citation-insert-btn').click();
+  assert.match(await page.locator('#markdown-input').inputValue(), /Tal como afirma @deharo2009redes \[p\. 5\]$/);
+  await page.locator('#html-output .edimark-preview-citation').waitFor();
+  assert.equal(await page.locator('#html-output .edimark-preview-citation').textContent(), 'de Haro (2009, p. 5)');
+
+  await page.locator('#markdown-input').focus();
+  await page.locator('#markdown-input').evaluate((textarea) => {
+    const position = textarea.value.indexOf('deharo2009') + 4;
+    textarea.setSelectionRange(position, position);
+  });
+  await page.locator('#citation-btn').click();
+  assert.equal(await page.locator('#citation-mode').inputValue(), 'narrative');
+  assert.equal(await page.locator('#citation-locator').inputValue(), 'p. 5');
+  await page.locator('#citation-mode').selectOption('suppress-author');
+  await page.locator('#citation-insert-btn').click();
+  assert.match(await page.locator('#markdown-input').inputValue(), /Tal como afirma \[-@deharo2009redes, p\. 5\]$/);
+
+  // Con dos fuentes no hay una única voz narrativa ni un localizador común.
+  await page.locator('#citation-btn').click();
+  await page.locator('#citation-search').fill('Mayer');
+  await page.locator('#citation-results input[value="mayer2009multimedia"]').check();
+  assert.equal(await page.locator('#citation-mode').inputValue(), 'parenthetical');
+  assert.equal(await page.locator('#citation-mode option[value="narrative"]').isDisabled(), true);
+  assert.equal(await page.locator('#citation-locator').isDisabled(), true);
+  await page.locator('#citation-cancel-btn').click();
 });
 
 test('al guardar, la bibliografía viaja en la carpeta propia y queda declarada en el Markdown', async (t) => {

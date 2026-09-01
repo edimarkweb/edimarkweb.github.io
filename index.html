@@ -872,6 +872,22 @@
                 <input type="search" id="citation-search" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" data-i18n-key="citation_search_placeholder" placeholder="Autor, título, año o clave…">
                 <p id="citation-result-count" class="mt-2 text-xs text-slate-500 dark:text-slate-400" role="status" aria-live="polite"></p>
                 <div id="citation-results" class="mt-2 max-h-80 overflow-y-auto rounded-md border border-slate-200 dark:border-slate-700" role="group" aria-label="Referencias" data-i18n-key="citation_results_label"></div>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div>
+                        <label for="citation-mode" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="citation_mode_label">Forma de la cita</label>
+                        <select id="citation-mode" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                            <option value="parenthetical" data-i18n-key="citation_mode_parenthetical">Parentética: (de Haro, 2009)</option>
+                            <option value="narrative" data-i18n-key="citation_mode_narrative">Narrativa: de Haro (2009)</option>
+                            <option value="suppress-author" data-i18n-key="citation_mode_suppress_author">Solo año: (2009)</option>
+                        </select>
+                        <p id="citation-mode-hint" class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="citation_mode_hint">La cita narrativa y la de solo año requieren una única referencia.</p>
+                    </div>
+                    <div>
+                        <label for="citation-locator" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="citation_locator_label">Página o localizador</label>
+                        <input type="text" id="citation-locator" maxlength="120" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" data-i18n-key="citation_locator_placeholder" placeholder="p. 5, pp. 5–7, cap. 3…">
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="citation_locator_hint">Disponible al seleccionar una sola referencia.</p>
+                    </div>
+                </div>
             </div>
             <div id="citation-library-empty" class="hidden rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-200">
                 <p data-i18n-key="citation_no_library">Todavía no hay ninguna bibliografía cargada.</p>
@@ -964,15 +980,27 @@
                         <div class="mt-3 flex flex-wrap items-center gap-3">
                             <button type="button" id="bibliography-choose-btn" class="px-3 py-1.5 text-sm bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="bibliography_choose">Elegir bibliografía…</button>
                             <button type="button" id="bibliography-example-btn" class="px-2 py-1 text-xs text-slate-500 rounded hover:text-slate-700 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700/50" data-i18n-key="bibliography_load_example">Cargar bibliografía de ejemplo</button>
-                            <button type="button" id="bibliography-add-article-btn" class="px-2 py-1 text-xs text-blue-600 rounded hover:text-blue-700 hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-blue-300 dark:hover:text-blue-200 dark:hover:bg-blue-500/10" data-i18n-key="bibliography_add_article">Añadir artículo…</button>
+                            <button type="button" id="bibliography-add-article-btn" class="px-2 py-1 text-xs text-blue-600 rounded hover:text-blue-700 hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-blue-300 dark:hover:text-blue-200 dark:hover:bg-blue-500/10" data-i18n-key="bibliography_add_reference">Añadir referencia…</button>
                             <button type="button" id="bibliography-remove-btn" class="hidden px-3 py-1.5 text-sm text-red-700 rounded-md hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-500 dark:text-red-300 dark:hover:bg-red-500/10" data-i18n-key="bibliography_remove">Quitar</button>
                             <input type="file" id="bibliography-input" class="hidden" accept=".bib,.json,application/json,text/plain">
                         </div>
                         <p id="bibliography-summary" class="mt-2 text-sm text-slate-600 dark:text-slate-300" data-i18n-key="bibliography_none">Ninguna bibliografía cargada.</p>
                         <form id="bibliography-article-form" class="hidden mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-slate-600 dark:bg-slate-800/40">
-                            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200" data-i18n-key="bibliography_article_form_title">Nuevo artículo</h3>
-                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="bibliography_article_form_hint">Amplía la biblioteca cargada o crea una nueva. Separa varios autores con punto y coma.</p>
+                            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200" data-i18n-key="bibliography_reference_form_title">Nueva referencia</h3>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="bibliography_reference_form_hint">Amplía la biblioteca cargada o crea una nueva. Separa varios autores con punto y coma.</p>
                             <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                                <div class="sm:col-span-2">
+                                    <label for="bibliography-reference-type" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_type">Tipo de referencia *</label>
+                                    <select id="bibliography-reference-type" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                        <option value="article" data-i18n-key="bibliography_type_article">Artículo de revista</option>
+                                        <option value="book" data-i18n-key="bibliography_type_book">Libro</option>
+                                        <option value="chapter" data-i18n-key="bibliography_type_chapter">Capítulo de libro</option>
+                                        <option value="report" data-i18n-key="bibliography_type_report">Informe</option>
+                                        <option value="web" data-i18n-key="bibliography_type_web">Página web</option>
+                                        <option value="thesis" data-i18n-key="bibliography_type_thesis">Tesis</option>
+                                        <option value="conference" data-i18n-key="bibliography_type_conference">Ponencia o comunicación</option>
+                                    </select>
+                                </div>
                                 <div>
                                     <label for="bibliography-article-key" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_article_key">Clave de cita *</label>
                                     <input type="text" id="bibliography-article-key" required maxlength="100" autocomplete="off" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="garcia2026">
@@ -989,23 +1017,63 @@
                                     <label for="bibliography-article-title" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_article_title">Título *</label>
                                     <input type="text" id="bibliography-article-title" required maxlength="500" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
                                 </div>
-                                <div class="sm:col-span-2">
-                                    <label for="bibliography-article-journal" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_article_journal">Revista *</label>
+                                <div class="sm:col-span-2" data-reference-types="article chapter web conference">
+                                    <label id="bibliography-reference-container-label" for="bibliography-article-journal" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_journal">Revista *</label>
                                     <input type="text" id="bibliography-article-journal" required maxlength="300" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
                                 </div>
-                                <div>
+                                <div class="sm:col-span-2" data-reference-types="chapter conference">
+                                    <label for="bibliography-reference-editor" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_editor">Edición o coordinación</label>
+                                    <input type="text" id="bibliography-reference-editor" maxlength="500" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="Pérez, Marta; Ruiz, Carlos">
+                                </div>
+                                <div data-reference-types="book chapter conference">
+                                    <label id="bibliography-reference-publisher-label" for="bibliography-reference-publisher" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_publisher_required">Editorial *</label>
+                                    <input type="text" id="bibliography-reference-publisher" maxlength="300" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                </div>
+                                <div data-reference-types="report thesis">
+                                    <label for="bibliography-reference-institution" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_institution">Institución o universidad *</label>
+                                    <input type="text" id="bibliography-reference-institution" maxlength="300" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                </div>
+                                <div data-reference-types="article">
+                                    <label for="bibliography-reference-volume" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_volume">Volumen</label>
+                                    <input type="text" id="bibliography-reference-volume" maxlength="50" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                </div>
+                                <div data-reference-types="article report">
+                                    <label for="bibliography-reference-number" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_number">Número</label>
+                                    <input type="text" id="bibliography-reference-number" maxlength="100" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                </div>
+                                <div data-reference-types="article chapter conference">
+                                    <label for="bibliography-reference-pages" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_pages">Páginas</label>
+                                    <input type="text" id="bibliography-reference-pages" maxlength="100" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="25–42">
+                                </div>
+                                <div data-reference-types="book">
+                                    <label for="bibliography-reference-edition" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_edition">Edición</label>
+                                    <input type="text" id="bibliography-reference-edition" maxlength="100" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                </div>
+                                <div data-reference-types="book chapter report thesis conference">
+                                    <label for="bibliography-reference-place" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_place">Lugar</label>
+                                    <input type="text" id="bibliography-reference-place" maxlength="200" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                </div>
+                                <div data-reference-types="book">
+                                    <label for="bibliography-reference-isbn" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_isbn">ISBN</label>
+                                    <input type="text" id="bibliography-reference-isbn" maxlength="100" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                </div>
+                                <div data-reference-types="web">
+                                    <label for="bibliography-reference-accessed" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_reference_accessed">Fecha de consulta</label>
+                                    <input type="date" id="bibliography-reference-accessed" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                                </div>
+                                <div data-reference-types="article book chapter report thesis conference">
                                     <label for="bibliography-article-doi" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_article_doi">DOI</label>
                                     <input type="text" id="bibliography-article-doi" maxlength="300" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="10.0000/ejemplo">
                                 </div>
                                 <div>
-                                    <label for="bibliography-article-url" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_article_url">URL</label>
+                                    <label id="bibliography-reference-url-label" for="bibliography-article-url" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_article_url">URL</label>
                                     <input type="url" id="bibliography-article-url" maxlength="1000" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="https://…">
                                 </div>
                             </div>
                             <p id="bibliography-article-error" role="alert" class="hidden mt-2 text-xs text-red-700 dark:text-red-300"></p>
                             <div class="mt-3 flex justify-end gap-2">
                                 <button type="button" id="bibliography-article-cancel-btn" class="px-3 py-1.5 text-sm text-slate-600 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-300 dark:hover:bg-slate-700" data-i18n-key="bibliography_article_cancel">Cancelar</button>
-                                <button type="submit" class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="bibliography_article_save">Añadir a la bibliografía</button>
+                                <button type="submit" class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="bibliography_reference_save">Añadir a la bibliografía</button>
                             </div>
                         </form>
                         <button type="button" id="bibliography-link-folder-btn" class="mt-2 text-xs text-slate-500 underline decoration-dotted underline-offset-2 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-400 dark:hover:text-slate-200" data-i18n-key="bibliography_link_folder">Vincular carpeta de recursos…</button>

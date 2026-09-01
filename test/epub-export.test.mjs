@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import { runPandoc, readZipEntries } from './helpers/pandoc-runner.mjs';
+import bibliographyModel from '../bibliography.js';
 import {
   MARKDOWN_READER_NO_AUTO_IDS,
   buildExportArgs,
@@ -845,7 +846,7 @@ test('citeproc aplica APA 7 y escribe el título elegido de la bibliografía en 
     }
   `);
   const apa = new Uint8Array(await readFile(new URL('../csl/apa.csl', import.meta.url)));
-  const markdown = '# Trabajo\n\nLa propuesta se apoya en una fuente [@garcia2024].\n\n### Fuentes consultadas\n\n::: {#refs}\n:::\n';
+  const markdown = '# Trabajo\n\nLa propuesta se apoya en una fuente [@garcia2024]. García también lo desarrolla: @garcia2024 [p. 5]. Según García [-@garcia2024, p. 8], es aplicable.\n\n### Fuentes consultadas\n\n::: {#refs}\n:::\n';
   const extraFiles = { 'references.bib': bibliography, 'style.csl': apa };
   const citationArgs = ' --citeproc --bibliography=/references.bib --csl=/style.csl';
 
@@ -858,6 +859,8 @@ test('citeproc aplica APA 7 y escribe el título elegido de la bibliografía en 
   assert.ok(html.bytes.length > 0, `HTML vacío: ${html.stderr.join(' | ')}`);
   assert.match(htmlText, /class="citation"/);
   assert.match(htmlText, /\(García, 2024\)/);
+  assert.match(htmlText, /García \(2024,\s+p\. 5\)/);
+  assert.match(htmlText, /\(2024,\s+p\. 8\)/);
   assert.match(htmlText, /<h3>Fuentes consultadas<\/h3>/);
   assert.match(htmlText, /id="refs"/);
   assert.match(htmlText, /Didáctica [Dd]igital/);
@@ -873,4 +876,49 @@ test('citeproc aplica APA 7 y escribe el título elegido de la bibliografía en 
   assert.match(documentXml, /Fuentes consultadas/);
   assert.match(documentXml, /Didáctica [Dd]igital/);
   assert.doesNotMatch(documentXml, /@garcia2024/);
+});
+
+test('citeproc compone los siete tipos de referencia creados desde la interfaz', { timeout: 180000 }, async () => {
+  const references = [
+    ['article', 'Artículo probado', { container: 'Revista Escolar', volume: '12', number: '2', pages: '5--9' }],
+    ['book', 'Libro probado', { publisher: 'Editorial Aula', edition: '2' }],
+    ['chapter', 'Capítulo probado', { container: 'Libro colectivo', publisher: 'Editorial Aula', pages: '20--30' }],
+    ['report', 'Informe probado', { institution: 'UNESCO', number: '42' }],
+    ['web', 'Web probada', { url: 'https://example.com/recurso', accessed: '2026-09-01' }],
+    ['thesis', 'Tesis probada', { institution: 'Universidad Abierta' }],
+    ['conference', 'Ponencia probada', { container: 'Congreso Educativo', pages: '40--45' }],
+  ];
+  let content = '';
+  references.forEach(([type, title, fields], index) => {
+    const result = bibliographyModel.appendReference(content, 'references.bib', {
+      type,
+      id: `interfaz${index}`,
+      author: 'García, Ana',
+      title,
+      year: '2026',
+      ...fields,
+    });
+    assert.equal(result.ok, true, type);
+    content = result.content;
+  });
+  const apa = new Uint8Array(await readFile(new URL('../csl/apa.csl', import.meta.url)));
+  const citations = references.map((_, index) => `@interfaz${index}`).join('; ');
+  const markdown = `# Fuentes\n\n[${citations}]\n\n## Referencias\n\n::: {#refs}\n:::\n`;
+  const html = await runPandoc(
+    `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --citeproc --bibliography=/references.bib --csl=/style.csl`,
+    markdown,
+    {
+      'references.bib': new TextEncoder().encode(content),
+      'style.csl': apa,
+    },
+  );
+  const htmlText = new TextDecoder().decode(html.bytes);
+  assert.ok(html.bytes.length > 0, `HTML vacío: ${html.stderr.join(' | ')}`);
+  references.forEach(([, title]) => assert.match(htmlText, new RegExp(title)));
+  assert.match(htmlText, /Revista Escolar/);
+  assert.match(htmlText, /Editorial\s+Aula/);
+  assert.match(htmlText, /UNESCO/);
+  assert.match(htmlText, /Universidad\s+Abierta/);
+  assert.match(htmlText, /Congreso\s+Educativo/);
+  assert.doesNotMatch(htmlText, /@interfaz/);
 });

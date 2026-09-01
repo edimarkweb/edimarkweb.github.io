@@ -4354,7 +4354,7 @@ function renderPreviewCitations(container) {
     const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
     const textNodes = [];
     while (walker.nextNode()) textNodes.push(walker.currentNode);
-    const citationPattern = /\[[^\]\n]*@[^\]\n]+\]/g;
+    const citationPattern = /\[[^\]\n]*@[^\]\n]+\]|@[A-Za-z0-9_](?:[A-Za-z0-9_.:+\/#$%&?<>~-]*[A-Za-z0-9_])?(?:\s+\[[^\]\n]+\])?/g;
 
     textNodes.forEach((textNode) => {
         const parent = textNode.parentElement;
@@ -7299,6 +7299,10 @@ window.onload = async () => {
     const bibliographyArticleForm = document.getElementById('bibliography-article-form');
     const bibliographyArticleCancelBtn = document.getElementById('bibliography-article-cancel-btn');
     const bibliographyArticleError = document.getElementById('bibliography-article-error');
+    const bibliographyReferenceType = document.getElementById('bibliography-reference-type');
+    const bibliographyReferenceContainerLabel = document.getElementById('bibliography-reference-container-label');
+    const bibliographyReferencePublisherLabel = document.getElementById('bibliography-reference-publisher-label');
+    const bibliographyReferenceUrlLabel = document.getElementById('bibliography-reference-url-label');
     const bibliographyArticleKey = document.getElementById('bibliography-article-key');
     const bibliographyArticleAuthor = document.getElementById('bibliography-article-author');
     const bibliographyArticleTitle = document.getElementById('bibliography-article-title');
@@ -7306,6 +7310,16 @@ window.onload = async () => {
     const bibliographyArticleYear = document.getElementById('bibliography-article-year');
     const bibliographyArticleDoi = document.getElementById('bibliography-article-doi');
     const bibliographyArticleUrl = document.getElementById('bibliography-article-url');
+    const bibliographyReferenceEditor = document.getElementById('bibliography-reference-editor');
+    const bibliographyReferencePublisher = document.getElementById('bibliography-reference-publisher');
+    const bibliographyReferenceInstitution = document.getElementById('bibliography-reference-institution');
+    const bibliographyReferenceVolume = document.getElementById('bibliography-reference-volume');
+    const bibliographyReferenceNumber = document.getElementById('bibliography-reference-number');
+    const bibliographyReferencePages = document.getElementById('bibliography-reference-pages');
+    const bibliographyReferenceEdition = document.getElementById('bibliography-reference-edition');
+    const bibliographyReferencePlace = document.getElementById('bibliography-reference-place');
+    const bibliographyReferenceIsbn = document.getElementById('bibliography-reference-isbn');
+    const bibliographyReferenceAccessed = document.getElementById('bibliography-reference-accessed');
     const bibliographyLinkFolderBtn = document.getElementById('bibliography-link-folder-btn');
     const bibliographyTitleInput = document.getElementById('bibliography-title');
     const bibliographyHeadingLevelSelect = document.getElementById('bibliography-heading-level');
@@ -7321,6 +7335,8 @@ window.onload = async () => {
     const citationSearch = document.getElementById('citation-search');
     const citationResults = document.getElementById('citation-results');
     const citationResultCount = document.getElementById('citation-result-count');
+    const citationMode = document.getElementById('citation-mode');
+    const citationLocator = document.getElementById('citation-locator');
     const citationLibraryReady = document.getElementById('citation-library-ready');
     const citationLibraryEmpty = document.getElementById('citation-library-empty');
     const citationLoadExampleBtn = document.getElementById('citation-load-example-btn');
@@ -9784,6 +9800,51 @@ window.onload = async () => {
         return true;
     }
 
+    function syncBibliographyReferenceFields() {
+        const type = bibliographyReferenceType?.value || 'article';
+        bibliographyArticleForm?.querySelectorAll('[data-reference-types]').forEach((field) => {
+            const visible = String(field.dataset.referenceTypes || '').split(/\s+/).includes(type);
+            field.classList.toggle('hidden', !visible);
+            field.querySelectorAll('input, select').forEach((input) => { input.disabled = !visible; });
+        });
+        const requirements = {
+            article: [bibliographyArticleJournal],
+            book: [bibliographyReferencePublisher],
+            chapter: [bibliographyArticleJournal, bibliographyReferencePublisher],
+            report: [bibliographyReferenceInstitution],
+            web: [bibliographyArticleUrl],
+            thesis: [bibliographyReferenceInstitution],
+            conference: [bibliographyArticleJournal],
+        };
+        [bibliographyArticleJournal, bibliographyReferencePublisher,
+            bibliographyReferenceInstitution, bibliographyArticleUrl].forEach((input) => {
+            if (input) input.required = false;
+        });
+        (requirements[type] || []).forEach((input) => { if (input) input.required = true; });
+        const containerLabels = {
+            article: ['bibliography_reference_journal', 'Revista *'],
+            chapter: ['bibliography_reference_book_title', 'Título del libro *'],
+            web: ['bibliography_reference_website', 'Sitio web'],
+            conference: ['bibliography_reference_proceedings', 'Congreso o actas *'],
+        };
+        const [containerKey, containerFallback] = containerLabels[type] || containerLabels.article;
+        if (bibliographyReferenceContainerLabel) {
+            bibliographyReferenceContainerLabel.dataset.i18nKey = containerKey;
+            bibliographyReferenceContainerLabel.textContent = getTranslation(containerKey, containerFallback);
+        }
+        if (bibliographyReferencePublisherLabel) {
+            const required = ['book', 'chapter'].includes(type);
+            const key = required ? 'bibliography_reference_publisher_required' : 'bibliography_reference_publisher';
+            bibliographyReferencePublisherLabel.dataset.i18nKey = key;
+            bibliographyReferencePublisherLabel.textContent = getTranslation(key, required ? 'Editorial *' : 'Editorial');
+        }
+        if (bibliographyReferenceUrlLabel) {
+            const key = type === 'web' ? 'bibliography_reference_url_required' : 'bibliography_article_url';
+            bibliographyReferenceUrlLabel.dataset.i18nKey = key;
+            bibliographyReferenceUrlLabel.textContent = getTranslation(key, type === 'web' ? 'URL *' : 'URL');
+        }
+    }
+
     function toggleBibliographyArticleForm(show) {
         if (!bibliographyArticleForm) return;
         bibliographyArticleForm.classList.toggle('hidden', !show);
@@ -9793,7 +9854,8 @@ window.onload = async () => {
             bibliographyArticleError.textContent = '';
         }
         if (!show) bibliographyArticleForm.reset();
-        else bibliographyArticleKey?.focus();
+        syncBibliographyReferenceFields();
+        if (show) bibliographyArticleKey?.focus();
     }
 
     function showBibliographyArticleError(key, fallback) {
@@ -9920,6 +9982,10 @@ window.onload = async () => {
             toggleBibliographyArticleForm(bibliographyArticleForm?.classList.contains('hidden'));
         });
     }
+    if (bibliographyReferenceType) {
+        bibliographyReferenceType.addEventListener('change', syncBibliographyReferenceFields);
+        syncBibliographyReferenceFields();
+    }
     if (bibliographyArticleCancelBtn) {
         bibliographyArticleCancelBtn.addEventListener('click', () => toggleBibliographyArticleForm(false));
     }
@@ -9927,15 +9993,27 @@ window.onload = async () => {
         bibliographyArticleForm.addEventListener('submit', (event) => {
             event.preventDefault();
             const api = bibliographyApi();
-            if (!api || typeof api.appendArticle !== 'function') return;
-            const result = api.appendArticle(pendingBibliography.content, pendingBibliography.name, {
+            if (!api || typeof api.appendReference !== 'function') return;
+            const fieldValue = input => (input && !input.disabled ? input.value : '');
+            const result = api.appendReference(pendingBibliography.content, pendingBibliography.name, {
+                type: bibliographyReferenceType?.value,
                 id: bibliographyArticleKey?.value,
                 author: bibliographyArticleAuthor?.value,
+                editor: fieldValue(bibliographyReferenceEditor),
                 title: bibliographyArticleTitle?.value,
-                journal: bibliographyArticleJournal?.value,
+                container: fieldValue(bibliographyArticleJournal),
                 year: bibliographyArticleYear?.value,
-                doi: bibliographyArticleDoi?.value,
-                url: bibliographyArticleUrl?.value,
+                publisher: fieldValue(bibliographyReferencePublisher),
+                institution: fieldValue(bibliographyReferenceInstitution),
+                volume: fieldValue(bibliographyReferenceVolume),
+                number: fieldValue(bibliographyReferenceNumber),
+                pages: fieldValue(bibliographyReferencePages),
+                edition: fieldValue(bibliographyReferenceEdition),
+                place: fieldValue(bibliographyReferencePlace),
+                isbn: fieldValue(bibliographyReferenceIsbn),
+                accessed: fieldValue(bibliographyReferenceAccessed),
+                doi: fieldValue(bibliographyArticleDoi),
+                url: fieldValue(bibliographyArticleUrl),
             });
             if (!result.ok) {
                 const errors = {
@@ -9951,7 +10029,7 @@ window.onload = async () => {
             pendingBibliography = result;
             syncBibliographyFields();
             toggleBibliographyArticleForm(false);
-            notifyUser(getTranslation('bibliography_article_added', 'Artículo añadido a la bibliografía.'));
+            notifyUser(getTranslation('bibliography_reference_added', 'Referencia añadida a la bibliografía.'));
         });
     }
     if (bibliographyLinkFolderBtn) {
@@ -9997,6 +10075,18 @@ window.onload = async () => {
         if (citationInsertBtn) citationInsertBtn.disabled = selectedCitationIds.size === 0;
     }
 
+    function syncCitationOptions() {
+        const single = selectedCitationIds.size === 1;
+        citationMode?.querySelectorAll('option:not([value="parenthetical"])').forEach((option) => {
+            option.disabled = !single;
+        });
+        if (!single && citationMode) citationMode.value = 'parenthetical';
+        if (citationLocator) {
+            citationLocator.disabled = !single;
+            if (!single) citationLocator.value = '';
+        }
+    }
+
     function citationResultLabel(entry) {
         const parts = [entry.author, entry.year, entry.id].filter(Boolean);
         return parts.join(' · ');
@@ -10037,6 +10127,7 @@ window.onload = async () => {
             checkbox.addEventListener('change', () => {
                 if (checkbox.checked) selectedCitationIds.add(entry.id);
                 else selectedCitationIds.delete(entry.id);
+                syncCitationOptions();
                 updateCitationInsertButton();
             });
             const text = document.createElement('span');
@@ -10059,15 +10150,23 @@ window.onload = async () => {
         const markdown = markdownEditor.getValue();
         const selectionStart = markdownTextareaEl.selectionStart;
         const selectionEnd = markdownTextareaEl.selectionEnd;
-        const pattern = /\[[^\]\n]*@[^\]\n]+\]/g;
+        const bracketed = /\[[^\]\n]*@[^\]\n]+\]/g;
+        const ranges = [];
         let match;
-        while ((match = pattern.exec(markdown))) {
-            const start = match.index;
-            const end = start + match[0].length;
+        while ((match = bracketed.exec(markdown))) {
+            ranges.push({ source: match[0], start: match.index, end: match.index + match[0].length });
+        }
+        const narrative = /@[A-Za-z0-9_](?:[A-Za-z0-9_.:+\/#$%&?<>~-]*[A-Za-z0-9_])?(?:\s+\[[^\]\n]+\])?/g;
+        while ((match = narrative.exec(markdown))) {
+            if (ranges.some(range => match.index >= range.start && match.index < range.end)) continue;
+            ranges.push({ source: match[0], start: match.index, end: match.index + match[0].length });
+        }
+        for (const range of ranges) {
+            const { start, end } = range;
             const touches = selectionStart === selectionEnd
                 ? selectionStart >= start && selectionStart <= end
                 : selectionStart < end && selectionEnd > start;
-            if (touches) return { source: match[0], start, end };
+            if (touches) return range;
         }
         return null;
     }
@@ -10088,10 +10187,13 @@ window.onload = async () => {
         const editingSource = editingCitationElement
             ? editingCitationElement.dataset.edimarkCitation || ''
             : editingCitationRange?.source || '';
-        const currentIds = editingSource && api && typeof api.citationIds === 'function'
-            ? api.citationIds(editingSource)
-            : [];
-        selectedCitationIds = new Set(currentIds);
+        const details = editingSource && api && typeof api.citationDetails === 'function'
+            ? api.citationDetails(editingSource)
+            : { ids: [], mode: 'parenthetical', locator: '' };
+        selectedCitationIds = new Set(details.ids);
+        if (citationMode) citationMode.value = details.mode || 'parenthetical';
+        if (citationLocator) citationLocator.value = details.locator || '';
+        syncCitationOptions();
         if (citationSearch) citationSearch.value = '';
         const editing = Boolean(editingCitationElement || editingCitationRange);
         if (citationModalTitle) {
@@ -10127,7 +10229,10 @@ window.onload = async () => {
         citationInsertBtn.addEventListener('click', () => {
             const api = bibliographyApi();
             const citation = api && typeof api.buildCitation === 'function'
-                ? api.buildCitation(Array.from(selectedCitationIds))
+                ? api.buildCitation(Array.from(selectedCitationIds), {
+                    mode: citationMode?.value,
+                    locator: citationLocator?.value,
+                })
                 : '';
             if (!citation) return;
             if (editingCitationElement && editingCitationElement.isConnected) {
