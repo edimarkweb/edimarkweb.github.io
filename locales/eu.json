@@ -512,7 +512,7 @@
   "bibliography_loaded": "{name} · {count} erreferentzia",
   "bibliography_too_big": "Bibliografiak {size} ditu eta 2 MB-ko muga gainditzen du.",
   "bibliography_invalid": "Fitxategiak ez du baliozko BibTeX edo CSL JSON liburutegirik.",
-  "bibliography_local_hint": "Bibliografia dokumentuarekin batera gordetzen da eramangarria izan dadin. CSL pertsonalizatua gailu honetan geratzen da. Ez da ezer zerbitzuetara bidaltzen.",
+  "bibliography_local_hint": "Bibliografia eta norberaren estiloa dokumentuarekin batera gordetzen dira eramangarria izan dadin. Ez da ezer zerbitzuetara bidaltzen.",
   "csl_section": "Aipuen estiloa",
   "csl_hint": "APA 7 da estilo lehenetsia. Barneko beste estilo bat aukeratu edo zure CSL fitxategia karga dezakezu.",
   "citation_style_label": "Bibliografia-estiloa",

@@ -3347,6 +3347,9 @@ function switchTo(id) {
         hydrateDocumentBibliography(doc).catch(error => {
             console.debug('No se pudo cargar la bibliografía del documento:', error);
         });
+        hydrateDocumentCsl(doc).catch(error => {
+            console.debug('No se pudo cargar el estilo del documento:', error);
+        });
     }
     markdownEditor.focus();
     restoreDocView(doc.view);
@@ -3554,6 +3557,32 @@ function bibliographyPathFromMarkdown(markdown) {
     const segments = value.split('/');
     if (segments.some(segment => !segment || segment === '.' || segment === '..')) return '';
     return segments.join('/');
+}
+
+/*
+  El estilo propio viaja como el resto: `csl:` es una variable que Pandoc
+  entiende, así que el documento guardado se compone igual fuera de aquí.
+*/
+function cslPathFromMarkdown(markdown) {
+    const { frontMatter } = splitDocumentFrontMatter(markdown);
+    const match = frontMatter && frontMatter.match(/^csl\s*:\s*(.+)$/mi);
+    if (!match) return '';
+    const value = unquoteYamlScalar(match[1]).replace(/\\/g, '/');
+    if (!/\.csl$/i.test(value) || value.startsWith('/') || /^[a-zA-Z]:/.test(value)) return '';
+    const segments = value.split('/');
+    if (segments.some(segment => !segment || segment === '.' || segment === '..')) return '';
+    return segments.join('/');
+}
+
+function setCslPathInMarkdown(markdown, path = '') {
+    const source = String(markdown || '');
+    const { frontMatter, body } = splitDocumentFrontMatter(source);
+    const cleanPath = String(path || '').trim();
+    const lines = frontMatter ? frontMatter.split('\n').slice(1, -1) : [];
+    const kept = lines.filter(line => !/^csl\s*:/i.test(line));
+    if (cleanPath) kept.push(`csl: "${cleanPath.replace(/"/g, '\\"')}"`);
+    if (!kept.length) return body || (frontMatter ? '' : source);
+    return `---\n${kept.join('\n')}\n---\n\n${body || (frontMatter ? '' : source)}`;
 }
 
 function setBibliographyPathInMarkdown(markdown, path = '') {
@@ -5470,14 +5499,56 @@ function defaultPortableBibliographyPath(doc, name = '', content = '') {
     return `${extractedAssetsFolder(doc)}/${portableBibliographyFilename(name, content)}`;
 }
 
+// El estilo propio se guarda en la misma carpeta que las referencias: son las
+// dos piezas de lo mismo y viajan juntas.
+function defaultPortableCslPath(doc) {
+    return `${extractedAssetsFolder(doc)}/style.csl`;
+}
+
 function effectiveLatexSettings(doc = docs.find(candidate => candidate.id === currentId)) {
     const settings = readLatexSettings();
-    if (!doc || (!doc.bibliographyPath && !doc.bibliographyContent)) return settings;
-    return {
-        ...settings,
-        bibliographyContent: doc.bibliographyContent || '',
-        bibliographyName: doc.bibliographyPath || doc.bibliographyName || '',
-    };
+    const own = { ...settings };
+    if (doc && (doc.bibliographyPath || doc.bibliographyContent)) {
+        own.bibliographyContent = doc.bibliographyContent || '';
+        own.bibliographyName = doc.bibliographyPath || doc.bibliographyName || '';
+    }
+    // Un estilo que llega con el documento manda sobre el general: es el que
+    // eligió quien lo escribió, y por eso viaja en su carpeta.
+    if (doc && doc.cslContent) {
+        own.cslContent = doc.cslContent;
+        own.cslName = doc.cslName || doc.cslPath || '';
+        own.citationStyle = 'custom';
+    }
+    return own;
+}
+
+function cslIsValid(content) {
+    const api = window.EdiMarkBibliography;
+    return Boolean(content && api && typeof api.isCslStyle === 'function' && api.isCslStyle(content));
+}
+
+function attachCslToDocument(doc, { content = '', name = '', path = '', writeMetadata = true } = {}) {
+    if (!doc) return false;
+    const valid = cslIsValid(content);
+    const currentMarkdown = doc.id === currentId && markdownEditor ? markdownEditor.getValue() : doc.md;
+    const existingPath = cslPathFromMarkdown(currentMarkdown);
+    const chosenPath = valid ? (path || existingPath || defaultPortableCslPath(doc)) : '';
+    doc.cslContent = valid ? String(content) : '';
+    doc.cslName = valid ? (name || chosenPath.split('/').pop()) : '';
+    doc.cslPath = chosenPath;
+
+    if (writeMetadata) {
+        const rewritten = setCslPathInMarkdown(currentMarkdown, chosenPath);
+        doc.md = rewritten;
+        if (doc.id === currentId && markdownEditor && markdownEditor.getValue() !== rewritten) {
+            markdownEditor.setValue(rewritten);
+        }
+    }
+    if (doc.id === currentId) {
+        publishLatexSettings(effectiveLatexSettings(doc));
+        updateHtml();
+    }
+    return valid;
 }
 
 function bibliographyIsValid(content, name = '') {
@@ -5552,6 +5623,42 @@ async function hydrateDocumentBibliography(doc, files = null) {
         // ruta estándar se escribirá la próxima vez que se guarde.
         writeMetadata: Boolean(declaredPath),
     });
+}
+
+const MAX_CSL_BYTES = 1024 * 1024;
+
+async function hydrateDocumentCsl(doc, files = null) {
+    if (!doc) return false;
+    const declaredPath = cslPathFromMarkdown(doc.md);
+    // Sin `csl:` no hay nada que recuperar: a diferencia de la bibliografía, un
+    // estilo no se adivina por convención, porque cambiaría cómo se ven las
+    // citas de un documento que no lo pidió.
+    if (!declaredPath) return false;
+    let content = '';
+    let name = declaredPath.split('/').pop();
+
+    if (Array.isArray(files) && files.length) {
+        const wanted = declaredPath.replace(/\\/g, '/').toLowerCase();
+        const match = files.find(file => {
+            const candidate = String(file.__edimarkPath || file.webkitRelativePath || file.name || '')
+                .replace(/\\/g, '/').toLowerCase();
+            return candidate === wanted || candidate.endsWith(`/${wanted}`);
+        });
+        if (!match || match.size > MAX_CSL_BYTES) return false;
+        content = await match.text();
+        name = match.name || name;
+    } else {
+        const platform = window.EdiMarkPlatform;
+        if (!platform?.isDesktop || !doc.filePath || typeof platform.readDocumentResource !== 'function') return false;
+        try {
+            content = await platform.readDocumentResource(doc.filePath, declaredPath) || '';
+        } catch (_) {
+            return false;
+        }
+    }
+    if (!cslIsValid(content)) return false;
+    // El documento ya declara la ruta: no hay que escribir nada al abrirlo.
+    return attachCslToDocument(doc, { content, name, path: declaredPath, writeMetadata: false });
 }
 
 function publishLatexSettings(settings) {
@@ -5780,6 +5887,27 @@ function preparePortableBibliographyForSave(doc, content) {
 }
 
 /*
+  El estilo propio se copia junto a las referencias y el documento lo declara
+  con `csl:`, de modo que quien lo reciba vea las citas como las dejó su autor.
+  Los estilos incluidos —APA, Chicago, MLA, IEEE— no copian nada: son una
+  elección, no un archivo.
+*/
+function preparePortableCslForSave(doc, content) {
+    const settings = effectiveLatexSettings(doc);
+    if (settings.citationStyle !== 'custom' || !cslIsValid(settings.cslContent)) {
+        return { contents: content, companionFiles: [] };
+    }
+    const path = cslPathFromMarkdown(content) || doc?.cslPath || defaultPortableCslPath(doc);
+    return {
+        contents: setCslPathInMarkdown(content, path),
+        companionFiles: [{ relativePath: path, contents: settings.cslContent }],
+        path,
+        name: path.split('/').pop(),
+        cslContent: settings.cslContent,
+    };
+}
+
+/*
   Las imágenes extraídas de base64 viven en una carpeta que lleva el nombre
   del documento. «Guardar como» cambia también esa carpeta y las referencias
   del Markdown, pero deja intactas las carpetas ajenas (`imagenes/`,
@@ -5812,6 +5940,10 @@ function renameOwnAssetFolderForSave(doc, content, companionFiles, savedName) {
             `${newFolder}/${bibliographyPath.slice(prefix.length)}`,
         );
     }
+    const cslPath = cslPathFromMarkdown(rewritten);
+    if (cslPath.startsWith(prefix)) {
+        rewritten = setCslPathInMarkdown(rewritten, `${newFolder}/${cslPath.slice(prefix.length)}`);
+    }
     rewritten = rewritten.replace(
         /(!\[[^\]]*?\]\(\s*)([^)\s]+)/g,
         (match, opening, source) => {
@@ -5830,6 +5962,8 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
     const doc = docs.find(d => d.id === currentId);
     const portableBibliography = preparePortableBibliographyForSave(doc, content);
     content = portableBibliography.contents;
+    const portableCsl = preparePortableCslForSave(doc, content);
+    content = portableCsl.contents;
     let savedContent = content;
     const rawName = doc && typeof doc.name === 'string' ? doc.name.trim() : '';
     const cleanName = rawName.replace(/\.md$/i, '') || 'documento';
@@ -5839,6 +5973,7 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
         const companionFiles = [
             ...(await collectLinkedDocumentAssets(doc, content)),
             ...portableBibliography.companionFiles,
+            ...portableCsl.companionFiles,
         ];
         const existingPath = saveAs ? '' : (doc?.filePath || '');
         const options = {
@@ -5894,6 +6029,12 @@ async function saveCurrentDocument({ saveAs = false } = {}) {
                 doc.bibliographyPath = savedBibliographyPath;
                 doc.bibliographyName = savedBibliographyPath.split('/').pop();
                 doc.bibliographyContent = portableBibliography.bibliographyContent;
+            }
+            const savedCslPath = cslPathFromMarkdown(savedContent);
+            if (savedCslPath && portableCsl.cslContent) {
+                doc.cslPath = savedCslPath;
+                doc.cslName = savedCslPath.split('/').pop();
+                doc.cslContent = portableCsl.cslContent;
             }
             const tabNameEl = document.querySelector(`.tab[data-id="${currentId}"] .tab-name`);
             if (tabNameEl) tabNameEl.textContent = savedName;
@@ -7407,7 +7548,6 @@ window.onload = async () => {
     const MAX_COVER_BYTES = 1024 * 1024;
     let pendingCover = { image: '', name: '' };
     const MAX_BIBLIOGRAPHY_BYTES = 2 * 1024 * 1024;
-    const MAX_CSL_BYTES = 1024 * 1024;
     let pendingBibliography = { content: '', name: '', entries: [] };
     let pendingCsl = { content: '', name: '' };
     let citationEntries = [];
@@ -12418,6 +12558,7 @@ window.onload = async () => {
             const folderName = (files[0].webkitRelativePath || '').split('/')[0] || '';
             const count = registerAssetFolder(files, { docId: doc.id, folderName });
             const bibliographyLoaded = await hydrateDocumentBibliography(doc, files);
+            await hydrateDocumentCsl(doc, files).catch(() => false);
             if (!count && !bibliographyLoaded) {
                 reportStatus(getTranslation('missing_assets_folder_empty', 'En esa carpeta no hay imágenes ni una bibliografía del documento.'));
                 return;

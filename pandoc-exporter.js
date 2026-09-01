@@ -230,11 +230,20 @@ function withBibliographySection(markdown, citations) {
   return `${markdown.replace(/\s+$/, '')}\n\n${'#'.repeat(level)} ${title}\n\n::: {#refs}\n:::\n`;
 }
 
+/*
+  Las rutas que hacen portable el documento —la bibliografía y el estilo propio—
+  apuntan a archivos del disco, y Pandoc corre dentro de WASM, donde no existen:
+  los mismos archivos entran por `citationResources` con un nombre fijo. Dejar
+  las rutas en los metadatos solo serviría para que la exportación fallara al no
+  poder abrirlas.
+*/
+const PORTABLE_METADATA_KEYS = /^(?:bibliography|csl)\s*:/i;
+
 function withoutPortableBibliographyMetadata(markdown) {
   const { frontMatter, body } = splitFrontMatter(markdown);
-  if (!frontMatter || !/^bibliography\s*:/mi.test(frontMatter)) return markdown;
+  if (!frontMatter || !new RegExp(PORTABLE_METADATA_KEYS.source, 'mi').test(frontMatter)) return markdown;
   const kept = frontMatter.split('\n').slice(1, -1)
-    .filter(line => !/^bibliography\s*:/i.test(line));
+    .filter(line => !PORTABLE_METADATA_KEYS.test(line));
   return kept.length ? `---\n${kept.join('\n')}\n---\n\n${body}` : body;
 }
 

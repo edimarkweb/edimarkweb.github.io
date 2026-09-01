@@ -512,7 +512,7 @@
   "bibliography_loaded": "{name} · {count} referencias",
   "bibliography_too_big": "La bibliografía ocupa {size} y supera el límite de 2 MB.",
   "bibliography_invalid": "El archivo no contiene una biblioteca BibTeX o CSL JSON válida.",
-  "bibliography_local_hint": "La bibliografía se guarda junto al documento para que sea portable. El CSL personalizado permanece en este dispositivo. Nada se envía a ningún servicio.",
+  "bibliography_local_hint": "La bibliografía y el estilo propio se guardan junto al documento para que sea portable. Nada se envía a ningún servicio.",
   "csl_section": "Estilo de citas",
   "csl_hint": "APA 7 es el estilo predeterminado. Puedes elegir otro estilo incluido o cargar un archivo CSL propio.",
   "citation_style_label": "Estilo bibliográfico",

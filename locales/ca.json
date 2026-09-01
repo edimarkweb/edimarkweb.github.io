@@ -512,7 +512,7 @@
   "bibliography_loaded": "{name} · {count} referències",
   "bibliography_too_big": "La bibliografia ocupa {size} i supera el límit de 2 MB.",
   "bibliography_invalid": "El fitxer no conté una biblioteca BibTeX o CSL JSON vàlida.",
-  "bibliography_local_hint": "La bibliografia es desa al costat del document perquè sigui portable. Un CSL personalitzat roman en aquest dispositiu. No s'envia res a cap servei.",
+  "bibliography_local_hint": "La bibliografia i l'estil propi es desen al costat del document perquè sigui portable. No s'envia res a cap servei.",
   "csl_section": "Estil de citació",
   "csl_hint": "APA 7 és l'estil predeterminat. Pots triar un altre estil inclòs o carregar un fitxer CSL propi.",
   "citation_style_label": "Estil bibliogràfic",

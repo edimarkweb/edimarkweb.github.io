@@ -2197,6 +2197,75 @@ test('carga una bibliografía, busca referencias e inserta una cita múltiple', 
   assert.equal(await page.evaluate(() => window.__edimarkLatexSettings.bibliographyHeadingLevel), 3);
 });
 
+/*
+  Un estilo propio es tan del documento como sus referencias: si no viaja con
+  él, quien lo abra en otro equipo verá las citas con el estilo de siempre.
+*/
+test('el estilo propio se guarda junto a las referencias y vuelve al abrir', async (t) => {
+  const CSL = '<?xml version="1.0"?><style xmlns="http://purl.org/net/xbiblio/csl" version="1.0"><info><title>Mío</title><id>http://example.com/mio</id></info><citation><layout><text variable="title"/></layout></citation><bibliography><layout><text variable="title"/></layout></bibliography></style>';
+  const { context, page } = await openApp({
+    initStorage: () => {
+      window.__cslSaveCalls = [];
+      window.__EDIMARK_TAURI__ = {
+        dialog: { save: async () => '/destino/trabajo.md' },
+        fs: {
+          writeTextFile: async (path, contents) => {
+            window.__cslSaveCalls.push(['text', path, contents]);
+          },
+          writeFile: async () => {},
+        },
+        app: {
+          writeDocumentResource: async (documentPath, relativePath, contents) => {
+            window.__cslSaveCalls.push(['resource', relativePath, new TextDecoder().decode(contents)]);
+          },
+          readDocumentResource: async (documentPath, relativePath) => {
+            const escrito = window.__cslSaveCalls.find(call => call[0] === 'resource' && call[1] === relativePath);
+            return escrito ? escrito[2] : '';
+          },
+        },
+      };
+    },
+  });
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').fill('Según [@mayer2009multimedia] el aprendizaje mejora.\n');
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  await page.locator('#doc-settings-tab-bibliography').click();
+  await page.locator('#bibliography-example-btn').click();
+  await page.locator('#citation-style-select').selectOption('custom');
+  await page.locator('#csl-input').setInputFiles({ name: 'mi-estilo.csl', mimeType: 'application/xml', buffer: Buffer.from(CSL) });
+  await page.locator('#csl-summary').getByText('mi-estilo.csl', { exact: false }).waitFor();
+  await page.locator('#latex-settings-save-btn').click();
+
+  await page.keyboard.press('Control+s');
+  await page.waitForFunction(() => window.__cslSaveCalls.some(call => call[0] === 'resource' && call[1].endsWith('.csl')));
+
+  const calls = await page.evaluate(() => window.__cslSaveCalls);
+  // El estilo se copia en la misma carpeta que las referencias.
+  assert.ok(calls.some(call => call[0] === 'resource' && call[1] === 'trabajo/references.bib'));
+  const estilo = calls.find(call => call[0] === 'resource' && call[1] === 'trabajo/style.csl');
+  assert.ok(estilo, 'el estilo propio debe guardarse junto a las referencias');
+  assert.match(estilo[2], /purl\.org\/net\/xbiblio\/csl/);
+
+  // Y el documento lo declara, como hace con la bibliografía.
+  const guardado = calls.find(call => call[0] === 'text');
+  assert.match(guardado[2], /bibliography: "trabajo\/references\.bib"/);
+  assert.match(guardado[2], /csl: "trabajo\/style\.csl"/);
+  assert.match(await page.locator('#markdown-input').inputValue(), /csl: "trabajo\/style\.csl"/);
+
+  // Al abrirlo de nuevo, el estilo del documento vuelve a mandar.
+  await page.evaluate(async () => {
+    const doc = docs.find(d => d.id === currentId);
+    doc.cslContent = '';
+    doc.cslName = '';
+    window.__cslHydrated = await hydrateDocumentCsl(doc);
+  });
+  assert.equal(await page.evaluate(() => window.__cslHydrated), true);
+  assert.equal(await page.evaluate(() => window.__edimarkLatexSettings.citationStyle), 'custom');
+  assert.match(await page.evaluate(() => window.__edimarkLatexSettings.cslContent), /purl\.org\/net\/xbiblio\/csl/);
+});
+
 test('la bibliografía de ejemplo se carga desde el selector de citas sin archivos', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());

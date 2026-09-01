@@ -512,7 +512,7 @@
   "bibliography_loaded": "{name} · {count} references",
   "bibliography_too_big": "The bibliography is {size} and exceeds the 2 MB limit.",
   "bibliography_invalid": "The file does not contain a valid BibTeX or CSL JSON library.",
-  "bibliography_local_hint": "The bibliography is saved alongside the document for portability. A custom CSL remains on this device. Nothing is sent to any service.",
+  "bibliography_local_hint": "The bibliography and a custom style are saved alongside the document for portability. Nothing is sent to any service.",
   "csl_section": "Citation style",
   "csl_hint": "APA 7 is the default. Choose another included style or load your own CSL file.",
   "citation_style_label": "Bibliographic style",
