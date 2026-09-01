@@ -4948,6 +4948,8 @@ test('la vista previa se ajusta al ancho del panel y no deja barra horizontal', 
     const sheet = document.getElementById('html-output');
     return {
       barraHorizontal: desk.scrollWidth > desk.clientWidth,
+      anchoMesa: desk.clientWidth,
+      anchoContenidoMesa: desk.scrollWidth,
       zoom: Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1,
       etiqueta: document.getElementById('preview-zoom-value').textContent,
       hoja: Math.round(sheet.getBoundingClientRect().width),
@@ -4997,7 +4999,14 @@ test('la vista previa se ajusta al ancho del panel y no deja barra horizontal', 
   await page.waitForFunction(() => (
     (Number(getComputedStyle(document.documentElement).getPropertyValue('--preview-zoom')) || 1) < 1
   ));
-  assert.equal((await medir()).barraHorizontal, false);
+  // Firefox actualiza el ancho desplazable un fotograma después que la
+  // variable de zoom; esperar solo esta última hacía intermitente la prueba.
+  await page.waitForFunction(() => {
+    const desk = document.getElementById('preview-desk');
+    return desk && desk.scrollWidth <= desk.clientWidth;
+  });
+  const vueltaAtada = await medir();
+  assert.equal(vueltaAtada.barraHorizontal, false, JSON.stringify(vueltaAtada));
   assert.equal(await page.locator('#preview-zoom-reset').getAttribute('data-ajuste'), 'true');
 
   /*
