@@ -94,7 +94,7 @@ Base64 kodeak milaka karaktere hartzen ditu; horregatik, EdiMarkWebek tolestu et
 
 Formulak LaTeX-en idazten dira eta unean bertan osatzen dira KaTeX-ekin. Hiru modu daude jartzeko:
 
-* **Formula-menua** (Markdown editorean): `Ctrl+M` teklek itxarotea irekitzen dute —egoera-barrak teklak gogorarazten ditu— eta gero `1`, `2`, `3` edo `4` teklek mugatzailea hautatzen dute (`$...$`, `$$...$$`, `\(...\)` edo `\[...\]`); `Sartu` teklak `$...$` txertatzen du eta `Esc` teklak bertan behera uzten du.
+* **Formula-menua** (Markdown editorean): `Ctrl+M` teklek itxarotea irekitzen dute —egoera-barrak teklak gogorarazten ditu— eta gero `1`, `2`, `3` edo `4` teklek mugatzailea hautatzen dute (`\(...\)`, `\[...\]`, `$...$` edo `$$...$$`); `Sartu` teklak `\(...\)` txertatzen du —gomendatua— eta `Esc` teklak bertan behera uzten du.
 * **Formularen leihoa** (editore bisualean): `{}` botoiak —edo `Ctrl+M` teklek, hemen mugatzaileei buruz galdetzen ez dutenak— leiho bat irekitzen du LaTeX kodearekin eta emaitza ikusgai idazten duzun bitartean, errorearen abisuarekin baldin badago. Han hautatzen duzu lerroan ala blokean doan eta zein mugatzailerekin. Horrela egiten da orriaren gainean ez dagoelako `$…$` huts baten barruan idazteko lekurik: KaTeX-ek formula bihurtzen du berriro margotu bezain laster.
 * **EdiCuaTeX (`Ctrl+Alt+M`)**: formulen editore bisual integratua, saguarekin eraikitzeko. Onartzean, formula txertatuta itzultzen da.
 

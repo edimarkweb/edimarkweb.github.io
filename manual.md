@@ -94,7 +94,7 @@ El código Base64 ocupa miles de caracteres, por lo que EdiMarkWeb lo pliega y d
 
 Las fórmulas se escriben en LaTeX y se componen al momento con KaTeX. Hay tres maneras de ponerlas:
 
-* **Menú de fórmulas** (en el editor Markdown): `Ctrl+M` abre la espera —la barra de estado recuerda las teclas— y después `1`, `2`, `3` o `4` elige el delimitador (`$...$`, `$$...$$`, `\(...\)` o `\[...\]`); `Intro` inserta `$...$` y `Esc` cancela.
+* **Menú de fórmulas** (en el editor Markdown): `Ctrl+M` abre la espera —la barra de estado recuerda las teclas— y después `1`, `2`, `3` o `4` elige el delimitador (`\(...\)`, `\[...\]`, `$...$` o `$$...$$`); `Intro` inserta `\(...\)`, que es el recomendado, y `Esc` cancela.
 * **Ventana de fórmula** (en el editor visual): el botón `{}` —o `Ctrl+M`, que aquí no pregunta por delimitadores— abre una ventana con el código LaTeX y el resultado a la vista mientras escribes, con el aviso del error si lo hay. Ahí eliges si va en línea o en bloque y con qué delimitadores. Se hace así porque sobre la hoja no hay dónde escribir dentro de un `$…$` vacío: KaTeX lo convierte en fórmula en cuanto se repinta.
 * **EdiCuaTeX (`Ctrl+Alt+M`)**: el editor visual de fórmulas integrado, para construirlas a golpe de ratón. Al aceptar, la fórmula vuelve insertada.
 

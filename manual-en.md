@@ -94,7 +94,7 @@ Base64 code takes thousands of characters, so EdiMarkWeb folds it away and leave
 
 Formulas are written in LaTeX and typeset on the spot with KaTeX. There are three ways to add them:
 
-* **Formula menu** (in the Markdown editor): `Ctrl+M` opens the wait — the status bar reminds you of the keys — and then `1`, `2`, `3` or `4` picks the delimiter (`$...$`, `$$...$$`, `\(...\)` or `\[...\]`); `Enter` inserts `$...$` and `Esc` cancels.
+* **Formula menu** (in the Markdown editor): `Ctrl+M` opens the wait — the status bar reminds you of the keys — and then `1`, `2`, `3` or `4` picks the delimiter (`\(...\)`, `\[...\]`, `$...$` or `$$...$$`); `Enter` inserts `\(...\)`, the recommended one, and `Esc` cancels.
 * **Formula window** (in the visual editor): the `{}` button —or `Ctrl+M`, which asks about no delimiters here— opens a window with the LaTeX code and the result in view as you type, with the error message if there is one. There you choose whether it goes inline or as a block, and with which delimiters. It works this way because there is nowhere to type inside an empty `$…$` on the sheet: KaTeX turns it into a formula as soon as it repaints.
 * **EdiCuaTeX (`Ctrl+Alt+M`)**: the built-in visual formula editor, for building them with the mouse. When you accept, the formula comes back inserted.
 

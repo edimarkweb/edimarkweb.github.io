@@ -9729,6 +9729,7 @@ window.onload = async () => {
             previewChanged = true;
             fitWidePreformattedBlocks(htmlOutput);
             applyRelativeImageSources(htmlOutput, docs.find(doc => doc.id === currentId));
+            applyDesktopEmbedCards(htmlOutput);
             if (window.renderMathInElement) {
                 renderMathInElement(htmlOutput, {
                     delimiters: [

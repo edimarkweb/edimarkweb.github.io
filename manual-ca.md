@@ -94,7 +94,7 @@ El codi Base64 ocupa milers de caràcters, per això EdiMarkWeb el plega i deixa
 
 Les fórmules s'escriuen en LaTeX i es componen a l'instant amb KaTeX. Hi ha tres maneres de posar-les:
 
-* **Menú de fórmules** (a l'editor Markdown): `Ctrl+M` obre l'espera —la barra d'estat recorda les tecles— i després `1`, `2`, `3` o `4` tria el delimitador (`$...$`, `$$...$$`, `\(...\)` o `\[...\]`); `Retorn` insereix `$...$` i `Esc` cancel·la.
+* **Menú de fórmules** (a l'editor Markdown): `Ctrl+M` obre l'espera —la barra d'estat recorda les tecles— i després `1`, `2`, `3` o `4` tria el delimitador (`\(...\)`, `\[...\]`, `$...$` o `$$...$$`); `Retorn` insereix `\(...\)`, que és el recomanat, i `Esc` cancel·la.
 * **Finestra de fórmula** (a l'editor visual): el botó `{}` —o `Ctrl+M`, que aquí no pregunta pels delimitadors— obre una finestra amb el codi LaTeX i el resultat a la vista mentre escrius, amb l'avís de l'error si n'hi ha. Allà tries si va en línia o en bloc i amb quins delimitadors. Es fa així perquè sobre el full no hi ha on escriure dins d'un `$…$` buit: KaTeX el converteix en fórmula tan bon punt es repinta.
 * **EdiCuaTeX (`Ctrl+Alt+M`)**: l'editor visual de fórmules integrat, per construir-les amb el ratolí. En acceptar, la fórmula torna inserida.
 

@@ -3059,7 +3059,7 @@ test('cada opción de formato se explica debajo, no entre paréntesis', async (t
   };
 
   await revisar('#export-menu-btn', '#export-menu', ['DOCX', 'ODT', 'EPUB', 'HTML', 'TEX', 'PDF']);
-  await revisar('#formula-btn', '#formula-options', ['$...$', '$$...$$', '\\(...\\)', '\\[...\\]']);
+  await revisar('#formula-btn', '#formula-options', ['\\(...\\)', '\\[...\\]', '$...$', '$$...$$']);
   await revisar('#copy-html-menu-toggle', '#preview-copy-menu', ['Markdown', 'HTML', 'LaTeX', 'LaTeX completo']);
 });
 
@@ -3203,13 +3203,14 @@ test('Ctrl+M abre la espera y la segunda tecla elige el delimitador', async (t) 
     return editor.inputValue();
   };
 
-  assert.equal(await acorde('Digit1'), '$$');
-  assert.equal(await acorde('Digit2'), '\n$$\n\n$$\n');
-  assert.equal(await acorde('Digit3'), '\\(\\)');
-  assert.equal(await acorde('Digit4'), '\n\\[\n\n\\]\n');
-  // El caso común, en dos pulsaciones y sin mirar la ayuda.
-  assert.equal(await acorde('Enter'), '$$');
-  assert.equal(await acorde('KeyM'), '$$');
+  assert.equal(await acorde('Digit1'), '\\(\\)');
+  assert.equal(await acorde('Digit2'), '\n\\[\n\n\\]\n');
+  assert.equal(await acorde('Digit3'), '$$');
+  assert.equal(await acorde('Digit4'), '\n$$\n\n$$\n');
+  // El caso común, en dos pulsaciones y sin mirar la ayuda: el delimitador
+  // recomendado, que es el primero de la lista.
+  assert.equal(await acorde('Enter'), '\\(\\)');
+  assert.equal(await acorde('KeyM'), '\\(\\)');
   // Escape cancela sin escribir; cualquier otra tecla cancela y se escribe.
   assert.equal(await acorde('Escape'), '');
   assert.equal(await acorde('KeyA'), 'a');
