@@ -15,6 +15,8 @@ const {
   EXAMPLE_BIBLIOGRAPHY,
   EXAMPLE_BIBLIOGRAPHY_NAME,
   formatPreviewCitation,
+  mergeBibliography,
+  suggestCitationKey,
 } = bibliography;
 
 test('lee BibTeX con campos anidados, autores y claves', () => {
@@ -209,4 +211,64 @@ test('compone una etiqueta breve para la vista previa', () => {
   assert.equal(formatPreviewCitation('[@no-existe]', entries), '');
   assert.equal(formatPreviewCitation('@deharo2009redes [p. 5]', entries), 'de Haro (2009, p. 5)');
   assert.equal(formatPreviewCitation('[-@deharo2009redes, p. 5]', entries), '(2009, p. 5)');
+});
+
+test('la clave de cita es opcional y nunca se repite', () => {
+  const reference = {
+    type: 'article',
+    author: 'de Haro, Juan José; García, Ana',
+    title: 'Las redes sociales en el aula',
+    year: '2026',
+    container: 'Educación Digital',
+  };
+  const first = appendReference('', '', reference);
+  assert.equal(first.ok, true);
+  assert.equal(first.entries[0].id, 'deharo2026redes');
+
+  // Una segunda referencia igual no puede pisar la clave de la primera.
+  const second = appendReference(first.content, first.name, { ...reference, title: 'Las redes sociales en el centro' });
+  assert.equal(second.ok, true);
+  assert.deepEqual(second.entries.map(entry => entry.id).sort(), ['deharo2026redes', 'deharo2026redes2']);
+
+  // Escrita a mano se sigue comprobando que sea válida y única.
+  assert.equal(appendReference(second.content, second.name, { ...reference, id: 'con espacio' }).error, 'invalid-key');
+  assert.equal(appendReference(second.content, second.name, { ...reference, id: 'deharo2026redes' }).error, 'duplicate-key');
+  const key = { author: 'UNESCO', title: 'Guía para el aula', year: '2023' };
+  assert.equal(suggestCitationKey(key), 'unesco2023guia');
+  assert.equal(suggestCitationKey(key, ['unesco2023guia']), 'unesco2023guia2');
+});
+
+test('el ejemplo se suma a la bibliografía cargada en lugar de sustituirla', () => {
+  const mine = appendReference('', 'la-mia.bib', {
+    type: 'book',
+    id: 'deharo2026manual',
+    author: 'de Haro, Juan José',
+    title: 'Manual propio',
+    year: '2026',
+    publisher: 'Editorial Educativa',
+  });
+  const merged = mergeBibliography(mine.content, mine.name, EXAMPLE_BIBLIOGRAPHY, EXAMPLE_BIBLIOGRAPHY_NAME);
+  assert.equal(merged.ok, true);
+  assert.equal(merged.name, 'la-mia.bib');
+  assert.equal(merged.added, 7);
+  assert.equal(merged.entries.length, 8);
+  assert.ok(merged.entries.some(entry => entry.id === 'deharo2026manual'));
+
+  // Cargarlo otra vez no duplica nada.
+  const again = mergeBibliography(merged.content, merged.name, EXAMPLE_BIBLIOGRAPHY, EXAMPLE_BIBLIOGRAPHY_NAME);
+  assert.equal(again.added, 0);
+  assert.equal(again.entries.length, 8);
+
+  // Sobre una biblioteca CSL JSON, el ejemplo se convierte a sus objetos.
+  const json = mergeBibliography('[{"id":"mio2026","type":"book","title":"Prueba"}]', 'refs.json', EXAMPLE_BIBLIOGRAPHY, EXAMPLE_BIBLIOGRAPHY_NAME);
+  assert.equal(json.added, 7);
+  const mayer = JSON.parse(json.content).find(item => item.id === 'mayer2009multimedia');
+  assert.deepEqual(mayer.author, [{ family: 'Mayer', given: 'Richard E.' }]);
+  assert.equal(mayer.type, 'book');
+  assert.deepEqual(mayer.issued, { 'date-parts': [[2009]] });
+
+  // Sin nada cargado se usa tal cual el ejemplo.
+  const empty = mergeBibliography('', '', EXAMPLE_BIBLIOGRAPHY, EXAMPLE_BIBLIOGRAPHY_NAME);
+  assert.equal(empty.name, EXAMPLE_BIBLIOGRAPHY_NAME);
+  assert.equal(empty.entries.length, 7);
 });

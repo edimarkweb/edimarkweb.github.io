@@ -187,31 +187,44 @@
       .join('; ');
   }
 
-  function parseBibTeX(source) {
+  // Devuelve cada entrada con su texto original, para poder copiarla tal cual
+  // al fundir dos bibliografías.
+  function bibEntryBlocks(source) {
     const text = String(source ?? '');
-    const entries = [];
+    const blocks = [];
     const entryStart = /@([a-zA-Z]+)\s*([({])/g;
     let match;
     while ((match = entryStart.exec(text))) {
       const type = match[1].toLowerCase();
-      if (['comment', 'preamble', 'string'].includes(type)) continue;
       const open = match[2];
       const close = open === '{' ? '}' : ')';
       const start = entryStart.lastIndex - 1;
       const block = balancedValue(text, start, open, close);
       entryStart.lastIndex = block.end;
+      if (['comment', 'preamble', 'string'].includes(type)) continue;
       const inner = block.value.slice(1, -1);
       const comma = inner.indexOf(',');
       if (comma === -1) continue;
       const id = inner.slice(0, comma).trim();
       if (!id || /[\s\[\];]/.test(id)) continue;
-      const fields = readBibFields(inner.slice(comma + 1));
-      const author = bibAuthor(fields.author || fields.editor || '');
-      const title = fields.title || fields.booktitle || fields.journal || '';
-      const year = fields.year || fields.date || '';
-      entries.push({ id, type, title, author, year: normalizeText(year).slice(0, 10) });
+      blocks.push({
+        id,
+        type,
+        fields: readBibFields(inner.slice(comma + 1)),
+        source: text.slice(match.index, block.end),
+      });
     }
-    return entries;
+    return blocks;
+  }
+
+  function parseBibTeX(source) {
+    return bibEntryBlocks(source).map(({ id, type, fields }) => ({
+      id,
+      type,
+      title: fields.title || fields.booktitle || fields.journal || '',
+      author: bibAuthor(fields.author || fields.editor || ''),
+      year: normalizeText(fields.year || fields.date || '').slice(0, 10),
+    }));
   }
 
   function cslNames(names) {
@@ -302,6 +315,121 @@
     conference: { bib: 'inproceedings', csl: 'paper-conference', required: ['container'] },
   };
 
+  const BIB_TO_CSL_TYPE = {
+    article: 'article-journal',
+    book: 'book',
+    incollection: 'chapter',
+    inbook: 'chapter',
+    techreport: 'report',
+    misc: 'webpage',
+    online: 'webpage',
+    phdthesis: 'thesis',
+    mastersthesis: 'thesis',
+    thesis: 'thesis',
+    inproceedings: 'paper-conference',
+    conference: 'paper-conference',
+  };
+
+  function bibNamesToCsl(value) {
+    return normalizeText(value)
+      .split(/\s+and\s+/i)
+      .map(name => name.trim())
+      .filter(Boolean)
+      .map(cslAuthor);
+  }
+
+  function bibBlockToCsl({ id, type, fields }) {
+    const item = { id, type: BIB_TO_CSL_TYPE[type] || 'document' };
+    if (fields.title) item.title = fields.title;
+    if (fields.author) item.author = bibNamesToCsl(fields.author);
+    if (fields.editor) item.editor = bibNamesToCsl(fields.editor);
+    const container = fields.journal || fields.booktitle || fields.howpublished;
+    if (container) item['container-title'] = container;
+    const year = normalizeText(fields.year || fields.date).match(/\d{4}/);
+    if (year) item.issued = { 'date-parts': [[Number(year[0])]] };
+    const publisher = fields.publisher || fields.institution || fields.school;
+    if (publisher) item.publisher = publisher;
+    if (fields.volume) item.volume = fields.volume;
+    if (fields.number) item.issue = fields.number;
+    if (fields.pages) item.page = fields.pages;
+    if (fields.edition) item.edition = fields.edition;
+    if (fields.address) item['publisher-place'] = fields.address;
+    if (fields.isbn) item.ISBN = fields.isbn;
+    if (fields.issn) item.ISSN = fields.issn;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(normalizeText(fields.urldate))) {
+      item.accessed = { 'date-parts': [fields.urldate.split('-').map(Number)] };
+    }
+    if (fields.doi) item.DOI = fields.doi;
+    if (fields.url) item.URL = fields.url;
+    return item;
+  }
+
+  // Añade a una bibliografía las entradas de otra que aún no estén, en lugar de
+  // sustituirla: así cargar el ejemplo no borra lo que ya había.
+  function mergeBibliography(source, name = '', extraSource = '', extraName = '') {
+    const text = String(source ?? '');
+    if (!text.trim()) {
+      const content = String(extraSource ?? '');
+      const outputName = normalizeText(extraName) || normalizeText(name) || 'bibliografia.bib';
+      const entries = parseBibliography(content, outputName);
+      return { ok: true, content, name: outputName, entries, added: entries.length };
+    }
+    const outputName = normalizeText(name) || 'bibliografia.bib';
+    const current = parseBibliography(text, outputName);
+    const taken = new Set(current.map(entry => entry.id));
+    const blocks = bibEntryBlocks(extraSource).filter(block => !taken.has(block.id));
+    if (!blocks.length) {
+      return { ok: true, content: text, name: outputName, entries: current, added: 0 };
+    }
+    let content;
+    if (bibliographyFormat(outputName, text) === 'json') {
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (_) {
+        return { ok: false, error: 'invalid-library' };
+      }
+      const items = Array.isArray(parsed) ? parsed : parsed?.items;
+      if (!Array.isArray(items)) return { ok: false, error: 'invalid-library' };
+      blocks.forEach(block => items.push(bibBlockToCsl(block)));
+      content = `${JSON.stringify(parsed, null, 2)}\n`;
+    } else {
+      content = `${text.trimEnd()}\n\n${blocks.map(block => block.source.trim()).join('\n\n')}\n`;
+    }
+    return {
+      ok: true,
+      content,
+      name: outputName,
+      entries: parseBibliography(content, outputName),
+      added: blocks.length,
+    };
+  }
+
+  function citationKeyPart(value) {
+    return searchable(value).replace(/[^a-z0-9]+/g, '');
+  }
+
+  // La clave es opcional: si no se escribe, se compone con el apellido, el año y
+  // una palabra del título, y se le añade un número si ya estuviera ocupada.
+  function suggestCitationKey(reference = {}, taken = []) {
+    const used = new Set(taken);
+    const first = articleAuthors(reference.author)[0] || '';
+    const family = citationKeyPart(first.includes(',') ? first.split(',')[0] : first.split(/\s+/).pop() || '');
+    const word = normalizeText(reference.title)
+      .split(/\s+/)
+      .map(citationKeyPart)
+      .find(part => part.length > 3) || '';
+    const year = normalizeText(reference.year).match(/\d{4}/)?.[0] || '';
+    const base = `${family}${year}${word}`.slice(0, 60) || 'referencia';
+    let key = base;
+    let suffix = 1;
+    while (used.has(key)) {
+      suffix += 1;
+      key = `${base}${suffix}`;
+    }
+    return key;
+  }
+
   function appendReference(source, name = '', reference = {}) {
     const type = REFERENCE_TYPES[reference.type] ? reference.type : 'article';
     const normalized = {
@@ -323,20 +451,20 @@
       doi: normalizeText(reference.doi),
       url: normalizeText(reference.url),
     };
-    if (!normalized.id || !normalized.author || !normalized.title || !normalized.year
+    if (!normalized.author || !normalized.title || !normalized.year
       || REFERENCE_TYPES[type].required.some(field => !normalized[field])) {
       return { ok: false, error: 'required-fields' };
     }
-    if (!/^[A-Za-z0-9][A-Za-z0-9_.:+/-]*$/.test(normalized.id)) {
+    if (normalized.id && !/^[A-Za-z0-9][A-Za-z0-9_.:+/-]*$/.test(normalized.id)) {
       return { ok: false, error: 'invalid-key' };
     }
     if (!/^\d{4}$/.test(normalized.year)) return { ok: false, error: 'invalid-year' };
 
     const text = String(source ?? '');
     const outputName = normalizeText(name) || 'bibliografia.bib';
-    if (parseBibliography(text, outputName).some(entry => entry.id === normalized.id)) {
-      return { ok: false, error: 'duplicate-key' };
-    }
+    const taken = parseBibliography(text, outputName).map(entry => entry.id);
+    if (!normalized.id) normalized.id = suggestCitationKey(normalized, taken);
+    else if (taken.includes(normalized.id)) return { ok: false, error: 'duplicate-key' };
 
     let content;
     if (bibliographyFormat(outputName, text) === 'json') {
@@ -534,6 +662,9 @@
     parseBibTeX,
     parseCslJson,
     parseBibliography,
+    bibEntryBlocks,
+    mergeBibliography,
+    suggestCitationKey,
     REFERENCE_TYPES,
     appendReference,
     appendArticle,
