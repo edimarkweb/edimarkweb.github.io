@@ -6780,7 +6780,7 @@ document.addEventListener('pointerdown', (event) => {
 function buildHtmlWithTex() {
   const htmlOutput = document.getElementById('html-output');
   if (!htmlOutput) return '';
-  const clone = restoreOriginalImageSources(htmlOutput.cloneNode(true));
+  const clone = restoreOriginalEmbeds(restoreOriginalImageSources(htmlOutput.cloneNode(true)));
   /*
     El índice de la hoja es una ayuda para mirar, no contenido: se retira antes
     de que la hoja se convierta en Markdown, en HTML o en lo que sea que salga

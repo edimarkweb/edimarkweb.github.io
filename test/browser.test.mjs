@@ -3218,7 +3218,7 @@ test('Ctrl+M abre la espera y la segunda tecla elige el delimitador', async (t) 
   // Mientras espera, la barra de estado dice qué teclas valen.
   await editor.click();
   await page.keyboard.press('Control+KeyM');
-  assert.match(await page.locator('#status-toast-message').textContent(), /1 \$…\$/);
+  assert.match(await page.locator('#status-toast-message').textContent(), /1 \\\(…\\\)/);
   await page.keyboard.press('Digit1');
   assert.equal(await page.locator('#status-toast-message').textContent(), '');
 
@@ -3227,6 +3227,36 @@ test('Ctrl+M abre la espera y la segunda tecla elige el delimitador', async (t) 
   await page.locator('#formula-options').waitFor({ state: 'visible' });
   const atajos = await page.locator('#formula-options [data-shortcut]').allTextContents();
   assert.deepEqual(atajos, ['Ctrl+M 1', 'Ctrl+M 2', 'Ctrl+M 3', 'Ctrl+M 4']);
+});
+
+/*
+  El HTML que Markdown no sabe escribir sobrevive a la ida y vuelta por la
+  hoja. Escribir una letra en el editor visual convertía el pódcast de un
+  artículo en el texto de su pie y se llevaba el vídeo por delante, sin que en
+  pantalla se notara nada: la hoja conserva lo que ya estaba pintado, así que
+  la pérdida solo aparecía en el Markdown, o al guardar.
+*/
+test('el audio y el vídeo escritos a mano sobreviven a escribir en la hoja', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const audio = '<figure class="wp-block-audio"><audio controls src="https://example.org/podcast.mp3">'
+    + '</audio><figcaption>Pódcast</figcaption></figure>';
+  const video = '<figure><iframe width="560" height="315" '
+    + 'src="https://www.youtube.com/embed/MQftUe8Y2ds" title="Vídeo"></iframe></figure>';
+  await page.locator('#markdown-input').fill(`# Prueba\n\n${audio}\n\nEntre los dos.\n\n${video}\n\nFinal.\n`);
+  await page.waitForTimeout(400);
+
+  // Escribir en el editor visual rehace el Markdown a partir de la hoja.
+  await page.locator('#html-output p:last-of-type').click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' X');
+  await page.waitForFunction(() => document.querySelector('#markdown-input').value.includes('Final. X'));
+
+  const markdown = await page.locator('#markdown-input').inputValue();
+  assert.match(markdown, /<audio[^>]*example\.org\/podcast\.mp3/, 'el reproductor de audio se ha perdido');
+  assert.match(markdown, /<figcaption>Pódcast<\/figcaption>/, 'el pie del audio se ha perdido');
+  assert.match(markdown, /<iframe[^>]*youtube\.com\/embed\/MQftUe8Y2ds/, 'el vídeo se ha perdido');
 });
 
 /*
