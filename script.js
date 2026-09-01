@@ -7382,6 +7382,8 @@ window.onload = async () => {
     const citationLoadExampleBtn = document.getElementById('citation-load-example-btn');
     const citationOpenSettingsBtn = document.getElementById('citation-open-settings-btn');
     const citationAddReferenceBtn = document.getElementById('citation-add-reference-btn');
+    const citationStyleSummary = document.getElementById('citation-style-summary');
+    const citationOpenStyleBtn = document.getElementById('citation-open-style-btn');
     const citationReferenceSlot = document.getElementById('citation-reference-slot');
     const citationInsertBtn = document.getElementById('citation-insert-btn');
     const citationCancelBtn = document.getElementById('citation-cancel-btn');
@@ -10314,8 +10316,38 @@ window.onload = async () => {
         else focusModalField(citationOpenSettingsBtn || citationLoadExampleBtn || citationAddReferenceBtn);
     }
 
+    /*
+      El estilo con el que se van a componer las citas es del documento, no de
+      esta cita: se dice aquí para no tener que ir a mirarlo a otro cuadro.
+    */
+    const CITATION_STYLE_KEYS = {
+        apa: ['citation_style_apa', 'APA 7.ª edición'],
+        'chicago-author-date': ['citation_style_chicago', 'Chicago, autor-fecha'],
+        'modern-language-association': ['citation_style_mla', 'MLA 9.ª edición'],
+        ieee: ['citation_style_ieee', 'IEEE'],
+    };
+
+    function syncCitationStyleSummary() {
+        if (!citationStyleSummary) return;
+        const settings = effectiveLatexSettings();
+        const style = settings.citationStyle || 'apa';
+        const named = CITATION_STYLE_KEYS[style];
+        const name = named
+            ? getTranslation(named[0], named[1])
+            : (settings.cslName || getTranslation('citation_style_custom', 'Archivo CSL propio'));
+        citationStyleSummary.textContent = `${formatTranslation(
+            'citation_style_summary',
+            'Las citas se compondrán con el estilo {style}.',
+            { style: name },
+        )} `;
+    }
+
+    // A qué cita hay que volver cuando se cierren las opciones generales.
+    let citationModalReturn = null;
+
     // Deja el diálogo al día tras cargar o crear referencias sin cerrarlo.
     function refreshCitationLibrary(entries = null) {
+        syncCitationStyleSummary();
         if (Array.isArray(entries)) {
             citationEntries = entries;
         } else {
@@ -10360,11 +10392,26 @@ window.onload = async () => {
             toggleCitationModal(false);
         });
     }
+    /*
+      Las opciones de la bibliografía se abren desde el cuadro de la cita, así
+      que al cerrarlas —guardando o no— se vuelve a él: quien fue a elegir el
+      estilo o a cargar la biblioteca seguía a medias de insertar una cita, y
+      dejarlo en el editor le obligaría a empezar otra vez.
+    */
+    function openBibliographySettingsFromCitation() {
+        citationModalReturn = {
+            editElement: editingCitationElement,
+            hadRange: Boolean(editingCitationRange),
+        };
+        toggleCitationModal(false);
+        toggleLatexSettingsModal(true, { tab: 'bibliography' });
+    }
+
     if (citationOpenSettingsBtn) {
-        citationOpenSettingsBtn.addEventListener('click', () => {
-            toggleCitationModal(false);
-            toggleLatexSettingsModal(true, { tab: 'bibliography' });
-        });
+        citationOpenSettingsBtn.addEventListener('click', openBibliographySettingsFromCitation);
+    }
+    if (citationOpenStyleBtn) {
+        citationOpenStyleBtn.addEventListener('click', openBibliographySettingsFromCitation);
     }
     if (citationAddReferenceBtn) {
         citationAddReferenceBtn.setAttribute('aria-controls', 'bibliography-article-form');
@@ -11983,6 +12030,20 @@ window.onload = async () => {
     function toggleLatexSettingsModal(show, { tab = 'document' } = {}) {
         if (!latexSettingsOverlay) return;
         latexSettingsOverlay.style.display = show ? 'flex' : 'none';
+        if (!show && citationModalReturn) {
+            const vuelta = citationModalReturn;
+            citationModalReturn = null;
+            /*
+              El sitio de la cita se busca otra vez en vez de reutilizar el que
+              se guardó: al declarar la bibliografía, el bloque de metadatos
+              crece y todo lo que hay debajo se desplaza.
+            */
+            toggleCitationModal(true, {
+                editElement: vuelta.editElement,
+                markdownRange: vuelta.hadRange ? markdownCitationAtSelection() : null,
+            });
+            return;
+        }
         if (show) {
             const tablist = document.getElementById('doc-settings-tablist');
             selectSettingsTab = setupSettingsTabs(tablist) || selectSettingsTab;

@@ -897,8 +897,17 @@
                 </div>
             </div>
             <div class="mt-4">
-                <button type="button" id="citation-add-reference-btn" class="inline-link-btn" data-i18n-key="bibliography_add_reference">Añadir referencia…</button>
+                <button type="button" id="citation-add-reference-btn" class="inline-link-btn" data-i18n-key="citation_add_reference">Añadir referencia manualmente</button>
                 <div id="citation-reference-slot" class="mt-3"></div>
+                <!--
+                  El estilo, el título de la bibliografía y su nivel no son de
+                  esta cita sino de todo el documento, así que se dicen aquí con
+                  el camino para cambiarlos, en vez de dejar que se busquen.
+                -->
+                <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                    <span id="citation-style-summary"></span>
+                    <button type="button" id="citation-open-style-btn" class="inline-link-btn" data-i18n-key="citation_open_style">Opciones de la bibliografía…</button>
+                </p>
             </div>
             <div class="mt-6 flex justify-end gap-3">
                 <button id="citation-cancel-btn" type="button" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
@@ -1008,7 +1017,7 @@
                                 <div>
                                     <label for="bibliography-article-key" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_article_key">Clave de cita</label>
                                     <input type="text" id="bibliography-article-key" maxlength="100" autocomplete="off" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" placeholder="garcia2026">
-                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="bibliography_article_key_hint">Si la dejas vacía, se genera una que no se repita.</p>
+                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="bibliography_article_key_hint">Si la dejas vacía, se generará una automáticamente</p>
                                 </div>
                                 <div>
                                     <label for="bibliography-article-year" class="block text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-key="bibliography_article_year">Año *</label>

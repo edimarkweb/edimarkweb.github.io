@@ -2005,6 +2005,46 @@ test('amplía la bibliografía con distintos tipos de referencia desde la interf
   assert.equal(await page.locator('#citation-results input[value="deharo2026libro"]').count(), 1);
 });
 
+test('las opciones de la bibliografía devuelven al cuadro de la cita', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#markdown-input').fill('# Trabajo\n\nSegún los datos.\n');
+  await page.locator('#citation-btn').click();
+  await page.locator('#citation-modal-overlay').waitFor({ state: 'visible' });
+
+  // Ir a elegir el estilo y volver con Cancelar.
+  await page.locator('#citation-open-style-btn').click();
+  await page.locator('#latex-settings-modal-overlay').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#citation-modal-overlay').isHidden(), true);
+  await page.locator('#latex-settings-cancel-btn').click();
+  await page.locator('#citation-modal-overlay').waitFor({ state: 'visible' });
+
+  // Y volver guardando, con lo elegido ya aplicado al cuadro de la cita.
+  await page.locator('#citation-open-style-btn').click();
+  await page.locator('#latex-settings-modal-overlay').waitFor({ state: 'visible' });
+  await page.locator('#doc-settings-tab-bibliography').click();
+  await page.locator('#bibliography-example-btn').click();
+  await page.locator('#citation-style-select').selectOption('ieee');
+  await page.locator('#latex-settings-save-btn').click();
+  await page.locator('#citation-modal-overlay').waitFor({ state: 'visible' });
+  assert.match(await page.locator('#citation-style-summary').textContent(), /IEEE/);
+  assert.equal(await page.locator('#citation-results input[value="mayer2009multimedia"]').count(), 1);
+
+  // Desde el aviso de que no hay bibliografía, el camino es el mismo.
+  await page.locator('#citation-cancel-btn').click();
+  await page.locator('#citation-btn').click();
+  await page.locator('#citation-results input[value="mayer2009multimedia"]').check();
+  await page.locator('#citation-insert-btn').click();
+  assert.match(await page.locator('#markdown-input').inputValue(), /\[@mayer2009multimedia\]/);
+
+  // Y al cerrar las opciones abiertas desde el menú no reaparece el cuadro.
+  await page.locator('#settings-menu-btn').click();
+  await page.locator('#latex-settings-btn').click();
+  await page.locator('#latex-settings-cancel-btn').click();
+  assert.equal(await page.locator('#citation-modal-overlay').isHidden(), true);
+});
+
 test('crea una referencia sin salir del diálogo de citas', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
@@ -2012,6 +2052,10 @@ test('crea una referencia sin salir del diálogo de citas', async (t) => {
   // Sin bibliografía cargada el diálogo ya ofrece escribir la referencia a mano.
   await page.locator('#citation-btn').click();
   assert.equal(await page.locator('#citation-library-empty').isVisible(), true);
+
+  // Y dice con qué estilo se compondrán las citas, con el camino para cambiarlo.
+  assert.match(await page.locator('#citation-style-summary').textContent(), /APA 7/);
+  assert.equal(await page.locator('#citation-open-style-btn').isVisible(), true);
   await page.locator('#citation-add-reference-btn').click();
   // Sin clave: la compone el programa con el apellido, el año y el título.
   await page.locator('#bibliography-article-year').fill('2026');
