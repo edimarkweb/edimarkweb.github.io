@@ -17,6 +17,7 @@
     "test:profiles": "node --test test/format-profiles.test.mjs",
     "test:platform": "node --test test/platform-api.test.mjs",
     "test:updater": "node --test test/desktop-updater.test.mjs",
+    "pretest:browser": "npm run build:desktop",
     "test:browser": "node --test --test-concurrency=1 test/browser.test.mjs",
     "test:export": "node --test --test-concurrency=1 test/epub-export.test.mjs",
     "test:all": "npm run test && npm run test:assets && npm run test:format && npm run test:office && npm run test:bibliography && npm run test:profiles && npm run test:platform && npm run test:updater && npm run test:export"

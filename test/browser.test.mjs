@@ -41,6 +41,14 @@ const mimeTypes = new Map([
   ['.png', 'image/png'],
 ]);
 
+// script.js abre el editor en vendor/edicuatex/ cuando corre como aplicación
+// nativa. Esa copia no está en el repositorio: EdiCuaTeX es una dependencia de
+// npm y `npm run build:desktop` la lleva a dist/ aplicándole los retoques de
+// integración, así que es de allí de donde hay que servirla. De paso, la prueba
+// comprueba también que esos retoques se aplicaron.
+const EDICUATEX_RUTA = 'vendor/edicuatex/';
+const edicuatexRoot = join(repoRoot, 'dist', 'vendor', 'edicuatex');
+
 let browser;
 let server;
 let appUrl;
@@ -51,8 +59,15 @@ function startStaticServer() {
       try {
         const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
         const relativePath = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
-        const filePath = resolve(repoRoot, relativePath);
-        if (filePath !== repoRoot && !filePath.startsWith(`${repoRoot}${sep}`)) {
+        // La copia de EdiCuaTeX que usa el escritorio no está en el repositorio:
+        // es una dependencia de npm y `scripts/build-desktop.mjs` la lleva a
+        // dist/vendor/edicuatex al construir. Aquí se sirve desde donde está,
+        // para que la ruta que abre la aplicación nativa exista igual que allí.
+        const filePath = relativePath.startsWith(EDICUATEX_RUTA)
+          ? resolve(edicuatexRoot, relativePath.slice(EDICUATEX_RUTA.length))
+          : resolve(repoRoot, relativePath);
+        const raiz = relativePath.startsWith(EDICUATEX_RUTA) ? edicuatexRoot : repoRoot;
+        if (filePath !== raiz && !filePath.startsWith(`${raiz}${sep}`)) {
           response.writeHead(403).end();
           return;
         }
