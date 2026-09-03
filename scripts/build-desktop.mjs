@@ -1,5 +1,7 @@
+import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 
@@ -41,7 +43,7 @@ const appFiles = [
   'zip-writer.js',
 ];
 
-const directories = ['csl', 'locales', 'vendor/edicuatex'];
+const directories = ['csl', 'locales'];
 
 const vendorFiles = new Map([
   ['node_modules/marked/lib/marked.umd.js', 'vendor/marked.umd.js'],
@@ -126,6 +128,41 @@ await cp(
   join(outputRoot, 'vendor/browser-wasi-shim'),
   { recursive: true },
 );
+
+// EdiCuaTeX llega como dependencia de npm y no como copia a mano, así que la
+// revisión que se empaqueta la fija package-lock.json. El paquete publicado no
+// trae MathJax, porque quien sirve el editor desde la web lo pide al CDN; aquí
+// no hay red que valga, de modo que se genera su copia local. Sin ella el
+// editor caería en el CDN y el escritorio dejaría de funcionar sin conexión.
+const edicuatexRoot = join(projectRoot, 'node_modules/edicuatex');
+if (!existsSync(join(edicuatexRoot, 'js/mathjax/tex-svg.js'))) {
+  execFileSync(process.execPath, [join(edicuatexRoot, 'scripts/vendor-mathjax.mjs')], { stdio: 'inherit' });
+  if (!existsSync(join(edicuatexRoot, 'js/mathjax/tex-svg.js'))) {
+    throw new Error('No se generó la copia local de MathJax para EdiCuaTeX');
+  }
+}
+const edicuatexOutput = join(outputRoot, 'vendor/edicuatex');
+// Lo que sobra en el escritorio: las dependencias del paquete, su script de
+// vendorizado y la documentación que acompaña al publicado en npm.
+const edicuatexExcluded = new Set(['node_modules', 'scripts', 'package.json', 'README.md', 'README_es.md']);
+await cp(edicuatexRoot, edicuatexOutput, {
+  recursive: true,
+  filter: source => !edicuatexExcluded.has(relative(edicuatexRoot, source).split(sep)[0]),
+});
+
+// Los dos retoques de integración se aplican sobre la copia de dist y no sobre
+// el paquete, para que actualizar EdiCuaTeX no obligue a rehacer ningún parche.
+// El tema entra por la interrogación `?mode=light|dark` que abre script.js.
+for (const [target, patch, place] of [
+  ['css/edicuatex.css', 'theme.css', 'final'],
+  ['js/edicuatex-tools.js', 'theme.js', 'principio'],
+]) {
+  const targetPath = join(edicuatexOutput, target);
+  if (!existsSync(targetPath)) throw new Error(`EdiCuaTeX ya no trae ${target}`);
+  const original = await readFile(targetPath, 'utf8');
+  const addition = await readFile(join(projectRoot, 'vendor/edicuatex-integration', patch), 'utf8');
+  await writeFile(targetPath, place === 'final' ? original + addition : `${addition}\n${original}`);
+}
 
 let indexHtml = await readFile(join(outputRoot, 'index.html'), 'utf8');
 for (const [remoteUrl, localUrl] of indexReplacements) {

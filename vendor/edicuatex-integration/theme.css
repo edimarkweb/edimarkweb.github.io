@@ -1,0 +1,74 @@
+
+/* Paleta exclusiva de la copia integrada en EdiMarkWeb Desktop. */
+html[data-edimark-theme] {
+    color-scheme: light;
+    --primary-color: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary-color: #64748b;
+    --success-color: #15803d;
+    --light-gray: #f8fafc;
+    --medium-gray: #e2e8f0;
+    --dark-gray: #475569;
+    --white: #ffffff;
+    --text-color: #1e293b;
+    --box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+html[data-edimark-theme] body {
+    background: #f1f5f9;
+}
+
+html[data-edimark-theme] .tab-btn:hover,
+html[data-edimark-theme] .tab-btn.active,
+html[data-edimark-theme] .toolbar-btn:hover,
+html[data-edimark-theme] #language-toggle:hover,
+html[data-edimark-theme] #language-toggle:focus,
+html[data-edimark-theme] .language-option:hover,
+html[data-edimark-theme] .language-option:focus,
+html[data-edimark-theme] .language-option.active {
+    background: #f1f5f9;
+}
+
+html[data-edimark-theme] .panel-title-container h2 {
+    color: var(--text-color);
+}
+
+html[data-edimark-theme="dark"] {
+    color-scheme: dark;
+    --primary-color: #60a5fa;
+    --primary-dark: #3b82f6;
+    --secondary-color: #64748b;
+    --success-color: #15803d;
+    --light-gray: #0f172a;
+    --medium-gray: #334155;
+    --dark-gray: #cbd5e1;
+    --white: #1e293b;
+    --text-color: #e2e8f0;
+    --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+html[data-edimark-theme="dark"] body {
+    background: #0f172a;
+}
+
+html[data-edimark-theme="dark"] .tab-btn:hover,
+html[data-edimark-theme="dark"] .tab-btn.active,
+html[data-edimark-theme="dark"] .toolbar-btn:hover,
+html[data-edimark-theme="dark"] #language-toggle:hover,
+html[data-edimark-theme="dark"] #language-toggle:focus,
+html[data-edimark-theme="dark"] .language-option:hover,
+html[data-edimark-theme="dark"] .language-option:focus,
+html[data-edimark-theme="dark"] .language-option.active {
+    background: #334155;
+}
+
+html[data-edimark-theme="dark"] input,
+html[data-edimark-theme="dark"] textarea,
+html[data-edimark-theme="dark"] select {
+    background-color: #0f172a;
+    color: var(--text-color);
+}
+
+html[data-edimark-theme="dark"] #ask-ai-btn {
+    background: #475569;
+}
