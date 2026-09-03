@@ -1,6 +1,6 @@
 {
   "name": "edimarkweb.github.io",
-  "version": "2.48.2",
+  "version": "2.48.3",
   "description": "> **Nota**   > Este repositorio ha sido trasladado a [edimarkweb/edimarkweb.github.io](https://github.com/edimarkweb/edimarkweb.github.io). La aplicación se publica ahora en [https://edimarkweb.github.io/](https://edimarkweb.github.io/).",
   "main": "i18n.js",
   "scripts": {
@@ -45,7 +45,7 @@
     "@tauri-apps/plugin-http": "2.5.9",
     "@tauri-apps/plugin-opener": "2.5.4",
     "codemirror": "5.65.15",
-    "edicuatex": "^1.5.4",
+    "edicuatex": "1.5.5",
     "esbuild": "0.28.2",
     "katex": "0.16.47",
     "lucide": "0.523.0",
