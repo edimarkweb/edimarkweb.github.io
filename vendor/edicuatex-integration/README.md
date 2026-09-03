@@ -19,16 +19,17 @@ web lo pide al CDN. En escritorio eso no vale, de modo que el script de
 construcción genera la copia local (`npm run vendor` de EdiCuaTeX) la primera
 vez que falta y aborta si no aparece. Son unos 18 MB, casi todo tipografías.
 
-## Por qué la CSP permite workers desde `blob:`
+## Por qué la CSP no necesita `worker-src`
 
-`src-tauri/tauri.conf.json` incluye `worker-src 'self' blob:` por MathJax 4, que
-construye el worker de su motor de voz desde una URL `blob:`. Con la CSP
-anterior el WebView lo rechazaba, y el fallo no se quedaba en la voz: abortaba
-el renderizado entero, de modo que el editor no dibujaba ninguna fórmula.
-MathJax 3 no usaba ese worker y por eso el problema aparece al actualizar.
+MathJax 4 construye desde una URL `blob:` el worker de su motor de voz, y el
+WebView lo rechazaba; el fallo no se quedaba en la voz, abortaba el renderizado
+entero y el editor no dibujaba ninguna fórmula. Durante un tiempo la CSP llevó
+`worker-src 'self' blob:` para permitirlo.
 
-Permitirlo no ensancha nada en la práctica: crear un worker exige ejecutar
-JavaScript antes, y eso lo sigue impidiendo `script-src 'self'`.
+Desde EdiCuaTeX 1.5.4 ese motor no se vendoriza y el editor no lo arranca, así
+que no hay worker que permitir y la CSP ha vuelto a ser la de antes. Si alguna
+vez vuelve a aparecer un fallo de renderizado silencioso al actualizar MathJax,
+este es el primer sitio donde mirar.
 
 ## Cambios de integración
 
