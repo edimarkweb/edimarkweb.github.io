@@ -44,7 +44,7 @@
     "@tauri-apps/plugin-http": "2.5.9",
     "@tauri-apps/plugin-opener": "2.5.4",
     "codemirror": "5.65.15",
-    "edicuatex": "^1.5.1",
+    "edicuatex": "^1.5.2",
     "esbuild": "0.28.2",
     "katex": "0.16.47",
     "lucide": "0.523.0",
