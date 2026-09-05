@@ -4604,7 +4604,9 @@ function schedulePreviewBibliography(container) {
 
 // --- Funciones principales ---
 function updateHtml() {
-    if (isUpdating) return;
+    // El idioma puede terminar de cargar antes de window.onload, que crea el
+    // editor. No activar isUpdating todavía: bloquearía los repintados futuros.
+    if (!markdownEditor || isUpdating) return;
     isUpdating = true;
     const fullMarkdown = markdownEditor.getValue();
     const markdownText = splitDocumentFrontMatter(fullMarkdown).body;

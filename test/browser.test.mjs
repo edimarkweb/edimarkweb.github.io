@@ -5708,3 +5708,30 @@ $$y = \sqrt{x}$$`;
   await page.waitForFunction(() => document.querySelectorAll('#html-output .katex .mathsf').length === 0);
   assert.equal(await page.locator('#html-output .katex').count(), 2);
 });
+
+
+test('una actualización temprana del idioma no bloquea el editor al arrancar', async (t) => {
+  const { context, page } = await openApp({
+    initStorage: () => {
+      document.addEventListener('DOMContentLoaded', () => {
+        window.__earlyPreviewCheck = {
+          editorMissing: typeof markdownEditor === 'undefined',
+          called: typeof updateHtml === 'function',
+        };
+        try {
+          updateHtml();
+          window.__earlyPreviewCheck.updating = isUpdating;
+        } catch (error) {
+          window.__earlyPreviewCheck.error = error.message;
+        }
+      }, { once: true });
+    },
+  });
+  t.after(() => context.close());
+  assert.deepEqual(await page.evaluate(() => window.__earlyPreviewCheck), {
+    editorMissing: true, called: true, updating: false,
+  });
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill('# El editor sigue funcionando');
+  await page.waitForFunction(() => document.querySelector('#html-output h1')?.textContent === 'El editor sigue funcionando');
+});
