@@ -966,7 +966,11 @@ test('la exportación descarga las imágenes de rutas relativas', async (t) => {
 
   const markdown = '# Con imagen\n\n![Diagrama](imagen-relativa.gif)\n';
   await page.evaluate(md => markdownEditor.setValue(md), markdown);
-  await page.locator('#html-output img').waitFor();
+  // El nodo aparece antes de resolver IndexedDB y, si hace falta, la URL.
+  await page.waitForFunction(() => {
+    const img = document.querySelector('#html-output img');
+    return Boolean(img && img.complete && img.naturalWidth > 0);
+  });
   assert.equal(peticiones, 1, 'la vista previa debería haber pedido la imagen una vez');
 
   // La exportación falla después (pandoc.b64 está vacío en las pruebas), pero
