@@ -3929,18 +3929,22 @@ async function persistLinkedDocumentAssets(doc, content) {
     return replacePersistedDocumentAssets(doc.id, assets);
 }
 
-async function restorePersistedDocumentAssets(doc) {
-    const records = await readPersistedDocumentAssets(doc?.id);
-    const entries = records
-        .filter(record => record && record.relativePath && record.file)
-        .map(record => ({ path: record.relativePath, file: record.file }));
-    if (!entries.length || !assetPathUtils) return 0;
+function restorePersistedDocumentAssets(doc) {
     const entry = documentAssetEntry(doc.id);
-    entry.assetIndex = assetPathUtils.buildAssetIndex(entries);
-    entry.folderName = '';
-    forgetMissingAssets(doc.id);
-    if (currentId === doc.id) updateHtml();
-    return entries.length;
+    if (!entry.restoration) {
+        entry.restoration = (async () => {
+            const records = await readPersistedDocumentAssets(doc.id);
+            const entries = records
+                .filter(record => record && record.relativePath && record.file)
+                .map(record => ({ path: record.relativePath, file: record.file }));
+            // Una carpeta elegida mientras se leía IndexedDB tiene prioridad.
+            if (!entries.length || !assetPathUtils || entry.assetIndex) return 0;
+            entry.assetIndex = assetPathUtils.buildAssetIndex(entries);
+            entry.folderName = '';
+            return entries.length;
+        })();
+    }
+    return entry.restoration;
 }
 
 function lookupAssetFile(doc, relativePath) {
@@ -3956,6 +3960,9 @@ function lookupAssetFile(doc, relativePath) {
 }
 
 async function loadAssetUrl(doc, relativePath) {
+    if (!window.EdiMarkPlatform?.isDesktop && !documentAssetEntry(doc.id).assetIndex) {
+        await restorePersistedDocumentAssets(doc);
+    }
     const file = lookupAssetFile(doc, relativePath);
     if (file) return URL.createObjectURL(file);
 
@@ -4009,32 +4016,36 @@ function whenImageSettles(img) {
     });
 }
 
-/*
-  Sustituye en la vista previa las rutas que el navegador no ha sabido cargar
-  por URL que sí entiende. Lo que ya está en la caché se aplica de inmediato,
-  sin esperar a nada, para que el documento no parpadee con cada tecla.
+/* Las imágenes relativas se montan sin src: insertarlas primero con su ruta
+   iniciaría una petición HTTP antes de recuperar la carpeta o IndexedDB. */
+function previewFragmentFromHtml(html) {
+    const fragment = fragmentFromHtml(html);
+    if (assetPathUtils) {
+        fragment.querySelectorAll('img[src]').forEach(img => {
+            const source = img.getAttribute('src');
+            if (!assetPathUtils.isRelativeAssetPath(source)) return;
+            img.dataset.edimarkSrc = source;
+            img.removeAttribute('src');
+        });
+    }
+    return fragment;
+}
 
-  Se espera a ver si la imagen carga sola antes de tocarla: en la versión web,
-  una ruta relativa se resuelve contra la dirección de la página, así que las
-  imágenes publicadas junto al sitio —el logotipo del manual, sin ir más lejos—
-  ya se ven y no hay nada que arreglar. Solo se interviene cuando fallan, que es
-  lo que ocurre siempre en la aplicación de escritorio y con los documentos
-  abiertos desde el disco.
-*/
 function applyRelativeImageSources(container, doc) {
     if (!assetPathUtils || !container || !doc) return;
     const token = ++previewAssetToken;
     const entry = documentAssetEntry(doc.id);
     const candidates = [];
 
-    container.querySelectorAll('img[src]').forEach(img => {
-        const original = img.getAttribute('src') || '';
+    container.querySelectorAll('img[src], img[data-edimark-src]').forEach(img => {
+        const original = img.dataset.edimarkSrc || img.getAttribute('src') || '';
         if (!assetPathUtils.isRelativeAssetPath(original)) return;
         img.dataset.edimarkSrc = original;
         const key = assetPathUtils.normalizeRelativePath(original);
         const cached = entry.urls.get(key);
         if (cached) {
             img.setAttribute('src', cached);
+            img.classList.remove('edimark-missing-asset');
             return;
         }
         candidates.push({ img, original });
@@ -4045,20 +4056,24 @@ function applyRelativeImageSources(container, doc) {
         return;
     }
 
-    Promise.all(candidates.map(({ img, original }) => whenImageSettles(img)
-        .then(loaded => {
-            if (loaded || token !== previewAssetToken || !img.isConnected) return null;
-            return assetUrlFor(doc, original).then(url => {
-                if (token !== previewAssetToken || !img.isConnected) return null;
-                if (url) img.setAttribute('src', url);
-                else img.classList.add('edimark-missing-asset');
-                return null;
-            });
-        })))
-        .then(() => {
-            if (token !== previewAssetToken) return;
-            updateMissingAssetsNotice(container, doc);
-        });
+    Promise.all(candidates.map(async ({ img, original }) => {
+        const url = await assetUrlFor(doc, original);
+        if (token !== previewAssetToken || !img.isConnected) return;
+        if (url) {
+            img.setAttribute('src', url);
+            img.classList.remove('edimark-missing-asset');
+            return;
+        }
+        // Si no hay archivo local, aún puede ser una imagen del propio sitio,
+        // como el logotipo del manual. Solo entonces se prueba su URL relativa.
+        img.setAttribute('src', original);
+        const loaded = await whenImageSettles(img);
+        if (token !== previewAssetToken || !img.isConnected) return;
+        img.classList.toggle('edimark-missing-asset', !loaded);
+    })).then(() => {
+        if (token !== previewAssetToken) return;
+        updateMissingAssetsNotice(container, doc);
+    });
 }
 
 /*
@@ -4620,7 +4635,7 @@ function updateHtml() {
     if (window.marked) {
         const parsedHtml = marked.parse(sanitizedText);
         const restoredHtml = restoreMathSegments(parsedHtml, mathSegments);
-        htmlOutput.innerHTML = restoredHtml;
+        htmlOutput.replaceChildren(previewFragmentFromHtml(restoredHtml));
         fitWidePreformattedBlocks(htmlOutput);
 
         // Las rutas relativas se resuelven sobre el DOM ya montado; el HTML
@@ -5102,7 +5117,7 @@ function insertMarkdownIntoPreview(markdown, { inline = false, repaint = false }
     range.deleteContents();
     if (inline) {
         const parseInline = typeof marked.parseInline === 'function' ? marked.parseInline : marked.parse;
-        const fragment = fragmentFromHtml(parseInline.call(marked, markdown));
+        const fragment = previewFragmentFromHtml(parseInline.call(marked, markdown));
         const last = fragment.lastChild;
         range.insertNode(fragment);
         if (last) {
@@ -5113,7 +5128,7 @@ function insertMarkdownIntoPreview(markdown, { inline = false, repaint = false }
             selection.addRange(after);
         }
     } else {
-        const fragment = fragmentFromHtml(marked.parse(markdown));
+        const fragment = previewFragmentFromHtml(marked.parse(markdown));
         const anchor = topLevelPreviewBlock(range.startContainer);
         if (anchor) anchor.after(fragment);
         else container.appendChild(fragment);
@@ -5923,8 +5938,8 @@ async function readApplicationAsset(relativePath) {
 async function collectLinkedDocumentAssets(doc, content) {
     const platform = window.EdiMarkPlatform;
     if (!doc || !assetPathUtils || !window.marked) return [];
-    const container = document.createElement('div');
-    container.innerHTML = marked.parse(splitDocumentFrontMatter(content).body);
+    // Analizar en un template evita descargar las imágenes solo por enumerarlas.
+    const container = fragmentFromHtml(marked.parse(splitDocumentFrontMatter(content).body));
     const relativePaths = new Set();
     container.querySelectorAll('img[src]').forEach(img => {
         const original = img.getAttribute('src') || '';
@@ -9842,7 +9857,7 @@ window.onload = async () => {
                 onNotification: notifyUser,
             });
             const htmlOutput = document.getElementById('html-output');
-            htmlOutput.innerHTML = citedHtml;
+            htmlOutput.replaceChildren(previewFragmentFromHtml(citedHtml));
             previewChanged = true;
             fitWidePreformattedBlocks(htmlOutput);
             applyRelativeImageSources(htmlOutput, docs.find(doc => doc.id === currentId));
@@ -13294,7 +13309,7 @@ window.onload = async () => {
         if (!htmlOutputEl) return;
         const editorHtml = htmlEditor.getValue();
         if (htmlOutputEl.innerHTML !== editorHtml) {
-          htmlOutputEl.innerHTML = editorHtml;
+          htmlOutputEl.replaceChildren(previewFragmentFromHtml(editorHtml));
           applyRelativeImageSources(htmlOutputEl, docs.find(d => d.id === currentId));
         }
         if (!shouldSyncMarkdown) return;

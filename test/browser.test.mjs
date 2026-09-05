@@ -1549,7 +1549,7 @@ test('las imágenes vinculadas reaparecen después de recargar la página', asyn
   await page.locator('#assets-folder-input').setInputFiles(carpeta);
   await page.waitForFunction(() => {
     const img = document.querySelector('#html-output img');
-    return Boolean(img && img.getAttribute('src').startsWith('blob:'));
+    return Boolean(img && img.getAttribute('src')?.startsWith('blob:'));
   });
 
   await page.waitForFunction(async (id) => new Promise((resolve) => {
@@ -1571,6 +1571,10 @@ test('las imágenes vinculadas reaparecen después de recargar la página', asyn
   }), docId);
   await page.evaluate(() => autosaveCurrentDoc());
 
+  const imageRequests = [];
+  page.on('request', request => {
+    if (request.url().includes('/imagenes/01-grafico.png')) imageRequests.push(request.url());
+  });
   await page.reload({ waitUntil: 'domcontentloaded' });
   const restoredTab = page.locator(`.tab[data-id="${docId}"]`);
   await restoredTab.waitFor();
@@ -1578,11 +1582,14 @@ test('las imágenes vinculadas reaparecen después de recargar la página', asyn
   await page.waitForFunction(() => {
     const img = document.querySelector('#html-output img');
     return Boolean(img
-      && img.getAttribute('src').startsWith('blob:')
+      && img.getAttribute('src')?.startsWith('blob:')
       && img.complete
       && img.naturalWidth > 0);
   });
 
+  await page.evaluate(() => updateHtml());
+  await page.waitForFunction(() => document.querySelector('#html-output img')?.naturalWidth > 0);
+  assert.deepEqual(imageRequests, [], 'las imágenes guardadas no deben buscarse en el servidor');
   assert.equal(await page.locator('#markdown-input').inputValue(), '![Gráfico](imagenes/01-grafico.png)');
   assert.equal(
     await page.locator('#missing-assets-notice').evaluate(el => el.classList.contains('hidden')),
@@ -1601,7 +1608,7 @@ test('lo que sale de la vista previa conserva la ruta relativa, no el blob', asy
   await page.locator('#assets-folder-input').setInputFiles(carpeta);
   await page.waitForFunction(() => {
     const img = document.querySelector('#html-output img');
-    return Boolean(img && img.getAttribute('src').startsWith('blob:'));
+    return Boolean(img && img.getAttribute('src')?.startsWith('blob:'));
   });
 
   const exportedHtml = await page.evaluate(() => window.buildHtmlWithTex());
@@ -1659,7 +1666,7 @@ test('en web Guardar escribe el Markdown y las imágenes vinculadas en la carpet
 });
 
 test('en escritorio Guardar como copia las imágenes relativas del documento original', async (t) => {
-  const { context, page } = await openApp({
+  const { context, page, requests } = await openApp({
     initStorage: () => {
       window.__desktopAssetSaveCalls = [];
       window.__EDIMARK_TAURI__ = {
@@ -1700,6 +1707,7 @@ test('en escritorio Guardar como copia las imágenes relativas del documento ori
   await page.keyboard.press('Control+Shift+s');
   await page.waitForFunction(() => window.__desktopAssetSaveCalls.some(call => call[0] === 'write-image'));
 
+  assert.equal(requests.some(url => url.includes('/imagenes/grafico.png')), false, 'la imagen nativa se lee del disco, no del servidor');
   const calls = await page.evaluate(() => window.__desktopAssetSaveCalls);
   assert.ok(calls.some(call => call[0] === 'read-image' && call[1] === '/origen/imagenes/grafico.png'));
   assert.ok(calls.some(call => call[0] === 'text'
