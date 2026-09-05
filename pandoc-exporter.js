@@ -6,6 +6,7 @@ import { pandoc } from './pandoc-wasm.js';
 import {
   MARKDOWN_READER_NO_AUTO_IDS,
   MARKDOWN_WRITER,
+  pandocWithMathFont,
   buildExportArgs,
   buildImportArgs,
   stripEpubAnchorPrefixes,
@@ -842,7 +843,10 @@ async function exportDocument({
         pandocArgs += ` --epub-cover-image=/${cover.name}`;
       }
     }
-    const resultadoBytes = await pandoc(pandocArgs, normalized, base64, extraFiles);
+    const resultadoBytes = await pandocWithMathFont(
+      (args, input) => pandoc(args, input, base64, extraFiles),
+      pandocArgs, normalized, exportFormat?.font,
+    );
     if (iosTimer) clearTimeout(iosTimer);
 
     // Pandoc reports internal failures by leaving the output file empty rather
@@ -937,7 +941,10 @@ async function generateHtml({
     pandocArgs += citations.args;
     withLanguage = withoutPortableBibliographyMetadata(withLanguage);
     withLanguage = withBibliographySection(withLanguage, citations);
-    const resultadoBytes = await pandoc(pandocArgs, withLanguage, base64, citations.files);
+    const resultadoBytes = await pandocWithMathFont(
+      (args, input) => pandoc(args, input, base64, citations.files),
+      pandocArgs, withLanguage, standalone ? resolvedDocumentFormat(normalized)?.font : '',
+    );
     if (!resultadoBytes || resultadoBytes.length === 0) {
       throw new Error('pandoc_empty_output');
     }
@@ -1031,7 +1038,10 @@ async function generateLatex({
     pandocArgs += citations.args;
     normalized = withoutPortableBibliographyMetadata(normalized);
     normalized = withBibliographySection(normalized, citations);
-    const resultadoBytes = await pandoc(pandocArgs, normalized, base64, citations.files);
+    const resultadoBytes = await pandocWithMathFont(
+      (args, input) => pandoc(args, input, base64, citations.files),
+      pandocArgs, normalized, resolvedDocumentFormat(normalized)?.font,
+    );
     if (!resultadoBytes || resultadoBytes.length === 0) {
       throw new Error('pandoc_empty_output');
     }

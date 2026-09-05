@@ -217,7 +217,7 @@ test('una tipografía suelta va como mainfont, que solo resuelven XeLaTeX y LuaL
     documentFormat.toLatex({ font: 'Garamond' }).entries.flatMap(e => e.lines),
     ['mainfont: "Garamond"'],
   );
-  assert.deepEqual(documentFormat.toLatex({ font: 'serif' }).preamble, ['\\usepackage{newtxtext}']);
+  assert.deepEqual(documentFormat.toLatex({ font: 'serif' }).preamble, ['\\usepackage{newtxtext}', '\\AtBeginDocument{\\urlstyle{same}}']);
 });
 
 test('DOCX y ODT reciben nombres de fuente reales y cuánto escalar los encabezados', () => {

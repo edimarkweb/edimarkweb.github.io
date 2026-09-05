@@ -2523,3 +2523,6 @@ code {
     font-size: 0.75rem;
     line-height: 1.4;
 }
+
+/* Links follow the document font, including in the printed preview. */
+#html-output a { font-family: inherit; }

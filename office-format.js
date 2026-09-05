@@ -199,6 +199,19 @@ export function applyDocxStyles(stylesXml, styles) {
   updated = docxHeadingSizes(updated, styles.headingScale);
   updated = docxHeadingPageBreak(updated, styles.pageBreakBeforeH1);
   updated = docxCodeAlignment(updated, styles);
+  if (styles.fontName) {
+    const font = escapeXmlAttribute(styles.fontName);
+    updated = updated.replace(
+      /<w:style\b[^>]*w:styleId="(?:Hyperlink|FollowedHyperlink)"[\s\S]*?<\/w:style>/g,
+      style => {
+        const fonts = `<w:rFonts w:ascii="${font}" w:hAnsi="${font}" w:eastAsia="${font}" w:cs="${font}" />`;
+        const clean = style.replace(/<w:rFonts\b[^>]*\/>/g, '');
+        if (/<w:rPr>/.test(clean)) return clean.replace('<w:rPr>', `<w:rPr>${fonts}`);
+        if (/<w:rPr\s*\/>/.test(clean)) return clean.replace(/<w:rPr\s*\/>/, `<w:rPr>${fonts}</w:rPr>`);
+        return clean.replace('</w:style>', `<w:rPr>${fonts}</w:rPr></w:style>`);
+      },
+    );
+  }
   return updated;
 }
 
@@ -395,6 +408,21 @@ export function applyOdtStyles(stylesXml, styles) {
   }
 
   if (styles.fontName) {
+    // Character styles need their own font: the default text style can
+    // otherwise take precedence over the surrounding paragraph in LibreOffice.
+    const linkFont = escapeXmlAttribute(styles.fontName);
+    updated = updated.replace(
+      /<style:style\b[^>]*style:name="(?:Internet_20_link|Visited_20_Internet_20_Link)"[^>]*>[\s\S]*?<\/style:style>/g,
+      style => {
+        const attrs = ['style:font-name', 'style:font-name-asian', 'style:font-name-complex']
+          .map(name => `${name}="${linkFont}"`).join(' ');
+        const clean = style.replace(/\s(?:style:font-name(?:-asian|-complex)?|fo:font-family)="[^"]*"/g, '');
+        if (/<style:text-properties\b/.test(clean)) {
+          return clean.replace('<style:text-properties', `<style:text-properties ${attrs}`);
+        }
+        return clean.replace('</style:style>', `<style:text-properties ${attrs} /></style:style>`);
+      },
+    );
     // «Heading» declara su propia tipografía, así que no hereda la de Standard.
     const font = escapeXmlAttribute(styles.fontName);
     updated = updated.replace(

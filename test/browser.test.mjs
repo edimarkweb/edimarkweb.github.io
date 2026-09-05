@@ -5677,3 +5677,34 @@ test('la impresión lleva consigo los márgenes y el papel del documento', async
     orientation: 'portrait',
   });
 });
+
+
+test('sin serifa se aplica a enlaces y fórmulas y conserva el TeX al copiar y cambiar de fuente', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.locator('#new-tab-btn').click();
+  const body = String.raw`Texto [enlace](https://example.org) y $x^2 + \frac{a}{b} + \mathbb{R}$.
+
+$$y = \sqrt{x}$$`;
+  await page.locator('#markdown-input').fill('---\nfont: sans\n---\n\n' + body);
+  await page.waitForFunction(() => document.querySelectorAll('#html-output .katex .mathsf').length > 0);
+  const fonts = await page.locator('#html-output').evaluate(el => ({
+    body: getComputedStyle(el).fontFamily,
+    link: getComputedStyle(el.querySelector('a')).fontFamily,
+    math: getComputedStyle(el.querySelector('.mathsf')).fontFamily,
+    original: [...el.querySelectorAll('annotation')].map(n => n.textContent),
+  }));
+  assert.equal(fonts.link, fonts.body);
+  assert.match(fonts.math, /KaTeX_SansSerif/);
+  assert.ok(fonts.original.every(tex => !tex.includes('\\mathsf')));
+  assert.equal(await page.locator('#html-output .mathbb').count(), 1);
+  const copied = await page.evaluate(() => buildHtmlWithTex());
+  assert.ok(!copied.includes('\\mathsf'));
+  assert.ok(copied.includes('\\mathbb{R}'));
+  await page.emulateMedia({ media: 'print' });
+  assert.match(await page.locator('#html-output .mathsf').first().evaluate(el => getComputedStyle(el).fontFamily), /KaTeX_SansSerif/);
+  await page.emulateMedia({ media: 'screen' });
+  await page.locator('#markdown-input').fill('---\nfont: serif\n---\n\n' + body);
+  await page.waitForFunction(() => document.querySelectorAll('#html-output .katex .mathsf').length === 0);
+  assert.equal(await page.locator('#html-output .katex').count(), 2);
+});

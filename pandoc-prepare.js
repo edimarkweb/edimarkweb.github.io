@@ -50,6 +50,28 @@ export const MARKDOWN_WRITER = [
   '-smart',
 ].join('');
 
+/* Apply the document font only to parsed formula nodes. The JSON pass keeps
+   code, escaped dollars, metadata and explicit mathematical alphabets intact.
+   This WASM build has no Lua engine, so filters cannot do this in one pass. */
+export async function pandocWithMathFont(convert, args, markdown, font) {
+  if (font !== 'sans') return convert(args, markdown);
+  const reader = args.match(/(?:^|\s)-f\s+(\S+)/);
+  if (!reader) throw new Error('pandoc_missing_reader');
+  const bytes = await convert(`-f ${reader[1]} -t json`, markdown);
+  if (!bytes?.length) throw new Error('pandoc_empty_output');
+  const ast = JSON.parse(new TextDecoder().decode(bytes));
+  function visit(node) {
+    if (!node || typeof node !== 'object') return;
+    if (node.t === 'Math' && Array.isArray(node.c)) {
+      node.c[1] = `\\mathsf{${node.c[1].trim()}\n}`;
+      return;
+    }
+    Object.values(node).forEach(visit);
+  }
+  visit(ast);
+  return convert(args.replace(/(^|\s)-f\s+\S+/, '$1-f json'), JSON.stringify(ast));
+}
+
 /*
   Kept here so tests exercise the same command line the app sends to Pandoc.
 

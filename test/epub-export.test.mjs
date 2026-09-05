@@ -16,6 +16,8 @@ import { runPandoc, readZipEntries } from './helpers/pandoc-runner.mjs';
 import bibliographyModel from '../bibliography.js';
 import {
   MARKDOWN_READER_NO_AUTO_IDS,
+  pandocWithMathFont,
+  applyOfficeFormat,
   buildExportArgs,
   ensureEpubMetadata,
   collectRemoteImageUrls,
@@ -921,4 +923,63 @@ test('citeproc compone los siete tipos de referencia creados desde la interfaz',
   assert.match(htmlText, /Universidad\s+Abierta/);
   assert.match(htmlText, /Congreso\s+Educativo/);
   assert.doesNotMatch(htmlText, /@interfaz/);
+});
+
+
+test('sans llega a las fórmulas de todas las exportaciones sin tocar el código ni los alfabetos explícitos', async () => {
+  const markdown = String.raw`---
+title: Prueba de fuentes
+font: sans
+---
+
+Texto [enlace](https://example.org) y $x^2 + \frac{a}{b} + \mathbb{R}$.
+
+$$
+y = \sqrt{x}
+$$
+
+Código: ${'`'}$sin tocar$${'`'}.
+
+\$5 no es una fórmula.
+`;
+  const convert = async (args, input) => {
+    const result = await runPandoc(args, input);
+    assert.ok(result.bytes.length > 0, result.stderr.join('\n'));
+    return result.bytes;
+  };
+  for (const format of ['html', 'latex', 'docx', 'odt', 'epub3']) {
+    const args = `-f ${MARKDOWN_READER_NO_AUTO_IDS} -t ${format}`
+      + (['odt', 'epub3'].includes(format) ? ' --mathml' : '')
+      + (format === 'html' ? ' --mathjax' : '');
+    let bytes = await pandocWithMathFont(convert, args, markdown, 'sans');
+    assert.ok(bytes.length > 0);
+    if (['docx', 'odt'].includes(format)) {
+      bytes = await applyOfficeFormat(bytes, { fontName: 'Arial' }, format);
+    }
+    const text = new TextDecoder().decode(bytes);
+    if (format === 'html' || format === 'latex') {
+      assert.ok(text.includes('\\mathsf{'), text);
+      assert.ok(text.includes('\\mathbb{R}'), text);
+      assert.ok(text.includes(format === 'html' ? '$sin tocar$' : String.raw`\texttt{\$sin\ tocar\$}`), text);
+    } else {
+      const entries = readZipEntries(bytes);
+      if (format === 'docx') {
+        const xml = new TextDecoder().decode(entries.get('word/document.xml'));
+        assert.match(xml, /m:scr m:val="sans-serif"/);
+        assert.match(xml, /m:scr m:val="double-struck"/);
+        const styles = new TextDecoder().decode(entries.get('word/styles.xml'));
+        assert.match(styles, /w:styleId="Hyperlink"[\s\S]*?w:rFonts w:ascii="Arial"/);
+      } else {
+        const formulas = [...entries].filter(([name]) => /(?:Formula-.*content\.xml|\.xhtml)$/.test(name))
+          .map(([, value]) => new TextDecoder().decode(value)).join('\n');
+        assert.match(formulas, /mathvariant="sans-serif"/);
+        assert.match(formulas, /mathvariant="double-struck"|ℝ/);
+        assert.match(formulas, /𝗑|mathvariant="sans-serif">x/);
+        if (format === 'odt') {
+          const styles = new TextDecoder().decode(entries.get('styles.xml'));
+          assert.match(styles, /style:name="Internet_20_link"[\s\S]*?style:font-name="Arial"/);
+        }
+      }
+    }
+  }
 });

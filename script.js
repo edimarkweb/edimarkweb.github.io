@@ -561,6 +561,33 @@ function parseMathSegmentInfo(segment) {
     return null;
 }
 
+// Keep the source annotation unchanged: copying or editing a formula must
+// never write the presentation-only mathsf wrapper back into the Markdown.
+function applyPreviewMathFont(container) {
+    const api = window.EdiMarkDocumentFormat;
+    if (!api || !window.katex || !container) return;
+    const { frontMatter } = splitDocumentFrontMatter(markdownEditor.getValue());
+    const format = api.resolveDocumentFormat(
+        (window.__edimarkLatexSettings || {}).documentFormat || {},
+        api.readFromFrontMatter(frontMatter),
+    );
+    const font = format.font === 'sans' ? 'sans' : 'serif';
+    container.querySelectorAll('.katex').forEach(node => {
+        if ((node.dataset.edimarkMathFont || 'serif') === font) return;
+        const tex = node.querySelector('annotation[encoding="application/x-tex"]')?.textContent;
+        if (tex === undefined) return;
+        const holder = document.createElement('span');
+        window.katex.render(font === 'sans' ? `\\mathsf{${tex.trim()}\n}` : tex, holder, {
+            displayMode: Boolean(node.closest('.katex-display')), throwOnError: false,
+        });
+        const rendered = holder.querySelector('.katex');
+        if (!rendered) return;
+        node.innerHTML = rendered.innerHTML;
+        node.querySelector('annotation[encoding="application/x-tex"]').textContent = tex;
+        node.dataset.edimarkMathFont = font;
+    });
+}
+
 function annotateRenderedMath(container, mathSegments) {
     if (!container || typeof container.querySelectorAll !== 'function') return;
     const displayQueue = [];
@@ -4636,6 +4663,7 @@ function updateHtml() {
                 ], throwOnError: false
             });
             annotateRenderedMath(htmlOutput, mathSegments);
+            applyPreviewMathFont(htmlOutput);
         }
     } catch (error) { console.warn("KaTeX no está listo.", error); }
     
@@ -5345,6 +5373,7 @@ function renderMathModalPreview() {
     }
     try {
         window.katex.render(tex, previewEl, { displayMode, throwOnError: true });
+        applyPreviewMathFont(previewEl);
     } catch (error) {
         // KaTeX sabe señalar en rojo lo que no entiende; el motivo va debajo.
         try {
@@ -9827,6 +9856,7 @@ window.onload = async () => {
                     throwOnError: false,
                 });
             }
+            applyPreviewMathFont(htmlOutput);
             refreshDocumentToc();
             schedulePageBreaks();
             await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
@@ -11946,6 +11976,7 @@ window.onload = async () => {
         Object.entries(styles).forEach(([property, value]) => {
             preview.style.setProperty(property, value);
         });
+        applyPreviewMathFont(preview);
         // El papel acaba de cambiar de ancho: el reparto de los paneles y la
         // lupa ajustada se hacen con esa medida, así que se rehacen aquí.
         ajustarRepartoDePaneles();

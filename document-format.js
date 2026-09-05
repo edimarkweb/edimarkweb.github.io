@@ -327,6 +327,7 @@
 
     const rules = [];
     if (body.length) rules.push(`body {\n  ${body.join('\n  ')}\n}`);
+    if (resolved.font) rules.push('a { font-family: inherit; }');
     // El tamaño de la página lo entienden la impresión del navegador y los
     // lectores de EPUB que paginan.
     if (resolved.paperSize) {
@@ -409,6 +410,7 @@
         entries.push({ key: 'mainfont', lines: [`mainfont: "${resolved.font}"`] });
       }
     }
+    if (resolved.font) preamble.push('\\AtBeginDocument{\\urlstyle{same}}');
     // En LaTeX el texto ya sale justificado: lo que hay que decir es lo otro.
     if (resolved.align === 'left') preamble.push('\\usepackage[document]{ragged2e}');
     if (resolved.align === 'right') {
