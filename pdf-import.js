@@ -13,7 +13,7 @@ export async function importPdf(file, translate) {
       <form method="dialog" class="pdf-import-content">
         <h2 id="pdf-import-title"></h2>
         <p class="pdf-import-filename"></p>
-        <p id="pdf-import-info"></p>
+        <p id="pdf-import-info" class="pdf-import-info" role="status"></p>
         <p class="pdf-import-note" id="pdf-import-note"></p>
         <div class="pdf-import-options">
           <label><input id="pdf-remove-headers" type="checkbox" checked> <span></span></label>
@@ -131,7 +131,7 @@ export async function importPdf(file, translate) {
         }
         function ensureWorker() {
             if (worker) return worker;
-            worker = new Worker(new URL('./pdf-worker.js?v=2.49.3', import.meta.url));
+            worker = new Worker(new URL('./pdf-worker.js?v=2.49.4', import.meta.url));
             worker.onerror = () => fail('pdf_error');
             worker.onmessage = async ({ data }) => {
                 if (closed) return;

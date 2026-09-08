@@ -2589,6 +2589,16 @@ code {
 .pdf-import-content > * { flex-shrink: 0; }
 .pdf-import-content h2 { font-size: 1.3rem; font-weight: 700; }
 .pdf-import-filename { overflow-wrap: anywhere; font-weight: 600; }
+.pdf-import-info {
+  padding: 10px 12px;
+  border: 1px solid #f59e0b;
+  border-left-width: 5px;
+  border-radius: 6px;
+  color: #78350f;
+  background: #fffbeb;
+  font-weight: 650;
+}
+.pdf-import-info:empty { display: none; }
 .pdf-import-note { font-size: .9rem; }
 .pdf-import-options { display: grid; gap: 8px; }
 .pdf-import-options input[type="text"] { border: 1px solid #94a3b8; padding: 6px; border-radius: 4px; color: inherit; background: transparent; }
@@ -2616,4 +2626,5 @@ code {
 }
 .dark #pdf-import-progress { background: #334155; }
 .dark #pdf-import-progress .pdf-import-progress-bar { background: #38bdf8; }
+.dark .pdf-import-info { border-color: #fbbf24; color: #fef3c7; background: #451a03; }
 .dark .pdf-import-dialog { background: #1e293b; color: #f1f5f9; }

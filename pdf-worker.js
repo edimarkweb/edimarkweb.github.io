@@ -5,20 +5,26 @@ const report = (stage, done, total) => self.postMessage({ type: 'progress', stag
 
 async function initialize() {
     const base = new URL('./vendor/pdf-runtime/', self.location.href).href;
+    const packages = ['numpy', 'pillow', 'packaging'];
     const wheels = [
         'pymupdf-1.28.2-cp313-abi3-pyemscripten_2025_0_wasm32.whl',
         'pymupdf4llm-1.28.2-py3-none-any.whl',
         'tabulate-0.9.0-py3-none-any.whl',
     ];
-    const steps = wheels.length + 4;
+    const steps = packages.length + wheels.length + 3;
     let done = 0;
     const step = () => report('loading', ++done, steps);
     importScripts(base + 'pyodide.js');
     step();
     const py = await loadPyodide({ indexURL: base });
     step();
-    await py.loadPackage(['numpy', 'pillow', 'packaging']);
-    step();
+    // WebKitGTK's asset protocol can stall when first-use parallel reads from
+    // a worker. Loading these local packages one at a time avoids that Tauri
+    // race and also keeps the inactivity watchdog informed between packages.
+    for (const name of packages) {
+        await py.loadPackage(name);
+        step();
+    }
     for (const name of wheels) {
         await py.loadPackage(base + name);
         step();
@@ -37,7 +43,7 @@ for relative, line in [('helpers/utils.py', 'from pymupdf4llm.ocr.analyze_page i
         raise RuntimeError('Unexpected PDF converter version')
     path.write_text(text.replace(line, ''))
 `);
-    const response = await fetch(new URL('./pdf-import.py?v=2.49.3', self.location.href));
+    const response = await fetch(new URL('./pdf-import.py?v=2.49.4', self.location.href));
     if (!response.ok) throw new Error('pdf_load_error');
     py.runPython(await response.text());
     step();
