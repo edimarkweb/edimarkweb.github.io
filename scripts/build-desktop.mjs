@@ -28,6 +28,9 @@ const appFiles = [
   'odt-formulas.js',
   'office-format.js',
   'odt-tables.js',
+  'pdf-import.js',
+  'pdf-worker.js',
+  'pdf-import.py',
   'pandoc-exporter.js',
   'pandoc-prepare.js',
   'pandoc-wasm.js',
@@ -43,7 +46,7 @@ const appFiles = [
   'zip-writer.js',
 ];
 
-const directories = ['csl', 'locales'];
+const directories = ['csl', 'locales', 'vendor/pdf-runtime'];
 
 const vendorFiles = new Map([
   ['node_modules/marked/lib/marked.umd.js', 'vendor/marked.umd.js'],

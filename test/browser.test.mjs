@@ -38,6 +38,7 @@ const mimeTypes = new Map([
   ['.js', 'text/javascript; charset=utf-8'],
   ['.json', 'application/json; charset=utf-8'],
   ['.md', 'text/markdown; charset=utf-8'],
+  ['.wasm', 'application/wasm'],
   ['.png', 'image/png'],
 ]);
 
@@ -5746,4 +5747,46 @@ test('una actualización temprana del idioma no bloquea el editor al arrancar', 
   await page.locator('#new-tab-btn').click();
   await page.locator('#markdown-input').fill('# El editor sigue funcionando');
   await page.waitForFunction(() => document.querySelector('#html-output h1')?.textContent === 'El editor sigue funcionando');
+});
+
+test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modificar documentos', { timeout: 180000 }, async (t) => {
+  const { context, page, requests } = await openApp();
+  t.after(() => context.close());
+  const initial = await page.evaluate(() => markdownEditor.getValue());
+  const fixture = resolve(defaultRepoRoot, 'test/fixtures/pdf-import.pdf');
+  await page.locator('#import-file-input').setInputFiles(fixture);
+  await page.locator('#pdf-preview').click();
+  await page.waitForFunction(() => document.querySelector('.pdf-import-dialog').getAttribute('aria-busy') === 'false', null, { timeout: 120000 });
+  assert.equal(await page.locator('#pdf-accept').isDisabled(), false, await page.locator('#pdf-import-status').innerText());
+  const preview = page.frameLocator('#pdf-import-preview');
+  const text = await preview.locator('body').innerText();
+  assert.ok(!text.includes('REPEATED HEADER'));
+  assert.ok(!text.includes('REPEATED FOOTER'));
+  assert.ok(text.indexOf('LEFT END') < text.indexOf('RIGHT START'));
+  assert.ok(await preview.locator('table').count() >= 1);
+  assert.ok(await preview.locator('img').count() >= 1);
+  assert.equal(await page.evaluate(() => markdownEditor.getValue()), initial);
+  await page.locator('#pdf-pages').fill('99');
+  assert.equal(await page.locator('#pdf-accept').isDisabled(), true);
+  await page.locator('#pdf-preview').click();
+  await page.waitForFunction(() => document.querySelector('#pdf-import-status').textContent.includes('Intervalo'));
+  await page.locator('#pdf-pages').fill('2');
+  await page.locator('#pdf-remove-headers').uncheck();
+  await page.locator('#pdf-keep-images').uncheck();
+  await page.locator('#pdf-preview').click();
+  await page.waitForFunction(() => document.querySelector('.pdf-import-dialog').getAttribute('aria-busy') === 'false', null, { timeout: 120000 });
+  assert.equal(await page.locator('#pdf-accept').isDisabled(), false, await page.locator('#pdf-import-status').innerText());
+  assert.match(await preview.locator('body').innerText(), /REPEATED HEADER/);
+  assert.equal(await preview.locator('img').count(), 0);
+  await page.locator('#pdf-accept').click();
+  const imported = await page.evaluate(() => markdownEditor.getValue());
+  assert.match(imported, /Apples/);
+  assert.doesNotMatch(imported, /LEFT START/);
+  assert.match(imported, /\|/);
+  await page.locator('#import-file-input').setInputFiles(fixture);
+  await page.locator('#pdf-preview').click();
+  await page.locator('#pdf-cancel').click();
+  assert.equal(await page.locator('.pdf-import-dialog').count(), 0);
+  assert.equal(await page.evaluate(() => markdownEditor.getValue()), imported);
+  assert.equal(requests.some(url => /pythonhosted|pyodide.org|cdn.jsdelivr.net\/pyodide/.test(url)), false);
 });

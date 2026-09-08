@@ -314,3 +314,12 @@ Los atajos de una sola letra actúan sobre el documento, así que quedan en paus
 ## Licencia y contribuciones
 
 EdiMarkWeb es software libre bajo la [GNU Affero General Public License v3.0](LICENSE): puedes usarlo en tu aula, adaptarlo y desplegarlo en servidores propios, siempre que compartas cualquier mejora bajo la misma licencia y ofrezcas el código a quienes usen tu versión. Si detectas un problema o quieres proponer cambios, abre una incidencia en [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) o envía un pull request.
+
+
+## Importar PDF
+
+En **Importar**, elige un PDF (también puedes arrastrarlo al editor). La conversión se realiza en tu equipo, sin OCR y sin enviar el documento a un servidor. El conversor se carga al generar la primera vista previa.
+
+Puedes eliminar encabezados y pies repetidos, conservar imágenes y fórmulas detectadas como imágenes, e indicar páginas como `1-3, 5` (vacío significa todas). Las dos opciones vienen activadas. Pulsa **Generar vista previa**, revisa el resultado y después **Importar en una pestaña nueva**. Cambiar las opciones exige generar otra vista previa. Cancelar no altera los documentos abiertos.
+
+La detección de tablas, columnas y fórmulas no es infalible: puede dividir celdas o perder estructura. Las fórmulas detectadas se guardan como imágenes, no como ecuaciones editables; otras pueden quedar mal convertidas. Si desaparece texto útil, desactiva la eliminación de encabezados y pies. Los PDF de imágenes requieren OCR, que no está incluido. Se admiten archivos de hasta 50 MB y hasta 200 páginas por conversión; los PDF con contraseña deben desbloquearse antes.

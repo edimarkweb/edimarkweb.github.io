@@ -314,3 +314,12 @@ Les dreceres d'una sola lletra actuen sobre el document, així que queden en pau
 ## Llicència i contribucions
 
 EdiMarkWeb és programari lliure sota la [GNU Affero General Public License v3.0](LICENSE): pots fer-lo servir a l'aula, adaptar-lo i desplegar-lo en servidors propis, sempre que comparteixis qualsevol millora sota la mateixa llicència i ofereixis el codi a qui faci servir la teva versió. Si detectes un problema o vols proposar canvis, obre una incidència a [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) o envia un pull request.
+
+
+## Importar PDF
+
+Tria un PDF a **Importar**, o arrossega’l a l’editor. La conversió es fa al teu equip, sense OCR ni enviar el document a un servidor. El convertidor es carrega en generar la primera vista prèvia.
+
+Pots eliminar capçaleres i peus repetits, conservar imatges i fórmules detectades com a imatges, i indicar pàgines com `1-3, 5` (buit significa totes). Les dues opcions estan activades inicialment. Prem **Generar vista prèvia**, revisa el resultat i després **Importar en una pestanya nova**. Canviar les opcions requereix una nova vista prèvia. Cancel·lar no altera els documents oberts.
+
+La detecció de taules, columnes i fórmules pot dividir cel·les o perdre estructura. Les fórmules detectades són imatges, no equacions editables; altres es poden convertir malament. Desactiva l’eliminació de capçaleres i peus si desapareix text útil. Els PDF d’imatges necessiten OCR, que no està inclòs. Límits: 50 MB per fitxer i 200 pàgines per conversió. Cal desbloquejar abans els PDF amb contrasenya.

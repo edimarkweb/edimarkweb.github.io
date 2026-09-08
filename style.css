@@ -2526,3 +2526,29 @@ code {
 
 /* Links follow the document font, including in the printed preview. */
 #html-output a { font-family: inherit; }
+
+/* PDF import: isolated preview, keyboard-accessible native modal. */
+.pdf-import-dialog {
+  width: min(960px, 94vw);
+  height: min(850px, 92vh);
+  max-height: 92vh;
+  border: 1px solid #94a3b8;
+  border-radius: 12px;
+  padding: 20px;
+  color: #1e293b;
+  background: #fff;
+}
+.pdf-import-dialog::backdrop { background: rgb(15 23 42 / 65%); }
+.pdf-import-content { display: flex; flex-direction: column; gap: 12px; height: 100%; }
+.pdf-import-content > * { flex-shrink: 0; }
+.pdf-import-content h2 { font-size: 1.3rem; font-weight: 700; }
+.pdf-import-filename { overflow-wrap: anywhere; font-weight: 600; }
+.pdf-import-note { font-size: .9rem; }
+.pdf-import-options { display: grid; gap: 8px; }
+.pdf-import-options input[type="text"] { border: 1px solid #94a3b8; padding: 6px; border-radius: 4px; color: inherit; background: transparent; }
+#pdf-import-preview { width: 100%; flex: 1 1 auto; min-height: 100px; height: 20vh; border: 1px solid #94a3b8; background: white; }
+.pdf-import-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.pdf-import-actions button { padding: 8px 14px; border: 1px solid #64748b; border-radius: 6px; }
+.pdf-import-actions button:disabled { opacity: .45; cursor: not-allowed; }
+#pdf-accept { background: #0369a1; color: white; }
+.dark .pdf-import-dialog { background: #1e293b; color: #f1f5f9; }

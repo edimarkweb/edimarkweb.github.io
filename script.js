@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.48.4';
+const APP_VERSION = '2.49.0';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -6187,6 +6187,7 @@ function detectImportFormat(file) {
         return IMPORT_EXTENSION_MAP.get(extension);
     }
     const mime = (file.type || '').toLowerCase();
+    if (extension === 'pdf' || mime === 'application/pdf') return 'pdf';
     if (mime.includes('wordprocessingml')) return 'docx';
     if (mime.includes('opendocument')) return 'odt';
     if (mime.includes('epub')) return 'epub';
@@ -6261,6 +6262,22 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     if (!format) {
         reportStatus(getTranslation('import_file_unsupported', 'Formato no soportado para importar.'));
         return false;
+    }
+    if (format === 'pdf') {
+        try {
+            const { importPdf } = await import('./pdf-import.js?v=2.49.0');
+            const markdown = await importPdf(file, getTranslation);
+            if (markdown === null) return false;
+            const createdDoc = newDoc(getSafeDocumentName(file.name), markdown);
+            if (!createdDoc) return false;
+            updateDirtyIndicator(createdDoc.id, false);
+            reportStatus(getTranslation('import_file_success', 'Importación completada.'));
+            return true;
+        } catch (error) {
+            console.error('PDF import failed:', error);
+            reportStatus(getTranslation('pdf_error', 'No se pudo convertir el PDF.'));
+            return false;
+        }
     }
     if (!window.PandocExporter || typeof window.PandocExporter.importToMarkdown !== 'function') {
         reportStatus(getTranslation('import_file_error', 'No se pudo importar el archivo.'));
@@ -13409,7 +13426,7 @@ window.onload = async () => {
       <div class="flex flex-col items-center gap-3 text-center">
         <i data-lucide="upload" class="w-10 h-10 text-indigo-600 dark:text-indigo-400"></i>
         <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100" data-i18n-key="drop_title">Suelta aquí para abrir en una pestaña nueva</h3>
-        <p class="text-sm text-slate-700 dark:text-slate-300" data-i18n-key="drop_subtitle">Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX. También puedes soltar varios archivos o carpetas enteras.</p>
+        <p class="text-sm text-slate-700 dark:text-slate-300" data-i18n-key="drop_subtitle">Markdown (.md, .markdown) o documentos PDF, DOCX, ODT, EPUB, HTML y TEX. También puedes soltar varios archivos o carpetas enteras.</p>
       </div>
     </div>
   `;
@@ -13558,7 +13575,7 @@ window.onload = async () => {
     if (!mdFiles.length && !importable.length) {
       notifyUser(getTranslation(
         'drop_unsupported',
-        'Solo se pueden soltar archivos Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX.',
+        'Solo se pueden soltar archivos Markdown (.md, .markdown) o documentos PDF, DOCX, ODT, EPUB, HTML y TEX.',
       ));
       return;
     }
@@ -13610,7 +13627,7 @@ window.onload = async () => {
       if (!encontradas.length) {
         notifyUser(getTranslation(
           'drop_unsupported',
-          'Solo se pueden soltar archivos Markdown (.md, .markdown) o documentos DOCX, ODT, EPUB, HTML y TEX.',
+          'Solo se pueden soltar archivos Markdown (.md, .markdown) o documentos PDF, DOCX, ODT, EPUB, HTML y TEX.',
         ));
         return;
       }
