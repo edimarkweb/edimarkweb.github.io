@@ -320,7 +320,7 @@ EdiMarkWeb software librea da [GNU Affero General Public License v3.0](LICENSE) 
 
 Aukeratu PDF bat **Inportatu** aukeran, edo arrastatu editorera. Bihurketa zure gailuan egiten da, OCRrik gabe eta dokumentua zerbitzari batera bidali gabe. Bihurgailua lehen aurrebista sortzean kargatzen da.
 
-Errepikatutako goiburuak eta orri-oinak ken ditzakezu, irudiak eta detektatutako formulak irudi gisa gorde, eta `1-3, 5` bezalako orrialdeak hautatu (hutsik uzteak guztiak esan nahi du). Bi aukerak hasieran aktibatuta daude. Sakatu **Sortu aurrebista**, berrikusi emaitza eta gero **Inportatu fitxa berri batean**. Aukerak aldatzean beste aurrebista bat sortu behar da. Ezeztatzeak ez ditu irekitako dokumentuak aldatzen.
+Errepikatutako goiburuak eta orri-oinak ken ditzakezu, irudiak eta detektatutako formulak irudi gisa gorde, eta `1-3, 5` bezalako orrialdeak hautatu (hutsik uzteak guztiak esan nahi du). Bi aukerak hasieran aktibatuta daude. Sakatu **Sortu aurrebista**, berrikusi emaitza eta gero **Inportatu fitxa berri batean**. Aukerak aldatzean beste aurrebista bat sortu behar da. Ezeztatzeak ez ditu irekitako dokumentuak aldatzen. Mezuaren azpiko barra batek non doan adierazten du: lehenik bihurtzailea irekitzean eta gero orriz orri, hala dokumentu luze batean lanean jarraitzen duela ikusten da.
 
 Taulen, zutabeen eta formulen detekzioak gelaxkak zatitu edo egitura gal dezake. Detektatutako formulak irudiak dira, ez ekuazio editagarriak; beste batzuk gaizki bihur daitezke. Testu erabilgarria desagertzen bada, desaktibatu goiburuak eta orri-oinak kentzeko aukera. Irudiz osatutako PDFek OCRa behar dute; ez dago barne. Mugak: 50 MB fitxategiko eta 200 orrialde bihurketako. Desblokeatu pasahitza duten PDFak lehenik.
 

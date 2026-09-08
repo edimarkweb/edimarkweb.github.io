@@ -610,6 +610,8 @@
   "pdf_accept": "Importar en una pestaña nueva",
   "pdf_changed": "Las opciones han cambiado. Genera otra vista previa.",
   "pdf_loading": "Cargando el conversor local (unos 34 MB la primera vez)…",
+  "pdf_analysing_page": "Analizando el documento… página {page} de {total}",
+  "pdf_converting_page": "Convirtiendo PDF… página {page} de {total}",
   "pdf_converting": "Convirtiendo PDF…",
   "pdf_error": "No se pudo convertir el PDF. Comprueba el archivo y vuelve a generar la vista previa.",
   "pdf_pages_invalid": "Intervalo de páginas inválido o fuera del documento. Usa, por ejemplo, 1-3, 5.",

@@ -610,6 +610,8 @@
   "pdf_accept": "Import into a new tab",
   "pdf_changed": "Options changed. Generate another preview.",
   "pdf_loading": "Loading the local converter (about 34 MB the first time)…",
+  "pdf_analysing_page": "Analysing the document… page {page} of {total}",
+  "pdf_converting_page": "Converting PDF… page {page} of {total}",
   "pdf_converting": "Converting PDF…",
   "pdf_error": "Could not convert the PDF. Check the file and generate the preview again.",
   "pdf_pages_invalid": "Invalid page range or pages outside the document. For example: 1-3, 5.",

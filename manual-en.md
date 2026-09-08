@@ -320,7 +320,7 @@ EdiMarkWeb is free software under the [GNU Affero General Public License v3.0](L
 
 Choose a PDF in **Import**, or drag it into the editor. Conversion runs on your device, without OCR or uploading the document to a server. The converter loads when you generate the first preview.
 
-You can remove repeated headers and footers, keep images and detected formulas as images, and select pages such as `1-3, 5` (leave empty for all pages). Both options are enabled initially. Click **Generate preview**, review the result, then **Import into a new tab**. Changing options requires a new preview. Cancelling leaves open documents unchanged.
+You can remove repeated headers and footers, keep images and detected formulas as images, and select pages such as `1-3, 5` (leave empty for all pages). Both options are enabled initially. Click **Generate preview**, review the result, then **Import into a new tab**. Changing options requires a new preview. Cancelling leaves open documents unchanged. A bar under the message tracks how far along it is: first while the converter opens, then page by page, so with a long document you can see it is still working.
 
 Table, column and formula detection can split cells or lose structure. Detected formulas are images, not editable equations; others may convert incorrectly. Disable header/footer removal if useful text disappears. Image-only PDFs need OCR, which is not included. Limits: 50 MB per file and 200 pages per conversion. Unlock password-protected PDFs first.
 

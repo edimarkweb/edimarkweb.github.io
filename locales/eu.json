@@ -610,6 +610,8 @@
   "pdf_accept": "Inportatu fitxa berri batean",
   "pdf_changed": "Aukerak aldatu dira. Sortu beste aurrebista bat.",
   "pdf_loading": "Bihurgailu lokala kargatzen (34 MB inguru lehen aldian)…",
+  "pdf_analysing_page": "Dokumentua aztertzen… {total}(e)tik {page}. orria",
+  "pdf_converting_page": "PDFa bihurtzen… {total}(e)tik {page}. orria",
   "pdf_converting": "PDFa bihurtzen…",
   "pdf_error": "Ezin izan da PDFa bihurtu. Egiaztatu fitxategia eta sortu aurrebista berriro.",
   "pdf_pages_invalid": "Orrialde-tarte baliogabea edo dokumentutik kanpokoa. Adibidez: 1-3, 5.",

@@ -2597,4 +2597,23 @@ code {
 .pdf-import-actions button { padding: 8px 14px; border: 1px solid #64748b; border-radius: 6px; }
 .pdf-import-actions button:disabled { opacity: .45; cursor: not-allowed; }
 #pdf-accept { background: #0369a1; color: white; }
+/*
+  La barra de la importación. Con un PDF largo la conversión tarda minutos, y
+  un diálogo quieto no se distingue de uno colgado: la barra avanza por páginas
+  cuando se sabe cuántas quedan, y se mueve sola mientras se carga el conversor,
+  que es cuando todavía no hay nada que contar.
+*/
+#pdf-import-progress { width: 100%; height: 6px; border-radius: 3px; overflow: hidden; background: #e2e8f0; }
+#pdf-import-progress[hidden] { display: none; }
+#pdf-import-progress .pdf-import-progress-bar { display: block; height: 100%; width: 0; border-radius: 3px; background: #0369a1; transition: width .2s linear; }
+#pdf-import-progress[data-indeterminate="true"] .pdf-import-progress-bar { width: 35%; animation: pdf-import-sweep 1.4s ease-in-out infinite; }
+@keyframes pdf-import-sweep {
+  0% { margin-left: -35%; }
+  100% { margin-left: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #pdf-import-progress[data-indeterminate="true"] .pdf-import-progress-bar { width: 100%; animation: none; opacity: .5; }
+}
+.dark #pdf-import-progress { background: #334155; }
+.dark #pdf-import-progress .pdf-import-progress-bar { background: #38bdf8; }
 .dark .pdf-import-dialog { background: #1e293b; color: #f1f5f9; }

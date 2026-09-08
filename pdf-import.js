@@ -21,6 +21,7 @@ export async function importPdf(file, translate) {
           <input id="pdf-pages" type="text" placeholder="1-3, 5" autocomplete="off" aria-describedby="pdf-import-note">
         </div>
         <p id="pdf-import-status" role="status" aria-live="polite"></p>
+        <div id="pdf-import-progress" role="progressbar" aria-labelledby="pdf-import-status" hidden><span class="pdf-import-progress-bar"></span></div>
         <iframe id="pdf-import-preview" sandbox="" referrerpolicy="no-referrer"></iframe>
         <div class="pdf-import-actions">
           <button id="pdf-cancel" type="button"></button>
@@ -71,8 +72,41 @@ export async function importPdf(file, translate) {
             previousFocus?.focus();
             resolve(value);
         }
+        /*
+          La barra se mueve sola solo mientras no hay nada que contar —al abrir
+          el conversor y al limpiar encabezados, que recorre el documento
+          entero—; el resto del tiempo marca las páginas que lleva hechas.
+        */
+        function setProgress(stage, done, total) {
+            const bar = $('#pdf-import-progress');
+            const indeterminate = !total || !done;
+            bar.hidden = false;
+            bar.dataset.indeterminate = String(indeterminate);
+            if (indeterminate) {
+                bar.removeAttribute('aria-valuenow');
+                bar.querySelector('.pdf-import-progress-bar').style.width = '';
+            } else {
+                const percent = Math.round((done / total) * 100);
+                bar.setAttribute('aria-valuenow', String(percent));
+                bar.querySelector('.pdf-import-progress-bar').style.width = `${percent}%`;
+            }
+            // Durante la carga manda su propio mensaje, que dice cuánto ocupa.
+            if (stage === 'loading' || !done) return;
+            const key = stage === 'analysing' ? 'pdf_analysing_page' : 'pdf_converting_page';
+            $('#pdf-import-status').textContent = t(key)
+                .replaceAll('{page}', String(done))
+                .replaceAll('{total}', String(total));
+        }
+        function clearProgress() {
+            const bar = $('#pdf-import-progress');
+            bar.hidden = true;
+            bar.dataset.indeterminate = 'false';
+            bar.removeAttribute('aria-valuenow');
+            bar.querySelector('.pdf-import-progress-bar').style.width = '';
+        }
         function setBusy(value) {
             clearTimeout(watchdog);
+            if (!value) clearProgress();
             if (value) watchdog = setTimeout(() => fail('pdf_error'), 180000);
             busy = value;
             $('#pdf-preview').disabled = value;
@@ -103,12 +137,14 @@ export async function importPdf(file, translate) {
             if (file.size > 50 * 1024 * 1024) return fail('pdf_size_limit');
             setBusy(true);
             $('#pdf-import-status').textContent = t('pdf_loading');
+            setProgress('loading', 0, 0);
             try {
                 worker ||= new Worker(new URL('./pdf-worker.js?v=2.49.1', import.meta.url));
                 worker.onerror = () => fail('pdf_error');
                 worker.onmessage = async ({ data }) => {
                     if (closed) return;
-                    if (data.type === 'status') $('#pdf-import-status').textContent = t(data.key);
+                    if (data.type === 'progress') setProgress(data.stage, data.done, data.total);
+                    else if (data.type === 'status') $('#pdf-import-status').textContent = t(data.key);
                     else if (data.type === 'error') fail(data.key);
                     else if (data.type === 'result') {
                         markdown = stripUnsafeMarkup(data.result.markdown);

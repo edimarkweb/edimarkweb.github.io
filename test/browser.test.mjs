@@ -5794,17 +5794,35 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   t.after(() => context.close());
   const initial = await page.evaluate(() => markdownEditor.getValue());
   const fixture = resolve(defaultRepoRoot, 'test/fixtures/pdf-import.pdf');
+  const avance = [];
+  await page.exposeFunction('anotarAvance', paso => avance.push(paso));
+  await page.evaluate(() => {
+    new MutationObserver(() => {
+      const bar = document.querySelector('#pdf-import-progress');
+      if (!bar || bar.hidden) return;
+      window.anotarAvance(bar.getAttribute('aria-valuenow') || '');
+      window.anotarAvance(document.querySelector('#pdf-import-status')?.textContent || '');
+    }).observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+  });
   await page.locator('#import-file-input').setInputFiles(fixture);
   await page.locator('#pdf-preview').click();
   await page.waitForFunction(() => document.querySelector('.pdf-import-dialog').getAttribute('aria-busy') === 'false', null, { timeout: 120000 });
   assert.equal(await page.locator('#pdf-accept').isDisabled(), false, await page.locator('#pdf-import-status').innerText());
+  /*
+    Convertir un PDF largo lleva minutos: sin señal de avance el diálogo se
+    confunde con uno colgado, así que la barra tiene que haber contado páginas
+    y desaparecer al terminar.
+  */
+  assert.ok(avance.some(paso => /\b1 (de|of|\/) 6\b|1 de 6/.test(paso)), avance.join(' | '));
+  assert.ok(avance.includes('100'), avance.join(' | '));
+  assert.equal(await page.locator('#pdf-import-progress').isHidden(), true);
   const preview = page.frameLocator('#pdf-import-preview');
   const text = await preview.locator('body').innerText();
   assert.ok(!text.includes('REPEATED HEADER'));
   assert.ok(!text.includes('REPEATED FOOTER'));
   assert.ok(text.indexOf('LEFT END') < text.indexOf('RIGHT START'));
   /*
-    Cuatro tablas: la segunda lleva un símbolo matemático en una celda y aun así
+    Tres tablas: la segunda lleva un símbolo matemático en una celda y aun así
     debe llegar como tabla, no rasterizada junto al resto de la fórmula; la
     tercera está dibujada como la imprime un navegador —bordes de celda sin una
     sola línea vertical—, que es lo que se recibe al reimportar un PDF salido de
