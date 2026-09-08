@@ -23,7 +23,7 @@ def selected_pages(value, count):
     return sorted(result)
 
 
-def remove_running_text(doc):
+def remove_running_text(doc, progress=None):
     """Only repeated text near page edges (and isolated page numbers).
 
     Match on the entire source document, before selecting pages. Redact text
@@ -31,7 +31,8 @@ def remove_running_text(doc):
     """
     candidates = []
     occurrences = defaultdict(set)
-    for page in doc:
+    total = len(doc)
+    for number, page in enumerate(doc, 1):
         for block in page.get_text('dict')['blocks']:
             for line in block.get('lines', []):
                 text = ''.join(s['text'] for s in line['spans']).strip()
@@ -43,12 +44,18 @@ def remove_running_text(doc):
                 key = (edge, normalized)
                 occurrences[key].add(page.number)
                 candidates.append((page.number, rect, text, key))
+        if progress is not None:
+            progress('headers', number, total)
     threshold = max(2, (len(doc) + 1) // 2)
     for number, rect, text, key in candidates:
         if len(occurrences[key]) >= threshold or re.fullmatch(r'\d+|[ivxlcdm]+', text, re.I):
             doc[number].add_redact_annot(rect, fill=False)
-    for page in doc:
+    for number, page in enumerate(doc, 1):
         page.apply_redactions(images=0, graphics=0)
+        # Applying many redactions can also take a while. This message proves
+        # that the worker is alive without restarting the visible page count.
+        if progress is not None:
+            progress('heartbeat', number, total)
 
 
 def table_bands(page):
@@ -218,7 +225,7 @@ def convert_pdf(data, options, progress=None):
         report('analysing', 0, total)
         # Work on an in-memory copy, never on the user's PDF.
         if options.get('removeHeaders', True):
-            remove_running_text(source)
+            remove_running_text(source, report)
         source.select(pages)
         text_pages = sum(bool(p.get_text().strip()) for p in source)
         math_regions = 0
@@ -238,6 +245,18 @@ def convert_pdf(data, options, progress=None):
             ))
             report('converting', number + 1, total)
         return {'markdown': ''.join(chunks), 'pages': total, 'textPages': text_pages, 'mathRegions': math_regions}
+
+
+def inspect_pdf(data):
+    """Read only the metadata needed before offering the conversion."""
+    with pymupdf.open(stream=data, filetype='pdf') as source:
+        if source.needs_pass:
+            raise ValueError('pdf_password')
+        return {'pages': len(source)}
+
+
+def inspect_json(data):
+    return json.dumps(inspect_pdf(bytes(data)))
 
 
 def convert_json(data, options_json, progress=None):

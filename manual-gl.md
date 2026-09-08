@@ -318,10 +318,10 @@ EdiMarkWeb é software libre baixo a [GNU Affero General Public License v3.0](LI
 
 ## Importar PDF
 
-Escolle un PDF en **Importar**, ou arrástrao ao editor. A conversión faise no teu equipo, sen OCR nin enviar o documento a un servidor. O conversor cárgase ao xerar a primeira vista previa.
+Escolle un PDF en **Importar**, ou arrástrao ao editor. A conversión faise no teu equipo, sen OCR nin enviar o documento a un servidor. Ao abrir o cadro, o conversor le o PDF e mostra cantas páxinas contén antes de permitir xerar a vista previa.
 
 Podes eliminar cabeceiras e pés repetidos, conservar imaxes e fórmulas detectadas como imaxes, e indicar páxinas como `1-3, 5` (baleiro significa todas). As dúas opcións están activadas inicialmente. Preme **Xerar vista previa**, revisa o resultado e despois **Importar nunha pestana nova**. Cambiar as opcións require outra vista previa. Cancelar non altera os documentos abertos. Unha barra baixo a mensaxe vai dicindo por onde vai: primeiro ao abrir o conversor e logo páxina a páxina, así que nun documento longo vese que segue traballando.
 
-A detección de táboas, columnas e fórmulas pode dividir celas ou perder estrutura. As fórmulas detectadas son imaxes, non ecuacións editables; outras poden converterse mal. Desactiva a eliminación de cabeceiras e pés se desaparece texto útil. Os PDF de imaxes necesitan OCR, que non está incluído. Límites: 50 MB por ficheiro e 200 páxinas por conversión. Desbloquea antes os PDF con contrasinal.
+A detección de táboas, columnas e fórmulas pode dividir celas ou perder estrutura. As fórmulas detectadas son imaxes, non ecuacións editables; outras poden converterse mal. Desactiva a eliminación de cabeceiras e pés se desaparece texto útil. Os PDF de imaxes necesitan OCR, que non está incluído. Límites: 50 MB por ficheiro e 200 páxinas por conversión para evitar que o navegador quede sen memoria. Desbloquea antes os PDF con contrasinal. A conversión só se interrompe se pasan tres minutos sen ningún avance, non pola súa duración total.
 
 As imaxes do PDF gárdanse automaticamente como recursos separados, para non encher o gardado automático do navegador con datos Base64. Recupéranse ao abrir de novo a aplicación e inclúense ao gardar o Markdown cos seus recursos ou ao exportar.

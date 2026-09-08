@@ -318,10 +318,10 @@ EdiMarkWeb és programari lliure sota la [GNU Affero General Public License v3.0
 
 ## Importar PDF
 
-Tria un PDF a **Importar**, o arrossega’l a l’editor. La conversió es fa al teu equip, sense OCR ni enviar el document a un servidor. El convertidor es carrega en generar la primera vista prèvia.
+Tria un PDF a **Importar**, o arrossega’l a l’editor. La conversió es fa al teu equip, sense OCR ni enviar el document a un servidor. En obrir el quadre, el convertidor llegeix el PDF i mostra quantes pàgines conté abans de permetre generar la vista prèvia.
 
 Pots eliminar capçaleres i peus repetits, conservar imatges i fórmules detectades com a imatges, i indicar pàgines com `1-3, 5` (buit significa totes). Les dues opcions estan activades inicialment. Prem **Generar vista prèvia**, revisa el resultat i després **Importar en una pestanya nova**. Canviar les opcions requereix una nova vista prèvia. Cancel·lar no altera els documents oberts. Una barra sota el missatge va indicant per on va: primer en obrir el convertidor i després pàgina a pàgina, de manera que en un document llarg es veu que continua treballant.
 
-La detecció de taules, columnes i fórmules pot dividir cel·les o perdre estructura. Les fórmules detectades són imatges, no equacions editables; altres es poden convertir malament. Desactiva l’eliminació de capçaleres i peus si desapareix text útil. Els PDF d’imatges necessiten OCR, que no està inclòs. Límits: 50 MB per fitxer i 200 pàgines per conversió. Cal desbloquejar abans els PDF amb contrasenya.
+La detecció de taules, columnes i fórmules pot dividir cel·les o perdre estructura. Les fórmules detectades són imatges, no equacions editables; altres es poden convertir malament. Desactiva l’eliminació de capçaleres i peus si desapareix text útil. Els PDF d’imatges necessiten OCR, que no està inclòs. Límits: 50 MB per fitxer i 200 pàgines per conversió per evitar que el navegador es quedi sense memòria. Cal desbloquejar abans els PDF amb contrasenya. La conversió només s’interromp si passen tres minuts sense cap progrés, no per la durada total.
 
 Les imatges del PDF es desen automàticament com a recursos separats, per no omplir l’autodesament del navegador amb dades Base64. Es recuperen en tornar a obrir l’aplicació i s’inclouen en desar el Markdown amb els recursos o en exportar.

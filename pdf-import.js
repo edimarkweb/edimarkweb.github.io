@@ -13,6 +13,7 @@ export async function importPdf(file, translate) {
       <form method="dialog" class="pdf-import-content">
         <h2 id="pdf-import-title"></h2>
         <p class="pdf-import-filename"></p>
+        <p id="pdf-import-info"></p>
         <p class="pdf-import-note" id="pdf-import-note"></p>
         <div class="pdf-import-options">
           <label><input id="pdf-remove-headers" type="checkbox" checked> <span></span></label>
@@ -25,7 +26,7 @@ export async function importPdf(file, translate) {
         <iframe id="pdf-import-preview" sandbox="" referrerpolicy="no-referrer"></iframe>
         <div class="pdf-import-actions">
           <button id="pdf-cancel" type="button"></button>
-          <button id="pdf-preview" type="button"></button>
+          <button id="pdf-preview" type="button" disabled></button>
           <button id="pdf-accept" type="button" disabled></button>
         </div>
       </form>`;
@@ -58,6 +59,7 @@ export async function importPdf(file, translate) {
     let worker;
     let markdown = null;
     let busy = false;
+    let inspected = false;
     let closed = false;
     let watchdog;
     return new Promise(resolve => {
@@ -78,6 +80,7 @@ export async function importPdf(file, translate) {
           entero—; el resto del tiempo marca las páginas que lleva hechas.
         */
         function setProgress(stage, done, total) {
+            if (stage === 'heartbeat') return;
             const bar = $('#pdf-import-progress');
             const indeterminate = !total || !done;
             bar.hidden = false;
@@ -92,7 +95,9 @@ export async function importPdf(file, translate) {
             }
             // Durante la carga manda su propio mensaje, que dice cuánto ocupa.
             if (stage === 'loading' || !done) return;
-            const key = stage === 'analysing' ? 'pdf_analysing_page' : 'pdf_converting_page';
+            const key = stage === 'headers'
+                ? 'pdf_scanning_page'
+                : stage === 'analysing' ? 'pdf_analysing_page' : 'pdf_converting_page';
             $('#pdf-import-status').textContent = t(key)
                 .replaceAll('{page}', String(done))
                 .replaceAll('{total}', String(total));
@@ -104,12 +109,15 @@ export async function importPdf(file, translate) {
             bar.removeAttribute('aria-valuenow');
             bar.querySelector('.pdf-import-progress-bar').style.width = '';
         }
-        function setBusy(value) {
+        function renewWatchdog() {
             clearTimeout(watchdog);
-            if (!value) clearProgress();
-            if (value) watchdog = setTimeout(() => fail('pdf_error'), 180000);
+            if (busy) watchdog = setTimeout(() => fail('pdf_error'), 180000);
+        }
+        function setBusy(value) {
             busy = value;
-            $('#pdf-preview').disabled = value;
+            renewWatchdog();
+            if (!value) clearProgress();
+            $('#pdf-preview').disabled = value || !inspected;
             for (const input of dialog.querySelectorAll('input')) input.disabled = value;
             $('#pdf-accept').disabled = value || !markdown;
             dialog.setAttribute('aria-busy', String(value));
@@ -120,6 +128,37 @@ export async function importPdf(file, translate) {
             worker?.terminate();
             worker = null;
             setBusy(false);
+        }
+        function ensureWorker() {
+            if (worker) return worker;
+            worker = new Worker(new URL('./pdf-worker.js?v=2.49.3', import.meta.url));
+            worker.onerror = () => fail('pdf_error');
+            worker.onmessage = async ({ data }) => {
+                if (closed) return;
+                // Every worker message proves activity: the three-minute
+                // timeout measures silence, never total conversion time.
+                if (busy) renewWatchdog();
+                if (data.type === 'progress') setProgress(data.stage, data.done, data.total);
+                else if (data.type === 'status') $('#pdf-import-status').textContent = t(data.key);
+                else if (data.type === 'error') fail(data.key);
+                else if (data.type === 'info') {
+                    inspected = true;
+                    $('#pdf-import-info').textContent = t('pdf_document_info')
+                        .replaceAll('{count}', String(data.result.pages));
+                    $('#pdf-import-status').textContent = '';
+                    setBusy(false);
+                } else if (data.type === 'result') {
+                    markdown = stripUnsafeMarkup(data.result.markdown);
+                    if (!markdown.trim()) { fail('pdf_empty'); return; }
+                    const html = stripUnsafeMarkup(window.marked.parse(markdown));
+                    // No scripts, network requests, forms or parent access in the preview.
+                    await setPreview(`<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline';"><style>body{font:16px/1.5 system-ui;padding:16px;color:#182536;background:#fff;overflow-wrap:anywhere}img{max-width:100%}table{border-collapse:collapse}td,th{border:1px solid #94a3b8;padding:6px}pre{white-space:pre-wrap}a{pointer-events:none}</style>${html}`);
+                    if (closed || !busy) return;
+                    $('#pdf-import-status').textContent = t(data.result.textPages < data.result.pages ? 'pdf_partial' : 'pdf_ready');
+                    setBusy(false);
+                }
+            };
+            return worker;
         }
         dialog.addEventListener('cancel', event => { event.preventDefault(); finish(null); });
         $('#pdf-cancel').onclick = () => finish(null);
@@ -139,27 +178,10 @@ export async function importPdf(file, translate) {
             $('#pdf-import-status').textContent = t('pdf_loading');
             setProgress('loading', 0, 0);
             try {
-                worker ||= new Worker(new URL('./pdf-worker.js?v=2.49.2', import.meta.url));
-                worker.onerror = () => fail('pdf_error');
-                worker.onmessage = async ({ data }) => {
-                    if (closed) return;
-                    if (data.type === 'progress') setProgress(data.stage, data.done, data.total);
-                    else if (data.type === 'status') $('#pdf-import-status').textContent = t(data.key);
-                    else if (data.type === 'error') fail(data.key);
-                    else if (data.type === 'result') {
-                        markdown = stripUnsafeMarkup(data.result.markdown);
-                        if (!markdown.trim()) { fail('pdf_empty'); return; }
-                        const html = stripUnsafeMarkup(window.marked.parse(markdown));
-                        // No scripts, network requests, forms or parent access in the preview.
-                        await setPreview(`<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline';"><style>body{font:16px/1.5 system-ui;padding:16px;color:#182536;background:#fff;overflow-wrap:anywhere}img{max-width:100%}table{border-collapse:collapse}td,th{border:1px solid #94a3b8;padding:6px}pre{white-space:pre-wrap}a{pointer-events:none}</style>${html}`);
-                        if (closed || !busy) return;
-                        $('#pdf-import-status').textContent = t(data.result.textPages < data.result.pages ? 'pdf_partial' : 'pdf_ready');
-                        setBusy(false);
-                    }
-                };
+                ensureWorker();
                 const bytes = await file.arrayBuffer();
                 if (closed) return;
-                worker.postMessage({ bytes, options: {
+                worker.postMessage({ operation: 'convert', bytes, options: {
                     pages: $('#pdf-pages').value,
                     removeHeaders: $('#pdf-remove-headers').checked,
                     keepImages: $('#pdf-keep-images').checked,
@@ -168,5 +190,17 @@ export async function importPdf(file, translate) {
         };
         dialog.showModal();
         $('#pdf-preview').focus();
+        (async () => {
+            if (file.size > 50 * 1024 * 1024) { fail('pdf_size_limit'); return; }
+            setBusy(true);
+            $('#pdf-import-status').textContent = t('pdf_inspecting');
+            setProgress('loading', 0, 0);
+            try {
+                ensureWorker();
+                const bytes = await file.arrayBuffer();
+                if (closed) return;
+                worker.postMessage({ operation: 'inspect', bytes }, [bytes]);
+            } catch (_) { if (!closed) fail('pdf_error'); }
+        })();
     });
 }

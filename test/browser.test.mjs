@@ -5805,6 +5805,14 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     }).observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
   });
   await page.locator('#import-file-input').setInputFiles(fixture);
+  await page.waitForFunction(
+    () => document.querySelector('#pdf-import-info')?.textContent.includes('6'),
+    null,
+    { timeout: 120000 },
+  );
+  assert.match(await page.locator('#pdf-import-info').innerText(), /6/);
+  assert.match(await page.locator('#pdf-import-info').innerText(), /200/);
+  assert.equal(await page.locator('#pdf-preview').isDisabled(), false);
   await page.locator('#pdf-preview').click();
   await page.waitForFunction(() => document.querySelector('.pdf-import-dialog').getAttribute('aria-busy') === 'false', null, { timeout: 120000 });
   assert.equal(await page.locator('#pdf-accept').isDisabled(), false, await page.locator('#pdf-import-status').innerText());
@@ -5853,6 +5861,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.doesNotMatch(imported, /LEFT START/);
   assert.match(imported, /\|/);
   await page.locator('#import-file-input').setInputFiles(fixture);
+  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('6'), null, { timeout: 120000 });
   await page.locator('#pdf-preview').click();
   await page.locator('#pdf-cancel').click();
   assert.equal(await page.locator('.pdf-import-dialog').count(), 0);

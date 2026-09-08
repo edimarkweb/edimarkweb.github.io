@@ -37,7 +37,7 @@ for relative, line in [('helpers/utils.py', 'from pymupdf4llm.ocr.analyze_page i
         raise RuntimeError('Unexpected PDF converter version')
     path.write_text(text.replace(line, ''))
 `);
-    const response = await fetch(new URL('./pdf-import.py?v=2.49.2', self.location.href));
+    const response = await fetch(new URL('./pdf-import.py?v=2.49.3', self.location.href));
     if (!response.ok) throw new Error('pdf_load_error');
     py.runPython(await response.text());
     step();
@@ -45,11 +45,24 @@ for relative, line in [('helpers/utils.py', 'from pymupdf4llm.ocr.analyze_page i
 }
 self.onmessage = async ({ data }) => {
     try {
-        self.postMessage({ type: 'status', key: runtime ? 'pdf_converting' : 'pdf_loading' });
+        const operation = data.operation === 'inspect' ? 'inspect' : 'convert';
+        self.postMessage({
+            type: 'status',
+            key: runtime ? (operation === 'inspect' ? 'pdf_inspecting' : 'pdf_converting') : 'pdf_loading',
+        });
         runtime ||= initialize();
         const py = await runtime;
-        self.postMessage({ type: 'status', key: 'pdf_converting' });
+        self.postMessage({ type: 'status', key: operation === 'inspect' ? 'pdf_inspecting' : 'pdf_converting' });
         py.globals.set('pdf_bytes', new Uint8Array(data.bytes));
+        if (operation === 'inspect') {
+            try {
+                const result = JSON.parse(py.runPython('inspect_json(pdf_bytes)'));
+                self.postMessage({ type: 'info', result });
+            } finally {
+                py.globals.delete('pdf_bytes');
+            }
+            return;
+        }
         py.globals.set('pdf_options', JSON.stringify(data.options));
         /*
           Python holds the worker's only thread while it converts, but a message
