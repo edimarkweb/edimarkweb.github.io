@@ -1131,6 +1131,46 @@ test('cambiar de pestaña guarda lo escrito en la que se abandona', async (t) =>
   );
 });
 
+test('el menú de la pestaña cierra en grupo y devuelve lo cerrado', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  const nombres = () => page.$$eval('.tab-name', tabs => tabs.map(tab => tab.textContent));
+
+  await page.evaluate(() => {
+    newDoc('Uno', 'Contenido uno');
+    newDoc('Dos', 'Contenido dos');
+    newDoc('Tres', 'Contenido tres');
+  });
+  await detenerTemporizadores(page);
+
+  await page.locator('.tab', { hasText: 'Dos' }).click({ button: 'right' });
+  await page.locator('#tab-context-menu').waitFor();
+  await page.locator('[data-tab-action="close-others"]').click();
+  await page.waitForFunction(() => document.querySelectorAll('.tab').length === 1);
+  assert.deepEqual(await nombres(), ['Dos']);
+
+  // Lo cerrado se apila con la última encima, y vuelve con su texto.
+  await page.locator('.tab', { hasText: 'Dos' }).click({ button: 'right' });
+  assert.deepEqual(
+    await page.$$eval('#tab-menu-reopen-list .tab-menu-name', items => items.map(item => item.textContent)),
+    ['Tres', 'Uno', 'Manual'],
+  );
+  await page.locator('#tab-menu-reopen-list .tab-menu-item', { hasText: 'Uno' }).click();
+  await page.waitForFunction(() => document.querySelectorAll('.tab').length === 2);
+  assert.equal(await page.evaluate(() => markdownEditor.getValue()), 'Contenido uno');
+  assert.equal(await page.locator('#tab-context-menu').isHidden(), true);
+
+  // Y una vez recuperada ya no está en la lista.
+  await page.locator('.tab', { hasText: 'Uno' }).click({ button: 'right' });
+  assert.deepEqual(
+    await page.$$eval('#tab-menu-reopen-list .tab-menu-name', items => items.map(item => item.textContent)),
+    ['Tres', 'Manual'],
+  );
+  await page.locator('[data-tab-action="close-all"]').click();
+  await page.waitForFunction(() => document.querySelectorAll('.tab').length === 0);
+  assert.deepEqual(await nombres(), []);
+});
+
 test('ocultar la página guarda el documento abierto', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());

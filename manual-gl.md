@@ -45,7 +45,7 @@ Con `Ctrl` (ou `Cmd`) premido, un clic nunha ligazón do editor visual ábrea; n
 
 ## Lapelas
 
-Cada documento vive na súa lapela. `Ctrl+T` crea unha; `Ctrl+Tab` pasa dunha a outra e cada unha lembra onde a deixaches. Dobre clic sobre o título para renomeala, o `X` para pechala, e un punto vermello (`●`) avisa de cambios sen gardar.
+Cada documento vive na súa lapela. `Ctrl+T` crea unha; `Ctrl+Tab` pasa dunha a outra e cada unha lembra onde a deixaches. Dobre clic sobre o título para renomeala, o `X` para pechala, e un punto vermello (`●`) avisa de cambios sen gardar. Co botón dereito sobre unha lapela ábrese o seu menú: **Renomear**, **Pechar**, **Pechar as demais** e **Pechar todas**. Debaixo, en **Reabrir**, están as últimas dez lapelas pechadas, co seu nome, para recuperar calquera co seu texto e as súas imaxes intactos; ese rexistro dura mentres a aplicación estea aberta.
 
 Todas se **autogardan** soas no equipo: se recargas a páxina ou volves abrir o programa, o contido reaparece. É unha rede de seguridade, non un substituto de gardar o ficheiro.
 

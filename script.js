@@ -3400,6 +3400,85 @@ function documentIsDirty(doc) {
     return contents !== doc.lastSaved;
 }
 
+/*
+  Las pestañas cerradas no se tiran: se guardan aquí para poder recuperarlas
+  mientras dure la sesión, igual que hace un navegador con sus pestañas. Solo
+  en memoria, que el texto de un documento no cabe en el almacenamiento con
+  holgura. Al salir del registro, y solo entonces, se borran sus imágenes.
+*/
+const CLOSED_DOCS_LIMIT = 10;
+const closedDocs = [];
+
+function rememberClosedDoc(doc, index) {
+    closedDocs.unshift({ doc: { ...doc }, index });
+    while (closedDocs.length > CLOSED_DOCS_LIMIT) {
+        const forgotten = closedDocs.pop();
+        deletePersistedDocumentAssets(forgotten.doc.id).catch(error => {
+            console.warn('No se pudieron borrar las imágenes guardadas del documento:', error);
+        });
+    }
+    updateTabMenuReopenList();
+}
+
+function reopenClosedDoc(docId) {
+    const position = docId
+        ? closedDocs.findIndex(entry => entry.doc.id === docId)
+        : 0;
+    if (position === -1) return null;
+    const [entry] = closedDocs.splice(position, 1);
+    updateTabMenuReopenList();
+    // El identificador se reutiliza: es lo que ata el documento a sus imágenes.
+    const restored = entry.doc;
+    const index = Math.min(Math.max(entry.index, 0), docs.length);
+    docs.splice(index, 0, restored);
+    addTabElement(restored);
+    const tabBar = document.getElementById('tab-bar');
+    const tab = tabBar?.querySelector(`.tab[data-id="${restored.id}"]`);
+    const following = docs[index + 1];
+    const reference = following ? tabBar?.querySelector(`.tab[data-id="${following.id}"]`) : null;
+    if (tab && reference) tabBar.insertBefore(tab, reference);
+    switchTo(restored.id);
+    saveDocsList();
+    return restored;
+}
+
+function updateTabMenuReopenList() {
+    const section = document.getElementById('tab-menu-reopen');
+    const list = document.getElementById('tab-menu-reopen-list');
+    if (!section || !list) return;
+    section.classList.toggle('hidden', closedDocs.length === 0);
+    list.textContent = '';
+    closedDocs.forEach(({ doc }) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'tab-menu-item';
+        item.setAttribute('role', 'menuitem');
+        item.dataset.tabAction = 'reopen';
+        item.dataset.reopenId = doc.id;
+        const icon = document.createElement('i');
+        icon.setAttribute('data-lucide', 'corner-down-left');
+        icon.className = 'w-4 h-4 shrink-0';
+        // El nombre viene del documento del usuario: como texto, nunca como HTML.
+        const name = document.createElement('span');
+        name.className = 'tab-menu-name';
+        name.textContent = doc.name;
+        item.append(icon, name);
+        list.appendChild(item);
+    });
+    if (window.lucide && closedDocs.length) lucide.createIcons();
+}
+
+/*
+  Cerrar varias de una vez. Cada documento con cambios sigue preguntando por su
+  cuenta, así que se van cerrando de uno en uno y en orden: hacerlo en paralelo
+  apilaría varios avisos a la vez sobre el mismo diálogo.
+*/
+async function closeDocs(ids) {
+    for (const id of ids) {
+        await closeDoc(id);
+    }
+}
+
 async function closeDoc(id) {
     const docIndex = docs.findIndex(d => d.id === id);
     if (docIndex === -1) return;
@@ -3423,9 +3502,9 @@ async function closeDoc(id) {
     if (indiceActual === -1) return;
 
     releaseDocumentAssets(id);
-    deletePersistedDocumentAssets(id).catch(error => {
-        console.warn('No se pudieron borrar las imágenes guardadas del documento:', error);
-    });
+    // Las imágenes se quedan donde están: el documento aún puede volver desde
+    // el registro de cerradas, y allí es donde se decide cuándo borrarlas.
+    rememberClosedDoc(doc, indiceActual);
     docs.splice(indiceActual, 1);
     document.querySelector(`.tab[data-id="${id}"]`)?.remove();
     safeLocalStorageRemove(`${AUTOSAVE_KEY_PREFIX}-${id}`);
@@ -9784,6 +9863,71 @@ window.onload = async () => {
         if (closeBtn && tab) { e.stopPropagation(); closeDoc(tab.dataset.id); } 
         else if (tab) { switchTo(tab.dataset.id); }
     });
+
+    /*
+      El menú de la pestaña. Se abre donde está el puntero y guarda a cuál se
+      pulsó: la lista de documentos se mueve mientras el menú está abierto, así
+      que las acciones se resuelven por identificador y no por posición.
+    */
+    const tabMenu = document.getElementById('tab-context-menu');
+    let tabMenuDocId = null;
+    const closeTabMenu = () => {
+        if (!tabMenu) return;
+        tabMenu.classList.add('hidden');
+        tabMenuDocId = null;
+    };
+    const openTabMenu = (tab, x, y) => {
+        if (!tabMenu) return;
+        tabMenuDocId = tab.dataset.id;
+        updateTabMenuReopenList();
+        // Cerrar las demás no tiene sentido con una sola pestaña abierta.
+        const others = tabMenu.querySelector('[data-tab-action="close-others"]');
+        if (others) others.disabled = docs.length < 2;
+        tabMenu.classList.remove('hidden');
+        tabMenu.style.left = `${x}px`;
+        tabMenu.style.top = `${y}px`;
+        fitMenuInViewport(tabMenu);
+        // Si no cabe hacia abajo, el menú sube y se apoya sobre el puntero.
+        const rect = tabMenu.getBoundingClientRect();
+        const limit = document.documentElement.clientHeight - MENU_VIEWPORT_MARGIN;
+        if (rect.bottom > limit) tabMenu.style.top = `${Math.max(MENU_VIEWPORT_MARGIN, y - rect.height)}px`;
+        tabMenu.querySelector('.tab-menu-item:not([disabled])')?.focus();
+    };
+    if (tabMenu) {
+        tabBar.addEventListener('contextmenu', (event) => {
+            const tab = event.target.closest('.tab');
+            if (!tab) return;
+            event.preventDefault();
+            openTabMenu(tab, event.clientX, event.clientY);
+        });
+        tabMenu.addEventListener('click', (event) => {
+            const item = event.target.closest('[data-tab-action]');
+            if (!item || item.disabled) return;
+            const action = item.dataset.tabAction;
+            const id = tabMenuDocId;
+            closeTabMenu();
+            if (action === 'reopen') {
+                reopenClosedDoc(item.dataset.reopenId);
+                return;
+            }
+            if (action === 'rename') {
+                const tab = document.querySelector(`.tab[data-id="${id}"]`);
+                if (tab) startRename(tab);
+                return;
+            }
+            if (action === 'close') closeDoc(id);
+            else if (action === 'close-others') closeDocs(docs.filter(doc => doc.id !== id).map(doc => doc.id));
+            else if (action === 'close-all') closeDocs(docs.map(doc => doc.id));
+        });
+        document.addEventListener('click', (event) => {
+            if (!tabMenu.contains(event.target)) closeTabMenu();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeTabMenu();
+        });
+        window.addEventListener('resize', closeTabMenu);
+        tabBar.addEventListener('scroll', closeTabMenu);
+    }
 
     layoutSwitchButtons.forEach((button) => {
       button.addEventListener('click', () => applyLayout(button.dataset.layout || 'dual'));

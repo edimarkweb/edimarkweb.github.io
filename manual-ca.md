@@ -45,7 +45,7 @@ Amb `Ctrl` (o `Cmd`) premut, un clic a un enllaç de l'editor visual l'obre; a l
 
 ## Pestanyes
 
-Cada document viu a la seva pestanya. `Ctrl+T` en crea una; `Ctrl+Tab` passa d'una a l'altra i cadascuna recorda on la vas deixar. Doble clic sobre el títol per reanomenar-la, la `X` per tancar-la, i un punt vermell (`●`) avisa de canvis sense desar.
+Cada document viu a la seva pestanya. `Ctrl+T` en crea una; `Ctrl+Tab` passa d'una a l'altra i cadascuna recorda on la vas deixar. Doble clic sobre el títol per reanomenar-la, la `X` per tancar-la, i un punt vermell (`●`) avisa de canvis sense desar. Amb el botó dret sobre una pestanya s'obre el seu menú: **Reanomena**, **Tanca**, **Tanca les altres** i **Tanca-les totes**. A sota, a **Torna a obrir**, hi ha les últimes deu pestanyes tancades, amb el seu nom, per recuperar-ne qualsevol amb el text i les imatges intactes; aquest registre dura mentre l'aplicació estigui oberta.
 
 Totes es **desen soles** a l'equip: si recarregues la pàgina o tornes a obrir el programa, el contingut hi torna a ser. És una xarxa de seguretat, no un substitut de desar el fitxer.
 

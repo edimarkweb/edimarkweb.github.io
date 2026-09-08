@@ -1928,6 +1928,52 @@ body.desktop-mode .markdown-textarea {
 }
 
 /*
+  Las entradas del menú de la pestaña. Van aquí y no como una ristra de clases
+  de Tailwind porque la lista de documentos reabribles se construye desde el
+  guion: una sola clase evita repetir el mismo puñado de utilidades en cada
+  botón creado a mano.
+*/
+.tab-menu-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    text-align: left;
+    font-size: 0.875rem;
+    color: #334155;
+}
+.tab-menu-item:hover,
+.tab-menu-item:focus-visible {
+    background-color: #f1f5f9;
+}
+.tab-menu-item[disabled] {
+    color: #94a3b8;
+    cursor: default;
+}
+.tab-menu-item[disabled]:hover {
+    background-color: transparent;
+}
+.tab-menu-item .tab-menu-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dark .tab-menu-item {
+    color: #e2e8f0;
+}
+.dark .tab-menu-item:hover,
+.dark .tab-menu-item:focus-visible {
+    background-color: #334155;
+}
+.dark .tab-menu-item[disabled] {
+    color: #64748b;
+}
+.dark .tab-menu-item[disabled]:hover {
+    background-color: transparent;
+}
+
+/*
   La pestaña se recoloca bajo el puntero durante el arrastre. El cursor no debe
   depender entonces del elemento que quede accidentalmente debajo: toda la
   ventana conserva la mano cerrada hasta soltar.

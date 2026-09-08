@@ -45,7 +45,7 @@ Con `Ctrl` (o `Cmd`) pulsado, un clic en un enlace del editor visual lo abre; en
 
 ## Pestañas
 
-Cada documento vive en su pestaña. `Ctrl+T` crea una; `Ctrl+Tab` pasa de una a otra y cada una recuerda dónde la dejaste. Doble clic sobre el título para renombrarla, la `X` para cerrarla, y un punto rojo (`●`) avisa de cambios sin guardar.
+Cada documento vive en su pestaña. `Ctrl+T` crea una; `Ctrl+Tab` pasa de una a otra y cada una recuerda dónde la dejaste. Doble clic sobre el título para renombrarla, la `X` para cerrarla, y un punto rojo (`●`) avisa de cambios sin guardar. Con el botón derecho sobre una pestaña se abre su menú: **Renombrar**, **Cerrar**, **Cerrar las demás** y **Cerrar todas**. Debajo, en **Reabrir**, están las últimas diez pestañas cerradas, con su nombre, para recuperar cualquiera con su texto y sus imágenes intactos; ese registro dura mientras la aplicación esté abierta.
 
 Todas se **autoguardan** solas en el equipo: si recargas la página o vuelves a abrir el programa, el contenido reaparece. Es una red de seguridad, no un sustituto de guardar el archivo.
 

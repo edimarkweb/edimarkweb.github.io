@@ -596,28 +596,54 @@
                 <i data-lucide="app-window" class="w-4 h-4 shrink-0"></i>
             </button>
         </div>
+        <!--
+          El menú de la pestaña vive fuera de la barra: dentro se recortaría
+          con el desplazamiento horizontal de las pestañas.
+        -->
+        <div id="tab-context-menu" class="hidden fixed z-40 w-60 rounded-md border border-slate-200 bg-white py-1 shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800" role="menu">
+          <button type="button" class="tab-menu-item" data-tab-action="rename" role="menuitem">
+            <i data-lucide="pencil" class="w-4 h-4 shrink-0"></i>
+            <span data-i18n-key="tab_menu_rename">Renombrar</span>
+          </button>
+          <button type="button" class="tab-menu-item" data-tab-action="close" role="menuitem">
+            <i data-lucide="x" class="w-4 h-4 shrink-0"></i>
+            <span data-i18n-key="tab_menu_close">Cerrar</span>
+          </button>
+          <button type="button" class="tab-menu-item" data-tab-action="close-others" role="menuitem">
+            <i data-lucide="between-horizontal-start" class="w-4 h-4 shrink-0"></i>
+            <span data-i18n-key="tab_menu_close_others">Cerrar las demás</span>
+          </button>
+          <button type="button" class="tab-menu-item" data-tab-action="close-all" role="menuitem">
+            <i data-lucide="x-square" class="w-4 h-4 shrink-0"></i>
+            <span data-i18n-key="tab_menu_close_all">Cerrar todas</span>
+          </button>
+          <div id="tab-menu-reopen" class="hidden">
+            <p class="mt-1 border-t border-slate-200 px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:border-slate-700 dark:text-slate-500" data-i18n-key="tab_menu_reopen">Reabrir</p>
+            <div id="tab-menu-reopen-list"></div>
+          </div>
+        </div>
 
-        <div id="editor-container" class="editor-wrapper pt-2">
-            <div id="markdown-panel" class="panel w-full md:w-1/2">
-                <textarea id="markdown-input"></textarea>
-                <div id="base64-hidden-container" class="base64-hidden-container hidden" aria-live="polite">
-                    <button type="button" id="base64-hidden-toggle" class="base64-hidden-summary" aria-expanded="false" aria-controls="base64-hidden-list">
-                        <i data-lucide="chevron-right" class="base64-hidden-chevron" aria-hidden="true"></i>
-                        <span class="base64-hidden-title" data-i18n-key="base64_hidden_title">Imágenes del documento</span>
-                        <span id="base64-hidden-count" class="base64-hidden-count-text">0 encontradas</span>
-                        <span class="base64-hidden-hint" data-i18n-key="base64_hidden_hint">Incrustadas, enlazadas desde archivos o en línea.</span>
+    <div id="editor-container" class="editor-wrapper pt-2">
+        <div id="markdown-panel" class="panel w-full md:w-1/2">
+            <textarea id="markdown-input"></textarea>
+            <div id="base64-hidden-container" class="base64-hidden-container hidden" aria-live="polite">
+                <button type="button" id="base64-hidden-toggle" class="base64-hidden-summary" aria-expanded="false" aria-controls="base64-hidden-list">
+                    <i data-lucide="chevron-right" class="base64-hidden-chevron" aria-hidden="true"></i>
+                    <span class="base64-hidden-title" data-i18n-key="base64_hidden_title">Imágenes del documento</span>
+                    <span id="base64-hidden-count" class="base64-hidden-count-text">0 encontradas</span>
+                    <span class="base64-hidden-hint" data-i18n-key="base64_hidden_hint">Incrustadas, enlazadas desde archivos o en línea.</span>
+                </button>
+                <!--
+                  Sacar las imágenes incrustadas del texto. Va aquí, junto
+                  al recuento de todas las imágenes, pero se oculta cuando
+                  el documento solo contiene archivos enlazados.
+                -->
+                <div class="base64-hidden-actions" hidden>
+                    <button type="button" id="base64-extract-btn" class="base64-hidden-action-btn" data-i18n-key="base64_extract_btn_title" title="Escribe cada imagen incrustada como archivo en la carpeta del documento y deja su ruta en el texto" hidden>
+                        <i data-lucide="folder-down" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
+                        <span data-i18n-key="base64_extract_btn">Pasar las incrustadas a la carpeta</span>
                     </button>
-                    <!--
-                      Sacar las imágenes incrustadas del texto. Va aquí, junto
-                      al recuento de todas las imágenes, pero se oculta cuando
-                      el documento solo contiene archivos enlazados.
-                    -->
-                    <div class="base64-hidden-actions" hidden>
-                        <button type="button" id="base64-extract-btn" class="base64-hidden-action-btn" data-i18n-key="base64_extract_btn_title" title="Escribe cada imagen incrustada como archivo en la carpeta del documento y deja su ruta en el texto" hidden>
-                            <i data-lucide="folder-down" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
-                            <span data-i18n-key="base64_extract_btn">Pasar las incrustadas a la carpeta</span>
-                        </button>
-                    </div>
+                </div>
                     <div id="base64-hidden-list" class="base64-hidden-list hidden" role="list"></div>
                 </div>
             </div>

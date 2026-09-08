@@ -45,7 +45,7 @@ Holding `Ctrl` (or `Cmd`), a click on a link in the visual editor opens it; in t
 
 ## Tabs
 
-Each document lives in its own tab. `Ctrl+T` creates one; `Ctrl+Tab` moves between them and each remembers where you left it. Double-click the title to rename it, the `X` to close it, and a red dot (`●`) warns of unsaved changes.
+Each document lives in its own tab. `Ctrl+T` creates one; `Ctrl+Tab` moves between them and each remembers where you left it. Double-click the title to rename it, the `X` to close it, and a red dot (`●`) warns of unsaved changes. Right-click a tab to open its menu: **Rename**, **Close**, **Close others** and **Close all**. Below, under **Reopen**, are the last ten closed tabs, listed by name, so you can bring any of them back with its text and images intact; that record lasts as long as the application stays open.
 
 They all **autosave** on your computer: if you reload the page or open the program again, the content is back. It is a safety net, not a replacement for saving the file.
 
