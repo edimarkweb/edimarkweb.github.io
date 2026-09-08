@@ -52,8 +52,8 @@ fn initial_markdown_paths(state: tauri::State<'_, PendingOpenPaths>) -> Vec<Stri
 
 /// Extensiones que la aplicación sabe abrir al soltarlas: el Markdown se abre
 /// tal cual y el resto pasa por Pandoc, igual que en el navegador.
-const DROPPABLE_EXTENSIONS: [&str; 8] = [
-    "md", "markdown", "docx", "odt", "epub", "html", "htm", "tex",
+const DROPPABLE_EXTENSIONS: [&str; 9] = [
+    "md", "markdown", "pdf", "docx", "odt", "epub", "html", "htm", "tex",
 ];
 
 fn droppable_extension(path: &Path) -> Option<String> {
@@ -951,8 +951,8 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
-        decode_ipc_header, document_asset_bytes, document_resource_text, markdown_target_path,
-        write_document_asset_bytes, write_document_resource_bytes,
+        decode_ipc_header, document_asset_bytes, document_resource_text, droppable_extension,
+        markdown_target_path, write_document_asset_bytes, write_document_resource_bytes,
     };
 
     /// Carpeta de trabajo con un documento y su imagen al lado, como la de
@@ -964,6 +964,29 @@ mod tests {
         std::fs::write(imagenes.join("01.png"), [137, 80, 78, 71]).expect("no se pudo escribir");
         std::fs::write(raiz.join("apuntes.md"), "# Apuntes").expect("no se pudo escribir");
         raiz
+    }
+
+    /// El arrastre nativo tiene su propia lista de extensiones, y se quedó sin
+    /// `pdf` cuando se añadió la importación de PDF: en el escritorio soltar un
+    /// PDF decía que no era un tipo permitido mientras en la web se abría.
+    #[test]
+    fn se_pueden_soltar_todos_los_formatos_que_se_importan() {
+        for nombre in [
+            "apuntes.md", "apuntes.markdown", "informe.pdf", "informe.docx",
+            "informe.odt", "libro.epub", "pagina.html", "pagina.htm", "articulo.tex",
+        ] {
+            assert!(
+                droppable_extension(std::path::Path::new(nombre)).is_some(),
+                "debería poder soltarse: {nombre}"
+            );
+        }
+        // Y lo que la aplicación no sabe abrir sigue fuera.
+        for nombre in ["imagen.png", "hoja.xlsx", "programa.exe", "sin-extension"] {
+            assert!(
+                droppable_extension(std::path::Path::new(nombre)).is_none(),
+                "no debería poder soltarse: {nombre}"
+            );
+        }
     }
 
     #[test]
