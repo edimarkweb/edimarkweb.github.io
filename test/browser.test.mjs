@@ -5791,7 +5791,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.equal(requests.some(url => /pythonhosted|pyodide.org|cdn.jsdelivr.net\/pyodide/.test(url)), false);
 });
 
-test('PDF grande: imágenes fuera de localStorage, dólares literales y recuperación tras recargar', { timeout: 300000 }, async (t) => {
+test('PDF grande: imágenes fuera de localStorage, dólares literales y recuperación tras recargar', { timeout: 180000 }, async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
   const image = Buffer.concat([PNG_PIXEL, Buffer.alloc(5 * 1024 * 1024)]).toString('base64');
@@ -5834,17 +5834,23 @@ test('PDF grande: imágenes fuera de localStorage, dólares literales y recupera
       saved = options.contents;
       return { saved: true };
     };
-    await window.PandocExporter.exportDocument({ format: 'docx', markdown });
     const { readZipEntries } = await import('./zip-reader.js');
-    const entries = await readZipEntries(new Uint8Array(await saved.arrayBuffer()));
-    const media = [...entries].filter(([path]) => path.startsWith('word/media/'));
+    const mediaSizes = {};
+    for (const format of ['docx', 'odt', 'epub']) {
+      await window.PandocExporter.exportDocument({ format, markdown });
+      const entries = await readZipEntries(new Uint8Array(await saved.arrayBuffer()));
+      mediaSizes[format] = [...entries].filter(([path]) => /\.png$/i.test(path))
+        .map(([, bytes]) => bytes.length);
+    }
     const html = await window.PandocExporter.generateHtml({ markdown });
     const fragment = new DOMParser().parseFromString(html, 'text/html');
     return {
-      mediaSizes: media.map(([, bytes]) => bytes.length),
+      mediaSizes,
       htmlImage: fragment.querySelector('img')?.getAttribute('src').startsWith('data:image/png;base64,'),
     };
   });
-  assert.deepEqual(exported.mediaSizes, [PNG_PIXEL.length + 5 * 1024 * 1024]);
+  for (const format of ['docx', 'odt', 'epub']) {
+    assert.ok(exported.mediaSizes[format].includes(PNG_PIXEL.length + 5 * 1024 * 1024), format);
+  }
   assert.equal(exported.htmlImage, true);
 });

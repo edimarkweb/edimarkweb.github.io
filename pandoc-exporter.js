@@ -524,7 +524,7 @@ function blobToDataUri(blob) {
 async function inlineFetchableImages(markdown, { onStatus } = {}) {
   const urls = collectFetchableImageUrls(markdown);
   if (urls.length === 0) {
-    return { markdown, skipped: [], oversized: [] };
+    return { markdown, skipped: [], oversized: [], files: {} };
   }
 
   triggerStatus(onStatus, 'images_downloading', 'Descargando imágenes...');
@@ -540,6 +540,7 @@ async function inlineFetchableImages(markdown, { onStatus } = {}) {
   }));
 
   const replacements = new Map();
+  const files = {};
   const skipped = [];
   const oversized = [];
   let usedBytes = 0;
@@ -558,8 +559,17 @@ async function inlineFetchableImages(markdown, { onStatus } = {}) {
       continue;
     }
     try {
-      replacements.set(url, await blobToDataUri(blob));
-      if (!local) usedBytes += size;
+      if (local) {
+        // Montar los bytes evita que Pandoc analice megabytes de Base64 como
+        // Markdown; en Firefox una sola imagen grande puede tardar minutos.
+        const extension = url.split(/[?#]/)[0].split('.').pop();
+        const name = `edimark-image-${Object.keys(files).length}.${/^[a-z0-9]+$/i.test(extension) ? extension : 'png'}`;
+        files[name] = new Uint8Array(await blob.arrayBuffer());
+        replacements.set(url, `/${name}`);
+      } else {
+        replacements.set(url, await blobToDataUri(blob));
+        usedBytes += size;
+      }
     } catch (error) {
       console.warn(`No se pudo leer la imagen ${url}:`, error);
       skipped.push(url);
@@ -571,7 +581,7 @@ async function inlineFetchableImages(markdown, { onStatus } = {}) {
   if (dropped.length > 0) {
     prepared = dropImagesByUrl(prepared, dropped);
   }
-  return { markdown: prepared, skipped, oversized };
+  return { markdown: prepared, skipped, oversized, files };
 }
 
 function stripPandocHeadingIds(markdown) {
@@ -794,6 +804,7 @@ async function exportDocument({
     markdown: withImages,
     skipped: skippedImages,
     oversized: oversizedImages,
+    files: imageFiles,
   } = await inlineFetchableImages(normalized, { onStatus });
   normalized = withImages;
   if (skippedImages.length > 0) {
@@ -837,7 +848,7 @@ async function exportDocument({
       La portada solo existe en el EPUB, y la imagen tiene que estar montada en
       el sistema de ficheros del WASM para que Pandoc la encuentre.
     */
-    const extraFiles = { ...citations.files };
+    const extraFiles = { ...citations.files, ...imageFiles };
     if (normalizedFormat === 'epub') {
       const cover = epubCoverFile({
         title: extractMarkdownTitle(normalized) || String(documentTitle || '').trim(),
@@ -931,11 +942,17 @@ async function generateHtml({
   // HTML debe ser portable también cuando las imágenes viven en IndexedDB.
   // Los enlaces externos conservan su comportamiento habitual.
   const readLocalImage = window.EdiMarkDocumentAssets?.createImageReader();
+  const htmlImages = new Map();
   if (readLocalImage) {
     const replacements = new Map();
+    const prefix = `edimark-image-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-`;
     for (const url of collectFetchableImageUrls(withLanguage)) {
       const blob = await readLocalImage(url);
-      if (blob) replacements.set(url, await blobToDataUri(blob));
+      if (blob) {
+        const placeholder = `${prefix}${htmlImages.size}.png`;
+        replacements.set(url, placeholder);
+        htmlImages.set(placeholder, await blobToDataUri(blob));
+      }
     }
     withLanguage = replaceImageUrls(withLanguage, replacements);
   }
@@ -966,6 +983,11 @@ async function generateHtml({
       throw new Error('pandoc_empty_output');
     }
     let htmlResult = new TextDecoder().decode(resultadoBytes);
+    // Incrustar después de convertir el Markdown evita el coste de analizar
+    // grandes cadenas Base64 y mantiene el HTML completamente autónomo.
+    for (const [placeholder, dataUri] of htmlImages) {
+      htmlResult = htmlResult.replaceAll(`src="${placeholder}"`, () => `src="${dataUri}"`);
+    }
 
     if (htmlFormatCss) {
       // Al final de la cabecera para ganar a los estilos de la plantilla.
