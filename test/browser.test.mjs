@@ -5790,3 +5790,61 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.equal(await page.evaluate(() => markdownEditor.getValue()), imported);
   assert.equal(requests.some(url => /pythonhosted|pyodide.org|cdn.jsdelivr.net\/pyodide/.test(url)), false);
 });
+
+test('PDF grande: imágenes fuera de localStorage, dólares literales y recuperación tras recargar', { timeout: 300000 }, async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  const image = Buffer.concat([PNG_PIXEL, Buffer.alloc(5 * 1024 * 1024)]).toString('base64');
+  const source = `Price $200/month\n\n**Conclusion**\n\n![Large](data:image/png;base64,${image}\n)\n\nAnother price US$40 billion.\n\nMath $x+1$`;
+  const id = await page.evaluate(async markdown => {
+    const doc = await createImportedPdfDocument('Large PDF', markdown);
+    return doc.id;
+  }, source);
+  await page.waitForFunction(() => {
+    const img = document.querySelector('#html-output img');
+    return img?.complete && img.naturalWidth > 0;
+  });
+  assert.match(await page.locator('#html-output strong').first().innerText(), /Conclusion/);
+  assert.doesNotMatch(await page.locator('#html-output').innerText(), /data:image|base64,/);
+  const stored = await page.evaluate(id => localStorage.getItem(`edimarkweb-autosave-${id}`), id);
+  assert.ok(stored.length < 500);
+  assert.match(stored, /Large-PDF\/images\/01.png/);
+  assert.equal(await page.evaluate(() => shownStorageNoticeKeys.has('storage_quota_exceeded')), false);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.__edimarkReady === true);
+  await page.waitForFunction(() => {
+    const img = document.querySelector('#html-output img');
+    return img?.src.startsWith('blob:') && img.complete && img.naturalWidth > 0;
+  });
+  const assets = await page.evaluate(async () => {
+    const doc = docs.find(d => d.id === currentId);
+    const files = await collectLinkedDocumentAssets(doc, markdownEditor.getValue());
+    return files.map(file => ({ path: file.relativePath, size: file.contents.size }));
+  });
+  assert.equal(assets.length, 1);
+  assert.equal(assets[0].size, PNG_PIXEL.length + 5 * 1024 * 1024);
+  assert.equal(await page.evaluate(() => currentId), id);
+  // Usar el WASM real: que no lance una excepción no demuestra que el DOCX
+  // contenga imágenes. La imagen supera los límites de descarga de Internet.
+  await context.unroute(/pandoc\.b64(?:\.gz)?(?:\?.*)?$/);
+  const exported = await page.evaluate(async () => {
+    const markdown = markdownEditor.getValue();
+    let saved;
+    window.EdiMarkPlatform.saveFile = async options => {
+      saved = options.contents;
+      return { saved: true };
+    };
+    await window.PandocExporter.exportDocument({ format: 'docx', markdown });
+    const { readZipEntries } = await import('./zip-reader.js');
+    const entries = await readZipEntries(new Uint8Array(await saved.arrayBuffer()));
+    const media = [...entries].filter(([path]) => path.startsWith('word/media/'));
+    const html = await window.PandocExporter.generateHtml({ markdown });
+    const fragment = new DOMParser().parseFromString(html, 'text/html');
+    return {
+      mediaSizes: media.map(([, bytes]) => bytes.length),
+      htmlImage: fragment.querySelector('img')?.getAttribute('src').startsWith('data:image/png;base64,'),
+    };
+  });
+  assert.deepEqual(exported.mediaSizes, [PNG_PIXEL.length + 5 * 1024 * 1024]);
+  assert.equal(exported.htmlImage, true);
+});

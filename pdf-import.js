@@ -104,7 +104,7 @@ export async function importPdf(file, translate) {
             setBusy(true);
             $('#pdf-import-status').textContent = t('pdf_loading');
             try {
-                worker ||= new Worker(new URL('./pdf-worker.js?v=2.49.0', import.meta.url));
+                worker ||= new Worker(new URL('./pdf-worker.js?v=2.49.1', import.meta.url));
                 worker.onerror = () => fail('pdf_error');
                 worker.onmessage = async ({ data }) => {
                     if (closed) return;

@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.49.0';
+const APP_VERSION = '2.49.1';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -532,7 +532,9 @@ function protectMathSegments(text) {
         return { text: '', segments: [] };
     }
     const segments = [];
-    const pattern = /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$(?!\s)([^$]+?)\$/g;
+    // Inline dollars cannot span lines: prices such as $200/month must not
+    // hide paragraphs and image Markdown up to a later currency amount.
+    const pattern = /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|(?<!\\)\$(?![\s$])([^$\n]*?[^\s$])\$(?!\d)/g;
     const protectedText = text.replace(pattern, match => {
         const placeholder = `${MATH_PLACEHOLDER_PREFIX}${segments.length}${MATH_PLACEHOLDER_SUFFIX}`;
         segments.push(match);
@@ -3650,8 +3652,7 @@ const ASSET_DB_STORE = 'document-assets';
 let assetDatabasePromise = null;
 
 function openAssetDatabase() {
-    const platform = window.EdiMarkPlatform;
-    if (platform?.isDesktop || typeof window.indexedDB === 'undefined') return Promise.resolve(null);
+    if (typeof window.indexedDB === 'undefined') return Promise.resolve(null);
     if (assetDatabasePromise) return assetDatabasePromise;
     assetDatabasePromise = new Promise((resolve, reject) => {
         const request = window.indexedDB.open(ASSET_DB_NAME, 1);
@@ -3869,16 +3870,10 @@ function registerExtractedAssets(doc, files) {
     forgetMissingAssets(doc.id);
 }
 
-async function extractBase64Images() {
-    const doc = docs.find(d => d.id === currentId);
-    if (!doc || !markdownEditor) return 0;
-    const markdown = markdownEditor.getValue();
-    if (!BASE64_TEST_REGEX.test(markdown)) {
-        reportStatus(getTranslation('base64_extract_empty', 'No hay imágenes incrustadas en este documento.'));
-        return 0;
-    }
+// Prepare linked assets before a PDF can enter localStorage or the editor.
+function prepareEmbeddedImageExtraction(markdown, documentName) {
     const used = relativeImagePathsInMarkdown(markdown);
-    const folder = extractedAssetsFolder(doc);
+    const folder = extractedAssetsFolderName(documentName);
     const extracted = [];
     let counter = 0;
     const rewritten = markdown.replace(BASE64_IMAGE_REGEX, (match, alt, prefix, mime, data, tail) => {
@@ -3901,8 +3896,22 @@ async function extractBase64Images() {
             relativePath,
             blob: new File([bytes], relativePath.split('/').pop(), { type: `image/${mime}` }),
         });
-        return `![${alt}](${relativePath}${tail || ''})`;
+        return `![${alt}](${relativePath}${tail.trim() ? ' ' + tail.trim() : ''})`;
     });
+
+    return { markdown: rewritten, files: extracted };
+}
+
+async function extractBase64Images() {
+    const doc = docs.find(d => d.id === currentId);
+    if (!doc || !markdownEditor) return 0;
+    const markdown = markdownEditor.getValue();
+    if (!BASE64_TEST_REGEX.test(markdown)) {
+        reportStatus(getTranslation('base64_extract_empty', 'No hay imágenes incrustadas en este documento.'));
+        return 0;
+    }
+    const { markdown: rewritten, files: extracted } = prepareEmbeddedImageExtraction(markdown, doc.name);
+    const folder = extractedAssetsFolder(doc);
 
     if (!extracted.length) {
         reportStatus(getTranslation('base64_extract_empty', 'No hay imágenes incrustadas en este documento.'));
@@ -3959,8 +3968,28 @@ function lookupAssetFile(doc, relativePath) {
     return null;
 }
 
+// Capturar el documento antes de una exportación asíncrona evita que un cambio
+// de pestaña mezcle imágenes de documentos distintos.
+window.EdiMarkDocumentAssets = {
+    createImageReader() {
+        const doc = docs.find(item => item.id === currentId);
+        return async source => {
+            if (!doc || !assetPathUtils?.isRelativeAssetPath(source)) return null;
+            const path = assetPathUtils.normalizeRelativePath(source);
+            if (!path || path === '..' || path.startsWith('../')) return null;
+            const url = await loadAssetUrl(doc, path);
+            if (!url) return null;
+            try {
+                return await (await fetch(url)).blob();
+            } finally {
+                URL.revokeObjectURL(url);
+            }
+        };
+    },
+};
+
 async function loadAssetUrl(doc, relativePath) {
-    if (!window.EdiMarkPlatform?.isDesktop && !documentAssetEntry(doc.id).assetIndex) {
+    if (!documentAssetEntry(doc.id).assetIndex) {
         await restorePersistedDocumentAssets(doc);
     }
     const file = lookupAssetFile(doc, relativePath);
@@ -5938,6 +5967,7 @@ async function readApplicationAsset(relativePath) {
 async function collectLinkedDocumentAssets(doc, content) {
     const platform = window.EdiMarkPlatform;
     if (!doc || !assetPathUtils || !window.marked) return [];
+    if (!documentAssetEntry(doc.id).assetIndex) await restorePersistedDocumentAssets(doc);
     // Analizar en un template evita descargar las imágenes solo por enumerarlas.
     const container = fragmentFromHtml(marked.parse(splitDocumentFrontMatter(content).body));
     const relativePaths = new Set();
@@ -6253,6 +6283,24 @@ function importProgressLabel(file, index, total) {
         : formatTranslation('import_progress_single', 'Importando {name}', { name });
 }
 
+async function createImportedPdfDocument(name, markdown) {
+    const prepared = prepareEmbeddedImageExtraction(markdown, name);
+    const doc = newDoc(name, prepared.markdown, { activate: false });
+    registerExtractedAssets(doc, prepared.files);
+    if (prepared.files.length) {
+        // IndexedDB stores Blobs without base64 expansion and localStorage's
+        // small quota. Also needed for unsaved PDF imports in the desktop app.
+        const saved = await replacePersistedDocumentAssets(doc.id, prepared.files.map(file => ({
+            relativePath: file.relativePath, contents: file.blob,
+        })));
+        if (!saved) reportStorageFailure(new Error('pdf_asset_persistence_failed'));
+    }
+    autosaveDoc(doc.id, doc.md);
+    switchTo(doc.id);
+    updateDirtyIndicator(doc.id, false);
+    return doc;
+}
+
 async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     const label = importProgressLabel(file, index, total);
     // Los puntos suspensivos mantienen el aviso en pantalla mientras se trabaja.
@@ -6265,12 +6313,11 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
     if (format === 'pdf') {
         try {
-            const { importPdf } = await import('./pdf-import.js?v=2.49.0');
+            const { importPdf } = await import('./pdf-import.js?v=2.49.1');
             const markdown = await importPdf(file, getTranslation);
             if (markdown === null) return false;
-            const createdDoc = newDoc(getSafeDocumentName(file.name), markdown);
+            const createdDoc = await createImportedPdfDocument(getSafeDocumentName(file.name), markdown);
             if (!createdDoc) return false;
-            updateDirtyIndicator(createdDoc.id, false);
             reportStatus(getTranslation('import_file_success', 'Importación completada.'));
             return true;
         } catch (error) {
@@ -9051,6 +9098,7 @@ window.onload = async () => {
                 const latexFilename = `${safeName}.tex`;
                 const saveResult = await saveFile(latexFilename, latexResult, 'application/x-tex;charset=utf-8', {
                     extensions: ['tex'],
+                    companionFiles: await collectLinkedDocumentAssets(currentDoc, rawMarkdown),
                 });
                 if (saveResult?.saved) {
                     updateExportStatus(getTranslation('latex_export_done', 'Exportación a LaTeX completada.'));

@@ -323,3 +323,5 @@ Escolle un PDF en **Importar**, ou arrástrao ao editor. A conversión faise no 
 Podes eliminar cabeceiras e pés repetidos, conservar imaxes e fórmulas detectadas como imaxes, e indicar páxinas como `1-3, 5` (baleiro significa todas). As dúas opcións están activadas inicialmente. Preme **Xerar vista previa**, revisa o resultado e despois **Importar nunha pestana nova**. Cambiar as opcións require outra vista previa. Cancelar non altera os documentos abertos.
 
 A detección de táboas, columnas e fórmulas pode dividir celas ou perder estrutura. As fórmulas detectadas son imaxes, non ecuacións editables; outras poden converterse mal. Desactiva a eliminación de cabeceiras e pés se desaparece texto útil. Os PDF de imaxes necesitan OCR, que non está incluído. Límites: 50 MB por ficheiro e 200 páxinas por conversión. Desbloquea antes os PDF con contrasinal.
+
+As imaxes do PDF gárdanse automaticamente como recursos separados, para non encher o gardado automático do navegador con datos Base64. Recupéranse ao abrir de novo a aplicación e inclúense ao gardar o Markdown cos seus recursos ou ao exportar.

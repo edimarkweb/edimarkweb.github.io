@@ -478,7 +478,9 @@ function currentLatexSettings() {
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const MAX_TOTAL_IMAGE_BYTES = 4 * 1024 * 1024;
 
-async function fetchImageBlob(url) {
+async function fetchImageBlob(url, readLocalImage) {
+  const localBlob = await readLocalImage?.(url);
+  if (localBlob) return { blob: localBlob, size: localBlob.size, local: true };
   const response = await fetch(url, { mode: 'cors' });
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
@@ -527,9 +529,10 @@ async function inlineFetchableImages(markdown, { onStatus } = {}) {
 
   triggerStatus(onStatus, 'images_downloading', 'Descargando imágenes...');
 
+  const readLocalImage = window.EdiMarkDocumentAssets?.createImageReader();
   const downloads = await Promise.all(urls.map(async (url) => {
     try {
-      return { url, ...(await fetchImageBlob(url)) };
+      return { url, ...(await fetchImageBlob(url, readLocalImage)) };
     } catch (error) {
       console.warn(`No se pudo incrustar la imagen ${url}:`, error);
       return { url, blob: null, size: 0 };
@@ -542,19 +545,21 @@ async function inlineFetchableImages(markdown, { onStatus } = {}) {
   let usedBytes = 0;
 
   // En orden de aparición, para que el presupuesto se gaste en las primeras.
-  for (const { url, blob, size } of downloads) {
+  for (const { url, blob, size, local } of downloads) {
     if (!blob) {
       // Sin blob por tamaño anunciado es «demasiado grande», no «no se pudo».
       (size > MAX_IMAGE_BYTES ? oversized : skipped).push(url);
       continue;
     }
-    if (size > MAX_IMAGE_BYTES || usedBytes + size > MAX_TOTAL_IMAGE_BYTES) {
+    // Los recursos del documento ya son locales: equivalen a las imágenes
+    // data: originales y no consumen el presupuesto de descargas de Internet.
+    if (!local && (size > MAX_IMAGE_BYTES || usedBytes + size > MAX_TOTAL_IMAGE_BYTES)) {
       oversized.push(url);
       continue;
     }
     try {
       replacements.set(url, await blobToDataUri(blob));
-      usedBytes += size;
+      if (!local) usedBytes += size;
     } catch (error) {
       console.warn(`No se pudo leer la imagen ${url}:`, error);
       skipped.push(url);
@@ -922,6 +927,18 @@ async function generateHtml({
       tocTitle: tocTitleFor(documentLanguage(), normalized),
     }).markdown
     : normalized;
+
+  // HTML debe ser portable también cuando las imágenes viven en IndexedDB.
+  // Los enlaces externos conservan su comportamiento habitual.
+  const readLocalImage = window.EdiMarkDocumentAssets?.createImageReader();
+  if (readLocalImage) {
+    const replacements = new Map();
+    for (const url of collectFetchableImageUrls(withLanguage)) {
+      const blob = await readLocalImage(url);
+      if (blob) replacements.set(url, await blobToDataUri(blob));
+    }
+    withLanguage = replaceImageUrls(withLanguage, replacements);
+  }
 
   const htmlFormatCss = standalone ? documentFormatCss(normalized) : '';
 
