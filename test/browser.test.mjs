@@ -5763,7 +5763,18 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.ok(!text.includes('REPEATED HEADER'));
   assert.ok(!text.includes('REPEATED FOOTER'));
   assert.ok(text.indexOf('LEFT END') < text.indexOf('RIGHT START'));
-  assert.ok(await preview.locator('table').count() >= 1);
+  /*
+    Cuatro tablas: la segunda lleva un símbolo matemático en una celda y aun así
+    debe llegar como tabla, no rasterizada junto al resto de la fórmula; la
+    tercera está dibujada como la imprime un navegador —bordes de celda sin una
+    sola línea vertical—, que es lo que se recibe al reimportar un PDF salido de
+    la propia aplicación; y la cuarta lleva reglas de ancho completo sin ningún
+    borde de columna, al estilo de LaTeX.
+  */
+  assert.ok(await preview.locator('table').count() >= 4, text);
+  assert.match(text, /Total/);
+  assert.match(text, /Negrita/);
+  assert.match(text, /Uvas/);
   assert.ok(await preview.locator('img').count() >= 1);
   assert.equal(await page.evaluate(() => markdownEditor.getValue()), initial);
   await page.locator('#pdf-pages').fill('99');
