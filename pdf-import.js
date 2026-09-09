@@ -119,7 +119,7 @@ function previewMarkdown(markdown, images, note) {
     return hidden ? `${rebuilt}\n\n*${note(hidden)}*` : rebuilt;
 }
 
-export async function importPdf(file, translate, assetFolder = '') {
+export async function importPdf(file, translate, assetFolder = '', accept = null) {
     if (active) return null;
     active = true;
     const t = key => translate(key, key);
@@ -258,6 +258,15 @@ export async function importPdf(file, translate, assetFolder = '') {
             bar.removeAttribute('aria-valuenow');
             bar.querySelector('.pdf-import-progress-bar').style.width = '';
         }
+        /*
+          Un mensaje puesto justo antes de un trabajo largo no se ve: el hilo
+          se bloquea sin haber pintado. Cediendo dos fotogramas, sí.
+        */
+        async function announce(key) {
+            $('#pdf-import-status').textContent = t(key);
+            setProgress('loading', 0, 0);
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        }
         function renewWatchdog() {
             clearTimeout(watchdog);
             if (busy) watchdog = setTimeout(() => fail('pdf_error'), 180000);
@@ -365,6 +374,13 @@ export async function importPdf(file, translate, assetFolder = '') {
                     try {
                         markdown = stripUnsafeMarkup(await applyOcr(data.result));
                         if (!markdown.trim()) { fail('pdf_empty'); return; }
+                        /*
+                          Convertir termina aquí, pero armar la vista previa de
+                          un documento largo lleva sus segundos más, y hasta
+                          ahora los pasaba en silencio con la última página en
+                          pantalla: exactamente igual que si se hubiera colgado.
+                        */
+                        await announce('pdf_preparing_preview');
                         const shown = previewMarkdown(markdown, images, count =>
                             t('pdf_preview_images_hidden').replace('{count}', String(count)));
                         const html = stripUnsafeMarkup(window.marked.parse(shown));
@@ -388,16 +404,33 @@ export async function importPdf(file, translate, assetFolder = '') {
         }
         dialog.addEventListener('cancel', event => { event.preventDefault(); finish(null); });
         $('#pdf-cancel').onclick = () => finish(null);
-        $('#pdf-accept').onclick = () => {
+        $('#pdf-accept').onclick = async () => {
             if (busy || !markdown) return;
             // Only the pictures the text still points at: a page whose OCR
             // reading won leaves its own image behind.
             const used = new Set(Array.from(markdown.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g), m => m[1]));
-            finish({
+            const result = {
                 markdown,
                 images: Array.from(images).filter(([path]) => used.has(path))
                     .map(([path, bytes]) => ({ relativePath: path, bytes })),
-            });
+            };
+            if (!accept) { finish(result); return; }
+            /*
+              Crear el documento, escribir sus imágenes y abrir la pestaña
+              lleva su tiempo con un informe entero, y el diálogo se cerraba
+              antes de empezar: la aplicación se quedaba quieta sin decir nada.
+              Ahora espera aquí, a la vista, y se cierra cuando está hecho.
+            */
+            setBusy(true);
+            await announce('pdf_importing');
+            try {
+                finish(await accept(result) ?? result);
+            } catch (error) {
+                if (!closed) {
+                    console.error('No se pudo abrir el PDF importado:', error);
+                    fail('pdf_error');
+                }
+            }
         };
         for (const input of dialog.querySelectorAll('input, select')) input.addEventListener('input', () => {
             markdown = null;

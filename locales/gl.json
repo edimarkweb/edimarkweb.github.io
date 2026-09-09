@@ -619,6 +619,8 @@
   "pdf_scanning_page": "Analizando cabeceiras e pés… páxina {page} de {total}",
   "pdf_analysing_page": "Analizando o documento… páxina {page} de {total}",
   "pdf_converting_page": "Convertendo o PDF… páxina {page} de {total}",
+  "pdf_preparing_preview": "Preparando a vista previa…",
+  "pdf_importing": "Importando nunha pestana nova…",
   "pdf_converting": "Convertendo PDF…",
   "pdf_ocr_loading": "Cargando o recoñecemento de texto local por primeira vez…",
   "pdf_ocr_rendering": "Preparando unha páxina para o OCR…",

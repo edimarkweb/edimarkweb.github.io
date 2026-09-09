@@ -6439,9 +6439,14 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
         try {
             const { importPdf } = await import('./pdf-import.js?v=2.50.0');
             const name = getSafeDocumentName(file.name);
-            const imported = await importPdf(file, getTranslation, extractedAssetsFolderName(name));
-            if (imported === null) return false;
-            const createdDoc = await createImportedPdfDocument(name, imported);
+            // Crear el documento ocurre dentro del diálogo, que se queda a la
+            // vista avisando: con un informe entero no es cosa de un instante.
+            const createdDoc = await importPdf(
+                file,
+                getTranslation,
+                extractedAssetsFolderName(name),
+                resultado => createImportedPdfDocument(name, resultado),
+            );
             if (!createdDoc) return false;
             reportStatus(getTranslation('import_file_success', 'Importación completada.'));
             return true;

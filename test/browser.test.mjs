@@ -6004,6 +6004,14 @@ test('PDF largo: más de doscientas páginas de una vez', { timeout: 300000 }, a
   assert.doesNotMatch(imported, /CAPITULO SEGUNDO/);
   // La cuenta de páginas llegó hasta el final, sin quedarse en 200.
   assert.ok(avisos.some(texto => /de 210/.test(texto)), avisos.slice(-6).join(' | '));
+  /*
+    Convertir no es lo último que pasa: armar la vista previa y luego crear el
+    documento con sus imágenes llevan lo suyo en un documento largo, y antes se
+    hacían en silencio, con la última página en pantalla, como si se hubiera
+    quedado colgado. Las dos esperas se anuncian.
+  */
+  assert.ok(avisos.some(texto => /Preparando la vista previa/.test(texto)), avisos.join(' | ').slice(-300));
+  assert.ok(avisos.some(texto => /Importando en una pestaña nueva/.test(texto)), avisos.join(' | ').slice(-300));
 });
 
 test('PDF escaneado: el OCR local produce Markdown editable', { timeout: 180000 }, async (t) => {
