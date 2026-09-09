@@ -1914,6 +1914,14 @@ function applySpellChecking(lang) {
     }
 }
 
+/*
+  Por encima de estas líneas, el editor deja de medir el reparto exacto de cada
+  una: la capa gemela que lo permite cuesta segundos de bloqueo en documentos
+  de decenas de miles de líneas, y una altura media mueve igual de bien la
+  vista previa de un texto de ese tamaño.
+*/
+const MEASURABLE_LINES = 5000;
+
 function createTextareaEditor(textarea) {
     textarea.value = normalizeNewlines(textarea.value || '');
     textarea.classList.add('markdown-textarea');
@@ -1955,6 +1963,7 @@ function createTextareaEditor(textarea) {
     measureLayer.appendChild(measureContent);
     wrapper.insertBefore(measureLayer, textarea);
     let measuredText = null;
+    let measuredLines = [];
 
     const changeHandlers = new Set();
     const cursorHandlers = new Set();
@@ -2086,10 +2095,17 @@ function createTextareaEditor(textarea) {
         return matches;
     }
 
+    /*
+      La capa solo existe para pintar las coincidencias de la búsqueda detrás
+      del textarea. Sin ninguna que pintar se llenaba igual con todo el texto,
+      y maquetar el millón y medio de caracteres de un PDF largo son cinco
+      segundos de ventana congelada al abrirlo, para no enseñar nada. Vacía
+      cuando no hay nada que marcar.
+    */
     function renderHighlights() {
         const text = textarea.value || '';
         if (!highlightMatches.length) {
-            highlightContent.innerHTML = text ? escapeHtml(text) : '&#8203;';
+            highlightContent.innerHTML = '&#8203;';
             highlightLayer.classList.remove('has-highlights');
             syncScroll();
             return;
@@ -2614,21 +2630,41 @@ function createTextareaEditor(textarea) {
       Cada línea lógica, un span; el salto entre ellos lo pone el `\n` del
       `pre`, igual que en la capa de resaltado, así que el reparto de líneas es
       exactamente el del textarea.
+
+      Salvo en un documento enorme. Un PDF de trescientas páginas trae treinta
+      mil líneas, y preguntarle a treinta mil spans dónde empieza uno obliga al
+      navegador a repartirlas todas: nueve segundos con la ventana congelada
+      solo por abrir el documento. Pasado ese tamaño se reparte a ojo, por la
+      altura media, que para arrastrar la vista previa de un texto así basta.
     */
     function refreshLineMetrics() {
         const text = textarea.value || '';
         if (measuredText === text) return;
         measuredText = text;
-        measureContent.innerHTML = text
-            .split('\n')
+        measuredLines = text.split('\n');
+        if (measuredLines.length > MEASURABLE_LINES) {
+            measureContent.innerHTML = '';
+            return;
+        }
+        measureContent.innerHTML = measuredLines
             .map(line => `<span>${line ? escapeHtml(line) : '&#8203;'}</span>`)
             .join('\n');
+    }
+
+    function estimatedLineMetrics(line) {
+        const total = measuredLines.length || 1;
+        // La altura real del contenido repartida entre sus líneas: aproximada
+        // línea a línea, pero fiel al conjunto, que es lo que mueve el scroll.
+        const height = (textarea.scrollHeight || 0) / total;
+        if (!height) return null;
+        const index = Math.max(0, Math.min(Math.round(line) || 0, total - 1));
+        return { top: index * height, height };
     }
 
     function lineMetrics(line) {
         refreshLineMetrics();
         const spans = measureContent.children;
-        if (!spans.length) return null;
+        if (!spans.length) return measuredLines.length ? estimatedLineMetrics(line) : null;
         const index = Math.max(0, Math.min(Math.round(line) || 0, spans.length - 1));
         const span = spans[index];
         if (!span) return null;
