@@ -801,10 +801,11 @@ test('la versión no se desincroniza entre package.json y la aplicación', () =>
     Los archivos propios se piden con `?v=` para que el navegador no sirva una
     copia vieja junto al HTML nuevo —que es lo que pasaba al desarrollar—. Ese
     número solo sirve si se sube con los demás: uno rezagado deja la caché
-    igual de pegada que antes.
+    igual de pegada que antes. Puede seguirle una revisión puntual de caché
+    (`&rev=`) cuando se publica un arreglo web sin adelantar la release nativa.
   */
   const indexHtml = leer('index.html');
-  const versionados = [...indexHtml.matchAll(/(?:src|href)="([a-z0-9-]+\.(?:js|css))(\?v=([^"]*))?"/g)];
+  const versionados = [...indexHtml.matchAll(/(?:src|href)="([a-z0-9-]+\.(?:js|css))(\?v=([^"&]*)(?:&amp;[^\"]*)?)?"/g)];
   assert.ok(versionados.length, 'no se encuentran los archivos propios en index.html');
   for (const [, archivo, , version] of versionados) {
     assert.equal(version, packageVersion, `${archivo} no lleva ?v=${packageVersion} en index.html`);
