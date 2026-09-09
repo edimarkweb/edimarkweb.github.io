@@ -1,4 +1,6 @@
 """Local PDF conversion, shared by Pyodide and the regression tests."""
+import base64
+import binascii
 import json
 import re
 from collections import defaultdict
@@ -14,6 +16,11 @@ pymupdf4llm.use_layout(False)
 # cover, the page is still a picture and worth reading with OCR.
 SCAN_TEXT_LIMIT = 120
 SCAN_IMAGE_RATIO = .5
+
+# What the converter writes when it embeds a picture, and the extensions the
+# application uses for the files it keeps beside a document.
+EMBEDDED_IMAGE = re.compile(r'!\[([^\]]*)\]\(\s*data:image/([A-Za-z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+?)\s*\)')
+IMAGE_EXTENSIONS = {'jpeg': 'jpg', 'svg+xml': 'svg'}
 
 
 def selected_pages(value, count):
@@ -231,6 +238,36 @@ def page_image_format(page):
     return 'png'
 
 
+def detach_images(markdown, folder, first, emit):
+    """Write each embedded picture out and leave only its path in the text.
+
+    Base64 inside the text is what made a large import unaffordable: the
+    string crosses into the page, is parsed again, rendered, and every copy
+    carries the pictures a third heavier than the files themselves. A 442-page
+    report reached a hundred megabytes of Markdown that way and ran the
+    browser out of memory. Detaching page by page keeps the peak at one page
+    and hands the bytes over untouched.
+
+    Returns the rewritten text and the number the next picture should take.
+    """
+    number = first
+
+    def replace(match):
+        nonlocal number
+        alt, kind, data = match.group(1), match.group(2).lower(), match.group(3)
+        try:
+            raw = base64.b64decode(data)
+        except (ValueError, binascii.Error):
+            # An unreadable picture stays where it is rather than disappearing.
+            return match.group(0)
+        path = f'{folder}/images/{number:02}.{IMAGE_EXTENSIONS.get(kind, kind)}'
+        emit(path, raw)
+        number += 1
+        return f'![{alt}]({path})'
+
+    return EMBEDDED_IMAGE.sub(replace, markdown), number
+
+
 def image_coverage(page):
     """How much of the page its images cover, overlaps counted only once."""
     area = abs(page.rect)
@@ -252,7 +289,7 @@ def image_coverage(page):
     return min(sum(abs(rect) for rect in parts), abs(bounds)) / area
 
 
-def convert_pdf(data, options, progress=None):
+def convert_pdf(data, options, progress=None, emit_image=None):
     """Convert a PDF to Markdown, reporting how far along it is.
 
     The work runs page by page and says so: converting a long document takes
@@ -298,6 +335,9 @@ def convert_pdf(data, options, progress=None):
         # One page at a time: identical output, and a count to show meanwhile.
         chunks = []
         ocr_pages = []
+        folder = str(options.get('assetFolder') or '').strip('/')
+        detach = bool(folder) and emit_image is not None
+        image_number = 1
         for number in range(total):
             page_markdown = pymupdf4llm.to_markdown(
                 source, pages=[number], embed_images=keep_images, image_size_limit=0,
@@ -318,6 +358,12 @@ def convert_pdf(data, options, progress=None):
                     'letters': letters[number],
                 })
             else:
+                # The picture of a scanned page stays embedded: it is only
+                # kept if OCR reads nothing there, and a file written for a
+                # page that ends up discarded would be an orphan.
+                if detach:
+                    page_markdown, image_number = detach_images(
+                        page_markdown, folder, image_number, emit_image)
                 chunks.append(page_markdown)
             report('converting', number + 1, total)
         return {
@@ -326,6 +372,7 @@ def convert_pdf(data, options, progress=None):
             'textPages': text_pages,
             'mathRegions': math_regions,
             'ocrPages': ocr_pages,
+            'images': image_number - 1,
         }
 
 
@@ -364,5 +411,5 @@ def inspect_json(data):
     return json.dumps(inspect_pdf(bytes(data)))
 
 
-def convert_json(data, options_json, progress=None):
-    return json.dumps(convert_pdf(bytes(data), json.loads(options_json), progress))
+def convert_json(data, options_json, progress=None, emit_image=None):
+    return json.dumps(convert_pdf(bytes(data), json.loads(options_json), progress, emit_image))

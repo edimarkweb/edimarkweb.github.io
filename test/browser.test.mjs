@@ -5840,11 +5840,11 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   });
   await page.locator('#import-file-input').setInputFiles(fixture);
   await page.waitForFunction(
-    () => document.querySelector('#pdf-import-info')?.textContent.includes('6'),
+    () => document.querySelector('#pdf-import-info')?.textContent.includes('7'),
     null,
     { timeout: 120000 },
   );
-  assert.match(await page.locator('#pdf-import-info').innerText(), /6/);
+  assert.match(await page.locator('#pdf-import-info').innerText(), /7/);
   assert.match(await page.locator('#pdf-import-info').innerText(), /200/);
   assert.equal(await page.locator('#pdf-preview').isDisabled(), false);
   await page.locator('#pdf-preview').click();
@@ -5855,7 +5855,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     confunde con uno colgado, así que la barra tiene que haber contado páginas
     y desaparecer al terminar.
   */
-  assert.ok(avance.some(paso => /\b1 (de|of|\/) 6\b|1 de 6/.test(paso)), avance.join(' | '));
+  assert.ok(avance.some(paso => /\b1 (de|of|\/) 7\b|1 de 7/.test(paso)), avance.join(' | '));
   assert.ok(avance.includes('100'), avance.join(' | '));
   assert.equal(await page.locator('#pdf-import-progress').isHidden(), true);
   const preview = page.frameLocator('#pdf-import-preview');
@@ -5884,8 +5884,14 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   */
   const fuentes = await preview.locator('img').evaluateAll(nodes => nodes.map(n => n.getAttribute('src') || ''));
   const cabeceras = fuentes.map(src => src.slice(0, 24)).join(' | ');
-  assert.ok(fuentes.some(src => src.startsWith('data:image/jpg;base64,')), cabeceras);
+  assert.ok(fuentes.some(src => src.startsWith('data:image/jpeg;base64,')), cabeceras);
   assert.ok(fuentes.some(src => src.startsWith('data:image/png;base64,')), cabeceras);
+  /*
+    Las imágenes ya no viajan dentro del texto: la vista previa las repone,
+    pero solo una docena. El resto se nombra, y el aviso dice cuántas son.
+  */
+  assert.equal(fuentes.length, 12, cabeceras);
+  assert.match(text, /3 imágenes más no se muestran/);
   assert.equal(await page.evaluate(() => markdownEditor.getValue()), initial);
   await page.locator('#pdf-pages').fill('99');
   assert.equal(await page.locator('#pdf-accept').isDisabled(), true);
@@ -5904,12 +5910,39 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.match(imported, /Apples/);
   assert.doesNotMatch(imported, /LEFT START/);
   assert.match(imported, /\|/);
+  /*
+    La fotografía de la primera página llega como archivo aparte, con su ruta
+    en el texto y su recurso registrado. Dentro del documento no queda ni un
+    base64: es lo que permitió importar informes que antes agotaban la memoria.
+  */
   await page.locator('#import-file-input').setInputFiles(fixture);
-  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('6'), null, { timeout: 120000 });
+  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('7'), null, { timeout: 120000 });
+  await page.locator('#pdf-pages').fill('1');
+  await page.locator('#pdf-preview').click();
+  // El botón, no el aria-busy: entre pulsar y ponerse a trabajar hay un
+  // instante en que el diálogo todavía dice que está libre.
+  await page.waitForFunction(
+    () => document.querySelector('#pdf-accept') && !document.querySelector('#pdf-accept').disabled,
+    null,
+    { timeout: 120000 },
+  );
+  await page.locator('#pdf-accept').click();
+  const conFoto = await page.evaluate(() => markdownEditor.getValue());
+  assert.match(conFoto, /!\[[^\]]*\]\([^)\s]*\/images\/01\.jpg\)/, conFoto.slice(0, 300));
+  assert.doesNotMatch(conFoto, /data:image/);
+  const recursos = await page.evaluate(async () => {
+    const doc = docs.find(d => d.id === currentId);
+    const archivos = await collectLinkedDocumentAssets(doc, markdownEditor.getValue());
+    return archivos.map(archivo => archivo.relativePath);
+  });
+  assert.ok(recursos.some(ruta => /images\/01\.jpg$/.test(ruta)), recursos.join(' | '));
+
+  await page.locator('#import-file-input').setInputFiles(fixture);
+  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('7'), null, { timeout: 120000 });
   await page.locator('#pdf-preview').click();
   await page.locator('#pdf-cancel').click();
   assert.equal(await page.locator('.pdf-import-dialog').count(), 0);
-  assert.equal(await page.evaluate(() => markdownEditor.getValue()), imported);
+  assert.equal(await page.evaluate(() => markdownEditor.getValue()), conFoto);
   assert.equal(requests.some(url => /pythonhosted|pyodide.org|cdn.jsdelivr.net\/pyodide/.test(url)), false);
 });
 
@@ -5961,6 +5994,8 @@ test('PDF escaneado: el OCR local produce Markdown editable', { timeout: 180000 
   // La lámina sin texto pasa por el OCR sin resultado: conserva su imagen,
   // que la importación extrae como recurso, y no deja una página vacía.
   assert.match(imported, /!\[\]\([^)\s]*images\/\d+\.png\)/);
+  // Ninguna imagen viaja ya dentro del texto.
+  assert.doesNotMatch(imported, /data:image/);
   assert.doesNotMatch(imported, /## Página 2/);
   // Y una portada con imagen grande y poco texto conserva su texto de verdad,
   // que el reconocimiento no mejora, junto con la imagen.
@@ -5985,8 +6020,10 @@ test('PDF grande: imágenes fuera de localStorage, dólares literales y recupera
   t.after(() => context.close());
   const image = Buffer.concat([PNG_PIXEL, Buffer.alloc(5 * 1024 * 1024)]).toString('base64');
   const source = `Price $200/month\n\n**Conclusion**\n\n![Large](data:image/png;base64,${image}\n)\n\nAnother price US$40 billion.\n\nMath $x+1$`;
+  // Sin imágenes sueltas: se prueba la repesca del base64 que aún llega
+  // incrustado, que es como viaja la página cuyo OCR no leyó nada.
   const id = await page.evaluate(async markdown => {
-    const doc = await createImportedPdfDocument('Large PDF', markdown);
+    const doc = await createImportedPdfDocument('Large PDF', { markdown, images: [] });
     return doc.id;
   }, source);
   await page.waitForFunction(() => {

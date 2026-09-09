@@ -95,13 +95,30 @@ self.onmessage = async ({ data }) => {
           that is what keeps the dialog moving during a long conversion.
         */
         py.globals.set('report_progress', report);
+        /*
+          Pictures leave one at a time, as bytes, instead of riding inside the
+          Markdown as base64: the text that crosses over stays small, and each
+          image is transferred rather than copied into the page.
+        */
+        py.globals.set('emit_image', (path, data) => {
+            const view = data?.toJs ? data.toJs() : data;
+            try {
+                // A copy of its own: the view may look into Python's heap,
+                // which must never be handed over to another thread.
+                const bytes = new Uint8Array(view);
+                self.postMessage({ type: 'image', path, bytes }, [bytes.buffer]);
+            } finally {
+                data?.destroy?.();
+            }
+        });
         try {
-            const result = JSON.parse(py.runPython('convert_json(pdf_bytes, pdf_options, report_progress)'));
+            const result = JSON.parse(py.runPython('convert_json(pdf_bytes, pdf_options, report_progress, emit_image)'));
             self.postMessage({ type: 'result', result });
             if (!result.ocrPages?.length) py.globals.delete('pdf_bytes');
         } finally {
             py.globals.delete('pdf_options');
             py.globals.delete('report_progress');
+            py.globals.delete('emit_image');
         }
     } catch (error) {
         const message = String(error);

@@ -72,7 +72,41 @@ function ocrPageMarkdown(text, page) {
     return ocrTextToMarkdown(text, page.page);
 }
 
-export async function importPdf(file, translate) {
+/*
+  Pictures no longer travel inside the Markdown, so the preview has to put
+  them back to show them. Only the first few: rebuilding every picture of a
+  long report as base64 is the very peak this conversion stopped paying.
+*/
+const PREVIEW_IMAGES = 12;
+const IMAGE_MIMES = { jpg: 'jpeg', svg: 'svg+xml' };
+
+function base64FromBytes(bytes) {
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(binary);
+}
+
+function previewMarkdown(markdown, images, note) {
+    if (!images.size) return markdown;
+    let shown = 0;
+    let hidden = 0;
+    const rebuilt = markdown.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (match, alt, path) => {
+        const bytes = images.get(path);
+        if (!bytes) return match;
+        if (shown >= PREVIEW_IMAGES) {
+            hidden += 1;
+            return `\`${path}\``;
+        }
+        shown += 1;
+        const kind = path.split('.').pop().toLowerCase();
+        return `![${alt}](data:image/${IMAGE_MIMES[kind] || kind};base64,${base64FromBytes(bytes)})`;
+    });
+    return hidden ? `${rebuilt}\n\n*${note(hidden)}*` : rebuilt;
+}
+
+export async function importPdf(file, translate, assetFolder = '') {
     if (active) return null;
     active = true;
     const t = key => translate(key, key);
@@ -143,6 +177,7 @@ export async function importPdf(file, translate) {
     let ocrWorker;
     let ocrWorkerLanguage;
     const pendingOcrImages = new Map();
+    const images = new Map();
     let markdown = null;
     let busy = false;
     let inspected = false;
@@ -287,6 +322,7 @@ export async function importPdf(file, translate) {
                 if (data.type === 'progress') setProgress(data.stage, data.done, data.total);
                 else if (data.type === 'status') $('#pdf-import-status').textContent = t(data.key);
                 else if (data.type === 'error') fail(data.key);
+                else if (data.type === 'image') images.set(data.path, data.bytes);
                 else if (data.type === 'ocrImage') {
                     const pending = pendingOcrImages.get(data.pageIndex);
                     if (pending) {
@@ -304,7 +340,9 @@ export async function importPdf(file, translate) {
                     try {
                         markdown = stripUnsafeMarkup(await applyOcr(data.result));
                         if (!markdown.trim()) { fail('pdf_empty'); return; }
-                        const html = stripUnsafeMarkup(window.marked.parse(markdown));
+                        const shown = previewMarkdown(markdown, images, count =>
+                            t('pdf_preview_images_hidden').replace('{count}', String(count)));
+                        const html = stripUnsafeMarkup(window.marked.parse(shown));
                         // No scripts, network requests, forms or parent access in the preview.
                         await setPreview(`<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline';"><style>body{font:16px/1.5 system-ui;padding:16px;color:#182536;background:#fff;overflow-wrap:anywhere}img{max-width:100%}table{border-collapse:collapse}td,th{border:1px solid #94a3b8;padding:6px}pre{white-space:pre-wrap}a{pointer-events:none}</style>${html}`);
                         if (closed || !busy) return;
@@ -325,7 +363,17 @@ export async function importPdf(file, translate) {
         }
         dialog.addEventListener('cancel', event => { event.preventDefault(); finish(null); });
         $('#pdf-cancel').onclick = () => finish(null);
-        $('#pdf-accept').onclick = () => { if (!busy && markdown) finish(markdown); };
+        $('#pdf-accept').onclick = () => {
+            if (busy || !markdown) return;
+            // Only the pictures the text still points at: a page whose OCR
+            // reading won leaves its own image behind.
+            const used = new Set(Array.from(markdown.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g), m => m[1]));
+            finish({
+                markdown,
+                images: Array.from(images).filter(([path]) => used.has(path))
+                    .map(([path, bytes]) => ({ relativePath: path, bytes })),
+            });
+        };
         for (const input of dialog.querySelectorAll('input, select')) input.addEventListener('input', () => {
             markdown = null;
             $('#pdf-accept').disabled = true;
@@ -336,6 +384,7 @@ export async function importPdf(file, translate) {
         $('#pdf-preview').onclick = async () => {
             if (busy) return;
             markdown = null;
+            images.clear();
             setPreview();
             if (file.size > 50 * 1024 * 1024) return fail('pdf_size_limit');
             setBusy(true);
@@ -346,6 +395,7 @@ export async function importPdf(file, translate) {
                 const bytes = await file.arrayBuffer();
                 if (closed) return;
                 worker.postMessage({ operation: 'convert', bytes, options: {
+                    assetFolder,
                     pages: $('#pdf-pages').value,
                     removeHeaders: $('#pdf-remove-headers').checked,
                     keepImages: $('#pdf-keep-images').checked,

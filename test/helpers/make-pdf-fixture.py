@@ -47,6 +47,20 @@ page.insert_text((40, 165), 'x', fontsize=18)
 page.insert_text((55, 165), '=', fontname='symb', fontsize=18)
 page.insert_text((80, 165), '2', fontsize=18)
 page.insert_text((40, 210), 'Text after formula.', fontsize=12)
+# Séptima página: más imágenes de las que la vista previa enseña, para que se
+# vea que las demás quedan nombradas y aun así se importan.
+page = doc.new_page(width=595, height=842)
+page.insert_text((40, 25), 'REPEATED HEADER', fontsize=10)
+page.insert_text((40, 85), 'Gallery', fontsize=18)
+page.insert_text((40, 120), 'Trece miniaturas seguidas.', fontsize=12)
+for i in range(13):
+    tarjeta = pymupdf.open()
+    lienzo = tarjeta.new_page(width=60, height=45)
+    lienzo.draw_rect(pymupdf.Rect(0, 0, 60, 45), color=None, fill=(i / 13, .5, 1 - i / 13))
+    x, y = 40 + (i % 4) * 130, 160 + (i // 4) * 110
+    page.insert_image(pymupdf.Rect(x, y, x + 120, y + 90), stream=lienzo.get_pixmap(dpi=96).tobytes('jpg'))
+    tarjeta.close()
+
 path=Path(__file__).resolve().parents[1]/'fixtures'/'pdf-import.pdf'
 doc.save(path,deflate=True)
 

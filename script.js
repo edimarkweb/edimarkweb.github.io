@@ -6394,8 +6394,21 @@ function importProgressLabel(file, index, total) {
         : formatTranslation('import_progress_single', 'Importando {name}', { name });
 }
 
-async function createImportedPdfDocument(name, markdown) {
-    const prepared = prepareEmbeddedImageExtraction(markdown, name);
+async function createImportedPdfDocument(name, imported) {
+    /*
+      El conversor ya entrega las imágenes como archivos, con su ruta escrita
+      en el texto. Solo queda repescar las que sigan incrustadas, que son las
+      de alguna página reconocida por OCR, y por eso se sigue pasando por la
+      extracción de siempre: numera detrás de las rutas que ya existen.
+    */
+    const detached = imported.images.map(image => ({
+        relativePath: image.relativePath,
+        blob: new File([image.bytes], image.relativePath.split('/').pop(), {
+            type: `image/${canonicalImageMime(image.relativePath.split('.').pop())}`,
+        }),
+    }));
+    const extracted = prepareEmbeddedImageExtraction(imported.markdown, name);
+    const prepared = { markdown: extracted.markdown, files: detached.concat(extracted.files) };
     const doc = newDoc(name, prepared.markdown, { activate: false });
     registerExtractedAssets(doc, prepared.files);
     if (prepared.files.length) {
@@ -6425,9 +6438,10 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     if (format === 'pdf') {
         try {
             const { importPdf } = await import('./pdf-import.js?v=2.49.4');
-            const markdown = await importPdf(file, getTranslation);
-            if (markdown === null) return false;
-            const createdDoc = await createImportedPdfDocument(getSafeDocumentName(file.name), markdown);
+            const name = getSafeDocumentName(file.name);
+            const imported = await importPdf(file, getTranslation, extractedAssetsFolderName(name));
+            if (imported === null) return false;
+            const createdDoc = await createImportedPdfDocument(name, imported);
             if (!createdDoc) return false;
             reportStatus(getTranslation('import_file_success', 'Importación completada.'));
             return true;
