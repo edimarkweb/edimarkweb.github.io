@@ -608,11 +608,12 @@
   "pdf_ocr": "Apply OCR to scanned pages",
   "pdf_ocr_language": "OCR language",
   "pdf_pages": "Pages (empty = all; example: 1-3, 5)",
-  "pdf_preview": "Generate preview",
+  "pdf_preview": "Convert to Markdown",
+  "pdf_preview_frame": "Preview of the converted document",
   "pdf_preview_images_hidden": "{count} further images are not shown here, but they will be imported all the same.",
   "pdf_preview_truncated": "The preview shows only the beginning of the document, which is imported whole.",
   "pdf_accept": "Import into a new tab",
-  "pdf_changed": "Options changed. Generate another preview.",
+  "pdf_changed": "The options have changed. Convert again.",
   "pdf_inspecting": "Checking the number of pages…",
   "pdf_document_info": "PDF pages: {count}. A long document can take several minutes to convert.",
   "pdf_document_scanned": "{scanned} of them look scanned: tick OCR if you want their text.",
@@ -635,6 +636,6 @@
   "pdf_partial": "Some pages have no extractable text. Review the result; OCR was disabled.",
   "pdf_ocr_ready": "OCR complete. Review possible recognition errors before importing.",
   "pdf_ocr_error": "OCR could not be completed. Check the connection in the web version or try again.",
-  "pdf_ready": "Preview ready. Review the content before importing.",
+  "pdf_ready": "Conversion finished. Review the content before importing it.",
   "pdf_cancel": "Cancel"
 }

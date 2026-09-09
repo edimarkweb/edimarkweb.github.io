@@ -608,11 +608,12 @@
   "pdf_ocr": "Aplicar OCR a les pàgines escanejades",
   "pdf_ocr_language": "Idioma de l’OCR",
   "pdf_pages": "Pàgines (buit = totes; exemple: 1-3, 5)",
-  "pdf_preview": "Generar vista prèvia",
+  "pdf_preview": "Convertir a Markdown",
+  "pdf_preview_frame": "Vista prèvia del document convertit",
   "pdf_preview_images_hidden": "{count} imatges més no es mostren aquí, però s’importaran igualment.",
   "pdf_preview_truncated": "La vista prèvia mostra només el començament del document, que s’importarà sencer.",
   "pdf_accept": "Importar en una pestanya nova",
-  "pdf_changed": "Les opcions han canviat. Genera una altra vista prèvia.",
+  "pdf_changed": "Les opcions han canviat. Torna a convertir.",
   "pdf_inspecting": "Comprovant el nombre de pàgines…",
   "pdf_document_info": "Pàgines del PDF: {count}. Un document llarg pot trigar uns quants minuts a convertir-se.",
   "pdf_document_scanned": "{scanned} semblen escanejades: marca l’OCR si en vols el text.",
@@ -635,6 +636,6 @@
   "pdf_partial": "Hi ha pàgines sense text extraïble. Revisa el resultat; l’OCR estava desactivat.",
   "pdf_ocr_ready": "OCR acabat. Revisa possibles errors de reconeixement abans d’importar.",
   "pdf_ocr_error": "No s’ha pogut completar l’OCR. Comprova la connexió a la versió web o torna-ho a provar.",
-  "pdf_ready": "Vista prèvia preparada. Revisa el contingut abans d’importar-lo.",
+  "pdf_ready": "Conversió acabada. Revisa el contingut abans d’importar-lo.",
   "pdf_cancel": "Cancel·lar"
 }

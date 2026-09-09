@@ -608,11 +608,12 @@
   "pdf_ocr": "Aplikatu OCRa eskaneatutako orriei",
   "pdf_ocr_language": "OCRaren hizkuntza",
   "pdf_pages": "Orrialdeak (hutsik = guztiak; adibidez: 1-3, 5)",
-  "pdf_preview": "Sortu aurrebista",
+  "pdf_preview": "Bihurtu Markdownera",
+  "pdf_preview_frame": "Bihurtutako dokumentuaren aurrebista",
   "pdf_preview_images_hidden": "Beste {count} irudi ez dira hemen erakusten, baina inportatu egingo dira.",
   "pdf_preview_truncated": "Aurrebistak dokumentuaren hasiera baino ez du erakusten; osorik inportatuko da.",
   "pdf_accept": "Inportatu fitxa berri batean",
-  "pdf_changed": "Aukerak aldatu dira. Sortu beste aurrebista bat.",
+  "pdf_changed": "Aukerak aldatu dira. Bihurtu berriro.",
   "pdf_inspecting": "Orrialde kopurua egiaztatzen…",
   "pdf_document_info": "PDFaren orrialdeak: {count}. Dokumentu luze batek minutu batzuk behar ditzake bihurtzeko.",
   "pdf_document_scanned": "{scanned} eskaneatuta daudela dirudi: markatu OCRa haien testua nahi baduzu.",
@@ -635,6 +636,6 @@
   "pdf_partial": "Orri batzuek ez dute erauzteko testurik. Berrikusi emaitza; OCRa desaktibatuta zegoen.",
   "pdf_ocr_ready": "OCRa amaitu da. Berrikusi ezagutza-erroreak inportatu aurretik.",
   "pdf_ocr_error": "Ezin izan da OCRa osatu. Egiaztatu konexioa web bertsioan edo saiatu berriro.",
-  "pdf_ready": "Aurrebista prest. Berrikusi edukia inportatu aurretik.",
+  "pdf_ready": "Bihurketa amaituta. Berrikusi edukia inportatu aurretik.",
   "pdf_cancel": "Utzi"
 }

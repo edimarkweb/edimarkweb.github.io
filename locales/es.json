@@ -608,11 +608,12 @@
   "pdf_ocr": "Aplicar OCR a las páginas escaneadas",
   "pdf_ocr_language": "Idioma del OCR",
   "pdf_pages": "Páginas (vacío = todas; ejemplo: 1-3, 5)",
-  "pdf_preview": "Generar vista previa",
+  "pdf_preview": "Convertir a Markdown",
+  "pdf_preview_frame": "Vista previa del documento convertido",
   "pdf_preview_images_hidden": "{count} imágenes más no se muestran aquí, pero se importarán igualmente.",
   "pdf_preview_truncated": "La vista previa muestra solo el principio del documento, que se importará entero.",
   "pdf_accept": "Importar en una pestaña nueva",
-  "pdf_changed": "Las opciones han cambiado. Genera otra vista previa.",
+  "pdf_changed": "Las opciones han cambiado. Vuelve a convertir.",
   "pdf_inspecting": "Comprobando el número de páginas…",
   "pdf_document_info": "Páginas del PDF: {count}. Un documento largo puede tardar varios minutos en convertirse.",
   "pdf_document_scanned": "{scanned} parecen escaneadas: marca el OCR si quieres su texto.",
@@ -635,6 +636,6 @@
   "pdf_partial": "Hay páginas sin texto extraíble. Revisa el resultado; el OCR estaba desactivado.",
   "pdf_ocr_ready": "OCR terminado. Revisa posibles errores de reconocimiento antes de importar.",
   "pdf_ocr_error": "No se pudo completar el OCR. Comprueba la conexión en la versión web o vuelve a intentarlo.",
-  "pdf_ready": "Vista previa preparada. Revisa el contenido antes de importarlo.",
+  "pdf_ready": "Conversión terminada. Revisa el contenido antes de importarlo.",
   "pdf_cancel": "Cancelar"
 }

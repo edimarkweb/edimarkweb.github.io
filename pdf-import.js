@@ -180,14 +180,14 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
     $('#pdf-cancel').textContent = t('pdf_cancel');
     $('#pdf-preview').textContent = t('pdf_preview');
     $('#pdf-accept').textContent = t('pdf_accept');
-    $('#pdf-import-preview').title = t('pdf_preview');
+    $('#pdf-import-preview').title = t('pdf_preview_frame');
     document.body.append(dialog);
     // A fresh frame avoids competing about:blank/srcdoc navigations in Firefox
     // when options are changed and the preview is regenerated.
     function setPreview(html = '') {
         const frame = document.createElement('iframe');
         frame.id = 'pdf-import-preview';
-        frame.title = t('pdf_preview');
+        frame.title = t('pdf_preview_frame');
         frame.setAttribute('sandbox', '');
         frame.referrerPolicy = 'no-referrer';
         const loaded = new Promise(resolve => frame.addEventListener('load', resolve, { once: true }));
