@@ -9,6 +9,12 @@ import pymupdf4llm
 
 pymupdf4llm.use_layout(False)
 
+# A scan that was numbered or watermarked afterwards keeps a sliver of real
+# text. Below this many characters, on a page that images almost entirely
+# cover, the page is still a picture and worth reading with OCR.
+SCAN_TEXT_LIMIT = 120
+SCAN_IMAGE_RATIO = .5
+
 
 def selected_pages(value, count):
     if not value.strip():
@@ -206,6 +212,27 @@ def preserve_math(page):
     return len(images)
 
 
+def image_coverage(page):
+    """How much of the page its images cover, overlaps counted only once."""
+    area = abs(page.rect)
+    if not area:
+        return 0.
+    parts = []
+    for block in page.get_text('dict')['blocks']:
+        if block.get('type') == 1:
+            rect = pymupdf.Rect(block['bbox']) & page.rect
+            if not rect.is_empty:
+                parts.append(rect)
+    if not parts:
+        return 0.
+    # One image covering the sheet is the usual case; several are added up and
+    # capped by their bounding box, so overlapping tiles are not counted twice.
+    bounds = parts[0]
+    for rect in parts[1:]:
+        bounds |= rect
+    return min(sum(abs(rect) for rect in parts), abs(bounds)) / area
+
+
 def convert_pdf(data, options, progress=None):
     """Convert a PDF to Markdown, reporting how far along it is.
 
@@ -229,9 +256,18 @@ def convert_pdf(data, options, progress=None):
         if options.get('removeHeaders', True):
             remove_running_text(source, report)
         source.select(pages)
-        page_has_text = [bool(p.get_text().strip()) for p in source]
-        text_pages = sum(page_has_text)
-        use_ocr = options.get('ocr', True)
+        texts = [p.get_text() for p in source]
+        text_pages = sum(1 for text in texts if text.strip())
+        letters = [sum(1 for c in text if c.isalnum()) for text in texts]
+        use_ocr = options.get('ocr', False)
+        # Measured before the math regions are rasterized, so that a formula
+        # turned into a picture never makes a page look like a scan.
+        scanned = [
+            use_ocr and (not count or (
+                count < SCAN_TEXT_LIMIT and image_coverage(source[number]) >= SCAN_IMAGE_RATIO
+            ))
+            for number, count in enumerate(letters)
+        ]
         math_regions = 0
         keep_images = options.get('keepImages', True)
         for number, page in enumerate(source, 1):
@@ -244,15 +280,25 @@ def convert_pdf(data, options, progress=None):
         chunks = []
         ocr_pages = []
         for number in range(total):
-            if use_ocr and not page_has_text[number]:
+            page_markdown = pymupdf4llm.to_markdown(
+                source, pages=[number], embed_images=keep_images, image_size_limit=0,
+                ignore_images=not keep_images, show_progress=False,
+            )
+            if scanned[number]:
                 original_page = pages[number]
                 chunks.append(f'\n\n<!-- edimark-ocr-page:{original_page + 1} -->\n\n')
-                ocr_pages.append({'index': original_page, 'page': original_page + 1})
+                # A page covered by an image is not always a scan: it can be a
+                # full-page illustration, or a cover with a heading of its own.
+                # Keep its ordinary conversion, and how much text it already
+                # had, so the caller can drop the reading that says less.
+                ocr_pages.append({
+                    'index': original_page,
+                    'page': original_page + 1,
+                    'fallback': page_markdown,
+                    'letters': letters[number],
+                })
             else:
-                chunks.append(pymupdf4llm.to_markdown(
-                    source, pages=[number], embed_images=keep_images, image_size_limit=0,
-                    ignore_images=not keep_images, show_progress=False,
-                ))
+                chunks.append(page_markdown)
             report('converting', number + 1, total)
         return {
             'markdown': ''.join(chunks),

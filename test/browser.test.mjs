@@ -5916,11 +5916,14 @@ test('PDF escaneado: el OCR local produce Markdown editable', { timeout: 180000 
 
   await page.locator('#import-file-input').setInputFiles(fixture);
   await page.waitForFunction(
-    () => document.querySelector('#pdf-import-info')?.textContent.includes('1'),
+    () => document.querySelector('#pdf-import-info')?.textContent.includes('4'),
     null,
     { timeout: 120000 },
   );
-  assert.equal(await page.locator('#pdf-ocr').isChecked(), true);
+  // El OCR no se aplica sin pedirlo: es lento y descarga un modelo.
+  assert.equal(await page.locator('#pdf-ocr').isChecked(), false);
+  assert.equal(await page.locator('#pdf-ocr-language').isDisabled(), true);
+  await page.locator('#pdf-ocr').check();
   assert.equal(await page.locator('#pdf-ocr-language').inputValue(), 'spa');
 
   await page.locator('#pdf-preview').click();
@@ -5939,7 +5942,20 @@ test('PDF escaneado: el OCR local produce Markdown editable', { timeout: 180000 
   const imported = await page.evaluate(() => markdownEditor.getValue());
   assert.match(imported, /### DOCUMENTO ESCANEADO/i);
   assert.match(imported, /Ferreras aparece/i);
-  assert.doesNotMatch(imported, /data:image|edimark-ocr-page/);
+  assert.doesNotMatch(imported, /edimark-ocr-page/);
+  // El escaneo con una referencia añadida encima sigue siendo una imagen: la
+  // pizca de texto extraíble no puede dejar la página sin reconocer.
+  assert.match(imported, /### ANEXO DIGITALIZADO/i);
+  assert.match(imported, /firma la ultima diligencia/i);
+  assert.match(imported, /Ref\. 4712-B/);
+  // La lámina sin texto pasa por el OCR sin resultado: conserva su imagen,
+  // que la importación extrae como recurso, y no deja una página vacía.
+  assert.match(imported, /!\[\]\([^)\s]*images\/\d+\.png\)/);
+  assert.doesNotMatch(imported, /## Página 2/);
+  // Y una portada con imagen grande y poco texto conserva su texto de verdad,
+  // que el reconocimiento no mejora, junto con la imagen.
+  assert.match(imported, /Portada del informe anual/);
+  assert.doesNotMatch(imported, /## Página 4/);
   assert.ok(requests.some(url => /spa\.traineddata\.gz/.test(url)), 'no se cargó el modelo OCR español');
   if (process.env.EDIMARK_STATIC_ROOT) {
     assert.ok(

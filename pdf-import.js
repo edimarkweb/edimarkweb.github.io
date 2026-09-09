@@ -3,6 +3,10 @@ import { stripUnsafeMarkup } from './pandoc-prepare.js';
 let active = false;
 const OCR_LANGUAGES = new Set(['spa', 'eng', 'cat', 'glg', 'eus']);
 const OCR_LANGUAGE_BY_UI = { es: 'spa', en: 'eng', ca: 'cat', gl: 'glg', eu: 'eus' };
+// Below this many recognised characters a page reads as a caption, not a scan.
+const OCR_CAPTION_LENGTH = 25;
+// A page that already had text keeps it unless OCR reads substantially more.
+const OCR_MIN_GAIN = 40;
 const OCR_CDN = {
     workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js',
     corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0',
@@ -48,6 +52,26 @@ function ocrTextToMarkdown(text, pageNumber) {
     return `## Página ${pageNumber}\n\n${converted}`.trim();
 }
 
+/* A page covered by an image is usually a scan, but it can also be a
+   full-page illustration or a cover, and a scan may carry a page number added
+   afterwards. The reading that says more wins: the ordinary conversion goes
+   back in whenever OCR does not beat the text the page already had, so
+   neither the image nor the text extracted from the file is lost. */
+function ocrPageMarkdown(text, page) {
+    const recognised = String(text || '').replace(/[^\p{L}\p{N}]/gu, '').length;
+    const fallback = typeof page.fallback === 'string' ? page.fallback.trim() : '';
+    const previous = Number(page.letters) || 0;
+    if (previous && recognised < previous * 2 + OCR_MIN_GAIN) {
+        return fallback || ocrTextToMarkdown(text, page.page);
+    }
+    const image = fallback.includes('![') ? fallback : '';
+    if (!recognised && image) return image;
+    if (image && recognised < OCR_CAPTION_LENGTH) {
+        return `${image}\n\n${ocrTextToMarkdown(text, page.page)}`;
+    }
+    return ocrTextToMarkdown(text, page.page);
+}
+
 export async function importPdf(file, translate) {
     if (active) return null;
     active = true;
@@ -64,7 +88,7 @@ export async function importPdf(file, translate) {
         <div class="pdf-import-options">
           <label><input id="pdf-remove-headers" type="checkbox" checked> <span></span></label>
           <label><input id="pdf-keep-images" type="checkbox" checked> <span></span></label>
-          <label><input id="pdf-ocr" type="checkbox" checked> <span></span></label>
+          <label><input id="pdf-ocr" type="checkbox"> <span></span></label>
           <label class="pdf-ocr-language" for="pdf-ocr-language"><span></span>
             <select id="pdf-ocr-language">
               <option value="spa">Español</option>
@@ -245,8 +269,9 @@ export async function importPdf(file, translate) {
                 const bytes = await requestOcrImage(page.index);
                 const blob = new Blob([bytes], { type: 'image/png' });
                 const recognition = await recognizer.recognize(blob);
-                const pageMarkdown = ocrTextToMarkdown(recognition.data?.text, page.page);
-                converted = converted.replace(`<!-- edimark-ocr-page:${page.page} -->`, pageMarkdown);
+                const pageMarkdown = ocrPageMarkdown(recognition.data?.text, page);
+                // A replacement function: the page may carry `$` sequences.
+                converted = converted.replace(`<!-- edimark-ocr-page:${page.page} -->`, () => pageMarkdown);
             }
             return converted;
         }

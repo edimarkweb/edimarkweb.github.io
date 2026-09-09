@@ -53,5 +53,38 @@ pixmap = page.get_pixmap(dpi=200, colorspace=pymupdf.csGRAY, alpha=False)
 scanned = pymupdf.open()
 page = scanned.new_page(width=595, height=842)
 page.insert_image(page.rect, stream=pixmap.tobytes('png'))
+
+# Segunda página: una lámina a toda página, sin una sola letra. También llega
+# al OCR, que no leerá nada, y la imagen debe sobrevivir a la conversión.
+plate = pymupdf.open()
+page = plate.new_page(width=595, height=842)
+page.draw_circle((300, 400), 180, color=(0, 0, 0), fill=(.2, .4, .8), width=3)
+page.draw_rect(pymupdf.Rect(120, 560, 480, 700), color=(0, 0, 0), fill=(.9, .7, .2), width=3)
+pixmap = page.get_pixmap(dpi=150, alpha=False)
+page = scanned.new_page(width=595, height=842)
+page.insert_image(page.rect, stream=pixmap.tobytes('png'))
+plate.close()
+
+# Tercera página: un escaneo al que alguien añadió después una referencia
+# vectorial. Conserva una pizca de texto extraíble sin dejar de ser una imagen.
+source = pymupdf.open()
+page = source.new_page(width=595, height=842)
+page.insert_text((60, 150), 'ANEXO DIGITALIZADO', fontsize=28)
+page.insert_text((60, 210), 'El expediente incluye la resolucion completa.', fontsize=20)
+page.insert_text((60, 250), 'Sequeiros firma la ultima diligencia del anexo.', fontsize=20)
+pixmap = page.get_pixmap(dpi=200, colorspace=pymupdf.csGRAY, alpha=False)
+page = scanned.new_page(width=595, height=842)
+page.insert_image(page.rect, stream=pixmap.tobytes('png'))
+page.insert_text((60, 430), 'Ref. 4712-B', fontsize=11)
+
+# Cuarta página: una portada digital, imagen grande y poco texto. Cumple el
+# perfil de un escaneo, pero su texto es de verdad y no debe perderse.
+page = scanned.new_page(width=595, height=842)
+page.draw_rect(pymupdf.Rect(60, 300, 535, 700), color=(0, 0, 0), fill=(.15, .55, .35), width=2)
+pixmap = page.get_pixmap(dpi=150, alpha=False)
+page = scanned[-1]
+page.insert_image(page.rect, stream=pixmap.tobytes('png'))
+page.insert_text((60, 200), 'Portada del informe anual', fontsize=22)
+
 ocr_path = Path(__file__).resolve().parents[1] / 'fixtures' / 'pdf-ocr.pdf'
 scanned.save(ocr_path, deflate=True)

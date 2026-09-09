@@ -605,7 +605,7 @@
   "pdf_note": "Conversió local. L’OCR transforma les pàgines escanejades en text editable. Revisa el resultat: les taules, fórmules, imatges i marques d’aigua poden alterar el reconeixement o l’ordre.",
   "pdf_remove_headers": "Eliminar capçaleres i peus repetits",
   "pdf_keep_images": "Conservar imatges i fórmules detectades com a imatges",
-  "pdf_ocr": "Aplicar OCR a les pàgines sense text extraïble",
+  "pdf_ocr": "Aplicar OCR a les pàgines escanejades",
   "pdf_ocr_language": "Idioma de l’OCR",
   "pdf_pages": "Pàgines (buit = totes; exemple: 1-3, 5)",
   "pdf_preview": "Generar vista prèvia",

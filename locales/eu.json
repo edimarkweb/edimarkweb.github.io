@@ -605,7 +605,7 @@
   "pdf_note": "Bihurketa lokala. OCRak eskaneatutako orriak testu editagarri bihurtzen ditu. Berrikusi emaitza: taulek, formulek, irudiek eta ur-markek ezagutza edo ordena alda dezakete.",
   "pdf_remove_headers": "Kendu errepikatutako goiburuak eta orri-oinak",
   "pdf_keep_images": "Gorde irudiak eta detektatutako formulak irudi gisa",
-  "pdf_ocr": "Aplikatu OCR testu erauzgarririk gabeko orriei",
+  "pdf_ocr": "Aplikatu OCRa eskaneatutako orriei",
   "pdf_ocr_language": "OCRaren hizkuntza",
   "pdf_pages": "Orrialdeak (hutsik = guztiak; adibidez: 1-3, 5)",
   "pdf_preview": "Sortu aurrebista",
