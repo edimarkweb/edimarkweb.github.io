@@ -212,6 +212,25 @@ def preserve_math(page):
     return len(images)
 
 
+def page_image_format(page):
+    """The format a page's pictures should be embedded in.
+
+    PyMuPDF4LLM rasterizes each picture, and PNG is the right answer for the
+    diagrams, screenshots and formulas that make up most of a document. It is
+    the wrong one for a photograph: re-encoding a JPEG as PNG multiplied one
+    real report's images by thirty and the conversion ran out of memory. What
+    the file itself chose to store is the cheapest signal available, and it is
+    the same judgement, made by whoever produced the document.
+    """
+    doc = page.parent
+    for image in page.get_images(full=True):
+        # The filter, not the pixels: reading the key never decodes the image.
+        marker = str(doc.xref_get_key(image[0], 'Filter'))
+        if 'DCT' in marker or 'JPX' in marker:
+            return 'jpg'
+    return 'png'
+
+
 def image_coverage(page):
     """How much of the page its images cover, overlaps counted only once."""
     area = abs(page.rect)
@@ -283,6 +302,7 @@ def convert_pdf(data, options, progress=None):
             page_markdown = pymupdf4llm.to_markdown(
                 source, pages=[number], embed_images=keep_images, image_size_limit=0,
                 ignore_images=not keep_images, show_progress=False,
+                image_format=page_image_format(source[number]) if keep_images else 'png',
             )
             if scanned[number]:
                 original_page = pages[number]

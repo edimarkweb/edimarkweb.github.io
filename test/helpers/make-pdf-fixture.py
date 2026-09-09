@@ -11,6 +11,14 @@ for n in range(6):
 page = doc[0]
 page.insert_text((40, 130), 'LEFT START\nLeft column content.\nLEFT END', fontsize=12)
 page.insert_text((320, 130), 'RIGHT START\nRight column content.\nRIGHT END', fontsize=12)
+# Una fotografía, guardada como JPEG dentro del PDF igual que la guardaría
+# cualquier maquetador: al convertirla no debe rasterizarse de nuevo como PNG.
+foto = pymupdf.open()
+lienzo = foto.new_page(width=200, height=150)
+for i, color in enumerate([(.9,.4,.2),(.2,.6,.8),(.3,.8,.4),(.8,.8,.2)]):
+    lienzo.draw_circle((40 + i * 40, 75), 55, color=None, fill=color, fill_opacity=.75)
+page.insert_image(pymupdf.Rect(40, 300, 340, 525), stream=lienzo.get_pixmap(dpi=110).tobytes('jpg'))
+foto.close()
 page = doc[1]
 for y in [130,160,190,220]: page.draw_line((40,y),(500,y))
 for x in [40,270,500]: page.draw_line((x,130),(x,220))

@@ -3933,6 +3933,15 @@ function extensionForImageMime(mime) {
     return EXTRACTED_IMAGE_EXTENSIONS.get(clean) || clean;
 }
 
+// `image/jpg` no es un tipo real, y el conversor de PDF escribe justo ese al
+// incrustar una fotografía. El archivo extraído lleva el nombre canónico.
+const CANONICAL_IMAGE_MIMES = new Map([['jpg', 'jpeg'], ['svg', 'svg+xml']]);
+
+function canonicalImageMime(mime) {
+    const clean = String(mime || '').toLowerCase().replace(/[^a-z0-9.+-]/g, '') || 'png';
+    return CANONICAL_IMAGE_MIMES.get(clean) || clean;
+}
+
 function base64ToBytes(data) {
     const binary = atob(String(data || '').replace(/\s+/g, ''));
     const bytes = new Uint8Array(binary.length);
@@ -3996,7 +4005,7 @@ function prepareEmbeddedImageExtraction(markdown, documentName) {
         used.add(relativePath);
         extracted.push({
             relativePath,
-            blob: new File([bytes], relativePath.split('/').pop(), { type: `image/${mime}` }),
+            blob: new File([bytes], relativePath.split('/').pop(), { type: `image/${canonicalImageMime(mime)}` }),
         });
         return `![${alt}](${relativePath}${tail.trim() ? ' ' + tail.trim() : ''})`;
     });

@@ -5876,6 +5876,16 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.match(text, /Negrita/);
   assert.match(text, /Uvas/);
   assert.ok(await preview.locator('img').count() >= 1);
+  /*
+    La fotografía se incrusta como JPEG, que es como venía guardada en el
+    archivo: rasterizarla de nuevo como PNG multiplicaba su peso hasta agotar
+    la memoria en informes reales. La fórmula, en cambio, sigue en PNG, donde
+    el trazo no se ensucia.
+  */
+  const fuentes = await preview.locator('img').evaluateAll(nodes => nodes.map(n => n.getAttribute('src') || ''));
+  const cabeceras = fuentes.map(src => src.slice(0, 24)).join(' | ');
+  assert.ok(fuentes.some(src => src.startsWith('data:image/jpg;base64,')), cabeceras);
+  assert.ok(fuentes.some(src => src.startsWith('data:image/png;base64,')), cabeceras);
   assert.equal(await page.evaluate(() => markdownEditor.getValue()), initial);
   await page.locator('#pdf-pages').fill('99');
   assert.equal(await page.locator('#pdf-accept').isDisabled(), true);
