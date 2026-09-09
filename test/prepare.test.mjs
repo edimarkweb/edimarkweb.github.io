@@ -954,3 +954,15 @@ test('normalizeThematicBreaks respeta el código sangrado', () => {
   const sangrado = 'Texto.\n\n    ---\n    lang: "ca"\n    ---\n\nMás.\n';
   assert.equal(normalizeThematicBreaks(sangrado), sangrado);
 });
+
+test('La estimación del PDF solo habla cuando ya ha medido algo', async () => {
+  const { remainingMinutes } = await import('../pdf-import.js');
+  // Sin páginas hechas, sin páginas pendientes o recién empezado, no dice nada.
+  assert.equal(remainingMinutes(60000, 0, 100), 0);
+  assert.equal(remainingMinutes(60000, 10, 0), 0);
+  assert.equal(remainingMinutes(3000, 10, 500), 0);
+  // Diez páginas en diez segundos: quinientas pendientes son unos ocho minutos.
+  assert.equal(remainingMinutes(10000, 10, 500), 8);
+  // Por debajo del minuto se calla en vez de decir «0 min».
+  assert.equal(remainingMinutes(10000, 100, 20), 0);
+});

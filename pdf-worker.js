@@ -122,7 +122,7 @@ self.onmessage = async ({ data }) => {
         }
     } catch (error) {
         const message = String(error);
-        const key = ['pdf_pages_invalid', 'pdf_password', 'pdf_page_limit'].find(k => message.includes(k)) || 'pdf_error';
+        const key = ['pdf_pages_invalid', 'pdf_password'].find(k => message.includes(k)) || 'pdf_error';
         self.postMessage({ type: 'error', key });
     }
 };

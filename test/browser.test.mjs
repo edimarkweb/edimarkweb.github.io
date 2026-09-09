@@ -5845,7 +5845,8 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     { timeout: 120000 },
   );
   assert.match(await page.locator('#pdf-import-info').innerText(), /7/);
-  assert.match(await page.locator('#pdf-import-info').innerText(), /200/);
+  // Ya no hay tope de páginas que anunciar.
+  assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /200/);
   assert.equal(await page.locator('#pdf-preview').isDisabled(), false);
   await page.locator('#pdf-preview').click();
   await page.waitForFunction(() => document.querySelector('.pdf-import-dialog').getAttribute('aria-busy') === 'false', null, { timeout: 120000 });
@@ -5906,6 +5907,9 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.match(await preview.locator('body').innerText(), /REPEATED HEADER/);
   assert.equal(await preview.locator('img').count(), 0);
   await page.locator('#pdf-accept').click();
+  // Importar crea el documento, guarda sus recursos y lo activa, todo ello
+  // después de cerrarse el diálogo: hay que esperar al editor, no al clic.
+  await page.waitForFunction(() => /Apples/.test(markdownEditor.getValue()), null, { timeout: 60000 });
   const imported = await page.evaluate(() => markdownEditor.getValue());
   assert.match(imported, /Apples/);
   assert.doesNotMatch(imported, /LEFT START/);
@@ -5927,6 +5931,11 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     { timeout: 120000 },
   );
   await page.locator('#pdf-accept').click();
+  await page.waitForFunction(
+    () => /images\/01\.jpg/.test(markdownEditor.getValue()),
+    null,
+    { timeout: 60000 },
+  );
   const conFoto = await page.evaluate(() => markdownEditor.getValue());
   assert.match(conFoto, /!\[[^\]]*\]\([^)\s]*\/images\/01\.jpg\)/, conFoto.slice(0, 300));
   assert.doesNotMatch(conFoto, /data:image/);
@@ -5944,6 +5953,46 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.equal(await page.locator('.pdf-import-dialog').count(), 0);
   assert.equal(await page.evaluate(() => markdownEditor.getValue()), conFoto);
   assert.equal(requests.some(url => /pythonhosted|pyodide.org|cdn.jsdelivr.net\/pyodide/.test(url)), false);
+});
+
+test('PDF largo: más de doscientas páginas de una vez', { timeout: 300000 }, async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  const fixture = resolve(defaultRepoRoot, 'test/fixtures/pdf-long.pdf');
+  const avisos = [];
+  await page.exposeFunction('anotarEstado', texto => avisos.push(texto));
+  await page.evaluate(() => {
+    new MutationObserver(() => window.anotarEstado(
+      document.querySelector('#pdf-import-status')?.textContent || '',
+    )).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
+  await page.locator('#import-file-input').setInputFiles(fixture);
+  await page.waitForFunction(
+    () => document.querySelector('#pdf-import-info')?.textContent.includes('210'),
+    null,
+    { timeout: 120000 },
+  );
+  const comenzado = Date.now();
+  await page.locator('#pdf-preview').click();
+  await page.waitForFunction(
+    () => document.querySelector('#pdf-accept') && !document.querySelector('#pdf-accept').disabled,
+    null,
+    { timeout: 240000 },
+  );
+  console.log(`   conversión de 210 páginas: ${Math.round((Date.now() - comenzado) / 1000)} s`);
+  await page.locator('#pdf-accept').click();
+  await page.waitForFunction(
+    () => /Pagina larga numero 210\b/.test(markdownEditor.getValue()),
+    null,
+    { timeout: 60000 },
+  );
+  const imported = await page.evaluate(() => markdownEditor.getValue());
+  // Las doscientas diez, no las doscientas primeras.
+  assert.match(imported, /Pagina larga numero 1\b/);
+  assert.match(imported, /Pagina larga numero 201\b/);
+  assert.match(imported, /Pagina larga numero 210\b/);
+  // La cuenta de páginas llegó hasta el final, sin quedarse en 200.
+  assert.ok(avisos.some(texto => /de 210/.test(texto)), avisos.slice(-6).join(' | '));
 });
 
 test('PDF escaneado: el OCR local produce Markdown editable', { timeout: 180000 }, async (t) => {
@@ -5982,6 +6031,11 @@ test('PDF escaneado: el OCR local produce Markdown editable', { timeout: 180000 
   assert.match(previewText, /Ferreras aparece/i);
 
   await page.locator('#pdf-accept').click();
+  await page.waitForFunction(
+    () => /DOCUMENTO ESCANEADO/i.test(markdownEditor.getValue()),
+    null,
+    { timeout: 60000 },
+  );
   const imported = await page.evaluate(() => markdownEditor.getValue());
   assert.match(imported, /### DOCUMENTO ESCANEADO/i);
   assert.match(imported, /Ferreras aparece/i);

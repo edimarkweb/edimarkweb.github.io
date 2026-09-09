@@ -64,6 +64,15 @@ for i in range(13):
 path=Path(__file__).resolve().parents[1]/'fixtures'/'pdf-import.pdf'
 doc.save(path,deflate=True)
 
+# Doscientas diez páginas mínimas: el conversor ya no tiene tope y esto lo
+# comprueba sin pedir un archivo pesado.
+largo = pymupdf.open()
+for n in range(210):
+    page = largo.new_page(width=595, height=842)
+    page.insert_text((50, 100), f'Pagina larga numero {n + 1}', fontsize=12)
+largo.save(Path(__file__).resolve().parents[1] / 'fixtures' / 'pdf-long.pdf', deflate=True)
+largo.close()
+
 # Una página que visualmente contiene texto pero cuyo PDF no conserva ninguna
 # capa textual: es el caso mínimo para la regresión del OCR.
 source = pymupdf.open()

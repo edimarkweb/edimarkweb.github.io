@@ -73,6 +73,19 @@ function ocrPageMarkdown(text, page) {
 }
 
 /*
+  Without a page limit a whole report can take minutes, and a percentage on
+  its own does not say how many. The estimate comes from the pace measured in
+  this very conversion rather than from a table: it depends on the document,
+  on the machine, and on whether recognition is running. Below a minute, or
+  before there is enough measured, saying nothing beats guessing.
+*/
+export function remainingMinutes(elapsed, advanced, pending) {
+    if (advanced <= 0 || pending <= 0 || elapsed < 8000) return 0;
+    const minutes = Math.round((elapsed / advanced) * pending / 60000);
+    return minutes >= 1 ? minutes : 0;
+}
+
+/*
   Pictures no longer travel inside the Markdown, so the preview has to put
   them back to show them. Only the first few: rebuilding every picture of a
   long report as base64 is the very peak this conversion stopped paying.
@@ -181,6 +194,10 @@ export async function importPdf(file, translate, assetFolder = '') {
     let markdown = null;
     let busy = false;
     let inspected = false;
+    // El ritmo real de esta conversión, para decir cuánto queda.
+    let paceStage = '';
+    let paceStart = 0;
+    let paceDone = 0;
     let closed = false;
     let watchdog;
     return new Promise(resolve => {
@@ -222,9 +239,17 @@ export async function importPdf(file, translate, assetFolder = '') {
                 : stage === 'analysing'
                     ? 'pdf_analysing_page'
                     : stage === 'ocr' ? 'pdf_ocr_page' : 'pdf_converting_page';
-            $('#pdf-import-status').textContent = t(key)
+            let message = t(key)
                 .replaceAll('{page}', String(done))
                 .replaceAll('{total}', String(total));
+            if (stage !== paceStage) {
+                paceStage = stage;
+                paceStart = Date.now();
+                paceDone = done;
+            }
+            const minutes = remainingMinutes(Date.now() - paceStart, done - paceDone, total - done);
+            if (minutes) message += ` · ${t('pdf_time_remaining').replace('{minutes}', String(minutes))}`;
+            $('#pdf-import-status').textContent = message;
         }
         function clearProgress() {
             const bar = $('#pdf-import-progress');

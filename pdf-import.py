@@ -17,6 +17,11 @@ pymupdf4llm.use_layout(False)
 SCAN_TEXT_LIMIT = 120
 SCAN_IMAGE_RATIO = .5
 
+# How many pages are converted in one go. See `page_batches`: the work the
+# converter repeats per call is what makes a long document expensive, and
+# amortizing it over a batch is what keeps the cost per page flat.
+BATCH_PAGES = 10
+
 # What the converter writes when it embeds a picture, and the extensions the
 # application uses for the files it keeps beside a document.
 EMBEDDED_IMAGE = re.compile(r'!\[([^\]]*)\]\(\s*data:image/([A-Za-z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+?)\s*\)')
@@ -219,6 +224,30 @@ def preserve_math(page):
     return len(images)
 
 
+def page_batches(scanned, formats, size=BATCH_PAGES):
+    """Group consecutive pages that can be converted in a single call.
+
+    Converting page by page costs proportionally to the whole document on
+    every call, because the converter repeats its document-wide work each
+    time: 30 ms a page in a short file became 560 ms in a 600-page one, and
+    that quadratic growth, not memory, is what made long imports hopeless.
+    A batch pays that once.
+
+    The cuts are what the batch cannot share: pictures are embedded in one
+    format per call, and a scanned page needs its own text, since it may be
+    replaced by what OCR reads there.
+    """
+    batch = []
+    for number, (is_scan, image_format) in enumerate(zip(scanned, formats)):
+        breaks = is_scan or (batch and (scanned[batch[0]] or formats[batch[0]] != image_format))
+        if batch and (breaks or len(batch) >= size):
+            yield batch
+            batch = []
+        batch.append(number)
+    if batch:
+        yield batch
+
+
 def page_image_format(page):
     """The format a page's pictures should be embedded in.
 
@@ -289,6 +318,20 @@ def image_coverage(page):
     return min(sum(abs(rect) for rect in parts), abs(bounds)) / area
 
 
+def batch_markdown(source, batch, keep_images, image_format):
+    """Convert some pages of a document without the rest weighing on them."""
+    chunk = pymupdf.open()
+    try:
+        chunk.insert_pdf(source, from_page=batch[0], to_page=batch[-1])
+        return pymupdf4llm.to_markdown(
+            chunk, embed_images=keep_images, image_size_limit=0,
+            ignore_images=not keep_images, show_progress=False,
+            image_format=image_format,
+        )
+    finally:
+        chunk.close()
+
+
 def convert_pdf(data, options, progress=None, emit_image=None):
     """Convert a PDF to Markdown, reporting how far along it is.
 
@@ -304,8 +347,6 @@ def convert_pdf(data, options, progress=None, emit_image=None):
         if source.needs_pass:
             raise ValueError('pdf_password')
         pages = selected_pages(options.get('pages', ''), len(source))
-        if len(pages) > 200:
-            raise ValueError('pdf_page_limit')
         total = len(pages)
         report('analysing', 0, total)
         # Work on an in-memory copy, never on the user's PDF.
@@ -332,18 +373,19 @@ def convert_pdf(data, options, progress=None, emit_image=None):
             if keep_images:
                 math_regions += preserve_math(page)
             report('analysing', number, total)
-        # One page at a time: identical output, and a count to show meanwhile.
+        formats = [page_image_format(page) if keep_images else 'png' for page in source]
+        # In batches, so that the count keeps moving and every call converts
+        # a document of its own.
         chunks = []
         ocr_pages = []
         folder = str(options.get('assetFolder') or '').strip('/')
         detach = bool(folder) and emit_image is not None
         image_number = 1
-        for number in range(total):
-            page_markdown = pymupdf4llm.to_markdown(
-                source, pages=[number], embed_images=keep_images, image_size_limit=0,
-                ignore_images=not keep_images, show_progress=False,
-                image_format=page_image_format(source[number]) if keep_images else 'png',
-            )
+        done = 0
+        for batch in page_batches(scanned, formats):
+            page_markdown = batch_markdown(source, batch, keep_images, formats[batch[0]])
+            done += len(batch)
+            number = batch[0]
             if scanned[number]:
                 original_page = pages[number]
                 chunks.append(f'\n\n<!-- edimark-ocr-page:{original_page + 1} -->\n\n')
@@ -365,7 +407,7 @@ def convert_pdf(data, options, progress=None, emit_image=None):
                     page_markdown, image_number = detach_images(
                         page_markdown, folder, image_number, emit_image)
                 chunks.append(page_markdown)
-            report('converting', number + 1, total)
+            report('converting', done, total)
         return {
             'markdown': ''.join(chunks),
             'pages': total,
