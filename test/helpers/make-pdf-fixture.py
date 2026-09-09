@@ -70,6 +70,10 @@ largo = pymupdf.open()
 for n in range(210):
     page = largo.new_page(width=595, height=842)
     page.insert_text((50, 100), f'Pagina larga numero {n + 1}', fontsize=12)
+    # Una cabecera de capítulo: cubre veinte páginas, ni de lejos la mitad del
+    # documento, y aun así es texto de margen que sobra en el resultado.
+    if 50 <= n < 70:
+        page.insert_text((50, 25), 'CAPITULO SEGUNDO', fontsize=10)
 largo.save(Path(__file__).resolve().parents[1] / 'fixtures' / 'pdf-long.pdf', deflate=True)
 largo.close()
 

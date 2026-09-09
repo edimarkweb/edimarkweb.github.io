@@ -43,11 +43,15 @@ def selected_pages(value, count):
     return sorted(result)
 
 
-def remove_running_text(doc, progress=None):
+def remove_running_text(doc, keep, progress=None):
     """Only repeated text near page edges (and isolated page numbers).
 
-    Match on the entire source document, before selecting pages. Redact text
-    only: drawings and images must survive. No fixed strip is cropped.
+    Match on the entire source document, before selecting pages: what repeats
+    cannot be told from the three pages somebody asked for. Rewriting is
+    another matter, and only `keep` is ever converted — applying redactions to
+    the whole document was more than half the cost of importing one page out
+    of four hundred. Redact text only: drawings and images must survive. No
+    fixed strip is cropped.
     """
     candidates = []
     occurrences = defaultdict(set)
@@ -66,16 +70,23 @@ def remove_running_text(doc, progress=None):
                 candidates.append((page.number, rect, text, key))
         if progress is not None:
             progress('headers', number, total)
-    threshold = max(2, (len(doc) + 1) // 2)
+    # Half the document in a short one, eight pages in a long one: a header
+    # that changes with each chapter never reaches half of a four-hundred-page
+    # book, and dragging it into every page is worse than the risk of taking
+    # out a line that repeats, normalized, along the edge of eight pages.
+    threshold = max(2, min((len(doc) + 1) // 2, 8))
     for number, rect, text, key in candidates:
+        if number not in keep:
+            continue
         if len(occurrences[key]) >= threshold or re.fullmatch(r'\d+|[ivxlcdm]+', text, re.I):
             doc[number].add_redact_annot(rect, fill=False)
-    for number, page in enumerate(doc, 1):
-        page.apply_redactions(images=0, graphics=0)
+    kept = sorted(keep)
+    for done, number in enumerate(kept, 1):
+        doc[number].apply_redactions(images=0, graphics=0)
         # Applying many redactions can also take a while. This message proves
         # that the worker is alive without restarting the visible page count.
         if progress is not None:
-            progress('heartbeat', number, total)
+            progress('heartbeat', done, len(kept))
 
 
 def table_bands(page):
@@ -351,7 +362,7 @@ def convert_pdf(data, options, progress=None, emit_image=None):
         report('analysing', 0, total)
         # Work on an in-memory copy, never on the user's PDF.
         if options.get('removeHeaders', True):
-            remove_running_text(source, report)
+            remove_running_text(source, set(pages), report)
         source.select(pages)
         texts = [p.get_text() for p in source]
         text_pages = sum(1 for text in texts if text.strip())

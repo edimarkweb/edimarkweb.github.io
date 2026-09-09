@@ -5937,6 +5937,11 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     { timeout: 60000 },
   );
   const conFoto = await page.evaluate(() => markdownEditor.getValue());
+  /*
+    Pedir una sola página no impide reconocer lo que se repite: el encabezado
+    se busca en todo el documento aunque solo se reescriba la página pedida.
+  */
+  assert.doesNotMatch(conFoto, /REPEATED HEADER/);
   assert.match(conFoto, /!\[[^\]]*\]\([^)\s]*\/images\/01\.jpg\)/, conFoto.slice(0, 300));
   assert.doesNotMatch(conFoto, /data:image/);
   const recursos = await page.evaluate(async () => {
@@ -5991,6 +5996,12 @@ test('PDF largo: más de doscientas páginas de una vez', { timeout: 300000 }, a
   assert.match(imported, /Pagina larga numero 1\b/);
   assert.match(imported, /Pagina larga numero 201\b/);
   assert.match(imported, /Pagina larga numero 210\b/);
+  /*
+    La cabecera del capítulo cubre veinte de las doscientas diez páginas: no
+    llega a la mitad del documento, que era lo que se exigía para retirarla, y
+    aun así es margen repetido que no debe colarse en el texto.
+  */
+  assert.doesNotMatch(imported, /CAPITULO SEGUNDO/);
   // La cuenta de páginas llegó hasta el final, sin quedarse en 200.
   assert.ok(avisos.some(texto => /de 210/.test(texto)), avisos.slice(-6).join(' | '));
 });
