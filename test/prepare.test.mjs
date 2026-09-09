@@ -991,3 +991,25 @@ test('La vista previa del PDF enseña el principio y unas pocas imágenes', asyn
   assert.equal(muchas.markdown.match(/data:image\/png;base64,/g).length, 12);
   assert.match(muchas.markdown, /`doc\/images\/12\.png`/);
 });
+
+test('Los cinco idiomas traducen exactamente las mismas claves', () => {
+  const idiomas = ['es', 'en', 'ca', 'gl', 'eu'];
+  const claves = new Map(idiomas.map(idioma => [
+    idioma,
+    new Set(Object.keys(JSON.parse(readFileSync(new URL(`../locales/${idioma}.json`, import.meta.url), 'utf8')))),
+  ]));
+  const referencia = claves.get('es');
+  for (const idioma of idiomas.slice(1)) {
+    const faltan = [...referencia].filter(clave => !claves.get(idioma).has(clave));
+    const sobran = [...claves.get(idioma)].filter(clave => !referencia.has(clave));
+    assert.deepEqual(faltan, [], `faltan en ${idioma}: ${faltan.join(', ')}`);
+    assert.deepEqual(sobran, [], `sobran en ${idioma}: ${sobran.join(', ')}`);
+  }
+});
+
+test('Los textos con cantidad tienen su forma singular', () => {
+  const es = JSON.parse(readFileSync(new URL('../locales/es.json', import.meta.url), 'utf8'));
+  for (const clave of Object.keys(es).filter(clave => clave.endsWith('_many'))) {
+    assert.ok(clave.replace(/_many$/, '_one') in es, `${clave} no tiene singular`);
+  }
+});

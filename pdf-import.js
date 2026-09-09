@@ -266,7 +266,11 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
                 paceDone = done;
             }
             const minutes = remainingMinutes(Date.now() - paceStart, done - paceDone, total - done);
-            if (minutes) message += ` · ${t('pdf_time_remaining').replace('{minutes}', String(minutes))}`;
+            if (minutes) {
+                // «quedan unos 1 min» no lo dice nadie: el singular es suyo.
+                const key = minutes === 1 ? 'pdf_time_remaining_one' : 'pdf_time_remaining_many';
+                message += ` · ${t(key).replace('{minutes}', String(minutes))}`;
+            }
             $('#pdf-import-status').textContent = message;
         }
         function clearProgress() {
@@ -405,7 +409,8 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
                 else if (data.type === 'scanned') {
                     scannedPages = Number(data.result.scanned) || 0;
                     if (scannedPages) {
-                        $('#pdf-import-info').textContent += ` ${t('pdf_document_scanned')
+                        const key = scannedPages === 1 ? 'pdf_document_scanned_one' : 'pdf_document_scanned_many';
+                        $('#pdf-import-info').textContent += ` ${t(key)
                             .replaceAll('{scanned}', String(scannedPages))
                             .replaceAll('{count}', String(data.result.pages))}`;
                     }
@@ -427,7 +432,9 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
                         const notes = [];
                         if (preview.truncated) notes.push(t('pdf_preview_truncated'));
                         if (preview.hiddenImages) {
-                            notes.push(t('pdf_preview_images_hidden')
+                            notes.push(t(preview.hiddenImages === 1
+                                ? 'pdf_preview_images_hidden_one'
+                                : 'pdf_preview_images_hidden_many')
                                 .replace('{count}', String(preview.hiddenImages)));
                         }
                         const shown = notes.length
