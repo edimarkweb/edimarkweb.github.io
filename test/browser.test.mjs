@@ -1360,6 +1360,19 @@ test('Ctrl+O abre el selector de archivos sin pisar Ctrl+Mayús+O', async (t) =>
     de tarde en tarde esperando el selector de archivos.
   */
   await page.waitForFunction(() => document.getElementById('markdown-input').value.length > 0);
+  /*
+    Y con el hilo libre. Abrir el selector de archivos exige una activación
+    reciente del usuario, así que una pulsación que llega mientras la ventana
+    está ocupada —montando la primera pestaña, repartiendo las páginas— se
+    procesa tarde y el navegador ya no la acepta: así se caía esta prueba de
+    tarde en tarde, aquí y en integración.
+  */
+  await page.evaluate(() => new Promise(listo => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (typeof requestIdleCallback === 'function') requestIdleCallback(() => listo(), { timeout: 2000 });
+      else setTimeout(listo, 100);
+    }));
+  }));
   const selector = page.waitForEvent('filechooser');
   await page.keyboard.press('Control+o');
   assert.equal(await (await selector).element().getAttribute('id'), 'file-input');
