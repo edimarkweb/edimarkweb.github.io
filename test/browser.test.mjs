@@ -5845,8 +5845,10 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     { timeout: 120000 },
   );
   assert.match(await page.locator('#pdf-import-info').innerText(), /7/);
-  // Ya no hay tope de páginas que anunciar.
+  // Ya no hay tope de páginas que anunciar, ni por qué avisar de la espera:
+  // siete páginas se convierten en un momento.
   assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /200/);
+  assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /varios minutos/);
   // Y en un documento sin una sola página escaneada, el OCR no se ofrece.
   await page.waitForFunction(
     () => document.querySelector('.pdf-import-dialog')?.dataset.scanned === '0',
@@ -5985,6 +5987,8 @@ test('PDF largo: más de doscientas páginas de una vez', { timeout: 300000 }, a
     null,
     { timeout: 120000 },
   );
+  // Doscientas diez sí merecen el aviso.
+  assert.match(await page.locator('#pdf-import-info').innerText(), /varios minutos/);
   const comenzado = Date.now();
   await page.locator('#pdf-preview').click();
   await page.waitForFunction(

@@ -7,6 +7,12 @@ const OCR_LANGUAGE_BY_UI = { es: 'spa', en: 'eng', ca: 'cat', gl: 'glg', eu: 'eu
 const OCR_CAPTION_LENGTH = 25;
 // A page that already had text keeps it unless OCR reads substantially more.
 const OCR_MIN_GAIN = 40;
+/*
+  Beyond this many pages a conversion is worth warning about: 210 light pages
+  take 2 s in Chromium and 11 in Firefox, while a real 442-page report takes
+  minutes. Below it the warning would be there for nothing, on every import.
+*/
+const LONG_DOCUMENT_PAGES = 100;
 const OCR_CDN = {
     workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js',
     corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0',
@@ -387,8 +393,10 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
                 }
                 else if (data.type === 'info') {
                     inspected = true;
+                    const pages = Number(data.result.pages) || 0;
                     $('#pdf-import-info').textContent = t('pdf_document_info')
-                        .replaceAll('{count}', String(data.result.pages));
+                        .replaceAll('{count}', String(pages))
+                        + (pages > LONG_DOCUMENT_PAGES ? ` ${t('pdf_document_long')}` : '');
                     $('#pdf-import-status').textContent = '';
                     setBusy(false);
                 }
