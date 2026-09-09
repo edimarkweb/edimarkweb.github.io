@@ -26,7 +26,10 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Firefox runs the PDF conversion several times slower than Chromium, and
+    # the suite now imports a 210-page document and reads four scanned pages
+    # with OCR: 7:44 of the old ten-minute budget became more than ten.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
