@@ -86,10 +86,14 @@ export function remainingMinutes(elapsed, advanced, pending) {
 }
 
 /*
-  Pictures no longer travel inside the Markdown, so the preview has to put
-  them back to show them. Only the first few: rebuilding every picture of a
-  long report as base64 is the very peak this conversion stopped paying.
+  A preview is for looking over the result before importing it, not for
+  reading the whole document, and building one is not free: laying out a
+  442-page report took over a second of frozen dialog, and rebuilding every
+  picture of it as base64 would be the very peak this conversion stopped
+  paying. So the preview shows the beginning and the first few pictures. The
+  document is imported whole either way.
 */
+const PREVIEW_CHARACTERS = 80000;
 const PREVIEW_IMAGES = 12;
 const IMAGE_MIMES = { jpg: 'jpeg', svg: 'svg+xml' };
 
@@ -101,12 +105,15 @@ function base64FromBytes(bytes) {
     return btoa(binary);
 }
 
-function previewMarkdown(markdown, images, note) {
-    if (!images.size) return markdown;
+export function previewMarkdown(markdown, images) {
+    const truncated = markdown.length > PREVIEW_CHARACTERS;
+    // Cortando por un final de línea, para no partir una tabla ni una palabra.
+    const cut = truncated ? markdown.lastIndexOf('\n', PREVIEW_CHARACTERS) : -1;
+    const visible = truncated ? markdown.slice(0, cut > 0 ? cut : PREVIEW_CHARACTERS) : markdown;
     let shown = 0;
     let hidden = 0;
-    const rebuilt = markdown.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (match, alt, path) => {
-        const bytes = images.get(path);
+    const rebuilt = visible.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (match, alt, path) => {
+        const bytes = images?.get(path);
         if (!bytes) return match;
         if (shown >= PREVIEW_IMAGES) {
             hidden += 1;
@@ -116,7 +123,7 @@ function previewMarkdown(markdown, images, note) {
         const kind = path.split('.').pop().toLowerCase();
         return `![${alt}](data:image/${IMAGE_MIMES[kind] || kind};base64,${base64FromBytes(bytes)})`;
     });
-    return hidden ? `${rebuilt}\n\n*${note(hidden)}*` : rebuilt;
+    return { markdown: rebuilt, hiddenImages: hidden, truncated };
 }
 
 export async function importPdf(file, translate, assetFolder = '', accept = null) {
@@ -381,8 +388,16 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
                           pantalla: exactamente igual que si se hubiera colgado.
                         */
                         await announce('pdf_preparing_preview');
-                        const shown = previewMarkdown(markdown, images, count =>
-                            t('pdf_preview_images_hidden').replace('{count}', String(count)));
+                        const preview = previewMarkdown(markdown, images);
+                        const notes = [];
+                        if (preview.truncated) notes.push(t('pdf_preview_truncated'));
+                        if (preview.hiddenImages) {
+                            notes.push(t('pdf_preview_images_hidden')
+                                .replace('{count}', String(preview.hiddenImages)));
+                        }
+                        const shown = notes.length
+                            ? `${preview.markdown}\n\n*${notes.join(' ')}*`
+                            : preview.markdown;
                         const html = stripUnsafeMarkup(window.marked.parse(shown));
                         // No scripts, network requests, forms or parent access in the preview.
                         await setPreview(`<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline';"><style>body{font:16px/1.5 system-ui;padding:16px;color:#182536;background:#fff;overflow-wrap:anywhere}img{max-width:100%}table{border-collapse:collapse}td,th{border:1px solid #94a3b8;padding:6px}pre{white-space:pre-wrap}a{pointer-events:none}</style>${html}`);

@@ -966,3 +966,28 @@ test('La estimación del PDF solo habla cuando ya ha medido algo', async () => {
   // Por debajo del minuto se calla en vez de decir «0 min».
   assert.equal(remainingMinutes(10000, 100, 20), 0);
 });
+
+test('La vista previa del PDF enseña el principio y unas pocas imágenes', async () => {
+  const { previewMarkdown } = await import('../pdf-import.js');
+  const imagen = ruta => [ruta, Uint8Array.from([1, 2, 3])];
+
+  // Un documento corto pasa entero y con todas sus imágenes repuestas.
+  const corto = previewMarkdown('# Hola\n\n![](doc/images/01.png)\n', new Map([imagen('doc/images/01.png')]));
+  assert.equal(corto.truncated, false);
+  assert.equal(corto.hiddenImages, 0);
+  assert.match(corto.markdown, /!\[\]\(data:image\/png;base64,/);
+
+  // Uno largo se corta por un final de línea, nunca a mitad de una.
+  const largo = previewMarkdown(`${'linea de relleno del informe\n'.repeat(6000)}FINAL`, new Map());
+  assert.equal(largo.truncated, true);
+  assert.ok(largo.markdown.length <= 80000, String(largo.markdown.length));
+  assert.doesNotMatch(largo.markdown, /FINAL/);
+  assert.ok(largo.markdown.endsWith('informe'), JSON.stringify(largo.markdown.slice(-30)));
+
+  // Y de trece imágenes se reponen doce: la que falta se cuenta y se nombra.
+  const rutas = Array.from({ length: 13 }, (_, i) => `doc/images/${i}.png`);
+  const muchas = previewMarkdown(rutas.map(ruta => `![](${ruta})`).join('\n\n'), new Map(rutas.map(imagen)));
+  assert.equal(muchas.hiddenImages, 1);
+  assert.equal(muchas.markdown.match(/data:image\/png;base64,/g).length, 12);
+  assert.match(muchas.markdown, /`doc\/images\/12\.png`/);
+});
