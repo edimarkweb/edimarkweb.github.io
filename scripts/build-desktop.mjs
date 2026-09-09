@@ -70,6 +70,13 @@ const vendorFiles = new Map([
   ['node_modules/codemirror/mode/gfm/gfm.js', 'vendor/codemirror/mode/gfm/gfm.min.js'],
   ['node_modules/codemirror/addon/edit/continuelist.js', 'vendor/codemirror/addon/edit/continuelist.min.js'],
   ['node_modules/split.js/dist/split.min.js', 'vendor/split.min.js'],
+  ['node_modules/tesseract.js/dist/tesseract.min.js', 'vendor/tesseract/tesseract.min.js'],
+  ['node_modules/tesseract.js/dist/worker.min.js', 'vendor/tesseract/worker.min.js'],
+  ['node_modules/@tesseract.js-data/spa/4.0.0_best_int/spa.traineddata.gz', 'vendor/tesseract/lang/spa.traineddata.gz'],
+  ['node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz', 'vendor/tesseract/lang/eng.traineddata.gz'],
+  ['node_modules/@tesseract.js-data/cat/4.0.0_best_int/cat.traineddata.gz', 'vendor/tesseract/lang/cat.traineddata.gz'],
+  ['node_modules/@tesseract.js-data/glg/4.0.0_best_int/glg.traineddata.gz', 'vendor/tesseract/lang/glg.traineddata.gz'],
+  ['node_modules/@tesseract.js-data/eus/4.0.0_best_int/eus.traineddata.gz', 'vendor/tesseract/lang/eus.traineddata.gz'],
 ]);
 
 const indexReplacements = new Map([
@@ -93,6 +100,7 @@ const indexReplacements = new Map([
   ['https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/gfm/gfm.min.js', 'vendor/codemirror/mode/gfm/gfm.min.js'],
   ['https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/edit/continuelist.min.js', 'vendor/codemirror/addon/edit/continuelist.min.js'],
   ['https://cdn.jsdelivr.net/npm/split.js@1.6.5/dist/split.min.js', 'vendor/split.min.js'],
+  ['https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js', 'vendor/tesseract/tesseract.min.js'],
 ]);
 
 async function copyFile(source, destination) {
@@ -124,6 +132,11 @@ await build({
 await cp(
   join(projectRoot, 'node_modules/katex/dist/fonts'),
   join(outputRoot, 'vendor/katex/fonts'),
+  { recursive: true },
+);
+await cp(
+  join(projectRoot, 'node_modules/tesseract.js-core'),
+  join(outputRoot, 'vendor/tesseract/core'),
   { recursive: true },
 );
 await cp(

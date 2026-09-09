@@ -44,6 +44,11 @@
     "@tauri-apps/plugin-fs": "2.5.1",
     "@tauri-apps/plugin-http": "2.5.9",
     "@tauri-apps/plugin-opener": "2.5.4",
+    "@tesseract.js-data/cat": "1.0.0",
+    "@tesseract.js-data/eng": "1.0.0",
+    "@tesseract.js-data/eus": "1.0.0",
+    "@tesseract.js-data/glg": "1.0.0",
+    "@tesseract.js-data/spa": "1.0.0",
     "codemirror": "5.65.15",
     "edicuatex": "1.5.5",
     "esbuild": "0.28.2",
@@ -52,6 +57,7 @@
     "marked": "18.0.9",
     "split.js": "1.6.5",
     "tailwindcss": "^3.4.19",
+    "tesseract.js": "7.0.0",
     "turndown": "7.1.1"
   }
 }

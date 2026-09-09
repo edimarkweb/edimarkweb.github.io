@@ -51,14 +51,33 @@ for relative, line in [('helpers/utils.py', 'from pymupdf4llm.ocr.analyze_page i
 }
 self.onmessage = async ({ data }) => {
     try {
-        const operation = data.operation === 'inspect' ? 'inspect' : 'convert';
+        const operation = ['inspect', 'renderOcrPage'].includes(data.operation) ? data.operation : 'convert';
         self.postMessage({
             type: 'status',
-            key: runtime ? (operation === 'inspect' ? 'pdf_inspecting' : 'pdf_converting') : 'pdf_loading',
+            key: runtime
+                ? (operation === 'inspect' ? 'pdf_inspecting' : operation === 'renderOcrPage' ? 'pdf_ocr_rendering' : 'pdf_converting')
+                : 'pdf_loading',
         });
         runtime ||= initialize();
         const py = await runtime;
-        self.postMessage({ type: 'status', key: operation === 'inspect' ? 'pdf_inspecting' : 'pdf_converting' });
+        self.postMessage({
+            type: 'status',
+            key: operation === 'inspect' ? 'pdf_inspecting' : operation === 'renderOcrPage' ? 'pdf_ocr_rendering' : 'pdf_converting',
+        });
+        if (operation === 'renderOcrPage') {
+            py.globals.set('ocr_page_index', data.pageIndex);
+            let proxy;
+            try {
+                proxy = py.runPython('render_ocr_page(pdf_bytes, ocr_page_index)');
+                const image = proxy.toJs();
+                const bytes = image instanceof Uint8Array ? image : new Uint8Array(image);
+                self.postMessage({ type: 'ocrImage', pageIndex: data.pageIndex, bytes }, [bytes.buffer]);
+            } finally {
+                proxy?.destroy?.();
+                py.globals.delete('ocr_page_index');
+            }
+            return;
+        }
         py.globals.set('pdf_bytes', new Uint8Array(data.bytes));
         if (operation === 'inspect') {
             try {
@@ -79,8 +98,8 @@ self.onmessage = async ({ data }) => {
         try {
             const result = JSON.parse(py.runPython('convert_json(pdf_bytes, pdf_options, report_progress)'));
             self.postMessage({ type: 'result', result });
+            if (!result.ocrPages?.length) py.globals.delete('pdf_bytes');
         } finally {
-            py.globals.delete('pdf_bytes');
             py.globals.delete('pdf_options');
             py.globals.delete('report_progress');
         }

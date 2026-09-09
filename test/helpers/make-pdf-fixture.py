@@ -41,3 +41,17 @@ page.insert_text((80, 165), '2', fontsize=18)
 page.insert_text((40, 210), 'Text after formula.', fontsize=12)
 path=Path(__file__).resolve().parents[1]/'fixtures'/'pdf-import.pdf'
 doc.save(path,deflate=True)
+
+# Una página que visualmente contiene texto pero cuyo PDF no conserva ninguna
+# capa textual: es el caso mínimo para la regresión del OCR.
+source = pymupdf.open()
+page = source.new_page(width=595, height=842)
+page.insert_text((60, 150), 'DOCUMENTO ESCANEADO', fontsize=28)
+page.insert_text((60, 210), 'La celula contiene informacion genetica.', fontsize=20)
+page.insert_text((60, 250), 'Ferreras aparece en esta pagina de prueba.', fontsize=20)
+pixmap = page.get_pixmap(dpi=200, colorspace=pymupdf.csGRAY, alpha=False)
+scanned = pymupdf.open()
+page = scanned.new_page(width=595, height=842)
+page.insert_image(page.rect, stream=pixmap.tobytes('png'))
+ocr_path = Path(__file__).resolve().parents[1] / 'fixtures' / 'pdf-ocr.pdf'
+scanned.save(ocr_path, deflate=True)

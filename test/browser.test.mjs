@@ -5903,6 +5903,57 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.equal(requests.some(url => /pythonhosted|pyodide.org|cdn.jsdelivr.net\/pyodide/.test(url)), false);
 });
 
+test('PDF escaneado: el OCR local produce Markdown editable', { timeout: 180000 }, async (t) => {
+  const { context, page, requests } = await openApp();
+  t.after(() => context.close());
+  const fixture = resolve(defaultRepoRoot, 'test/fixtures/pdf-ocr.pdf');
+
+  // Al servir dist/ ejercitamos las rutas vendorizadas que usa Tauri, sin
+  // depender del CDN para el motor ni para el modelo del idioma.
+  if (process.env.EDIMARK_STATIC_ROOT) {
+    await page.evaluate(() => document.body.classList.add('desktop-mode'));
+  }
+
+  await page.locator('#import-file-input').setInputFiles(fixture);
+  await page.waitForFunction(
+    () => document.querySelector('#pdf-import-info')?.textContent.includes('1'),
+    null,
+    { timeout: 120000 },
+  );
+  assert.equal(await page.locator('#pdf-ocr').isChecked(), true);
+  assert.equal(await page.locator('#pdf-ocr-language').inputValue(), 'spa');
+
+  await page.locator('#pdf-preview').click();
+  await page.waitForFunction(
+    () => document.querySelector('.pdf-import-dialog').getAttribute('aria-busy') === 'false',
+    null,
+    { timeout: 180000 },
+  );
+  assert.equal(await page.locator('#pdf-accept').isDisabled(), false, await page.locator('#pdf-import-status').innerText());
+  assert.match(await page.locator('#pdf-import-status').innerText(), /OCR/i);
+  const previewText = await page.frameLocator('#pdf-import-preview').locator('body').innerText();
+  assert.match(previewText, /DOCUMENTO ESCANEADO/i);
+  assert.match(previewText, /Ferreras aparece/i);
+
+  await page.locator('#pdf-accept').click();
+  const imported = await page.evaluate(() => markdownEditor.getValue());
+  assert.match(imported, /### DOCUMENTO ESCANEADO/i);
+  assert.match(imported, /Ferreras aparece/i);
+  assert.doesNotMatch(imported, /data:image|edimark-ocr-page/);
+  assert.ok(requests.some(url => /spa\.traineddata\.gz/.test(url)), 'no se cargó el modelo OCR español');
+  if (process.env.EDIMARK_STATIC_ROOT) {
+    assert.ok(
+      requests.some(url => /\/vendor\/tesseract\/lang\/spa\.traineddata\.gz$/.test(url)),
+      'el escritorio no cargó su modelo OCR local',
+    );
+    assert.equal(
+      requests.some(url => /cdn\.jsdelivr\.net\/npm\/(?:tesseract\.js|@tesseract\.js-data)/.test(url)),
+      false,
+      'el OCR del escritorio intentó usar el CDN',
+    );
+  }
+});
+
 test('PDF grande: imágenes fuera de localStorage, dólares literales y recuperación tras recargar', { timeout: 180000 }, async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());

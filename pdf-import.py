@@ -1,7 +1,9 @@
-"""Local PDF conversion, shared by Pyodide and the regression tests. No OCR."""
+"""Local PDF conversion, shared by Pyodide and the regression tests."""
 import json
 import re
 from collections import defaultdict
+from io import BytesIO
+from PIL import Image
 import pymupdf
 import pymupdf4llm
 
@@ -227,7 +229,9 @@ def convert_pdf(data, options, progress=None):
         if options.get('removeHeaders', True):
             remove_running_text(source, report)
         source.select(pages)
-        text_pages = sum(bool(p.get_text().strip()) for p in source)
+        page_has_text = [bool(p.get_text().strip()) for p in source]
+        text_pages = sum(page_has_text)
+        use_ocr = options.get('ocr', True)
         math_regions = 0
         keep_images = options.get('keepImages', True)
         for number, page in enumerate(source, 1):
@@ -238,13 +242,48 @@ def convert_pdf(data, options, progress=None):
             report('analysing', number, total)
         # One page at a time: identical output, and a count to show meanwhile.
         chunks = []
+        ocr_pages = []
         for number in range(total):
-            chunks.append(pymupdf4llm.to_markdown(
-                source, pages=[number], embed_images=keep_images, image_size_limit=0,
-                ignore_images=not keep_images, show_progress=False,
-            ))
+            if use_ocr and not page_has_text[number]:
+                original_page = pages[number]
+                chunks.append(f'\n\n<!-- edimark-ocr-page:{original_page + 1} -->\n\n')
+                ocr_pages.append({'index': original_page, 'page': original_page + 1})
+            else:
+                chunks.append(pymupdf4llm.to_markdown(
+                    source, pages=[number], embed_images=keep_images, image_size_limit=0,
+                    ignore_images=not keep_images, show_progress=False,
+                ))
             report('converting', number + 1, total)
-        return {'markdown': ''.join(chunks), 'pages': total, 'textPages': text_pages, 'mathRegions': math_regions}
+        return {
+            'markdown': ''.join(chunks),
+            'pages': total,
+            'textPages': text_pages,
+            'mathRegions': math_regions,
+            'ocrPages': ocr_pages,
+        }
+
+
+def render_ocr_page(data, page_index, dpi=200):
+    """Render one original page for OCR without retaining the whole document."""
+    with pymupdf.open(stream=bytes(data), filetype='pdf') as source:
+        if source.needs_pass:
+            raise ValueError('pdf_password')
+        if page_index < 0 or page_index >= len(source):
+            raise ValueError('pdf_pages_invalid')
+        pixmap = source[page_index].get_pixmap(
+            dpi=dpi,
+            colorspace=pymupdf.csGRAY,
+            alpha=False,
+        )
+        # Scanners often encode a pale diagonal watermark in the same image as
+        # the text. A conservative black-and-white threshold removes that
+        # background noise and leaves the dark glyphs, which markedly improves
+        # segmentation without sending the page to an external service.
+        image = Image.frombytes('L', (pixmap.width, pixmap.height), pixmap.samples)
+        image = image.point(lambda value: 255 if value > 185 else 0, mode='1')
+        output = BytesIO()
+        image.save(output, format='PNG', optimize=True)
+        return output.getvalue()
 
 
 def inspect_pdf(data):
