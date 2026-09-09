@@ -460,8 +460,32 @@ def inspect_pdf(data):
         return {'pages': len(source)}
 
 
+def count_scanned(data):
+    """How many pages would go to OCR, by the same rule the conversion uses.
+
+    Reading the text of every page is far more expensive than opening the
+    file — 2.5 s against 27 ms on a 442-page report — so this is asked for
+    separately, once the dialog is already up, and never delays it.
+    """
+    with pymupdf.open(stream=data, filetype='pdf') as source:
+        if source.needs_pass:
+            raise ValueError('pdf_password')
+        scanned = 0
+        for page in source:
+            letters = sum(1 for c in page.get_text() if c.isalnum())
+            if not letters or (
+                letters < SCAN_TEXT_LIMIT and image_coverage(page) >= SCAN_IMAGE_RATIO
+            ):
+                scanned += 1
+        return {'scanned': scanned, 'pages': len(source)}
+
+
 def inspect_json(data):
     return json.dumps(inspect_pdf(bytes(data)))
+
+
+def scanned_json(data):
+    return json.dumps(count_scanned(bytes(data)))
 
 
 def convert_json(data, options_json, progress=None, emit_image=None):

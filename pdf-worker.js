@@ -83,6 +83,13 @@ self.onmessage = async ({ data }) => {
             try {
                 const result = JSON.parse(py.runPython('inspect_json(pdf_bytes)'));
                 self.postMessage({ type: 'info', result });
+                /*
+                  Whether the document holds scanned pages decides if the OCR
+                  option is worth showing at all, but counting them means
+                  reading every page. It goes after the dialog is up, on this
+                  thread, so nothing waits for it.
+                */
+                self.postMessage({ type: 'scanned', result: JSON.parse(py.runPython('scanned_json(pdf_bytes)')) });
             } finally {
                 py.globals.delete('pdf_bytes');
             }

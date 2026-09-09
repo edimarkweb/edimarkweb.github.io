@@ -142,7 +142,7 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
         <div class="pdf-import-options">
           <label><input id="pdf-remove-headers" type="checkbox" checked> <span></span></label>
           <label><input id="pdf-keep-images" type="checkbox" checked> <span></span></label>
-          <label><input id="pdf-ocr" type="checkbox"> <span></span></label>
+          <label class="pdf-ocr-option" hidden><input id="pdf-ocr" type="checkbox"> <span></span></label>
           <label class="pdf-ocr-language" for="pdf-ocr-language"><span></span>
             <select id="pdf-ocr-language">
               <option value="spa">Español</option>
@@ -173,6 +173,9 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
     $('#pdf-ocr + span').textContent = t('pdf_ocr');
     $('.pdf-ocr-language > span').textContent = t('pdf_ocr_language');
     $('#pdf-ocr-language').value = defaultOcrLanguage();
+    $('.pdf-ocr-language').hidden = !$('#pdf-ocr').checked;
+    // La opción aparece cuando se sabe que el documento tiene qué reconocer.
+    let scannedPages = 0;
     $('label[for="pdf-pages"]').textContent = t('pdf_pages');
     $('#pdf-cancel').textContent = t('pdf_cancel');
     $('#pdf-preview').textContent = t('pdf_preview');
@@ -278,13 +281,24 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
             clearTimeout(watchdog);
             if (busy) watchdog = setTimeout(() => fail('pdf_error'), 180000);
         }
+        /*
+          El OCR solo se ofrece si hay páginas escaneadas que reconocer, y su
+          idioma solo si se ha marcado: una opción que no puede hacer nada en
+          este documento estorba más que ayuda.
+        */
+        function syncOcrLanguage() {
+            const enabled = $('#pdf-ocr').checked;
+            $('.pdf-ocr-option').hidden = !scannedPages;
+            $('.pdf-ocr-language').hidden = !enabled || !scannedPages;
+            $('#pdf-ocr-language').disabled = busy || !enabled;
+        }
         function setBusy(value) {
             busy = value;
             renewWatchdog();
             if (!value) clearProgress();
             $('#pdf-preview').disabled = value || !inspected;
             for (const input of dialog.querySelectorAll('input, select')) input.disabled = value;
-            $('#pdf-ocr-language').disabled = value || !$('#pdf-ocr').checked;
+            syncOcrLanguage();
             $('#pdf-accept').disabled = value || !markdown;
             dialog.setAttribute('aria-busy', String(value));
         }
@@ -377,6 +391,17 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
                         .replaceAll('{count}', String(data.result.pages));
                     $('#pdf-import-status').textContent = '';
                     setBusy(false);
+                }
+                else if (data.type === 'scanned') {
+                    scannedPages = Number(data.result.scanned) || 0;
+                    if (scannedPages) {
+                        $('#pdf-import-info').textContent += ` ${t('pdf_document_scanned')
+                            .replaceAll('{scanned}', String(scannedPages))
+                            .replaceAll('{count}', String(data.result.pages))}`;
+                    }
+                    syncOcrLanguage();
+                    // Para que la espera del recuento se pueda observar fuera.
+                    dialog.dataset.scanned = String(scannedPages);
                 } else if (data.type === 'result') {
                     try {
                         markdown = stripUnsafeMarkup(await applyOcr(data.result));
@@ -450,7 +475,7 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
         for (const input of dialog.querySelectorAll('input, select')) input.addEventListener('input', () => {
             markdown = null;
             $('#pdf-accept').disabled = true;
-            $('#pdf-ocr-language').disabled = busy || !$('#pdf-ocr').checked;
+            syncOcrLanguage();
             setPreview();
             $('#pdf-import-status').textContent = t('pdf_changed');
         });

@@ -2604,6 +2604,9 @@ code {
 .pdf-import-options input[type="text"],
 .pdf-import-options select { border: 1px solid #94a3b8; padding: 6px; border-radius: 4px; color: inherit; background: transparent; }
 .pdf-ocr-language { display: flex; align-items: center; gap: 8px; padding-left: 24px; }
+/* La regla de arriba gana al display:none del atributo, así que se repite. */
+.pdf-ocr-language[hidden] { display: none; }
+.pdf-ocr-option[hidden] { display: none; }
 .pdf-ocr-language select { min-width: 9rem; }
 #pdf-import-preview { width: 100%; flex: 1 1 auto; min-height: 100px; height: 20vh; border: 1px solid #94a3b8; background: white; }
 .pdf-import-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }

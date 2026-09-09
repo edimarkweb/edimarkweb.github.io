@@ -5847,6 +5847,14 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.match(await page.locator('#pdf-import-info').innerText(), /7/);
   // Ya no hay tope de páginas que anunciar.
   assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /200/);
+  // Y en un documento sin una sola página escaneada, el OCR no se ofrece.
+  await page.waitForFunction(
+    () => document.querySelector('.pdf-import-dialog')?.dataset.scanned === '0',
+    null,
+    { timeout: 120000 },
+  );
+  assert.equal(await page.locator('.pdf-ocr-option').isHidden(), true);
+  assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /escaneadas/);
   assert.equal(await page.locator('#pdf-preview').isDisabled(), false);
   await page.locator('#pdf-preview').click();
   await page.waitForFunction(() => document.querySelector('.pdf-import-dialog').getAttribute('aria-busy') === 'false', null, { timeout: 120000 });
@@ -6031,10 +6039,22 @@ test('PDF escaneado: el OCR local produce Markdown editable', { timeout: 180000 
     null,
     { timeout: 120000 },
   );
-  // El OCR no se aplica sin pedirlo: es lento y descarga un modelo.
+  /*
+    Las cuatro páginas están escaneadas, así que la opción se ofrece, con su
+    recuento. Sin marcarla: el reconocimiento es lento y nadie lo ha pedido.
+    Y el idioma no se enseña mientras no haya reconocimiento que hacer.
+  */
+  await page.waitForFunction(
+    () => document.querySelector('.pdf-import-dialog')?.dataset.scanned === '4',
+    null,
+    { timeout: 120000 },
+  );
+  assert.equal(await page.locator('.pdf-ocr-option').isHidden(), false);
+  assert.match(await page.locator('#pdf-import-info').innerText(), /4 parecen escaneadas/);
   assert.equal(await page.locator('#pdf-ocr').isChecked(), false);
-  assert.equal(await page.locator('#pdf-ocr-language').isDisabled(), true);
+  assert.equal(await page.locator('.pdf-ocr-language').isHidden(), true);
   await page.locator('#pdf-ocr').check();
+  assert.equal(await page.locator('.pdf-ocr-language').isHidden(), false);
   assert.equal(await page.locator('#pdf-ocr-language').inputValue(), 'spa');
 
   await page.locator('#pdf-preview').click();

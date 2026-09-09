@@ -615,6 +615,7 @@
   "pdf_changed": "Les opcions han canviat. Genera una altra vista prèvia.",
   "pdf_inspecting": "Comprovant el nombre de pàgines…",
   "pdf_document_info": "Pàgines del PDF: {count}. Un document llarg pot trigar uns quants minuts a convertir-se.",
+  "pdf_document_scanned": "{scanned} semblen escanejades: marca l’OCR si en vols el text.",
   "pdf_time_remaining": "queden uns {minutes} min",
   "pdf_loading": "Carregant el convertidor local (uns 34 MB la primera vegada)…",
   "pdf_scanning_page": "S’estan analitzant les capçaleres i els peus… pàgina {page} de {total}",

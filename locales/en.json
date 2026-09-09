@@ -615,6 +615,7 @@
   "pdf_changed": "Options changed. Generate another preview.",
   "pdf_inspecting": "Checking the number of pages…",
   "pdf_document_info": "PDF pages: {count}. A long document can take several minutes to convert.",
+  "pdf_document_scanned": "{scanned} of them look scanned: tick OCR if you want their text.",
   "pdf_time_remaining": "about {minutes} min left",
   "pdf_loading": "Loading the local converter (about 34 MB the first time)…",
   "pdf_scanning_page": "Analysing headers and footers… page {page} of {total}",

@@ -615,6 +615,7 @@
   "pdf_changed": "Aukerak aldatu dira. Sortu beste aurrebista bat.",
   "pdf_inspecting": "Orrialde kopurua egiaztatzen…",
   "pdf_document_info": "PDFaren orrialdeak: {count}. Dokumentu luze batek minutu batzuk behar ditzake bihurtzeko.",
+  "pdf_document_scanned": "{scanned} eskaneatuta daudela dirudi: markatu OCRa haien testua nahi baduzu.",
   "pdf_time_remaining": "{minutes} min inguru falta dira",
   "pdf_loading": "Bihurgailu lokala kargatzen (34 MB inguru lehen aldian)…",
   "pdf_scanning_page": "Goiburuak eta orri-oinak aztertzen… {total}(e)tik {page}. orria",

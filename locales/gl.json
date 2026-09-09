@@ -615,6 +615,7 @@
   "pdf_changed": "As opcións cambiaron. Xera outra vista previa.",
   "pdf_inspecting": "Comprobando o número de páxinas…",
   "pdf_document_info": "Páxinas do PDF: {count}. Un documento longo pode tardar varios minutos en converterse.",
+  "pdf_document_scanned": "{scanned} parecen dixitalizadas: marca o OCR se queres o seu texto.",
   "pdf_time_remaining": "quedan uns {minutes} min",
   "pdf_loading": "Cargando o conversor local (uns 34 MB a primeira vez)…",
   "pdf_scanning_page": "Analizando cabeceiras e pés… páxina {page} de {total}",
