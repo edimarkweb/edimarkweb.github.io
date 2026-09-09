@@ -254,7 +254,9 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
                 ? 'pdf_scanning_page'
                 : stage === 'analysing'
                     ? 'pdf_analysing_page'
-                    : stage === 'ocr' ? 'pdf_ocr_page' : 'pdf_converting_page';
+                    : stage === 'ocr'
+                        ? 'pdf_ocr_page'
+                        : stage === 'saving' ? 'pdf_saving_images' : 'pdf_converting_page';
             let message = t(key)
                 .replaceAll('{page}', String(done))
                 .replaceAll('{total}', String(total));
@@ -472,7 +474,10 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
             setBusy(true);
             await announce('pdf_importing');
             try {
-                finish(await accept(result) ?? result);
+                // Guardar las imágenes lleva segundos y la base de datos va
+                // confirmándolas: contarlas es la diferencia entre una espera
+                // y una espera que se ve avanzar.
+                finish(await accept(result, (done, total) => setProgress('saving', done, total)) ?? result);
             } catch (error) {
                 if (!closed) {
                     console.error('No se pudo abrir el PDF importado:', error);

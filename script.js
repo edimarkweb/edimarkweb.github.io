@@ -3783,21 +3783,29 @@ function assetTransactionFinished(transaction) {
     });
 }
 
-async function replacePersistedDocumentAssets(docId, assets) {
+/*
+  Una sola transacción para todas las imágenes: es más rápida que trocearla y,
+  si algo falla, no deja el documento a medio guardar. A cambio, escribir las
+  mil imágenes de un informe son segundos en los que no ocurre nada visible,
+  así que se cuenta cada escritura conforme la base de datos la confirma.
+*/
+async function replacePersistedDocumentAssets(docId, assets, onProgress) {
     const database = await openAssetDatabase();
     if (!database || !docId) return false;
     const transaction = database.transaction(ASSET_DB_STORE, 'readwrite');
     const store = transaction.objectStore(ASSET_DB_STORE);
     const keysRequest = store.index('docId').getAllKeys(docId);
+    let written = 0;
     keysRequest.onsuccess = () => {
         keysRequest.result.forEach(key => store.delete(key));
         assets.forEach(asset => {
-            store.put({
+            const request = store.put({
                 key: `${docId}\u0000${asset.relativePath}`,
                 docId,
                 relativePath: asset.relativePath,
                 file: asset.contents,
             });
+            if (onProgress) request.onsuccess = () => onProgress(++written, assets.length);
         });
     };
     try {
@@ -6394,7 +6402,7 @@ function importProgressLabel(file, index, total) {
         : formatTranslation('import_progress_single', 'Importando {name}', { name });
 }
 
-async function createImportedPdfDocument(name, imported) {
+async function createImportedPdfDocument(name, imported, onProgress) {
     /*
       El conversor ya entrega las imágenes como archivos, con su ruta escrita
       en el texto. Solo queda repescar las que sigan incrustadas, que son las
@@ -6416,7 +6424,7 @@ async function createImportedPdfDocument(name, imported) {
         // small quota. Also needed for unsaved PDF imports in the desktop app.
         const saved = await replacePersistedDocumentAssets(doc.id, prepared.files.map(file => ({
             relativePath: file.relativePath, contents: file.blob,
-        })));
+        })), onProgress);
         if (!saved) reportStorageFailure(new Error('pdf_asset_persistence_failed'));
     }
     autosaveDoc(doc.id, doc.md);
@@ -6445,7 +6453,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
                 file,
                 getTranslation,
                 extractedAssetsFolderName(name),
-                resultado => createImportedPdfDocument(name, resultado),
+                (resultado, informar) => createImportedPdfDocument(name, resultado, informar),
             );
             if (!createdDoc) return false;
             reportStatus(getTranslation('import_file_success', 'Importación completada.'));

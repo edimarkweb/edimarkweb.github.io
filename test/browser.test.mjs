@@ -5960,6 +5960,12 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     return archivos.map(archivo => archivo.relativePath);
   });
   assert.ok(recursos.some(ruta => /images\/01\.jpg$/.test(ruta)), recursos.join(' | '));
+  /*
+    Guardar las imágenes de un informe entero son segundos en una sola
+    transacción, y la barra se quedaba quieta hasta saltar al final: ahora se
+    cuentan según la base de datos las confirma.
+  */
+  assert.ok(avance.some(paso => /Guardando imágenes… \d+ de \d+/.test(paso)), avance.slice(-8).join(' | '));
 
   await page.locator('#import-file-input').setInputFiles(fixture);
   await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('7'), null, { timeout: 120000 });

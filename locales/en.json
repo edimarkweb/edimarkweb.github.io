@@ -625,6 +625,7 @@
   "pdf_converting_page": "Converting PDF… page {page} of {total}",
   "pdf_preparing_preview": "Preparing the preview…",
   "pdf_importing": "Importing into a new tab…",
+  "pdf_saving_images": "Saving images… {page} of {total}",
   "pdf_converting": "Converting PDF…",
   "pdf_ocr_loading": "Loading local text recognition for the first time…",
   "pdf_ocr_rendering": "Preparing a page for OCR…",
