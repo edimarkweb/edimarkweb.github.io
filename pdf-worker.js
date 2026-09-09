@@ -43,7 +43,7 @@ for relative, line in [('helpers/utils.py', 'from pymupdf4llm.ocr.analyze_page i
         raise RuntimeError('Unexpected PDF converter version')
     path.write_text(text.replace(line, ''))
 `);
-    const response = await fetch(new URL('./pdf-import.py?v=2.50.3', self.location.href));
+    const response = await fetch(new URL('./pdf-import.py?v=2.50.4', self.location.href));
     if (!response.ok) throw new Error('pdf_load_error');
     py.runPython(await response.text());
     step();
