@@ -2806,14 +2806,37 @@ function createTextareaEditor(textarea) {
             } else {
                 setSelectionRange(offset, offset);
             }
+
+            /*
+              Cambiar la selección solo desplaza un textarea cuando conserva
+              el foco. El buscador se lo ha llevado a su campo, así que en
+              documentos largos el resultado quedaba seleccionado pero fuera
+              de la pantalla. La capa gemela conoce la altura real de cada
+              línea, incluso cuando se parte por el ajuste automático: usamos
+              esa geometría para llevar explícitamente la coincidencia a una
+              zona cómoda del editor.
+            */
+            const metrics = lineMetrics(pos?.line || 0);
+            if (metrics) {
+                const margin = Math.min(100, Math.max(16, textarea.clientHeight / 4));
+                const visibleTop = textarea.scrollTop;
+                const visibleBottom = visibleTop + textarea.clientHeight;
+                const lineTop = metrics.top;
+                const lineBottom = lineTop + Math.max(metrics.height, 1);
+                if (lineTop < visibleTop + margin || lineBottom > visibleBottom - margin) {
+                    const centered = lineTop - Math.max(0, (textarea.clientHeight - metrics.height) / 2);
+                    textarea.scrollTop = Math.max(0, centered);
+                    syncScroll();
+                }
+            }
             if (hadFocus) {
                 textarea.focus({ preventScroll: false });
-        } else if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
-            try {
-                previouslyFocused.focus({ preventScroll: true });
-            } catch (_) {
-                previouslyFocused.focus();
-            }
+            } else if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+                try {
+                    previouslyFocused.focus({ preventScroll: true });
+                } catch (_) {
+                    previouslyFocused.focus();
+                }
                 if (typeof previouslyFocused.setSelectionRange === 'function' && typeof previouslyFocused.value === 'string') {
                     const endPos = previouslyFocused.value.length;
                     previouslyFocused.setSelectionRange(endPos, endPos);

@@ -636,6 +636,40 @@ test('cerrar la búsqueda devuelve el foco al editor', async (t) => {
   );
 });
 
+test('la búsqueda lleva al resultado lejano sin sacar el foco del buscador', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  const lineas = Array.from({ length: 320 }, (_, indice) => (
+    indice === 278 ? 'La coincidencia con Ferreras está aquí.' : `Línea de relleno ${indice}.`
+  ));
+  await page.locator('#markdown-input').fill(lineas.join('\n'));
+
+  await page.locator('#open-search-btn').click();
+  await page.locator('#search-input').fill('ferreras');
+  await page.locator('#search-matches-info').getByText('1 / 1', { exact: true }).waitFor();
+
+  const estado = await page.evaluate(() => {
+    const textarea = document.getElementById('markdown-input');
+    const input = document.getElementById('search-input');
+    const linea = textarea.value.split('\n').findIndex(texto => texto.includes('Ferreras'));
+    const medida = markdownEditor.lineMetrics(linea);
+    return {
+      foco: document.activeElement === input,
+      desplazado: textarea.scrollTop > 0,
+      visible: medida.top >= textarea.scrollTop
+        && medida.top + medida.height <= textarea.scrollTop + textarea.clientHeight,
+      seleccionado: textarea.value.slice(textarea.selectionStart, textarea.selectionEnd),
+    };
+  });
+
+  assert.equal(estado.foco, true, 'el foco abandonó el cuadro de búsqueda');
+  assert.equal(estado.desplazado, true, 'el editor siguió al principio del documento');
+  assert.equal(estado.visible, true, 'la línea encontrada quedó fuera de la zona visible');
+  assert.equal(estado.seleccionado.toLowerCase(), 'ferreras');
+});
+
 /*
   El repintado de la vista previa está limitado en frecuencia, y ese mismo
   repintado es lo que vuelca el Markdown al editor HTML: la escritura seguida no
