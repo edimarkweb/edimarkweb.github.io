@@ -3867,6 +3867,41 @@ async function readPersistedDocumentAssets(docId) {
     });
 }
 
+/*
+  Las imágenes de una pestaña cerrada se conservan por si vuelve, y se borran
+  cuando sale del registro de cerradas. Pero ese registro vive en memoria: al
+  cerrar la aplicación se pierde, y sus imágenes se quedaban en la base de
+  datos sin dueño para siempre. Una sesión de pruebas con PDF dejó ahí 1441
+  imágenes y 101 MB. Al arrancar, lo que no sea de un documento conocido sobra.
+*/
+async function purgeOrphanDocumentAssets(knownIds) {
+    const database = await openAssetDatabase();
+    if (!database) return 0;
+    const transaction = database.transaction(ASSET_DB_STORE, 'readwrite');
+    const store = transaction.objectStore(ASSET_DB_STORE);
+    let removed = 0;
+    await new Promise((resolve, reject) => {
+        const request = store.index('docId').openCursor();
+        request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor) return resolve();
+            if (!knownIds.has(cursor.value?.docId)) {
+                cursor.delete();
+                removed += 1;
+            }
+            cursor.continue();
+        };
+        request.onerror = () => reject(request.error);
+    });
+    try {
+        await assetTransactionFinished(transaction);
+    } catch (error) {
+        console.warn('No se pudieron borrar las imágenes sin documento:', error);
+        return 0;
+    }
+    return removed;
+}
+
 async function deletePersistedDocumentAssets(docId) {
     const database = await openAssetDatabase();
     if (!database || !docId) return;

@@ -5823,6 +5823,44 @@ test('una actualización temprana del idioma no bloquea el editor al arrancar', 
   await page.waitForFunction(() => document.querySelector('#html-output h1')?.textContent === 'El editor sigue funcionando');
 });
 
+test('Las imágenes sin documento no se quedan ocupando sitio', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  /*
+    Las pestañas cerradas guardan sus imágenes por si vuelven, pero ese
+    registro vive en memoria: al cerrar la aplicación se pierde y las imágenes
+    se quedaban sin dueño. Unas cuantas importaciones de prueba dejaron así
+    101 MB en la base de datos.
+  */
+  const antes = await page.evaluate(async () => {
+    const doc = docs.find(d => d.id === currentId);
+    await replacePersistedDocumentAssets('documento-que-ya-no-existe', [
+      { relativePath: 'viejo/images/01.png', contents: new Blob([new Uint8Array(64)]) },
+      { relativePath: 'viejo/images/02.png', contents: new Blob([new Uint8Array(64)]) },
+    ]);
+    await replacePersistedDocumentAssets(doc.id, [
+      { relativePath: 'vivo/images/01.png', contents: new Blob([new Uint8Array(64)]) },
+    ]);
+    return {
+      huerfanas: (await readPersistedDocumentAssets('documento-que-ya-no-existe')).length,
+      vivas: (await readPersistedDocumentAssets(doc.id)).length,
+    };
+  });
+  assert.deepEqual(antes, { huerfanas: 2, vivas: 1 });
+
+  const despues = await page.evaluate(async () => {
+    const doc = docs.find(d => d.id === currentId);
+    const borradas = await purgeOrphanDocumentAssets(new Set(docs.map(d => d.id)));
+    return {
+      borradas,
+      huerfanas: (await readPersistedDocumentAssets('documento-que-ya-no-existe')).length,
+      vivas: (await readPersistedDocumentAssets(doc.id)).length,
+    };
+  });
+  // Las del documento abierto siguen ahí; las del que ya no existe, no.
+  assert.deepEqual(despues, { borradas: 2, huerfanas: 0, vivas: 1 });
+});
+
 test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modificar documentos', { timeout: 180000 }, async (t) => {
   const { context, page, requests } = await openApp();
   t.after(() => context.close());
