@@ -12302,7 +12302,13 @@ window.onload = async () => {
         // lupa ajustada se hacen con esa medida, así que se rehacen aquí.
         ajustarRepartoDePaneles();
         aplicarAjusteAlAncho();
-        refreshPageBreaks();
+        /*
+          Repartir en páginas obliga a medir bloque a bloque, y en un documento
+          de trescientas páginas eso son casi dos segundos con la ventana
+          parada. Al fotograma siguiente: primero se ve el texto, y las páginas
+          se dibujan encima. Es la misma vía que usa el observador de tamaño.
+        */
+        schedulePageBreaks();
     }
     window.__applyDocumentFormatToPreview = applyDocumentFormatToPreview;
 
