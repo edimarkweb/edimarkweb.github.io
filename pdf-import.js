@@ -337,7 +337,7 @@ export async function importPdf(file, translate, assetFolder = '') {
         }
         function ensureWorker() {
             if (worker) return worker;
-            worker = new Worker(new URL('./pdf-worker.js?v=2.49.4', import.meta.url));
+            worker = new Worker(new URL('./pdf-worker.js?v=2.50.0', import.meta.url));
             worker.onerror = () => fail('pdf_error');
             worker.onmessage = async ({ data }) => {
                 if (closed) return;
