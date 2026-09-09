@@ -2634,3 +2634,25 @@ code {
 .dark #pdf-import-progress .pdf-import-progress-bar { background: #38bdf8; }
 .dark .pdf-import-info { border-color: #fbbf24; color: #fef3c7; background: #451a03; }
 .dark .pdf-import-dialog { background: #1e293b; color: #f1f5f9; }
+
+/*
+  La cortina del arranque: tapa la interfaz a medio dibujar mientras el guion
+  monta el documento, que con uno largo son varios segundos de hilo ocupado.
+*/
+#app-loading {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 1rem;
+}
+#app-loading .app-loading-hint { font-size: .85rem; color: #64748b; }
+#app-loading[hidden] { display: none; }
+.dark #app-loading { background: #0f172a; color: #e2e8f0; }
+.dark #app-loading .app-loading-hint { color: #94a3b8; }

@@ -13717,6 +13717,19 @@ window.onload = async () => {
     */
     applyDocumentFormatToPreview();
 
+    /*
+      Y la basura de sesiones anteriores, cuando ya no estorba: sin prisa, para
+      no retrasar la primera pestaña.
+    */
+    const limpiar = () => purgeOrphanDocumentAssets(new Set(docs.map(doc => doc.id)))
+        .then(borradas => { if (borradas) console.info(`Imágenes sin documento borradas: ${borradas}`); })
+        .catch(error => console.warn('No se pudo limpiar la base de imágenes:', error));
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(limpiar, { timeout: 5000 });
+    else setTimeout(limpiar, 2000);
+
+    // Fuera la cortina: la ventana ya está montada y responde.
+    document.getElementById('app-loading')?.setAttribute('hidden', '');
+
     window.__edimarkReady = true;
 };
 
