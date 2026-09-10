@@ -637,6 +637,7 @@
   "pdf_converting_page": "Convertendo o PDF… páxina {page} de {total}",
   "pdf_preparing_preview": "Preparando a vista previa…",
   "pdf_importing": "Importando nunha pestana nova…",
+  "pdf_mounting": "Preparando o documento na lapela nova…",
   "pdf_saving_images": "Gardando imaxes… {page} de {total}",
   "pdf_converting": "Convertendo PDF…",
   "pdf_ocr_loading": "Cargando o recoñecemento de texto local por primeira vez…",

@@ -637,6 +637,7 @@
   "pdf_converting_page": "PDFa bihurtzen… {total}(e)tik {page}. orria",
   "pdf_preparing_preview": "Aurrebista prestatzen…",
   "pdf_importing": "Fitxa berri batean inportatzen…",
+  "pdf_mounting": "Dokumentua fitxa berrian prestatzen…",
   "pdf_saving_images": "Irudiak gordetzen… {page} / {total}",
   "pdf_converting": "PDFa bihurtzen…",
   "pdf_ocr_loading": "Testu-ezagutza lokala lehen aldiz kargatzen…",

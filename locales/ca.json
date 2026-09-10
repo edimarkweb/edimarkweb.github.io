@@ -637,6 +637,7 @@
   "pdf_converting_page": "S’està convertint el PDF… pàgina {page} de {total}",
   "pdf_preparing_preview": "Preparant la vista prèvia…",
   "pdf_importing": "Important en una pestanya nova…",
+  "pdf_mounting": "Preparant el document a la pestanya nova…",
   "pdf_saving_images": "Desant imatges… {page} de {total}",
   "pdf_converting": "Convertint PDF…",
   "pdf_ocr_loading": "Carregant el reconeixement de text local per primera vegada…",

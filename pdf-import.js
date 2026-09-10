@@ -508,7 +508,20 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
                 // Guardar las imágenes lleva segundos y la base de datos va
                 // confirmándolas: contarlas es la diferencia entre una espera
                 // y una espera que se ve avanzar.
-                finish(await accept(result, (done, total) => setProgress('saving', done, total)) ?? result);
+                /*
+                  Guardar las imágenes se cuenta, pero montar el documento en
+                  su pestaña —el texto en el editor y la hoja pintada— es otro
+                  tramo largo que pasaba entero bajo el mismo mensaje: en un
+                  informe de trescientas páginas el diálogo parecía detenido.
+                  Ahora dice en qué anda, y `announce` cede dos fotogramas para
+                  que el aviso llegue a la pantalla antes del trabajo que la
+                  bloquea.
+                */
+                finish(await accept(
+                    result,
+                    (done, total) => setProgress('saving', done, total),
+                    announce,
+                ) ?? result);
             } catch (error) {
                 if (!closed) {
                     console.error('No se pudo abrir el PDF importado:', error);

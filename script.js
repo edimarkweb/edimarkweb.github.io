@@ -6544,7 +6544,7 @@ function importProgressLabel(file, index, total) {
         : formatTranslation('import_progress_single', 'Importando {name}', { name });
 }
 
-async function createImportedPdfDocument(name, imported, onProgress) {
+async function createImportedPdfDocument(name, imported, onProgress, announce) {
     /*
       El conversor ya entrega las imágenes como archivos, con su ruta escrita
       en el texto. Solo queda repescar las que sigan incrustadas, que son las
@@ -6570,6 +6570,13 @@ async function createImportedPdfDocument(name, imported, onProgress) {
         if (!saved) reportStorageFailure(new Error('pdf_asset_persistence_failed'));
     }
     autosaveDoc(doc.id, doc.md);
+    /*
+      Montar el documento —el texto en el editor y la hoja pintada— ocupa el
+      hilo de una vez, y con un informe largo son segundos en los que el
+      diálogo se quedaba con el mensaje de guardar las imágenes, como detenido.
+      El aviso va antes, y cediendo fotogramas para que se vea.
+    */
+    if (typeof announce === 'function') await announce('pdf_mounting');
     switchTo(doc.id);
     updateDirtyIndicator(doc.id, false);
     return doc;
@@ -6595,7 +6602,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
                 file,
                 getTranslation,
                 extractedAssetsFolderName(name),
-                (resultado, informar) => createImportedPdfDocument(name, resultado, informar),
+                (resultado, informar, avisar) => createImportedPdfDocument(name, resultado, informar, avisar),
             );
             if (!createdDoc) return false;
             reportStatus(getTranslation('import_file_success', 'Importación completada.'));
