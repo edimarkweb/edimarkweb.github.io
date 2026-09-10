@@ -470,14 +470,16 @@ def count_scanned(data):
     with pymupdf.open(stream=data, filetype='pdf') as source:
         if source.needs_pass:
             raise ValueError('pdf_password')
-        scanned = 0
-        for page in source:
+        scanned = []
+        for number, page in enumerate(source, start=1):
             letters = sum(1 for c in page.get_text() if c.isalnum())
             if not letters or (
                 letters < SCAN_TEXT_LIMIT and image_coverage(page) >= SCAN_IMAGE_RATIO
             ):
-                scanned += 1
-        return {'scanned': scanned, 'pages': len(source)}
+                scanned.append(number)
+        # Which pages they are, so the warning can name them: the reader can
+        # look at those and decide whether the OCR is worth it.
+        return {'scanned': len(scanned), 'scannedPages': scanned, 'pages': len(source)}
 
 
 def inspect_json(data):

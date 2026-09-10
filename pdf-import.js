@@ -92,6 +92,26 @@ export function remainingMinutes(elapsed, advanced, pending) {
 }
 
 /*
+  Naming the scanned pages saves the reader from hunting for them, but a scan
+  of a whole book would spill hundreds of numbers into the dialog. Runs are
+  written as ranges, and past a handful of them the rest is left as an
+  ellipsis: enough to see where they are without burying the message.
+*/
+export function formatPageList(pages, groups = 6) {
+    const sorted = [...new Set(pages.map(Number).filter(Number.isInteger))].sort((a, b) => a - b);
+    const ranges = [];
+    for (const page of sorted) {
+        const last = ranges[ranges.length - 1];
+        if (last && page === last[1] + 1) last[1] = page;
+        else ranges.push([page, page]);
+    }
+    const shown = ranges.slice(0, groups)
+        .map(([from, to]) => (from === to ? String(from) : `${from}-${to}`))
+        .join(', ');
+    return ranges.length > groups ? `${shown}…` : shown;
+}
+
+/*
   A preview is for looking over the result before importing it, not for
   reading the whole document, and building one is not free: laying out a
   442-page report took over a second of frozen dialog, and rebuilding every
@@ -410,9 +430,13 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
                     scannedPages = Number(data.result.scanned) || 0;
                     if (scannedPages) {
                         const key = scannedPages === 1 ? 'pdf_document_scanned_one' : 'pdf_document_scanned_many';
+                        const list = formatPageList(data.result.scannedPages || []);
                         $('#pdf-import-info').textContent += ` ${t(key)
                             .replaceAll('{scanned}', String(scannedPages))
-                            .replaceAll('{count}', String(data.result.pages))}`;
+                            .replaceAll('{pages}', list)
+                            .replaceAll('{count}', String(data.result.pages))
+                            // Sin lista de páginas el paréntesis sobraría.
+                            .replace(/\s*\(\s*\)/, '')}`;
                     }
                     syncOcrLanguage();
                     // Para que la espera del recuento se pueda observar fuera.

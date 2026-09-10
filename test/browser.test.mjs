@@ -6111,7 +6111,7 @@ test('PDF escaneado: el OCR local produce Markdown editable', { timeout: 180000 
     { timeout: 120000 },
   );
   assert.equal(await page.locator('.pdf-ocr-option').isHidden(), false);
-  assert.match(await page.locator('#pdf-import-info').innerText(), /4 parecen escaneadas/);
+  assert.match(await page.locator('#pdf-import-info').innerText(), /4 parecen escaneadas \(las 1-4\)/);
   assert.equal(await page.locator('#pdf-ocr').isChecked(), false);
   assert.equal(await page.locator('.pdf-ocr-language').isHidden(), true);
   await page.locator('#pdf-ocr').check();

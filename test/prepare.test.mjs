@@ -967,6 +967,15 @@ test('La estimación del PDF solo habla cuando ya ha medido algo', async () => {
   assert.equal(remainingMinutes(10000, 100, 20), 0);
 });
 
+test('Las páginas escaneadas se nombran agrupadas en intervalos', async () => {
+  const { formatPageList } = await import('../pdf-import.js');
+  // Las seguidas se juntan; las sueltas van una a una y en orden.
+  assert.equal(formatPageList([5, 3, 4, 9]), '3-5, 9');
+  assert.equal(formatPageList([]), '');
+  // Un libro entero escaneado no vuelca sus cientos de números en el aviso.
+  assert.equal(formatPageList([1, 3, 5, 7, 9, 11, 13], 3), '1, 3, 5…');
+});
+
 test('La vista previa del PDF enseña el principio y unas pocas imágenes', async () => {
   const { previewMarkdown } = await import('../pdf-import.js');
   const imagen = ruta => [ruta, Uint8Array.from([1, 2, 3])];
