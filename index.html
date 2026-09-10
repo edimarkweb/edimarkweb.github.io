@@ -589,6 +589,15 @@
             <div id="tab-bar" role="tablist" class="flex gap-1 overflow-x-auto"></div>
             <button id="new-tab-btn" class="action-btn p-2" type="button" data-i18n-key="new_tab_btn_title" title="Nueva pestaña (Ctrl+T)"><i data-lucide="plus"></i></button>
             <div class="flex-grow"></div>
+            <!--
+              Un documento abierto desde el disco puede cambiar por fuera: otro
+              editor, una sincronización, una copia recuperada. Este botón lo
+              vuelve a leer sin cerrar la pestaña. Solo tiene sentido donde hay
+              disco, así que en el navegador ni aparece.
+            -->
+            <button type="button" id="reload-from-disk-btn" class="action-btn p-2 hidden" data-i18n-key="reload_from_disk_btn_title" title="Releer el documento del disco">
+                <i data-lucide="refresh-cw" class="w-4 h-4 shrink-0"></i>
+            </button>
             <button id="focus-mode-toggle" class="action-btn p-2" type="button" aria-pressed="false" data-i18n-key="focus_mode_toggle_title" title="Maximizar área de edición (Ctrl+Mayús+F)" aria-keyshortcuts="Control+Shift+F">
                 <i data-lucide="chevrons-up" class="toggle-icon"></i>
             </button>

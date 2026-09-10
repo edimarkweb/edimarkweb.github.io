@@ -47,6 +47,8 @@ Hau guztia bi panelak batera daudenean gertatzen da, batak bestearen zabalera ha
 
 Dokumentu bakoitza bere fitxan bizi da. `Ctrl+T` teklek bat sortzen dute; `Ctrl+Tab` teklek batetik bestera pasatzen dute eta bakoitzak non utzi zenuen gogoratzen du. Klik bikoitza izenburuan berrizendatzeko, `X` ixteko, eta puntu gorri batek (`●`) gorde gabeko aldaketak daudela abisatzen du. Eskuineko botoiarekin fitxa baten gainean bere menua irekitzen da: **Berrizendatu**, **Itxi**, **Itxi gainerakoak** eta **Itxi guztiak**. Azpian, **Berriro ireki** atalean, itxitako azken hamar fitxak daude, izenarekin, edozein bere testu eta irudiekin osorik berreskuratzeko; erregistro hori aplikazioa irekita dagoen bitartean irauten du.
 
+Mahaigaineko aplikazioan, ilara horren eskuinaldean **dokumentua diskotik berriro irakurtzeko** botoi bat dago: fitxategia kanpotik aldatu denerako balio du (beste editore bat, sinkronizazio bat), lehen fitxa itxi eta berriro ireki behar zenean. Fitxategia berdin badago ez du ezer ukitzen eta hala esaten du; pantailan gorde gabeko aldaketak badaude, aurretik galdetzen du, berriro irakurtzeak baztertu egiten dituelako. Fitxategirik gabeko fitxetan itzalita dago.
+
 Guztiak **bakarrik gordetzen dira** ekipoan: orria birkargatzen baduzu edo programa berriro irekitzen baduzu, edukia berriro hor dago. Segurtasun-sarea da, ez fitxategia gordetzearen ordezkoa.
 
 ---

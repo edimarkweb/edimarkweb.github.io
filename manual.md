@@ -47,6 +47,8 @@ Con `Ctrl` (o `Cmd`) pulsado, un clic en un enlace del editor visual lo abre; en
 
 Cada documento vive en su pestaña. `Ctrl+T` crea una; `Ctrl+Tab` pasa de una a otra y cada una recuerda dónde la dejaste. Doble clic sobre el título para renombrarla, la `X` para cerrarla, y un punto rojo (`●`) avisa de cambios sin guardar. Con el botón derecho sobre una pestaña se abre su menú: **Renombrar**, **Cerrar**, **Cerrar las demás** y **Cerrar todas**. Debajo, en **Reabrir**, están las últimas diez pestañas cerradas, con su nombre, para recuperar cualquiera con su texto y sus imágenes intactos; ese registro dura mientras la aplicación esté abierta.
 
+En la aplicación de escritorio, a la derecha de esa misma fila hay un botón para **releer el documento del disco**: sirve cuando el archivo ha cambiado por fuera (otro editor, una sincronización) y antes había que cerrar la pestaña y volver a abrirlo. Si el archivo sigue igual no toca nada y lo dice; si en pantalla hay cambios sin guardar, pregunta antes, porque releer los descarta. Está apagado en las pestañas que no vienen de ningún archivo.
+
 Todas se **autoguardan** solas en el equipo: si recargas la página o vuelves a abrir el programa, el contenido reaparece. Es una red de seguridad, no un sustituto de guardar el archivo.
 
 ---

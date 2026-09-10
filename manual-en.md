@@ -47,6 +47,8 @@ Holding `Ctrl` (or `Cmd`), a click on a link in the visual editor opens it; in t
 
 Each document lives in its own tab. `Ctrl+T` creates one; `Ctrl+Tab` moves between them and each remembers where you left it. Double-click the title to rename it, the `X` to close it, and a red dot (`●`) warns of unsaved changes. Right-click a tab to open its menu: **Rename**, **Close**, **Close others** and **Close all**. Below, under **Reopen**, are the last ten closed tabs, listed by name, so you can bring any of them back with its text and images intact; that record lasts as long as the application stays open.
 
+In the desktop app, at the right of that same row there is a button to **reload the document from disk**: for when the file has changed outside the app (another editor, a sync) and the only way out used to be closing the tab and opening it again. If the file is unchanged it touches nothing and says so; if there are unsaved changes on screen it asks first, because reloading discards them. It is disabled on tabs that do not come from a file.
+
 They all **autosave** on your computer: if you reload the page or open the program again, the content is back. It is a safety net, not a replacement for saving the file.
 
 ---

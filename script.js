@@ -3460,6 +3460,65 @@ function documentIsDirty(doc) {
 }
 
 /*
+  Releer del disco. Un documento abierto desde un archivo puede cambiar por
+  fuera mientras se edita —otro editor, una sincronización, una copia
+  recuperada—, y hasta ahora la única salida era cerrar la pestaña y volver a
+  abrirlo, perdiendo de paso el resto de la sesión. Si el archivo no ha
+  cambiado no se toca nada y se dice; si lo que hay en pantalla tiene cambios
+  sin guardar se pregunta antes, porque releer los descarta.
+*/
+async function reloadCurrentDocFromDisk() {
+    const platform = window.EdiMarkPlatform;
+    const doc = docs.find(d => d.id === currentId);
+    if (!doc || !doc.filePath || !platform?.isDesktop
+        || typeof platform.openTextDocumentAtPath !== 'function') return false;
+    let enDisco;
+    try {
+        const leido = await platform.openTextDocumentAtPath(doc.filePath);
+        if (!leido || typeof leido.content !== 'string') throw new Error('empty_read');
+        enDisco = normalizeNewlines(leido.content);
+    } catch (error) {
+        console.error('No se pudo releer el documento del disco:', error);
+        reportStatus(getTranslation('reload_from_disk_error', 'No se pudo leer el archivo del disco.'));
+        return false;
+    }
+    const enPantalla = markdownEditor ? markdownEditor.getValue() : doc.md;
+    if (enDisco === enPantalla) {
+        reportStatus(getTranslation('reload_from_disk_unchanged', 'El archivo del disco no ha cambiado.'));
+        return false;
+    }
+    if (documentIsDirty(doc) && !await confirmAction(formatTranslation(
+        'reload_from_disk_confirm',
+        '«{name}» tiene cambios sin guardar. ¿Releer el archivo del disco y descartarlos?',
+        { name: doc.name },
+    ))) return false;
+    // La pregunta es asíncrona: entre medias la pestaña ha podido cambiar.
+    if (currentId !== doc.id) return false;
+    if (markdownEditor) markdownEditor.setValue(enDisco);
+    doc.md = enDisco;
+    doc.lastSaved = enDisco;
+    lastAutosavedById.set(doc.id, enDisco);
+    autosaveDoc(doc.id, enDisco);
+    updateDirtyIndicator(doc.id, false);
+    updateMarkdownCharCounter(enDisco);
+    reportStatus(getTranslation('reload_from_disk_done', 'Documento releído del disco.'));
+    return true;
+}
+
+/*
+  El botón vive en la fila de las pestañas, siempre a la vista en el escritorio
+  para que se sepa que existe, pero apagado mientras el documento abierto no
+  venga de ningún archivo: no hay nada que releer en una pestaña nueva.
+*/
+function updateReloadFromDiskState() {
+    const button = document.getElementById('reload-from-disk-btn');
+    if (!button || !window.EdiMarkPlatform?.isDesktop) return;
+    button.classList.remove('hidden');
+    const doc = docs.find(d => d.id === currentId);
+    button.disabled = !doc?.filePath;
+}
+
+/*
   Las pestañas cerradas no se tiran: se guardan aquí para poder recuperarlas
   mientras dure la sesión, igual que hace un navegador con sus pestañas. Solo
   en memoria, que el texto de un documento no cabe en el almacenamiento con
@@ -3594,7 +3653,12 @@ function updateDirtyIndicator(id, isDirty) {
     }
     // Guardar vive ahora en la barra, donde no hay nombre de documento que
     // marcar: el punto del botón dice si al documento abierto le falta guardar.
-    if (id === currentId) updateSaveButtonState(isDirty);
+    if (id === currentId) {
+        updateSaveButtonState(isDirty);
+        // Aquí pasa todo lo que cambia el documento a la vista o su archivo:
+        // cambiar de pestaña, guardar, «Guardar como», abrir.
+        updateReloadFromDiskState();
+    }
 }
 
 function updateSaveButtonState(isDirty) {
@@ -9453,6 +9517,16 @@ window.onload = async () => {
     }
     if (desktopWindowToolbarBtn) {
         desktopWindowToolbarBtn.addEventListener('click', () => openDesktopWindow());
+    }
+    const reloadFromDiskBtn = document.getElementById('reload-from-disk-btn');
+    if (reloadFromDiskBtn) {
+        reloadFromDiskBtn.addEventListener('click', () => {
+            reloadCurrentDocFromDisk().catch(error => {
+                console.error('No se pudo releer el documento del disco:', error);
+            });
+        });
+        // Los documentos ya están abiertos cuando se llega aquí.
+        updateReloadFromDiskState();
     }
 
     window.addEventListener('beforeunload', () => {

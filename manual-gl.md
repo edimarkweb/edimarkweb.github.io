@@ -47,6 +47,8 @@ Con `Ctrl` (ou `Cmd`) premido, un clic nunha ligazón do editor visual ábrea; n
 
 Cada documento vive na súa lapela. `Ctrl+T` crea unha; `Ctrl+Tab` pasa dunha a outra e cada unha lembra onde a deixaches. Dobre clic sobre o título para renomeala, o `X` para pechala, e un punto vermello (`●`) avisa de cambios sen gardar. Co botón dereito sobre unha lapela ábrese o seu menú: **Renomear**, **Pechar**, **Pechar as demais** e **Pechar todas**. Debaixo, en **Reabrir**, están as últimas dez lapelas pechadas, co seu nome, para recuperar calquera co seu texto e as súas imaxes intactos; ese rexistro dura mentres a aplicación estea aberta.
 
+Na aplicación de escritorio, á dereita desa mesma fila hai un botón para **reler o documento do disco**: serve cando o ficheiro cambiou por fóra (outro editor, unha sincronización) e antes había que pechar a lapela e volvela abrir. Se o ficheiro segue igual non toca nada e dío; se na pantalla hai cambios sen gardar, pregunta antes, porque reler descártaos. Está apagado nas lapelas que non veñen de ningún ficheiro.
+
 Todas se **autogardan** soas no equipo: se recargas a páxina ou volves abrir o programa, o contido reaparece. É unha rede de seguridade, non un substituto de gardar o ficheiro.
 
 ---

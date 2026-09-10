@@ -6234,3 +6234,62 @@ test('PDF grande: imágenes fuera de localStorage, dólares literales y recupera
   }
   assert.equal(exported.htmlImage, true);
 });
+
+/*
+  Releer del disco. Un documento abierto desde un archivo puede cambiar por
+  fuera mientras se edita, y hasta ahora la única salida era cerrar la pestaña
+  y volver a abrirlo. El botón de la fila de las pestañas lo relee: calla si el
+  archivo sigue igual, y pregunta antes de tirar cambios sin guardar.
+*/
+test('el botón de releer trae lo que hay en el disco y avisa antes de descartar', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  // El escritorio, de mentira: un archivo cuyo contenido decide la prueba.
+  await page.evaluate(() => {
+    window.__disco = 'Del disco, versión 1.\n';
+    window.__preguntas = [];
+    window.__respuesta = true;
+    window.EdiMarkPlatform = {
+      ...(window.EdiMarkPlatform || {}),
+      isDesktop: true,
+      openTextDocumentAtPath: async (path) => ({ path, name: 'notas', content: window.__disco }),
+      confirm: async (message) => { window.__preguntas.push(message); return window.__respuesta; },
+    };
+  });
+  const boton = page.locator('#reload-from-disk-btn');
+  // En una pestaña que no viene de ningún archivo no hay nada que releer.
+  await page.evaluate(() => updateReloadFromDiskState());
+  assert.equal(await boton.isVisible(), true);
+  assert.equal(await boton.isDisabled(), true);
+
+  await page.evaluate(() => window.__edimarkOpenNativePaths(['/tmp/notas.md']));
+  await page.waitForFunction(() => markdownEditor.getValue().includes('versión 1'));
+  assert.equal(await boton.isDisabled(), false);
+
+  // El archivo cambia por fuera y el editor no tiene nada sin guardar: entra
+  // sin preguntar.
+  await page.evaluate(() => { window.__disco = 'Del disco, versión 2.\n'; });
+  await boton.click();
+  await page.waitForFunction(() => markdownEditor.getValue().includes('versión 2'));
+  assert.deepEqual(await page.evaluate(() => window.__preguntas), []);
+  // Y releído es lo guardado: la pestaña no queda marcada como sucia.
+  assert.equal(await page.locator('.tab[aria-selected="true"] .tab-dirty').isHidden(), true);
+
+  // Con cambios sin guardar se pregunta, y un «no» los respeta.
+  await page.locator('#markdown-input').fill('Escrito a mano, sin guardar.\n');
+  await page.evaluate(() => { window.__disco = 'Del disco, versión 3.\n'; window.__respuesta = false; });
+  await boton.click();
+  await page.waitForFunction(() => window.__preguntas.length === 1);
+  assert.match((await page.evaluate(() => window.__preguntas))[0], /notas/);
+  assert.match(await page.locator('#markdown-input').inputValue(), /Escrito a mano/);
+
+  // Y un «sí» trae el disco encima de lo escrito.
+  await page.evaluate(() => { window.__respuesta = true; });
+  await boton.click();
+  await page.waitForFunction(() => markdownEditor.getValue().includes('versión 3'));
+
+  // Si el archivo no ha cambiado no se toca nada y se dice en la barra.
+  await boton.click();
+  await page.waitForFunction(() => /no ha cambiado/i.test(document.getElementById('status-toast-message')?.textContent || ''));
+});
