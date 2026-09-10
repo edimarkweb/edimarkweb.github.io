@@ -6293,3 +6293,64 @@ test('el botón de releer trae lo que hay en el disco y avisa antes de descartar
   await boton.click();
   await page.waitForFunction(() => /no ha cambiado/i.test(document.getElementById('status-toast-message')?.textContent || ''));
 });
+
+/*
+  El manual es la bienvenida, no un inquilino: se abre solo mientras nadie lo
+  haya cerrado. Cerrarlo es decir que ya se ha leído, y desde entonces una
+  sesión vacía arranca con un documento en blanco.
+*/
+test('el manual se abre solo hasta que se cierra una vez', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('.tab-name', { hasText: 'Manual' }).waitFor();
+  await page.locator('.tab', { hasText: 'Manual' }).locator('.tab-close').click();
+  await page.waitForFunction(() => document.querySelectorAll('.tab').length === 0);
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.__edimarkReady === true);
+  await page.locator('.tab-name').first().waitFor();
+  assert.equal(await page.locator('.tab', { hasText: 'Manual' }).count(), 0);
+  assert.equal(await page.locator('.tab').count(), 1);
+  // Y sigue a un clic de distancia donde siempre.
+  await page.keyboard.press('F1');
+  await page.locator('.tab-name', { hasText: 'Manual' }).waitFor();
+});
+
+/*
+  La cortina del arranque. Un documento que cuelga el montaje deja la ventana
+  quieta y sin salida: el botón abre una sesión vacía y olvida la guardada, que
+  es lo único que rompe el bucle. Como eso se pierde, se pregunta antes.
+*/
+test('cancelar el arranque abre vacío y olvida la sesión guardada', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('.tab-name').first().waitFor();
+  await page.locator('#markdown-input').fill('Trabajo de la sesión anterior.\n');
+  await page.waitForFunction(() => localStorage.getItem('edimarkweb-docslist')?.includes('id'));
+
+  // La cortina vuelve, como en un arranque que todavía no ha terminado.
+  await page.evaluate(() => {
+    window.__preguntas = [];
+    window.EdiMarkPlatform = {
+      ...(window.EdiMarkPlatform || {}),
+      confirm: async (message) => { window.__preguntas.push(message); return false; },
+    };
+    document.getElementById('app-loading').removeAttribute('hidden');
+    document.getElementById('app-loading-cancel').removeAttribute('hidden');
+  });
+  // Un «no» deja la sesión intacta.
+  await page.locator('#app-loading-cancel').click();
+  await page.waitForFunction(() => window.__preguntas.length === 1);
+  assert.match(await page.evaluate(() => localStorage.getItem('edimarkweb-docslist') || ''), /id/);
+
+  await page.evaluate(() => { window.EdiMarkPlatform.confirm = async () => true; });
+  await page.locator('#app-loading-cancel').click();
+  await page.waitForFunction(() => window.__edimarkReady === true && !localStorage.getItem('edimarkweb-docslist'));
+  assert.equal(await page.evaluate(() => localStorage.getItem('edimarkweb-active-doc')), null);
+  // La sesión nueva empieza de cero: una sola pestaña, y sin lo de antes.
+  await page.locator('.tab-name').first().waitFor();
+  assert.equal(await page.locator('.tab').count(), 1);
+  assert.doesNotMatch(await page.locator('#markdown-input').inputValue(), /sesión anterior/);
+});

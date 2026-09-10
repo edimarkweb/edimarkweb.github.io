@@ -1,5 +1,9 @@
 {
   "title": "EdiMarkWeb: Markdown text editor",
+  "app_loading_title": "Opening EdiMarkWeb…",
+  "app_loading_hint": "A long document can take a few seconds.",
+  "app_loading_cancel": "Cancel and start empty",
+  "app_loading_cancel_confirm": "An empty session will open and the saved documents from the previous session will be discarded. This deletes no file on disk. Continue?",
   "h1": "EdiMarkWeb",
   "toggle_width_btn_title": "Expand / Collapse width",
   "theme_toggle_btn_aria_label": "Change theme",

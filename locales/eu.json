@@ -1,5 +1,9 @@
 {
   "title": "EdiMarkWeb: Markdown testu editorea",
+  "app_loading_title": "EdiMarkWeb irekitzen…",
+  "app_loading_hint": "Dokumentu luze batek segundo batzuk behar ditzake.",
+  "app_loading_cancel": "Utzi eta hutsik ireki",
+  "app_loading_cancel_confirm": "Saio huts bat irekiko da eta aurreko saioko dokumentu gordeak baztertuko dira. Honek ez du diskoko fitxategirik ezabatzen. Jarraitu nahi duzu?",
   "h1": "EdiMarkWeb",
   "toggle_width_btn_title": "Zabalera zabaldu / tolestu",
   "theme_toggle_btn_aria_label": "Gaia aldatu",

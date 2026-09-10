@@ -10,6 +10,10 @@ Idatzi ezkerreko panelean eta dokumentua eskuinean osatzen ikusiko duzu. Ez da b
 
 Amaitzean, bi bide dituzu: **Gorde** (`Ctrl+S`) aukerak `.md` fitxategi bat uzten du —testu arrunta da eta edonon irekitzen da—, eta **Esportatu** aukerak entregatu behar duzun DOCXa, PDFa edo formatua sortzen du.
 
+Lehen aldian, aplikazioak eskuliburu hau fitxa batean irekitzen du. Ixten duzunean ez da berriro bakarrik irekiko: hortik aurrera saio huts bat dokumentu zuri batekin hasten da, eta eskuliburua **Laguntza**n edo `F1` teklarekin dago eskura.
+
+Irekitzean, azken saioko dokumentuak muntatzen dituen bitartean, barra mugikor bat duen pantaila bat ikusten da. Itxaronaldiak hiru segundo baino gehiago irauten badu, **Utzi eta hutsik ireki** agertzen da: saio garbi bat abiarazten du eta aurreko saioko dokumentu gordeak baztertzen ditu —dokumentu batek abioa behin eta berriz zintzilikatzen duenerako irteera—. Aurretik galdetzen du, hori galdu egiten delako; diskoko fitxategiak ez dira ukitzen.
+
 ---
 
 ## Bi editoreak

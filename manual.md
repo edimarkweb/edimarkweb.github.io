@@ -10,6 +10,10 @@ Escribe en el panel de la izquierda y verás el documento componerse a la derech
 
 Cuando termines, tienes dos caminos: **Guardar** (`Ctrl+S`) deja un archivo `.md`, que es texto corriente y se abre en cualquier sitio, y **Exportar** genera el DOCX, el PDF o el formato que necesites entregar.
 
+La primera vez, la aplicación abre este manual en una pestaña. Cuando lo cierres no volverá a abrirse solo: desde entonces una sesión vacía empieza con un documento en blanco, y el manual sigue a mano en **Ayuda** o con `F1`.
+
+Al abrirse, mientras monta los documentos de la última sesión, se ve una pantalla con una barra en marcha. Si la espera pasa de tres segundos aparece **Cancelar y abrir vacía**: arranca una sesión limpia y descarta los documentos guardados de la anterior —la salida cuando un documento cuelga el arranque una y otra vez—. Pregunta antes, porque eso se pierde; los archivos del disco no se tocan.
+
 ---
 
 ## Los dos editores

@@ -10,6 +10,10 @@ Type in the left-hand pane and watch the document take shape on the right. You d
 
 When you are done there are two ways out: **Save** (`Ctrl+S`) leaves a `.md` file, which is plain text and opens anywhere, and **Export** produces the DOCX, the PDF or whichever format you have to hand in.
 
+The first time, the app opens this manual in a tab. Once you close it, it will not open on its own again: from then on an empty session starts with a blank document, and the manual stays within reach under **Help** or with `F1`.
+
+While it starts up and mounts the documents of the last session, a screen with a moving bar is shown. If the wait goes past three seconds, **Cancel and start empty** appears: it starts a clean session and discards the saved documents of the previous one — the way out when a document hangs the startup over and over. It asks first, because that is lost; no file on disk is touched.
+
 ---
 
 ## The two editors

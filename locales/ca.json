@@ -1,5 +1,9 @@
 {
   "title": "EdiMarkWeb: Editor de textos Markdown",
+  "app_loading_title": "Obrint EdiMarkWeb…",
+  "app_loading_hint": "Un document llarg pot trigar uns segons.",
+  "app_loading_cancel": "Cancel·lar i obrir buida",
+  "app_loading_cancel_confirm": "S'obrirà una sessió buida i es descartaran els documents desats de la sessió anterior. Això no esborra cap arxiu del disc. Vols continuar?",
   "h1": "EdiMarkWeb",
   "toggle_width_btn_title": "Expandir / Contraure amplada",
   "theme_toggle_btn_aria_label": "Canviar tema",

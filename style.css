@@ -2656,3 +2656,49 @@ code {
 #app-loading[hidden] { display: none; }
 .dark #app-loading { background: #0f172a; color: #e2e8f0; }
 .dark #app-loading .app-loading-hint { color: #94a3b8; }
+/*
+  Una barra que no mide: la animación es de transform, que corre en el
+  compositor y no se detiene mientras el hilo monta el documento.
+*/
+.app-loading-bar {
+    position: relative;
+    overflow: hidden;
+    width: 220px;
+    max-width: 60vw;
+    height: 4px;
+    margin-top: 10px;
+    border-radius: 999px;
+    background: #e2e8f0;
+}
+.app-loading-bar > span {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: #2563eb;
+    transform-origin: left center;
+    animation: app-loading-slide 1.4s ease-in-out infinite;
+}
+@keyframes app-loading-slide {
+    0% { transform: translateX(-40%) scaleX(.4); }
+    50% { transform: translateX(60%) scaleX(.5); }
+    100% { transform: translateX(150%) scaleX(.4); }
+}
+.app-loading-cancel {
+    margin-top: 16px;
+    padding: 6px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #334155;
+    font-size: .85rem;
+    cursor: pointer;
+}
+.app-loading-cancel:hover { background: #f1f5f9; }
+.app-loading-cancel[hidden] { display: none; }
+.dark .app-loading-bar { background: #1e293b; }
+.dark .app-loading-bar > span { background: #60a5fa; }
+.dark .app-loading-cancel { border-color: #334155; background: #1e293b; color: #e2e8f0; }
+.dark .app-loading-cancel:hover { background: #334155; }
+@media (prefers-reduced-motion: reduce) {
+    .app-loading-bar > span { animation-duration: 3s; }
+}

@@ -10,6 +10,10 @@ Escriu al plafó de l'esquerra i veuràs el document composant-se a la dreta. No
 
 Quan acabis, tens dos camins: **Desar** (`Ctrl+S`) deixa un fitxer `.md`, que és text corrent i s'obre a qualsevol lloc, i **Exportar** genera el DOCX, el PDF o el format que hagis de lliurar.
 
+La primera vegada, l'aplicació obre aquest manual en una pestanya. Quan el tanquis no es tornarà a obrir tot sol: des d'aleshores una sessió buida comença amb un document en blanc, i el manual continua a mà a **Ajuda** o amb `F1`.
+
+En obrir-se, mentre munta els documents de l'última sessió, es veu una pantalla amb una barra en marxa. Si l'espera passa de tres segons apareix **Cancel·lar i obrir buida**: arrenca una sessió neta i descarta els documents desats de l'anterior —la sortida quan un document penja l'arrencada una vegada i una altra—. Pregunta abans, perquè això es perd; els arxius del disc no es toquen.
+
 ---
 
 ## Els dos editors

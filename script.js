@@ -26,6 +26,12 @@ const DOCS_LIST_KEY = 'edimarkweb-docslist';
 */
 const ACTIVE_DOC_KEY = 'edimarkweb-active-doc';
 const CORRUPT_DOCS_LIST_BACKUP_KEY = 'edimarkweb-docslist-corrupt-backup';
+/*
+  El manual se abre solo la primera vez. Cerrarlo es la forma de decir que ya
+  se ha leído: a partir de ahí, una sesión vacía arranca con un documento en
+  blanco y el manual queda donde siempre, en Ayuda y en F1.
+*/
+const MANUAL_DISMISSED_KEY = 'edimarkweb-manual-dismissed';
 const LAYOUT_KEY = 'edimarkweb-layout';
 /*
   Icono de cada disposición. Representa el panel que queda a la vista, no el
@@ -3619,6 +3625,7 @@ async function closeDoc(id) {
     const indiceActual = docs.findIndex(d => d.id === id);
     if (indiceActual === -1) return;
 
+    if (doc.isManual) safeLocalStorageSet(MANUAL_DISMISSED_KEY, '1');
     releaseDocumentAssets(id);
     // Las imágenes se quedan donde están: el documento aún puede volver desde
     // el registro de cerradas, y allí es donde se decide cuándo borrarlas.
@@ -9982,7 +9989,10 @@ window.onload = async () => {
                 console.error('No se pudo consultar el documento inicial:', error);
             }
         }
-        if (savedDocsList.length === 0 && openedAtLaunch === 0) openManualDoc();
+        if (savedDocsList.length === 0 && openedAtLaunch === 0) {
+            if (safeLocalStorageGet(MANUAL_DISMISSED_KEY) === '1') newDoc();
+            else openManualDoc();
+        }
     })();
     
     /*
@@ -13802,10 +13812,54 @@ window.onload = async () => {
     else setTimeout(limpiar, 2000);
 
     // Fuera la cortina: la ventana ya está montada y responde.
-    document.getElementById('app-loading')?.setAttribute('hidden', '');
+    hideStartupCurtain();
 
     window.__edimarkReady = true;
 };
+
+/*
+  La cortina del arranque. Montar un documento largo ocupa el hilo de golpe y
+  la ventana se queda quieta: la barra se mueve sola desde el compositor para
+  decir que sigue viva, y si la espera pasa de tres segundos aparece la salida.
+  Cancelar arranca de cero y olvida la sesión guardada —es la única forma de
+  escapar de un documento que cuelga el arranque una y otra vez—, así que se
+  pregunta antes y se dice lo que se va a perder.
+*/
+const STARTUP_CANCEL_DELAY_MS = 3000;
+let startupCancelTimer = setTimeout(() => {
+    document.getElementById('app-loading-cancel')?.removeAttribute('hidden');
+}, STARTUP_CANCEL_DELAY_MS);
+
+function hideStartupCurtain() {
+    clearTimeout(startupCancelTimer);
+    startupCancelTimer = null;
+    document.getElementById('app-loading')?.setAttribute('hidden', '');
+}
+
+async function cancelStartupAndForgetSession() {
+    // Un clic que llegó mientras el hilo estaba tomado se atiende cuando ya
+    // ha terminado de cargar: entonces no hay nada que cancelar.
+    if (!startupCancelTimer && document.getElementById('app-loading')?.hasAttribute('hidden')) return;
+    const documentos = loadSavedDocsList();
+    if (!await confirmAction(getTranslation(
+        'app_loading_cancel_confirm',
+        'Se abrirá una sesión vacía y se descartarán los documentos guardados de la sesión anterior. Esto no borra ningún archivo del disco. ¿Continuar?',
+    ))) return;
+    for (const doc of documentos) safeLocalStorageRemove(`${AUTOSAVE_KEY_PREFIX}-${doc.id}`);
+    safeLocalStorageRemove(DOCS_LIST_KEY);
+    safeLocalStorageRemove(ACTIVE_DOC_KEY);
+    // Arrancar de nuevo, ya sin nada que montar. Las imágenes que se queden
+    // sin documento las barre la limpieza del arranque siguiente.
+    window.location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('app-loading-cancel')?.addEventListener('click', () => {
+        cancelStartupAndForgetSession().catch(error => {
+            console.error('No se pudo cancelar el arranque:', error);
+        });
+    });
+});
 
 /* =========================================================
    Arrastrar .md con "fondo por detrás" para soltar en toda la app

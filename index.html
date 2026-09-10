@@ -50,8 +50,21 @@
   no en el guion: se ve aunque el guion todavía no haya soltado el hilo.
 -->
 <div id="app-loading" role="status" aria-live="polite">
-    <p>Abriendo EdiMarkWeb…</p>
-    <p class="app-loading-hint">Un documento largo puede tardar unos segundos.</p>
+    <p data-i18n-key="app_loading_title">Abriendo EdiMarkWeb…</p>
+    <p class="app-loading-hint" data-i18n-key="app_loading_hint">Un documento largo puede tardar unos segundos.</p>
+    <!--
+      La barra no mide nada: montar el documento ocupa el hilo de golpe y no
+      hay hitos que contar. Se mueve sola, con una animación de transform que
+      corre en el compositor y sigue andando aunque el hilo esté tomado; que es
+      justo cuando hace falta saber que la ventana está viva y no colgada.
+    -->
+    <div class="app-loading-bar" aria-hidden="true"><span></span></div>
+    <!--
+      Y si la espera se alarga, la salida: aparece a los tres segundos, porque
+      ofrecer «cancelar» en un arranque de medio segundo solo invita a estropear
+      la sesión.
+    -->
+    <button type="button" id="app-loading-cancel" class="app-loading-cancel" hidden data-i18n-key="app_loading_cancel">Cancelar y abrir vacía</button>
 </div>
 
 <main id="main-container" class="max-w-7xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-700 is-expanded">
