@@ -10,7 +10,7 @@ Escriu al plafó de l'esquerra i veuràs el document composant-se a la dreta. No
 
 Quan acabis, tens dos camins: **Desar** (`Ctrl+S`) deixa un fitxer `.md`, que és text corrent i s'obre a qualsevol lloc, i **Exportar** genera el DOCX, el PDF o el format que hagis de lliurar.
 
-La primera vegada, l'aplicació obre aquest manual en una pestanya. Quan el tanquis no es tornarà a obrir tot sol: des d'aleshores una sessió buida comença amb un document en blanc, i el manual continua a mà a **Ajuda** o amb `F1`.
+La primera vegada, l'aplicació obre aquest manual en una pestanya. Quan el tanquis no es tornarà a obrir tot sol: des d'aleshores una sessió buida comença amb un document en blanc, i el manual continua a mà a **Ajuda** o amb `F1`. En aquest mateix menú hi ha l'[article del blog](https://educacion.bilateria.org/edimarkweb-escribir-en-markdown-y-entregar-en-cualquier-formato), que explica per a què serveix tot això a classe, amb exemples i captures; aquest manual explica com es fa cada cosa.
 
 En obrir-se, mentre munta els documents de l'última sessió, es veu una pantalla amb una barra en marxa. Si l'espera passa de tres segons apareix **Cancel·lar i obrir buida**: arrenca una sessió neta i descarta els documents desats de l'anterior —la sortida quan un document penja l'arrencada una vegada i una altra—. Pregunta abans, perquè això es perd; els arxius del disc no es toquen. La pàgina d'un document llarg no es compon en obrir: l'editor apareix de seguida amb el text i la vista prèvia espera que premis **Mostra la vista prèvia**, perquè compondre-la deixa la finestra sense respondre uns segons. I quan sí que es compon, el botó de sortir es retira mentre dura, per no oferir una sortida que no et podria atendre.
 

@@ -694,5 +694,8 @@
   "linked_image_embed_all_done_many": "{count} imatges incrustades al document.",
   "linked_image_embed_all_failed_one": "Una imatge no s’ha pogut incrustar.",
   "linked_image_embed_all_failed_many": "No s’han pogut incrustar {count} imatges.",
-  "app_loading_preview_blocking": "Component la pàgina… El programa no respondrà fins que acabi."
+  "app_loading_preview_blocking": "Component la pàgina… El programa no respondrà fins que acabi.",
+  "help_menu_article_text": "Article del blog",
+  "menu_hint_article": "Per a què serveix a classe, amb exemples i captures",
+  "about_article_link": "Llegir l’article del blog"
 }

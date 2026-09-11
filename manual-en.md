@@ -10,7 +10,7 @@ Type in the left-hand pane and watch the document take shape on the right. You d
 
 When you are done there are two ways out: **Save** (`Ctrl+S`) leaves a `.md` file, which is plain text and opens anywhere, and **Export** produces the DOCX, the PDF or whichever format you have to hand in.
 
-The first time, the app opens this manual in a tab. Once you close it, it will not open on its own again: from then on an empty session starts with a blank document, and the manual stays within reach under **Help** or with `F1`.
+The first time, the app opens this manual in a tab. Once you close it, it will not open on its own again: from then on an empty session starts with a blank document, and the manual stays within reach under **Help** or with `F1`. The same menu holds the [blog article](https://educacion.bilateria.org/edimarkweb-escribir-en-markdown-y-entregar-en-cualquier-formato), which explains what all this is for in class, with examples and screenshots; this manual explains how each thing is done.
 
 While it starts up and mounts the documents of the last session, a screen with a moving bar is shown. If the wait goes past three seconds, **Cancel and start empty** appears: it starts a clean session and discards the saved documents of the previous one — the way out when a document hangs the startup over and over. It asks first, because that is lost; no file on disk is touched. The page of a long document is not laid out on opening: the editor appears right away with the text and the preview waits until you press **Show the preview**, because laying it out leaves the window unresponsive for a few seconds. And while it is being laid out, the exit button is taken away rather than offering a way out that could not answer you.
 

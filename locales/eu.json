@@ -694,5 +694,8 @@
   "linked_image_embed_all_done_many": "{count} irudi kapsulatu dira dokumentuan.",
   "linked_image_embed_all_failed_one": "Irudi bat ezin izan da kapsulatu.",
   "linked_image_embed_all_failed_many": "{count} irudi ezin izan dira kapsulatu.",
-  "app_loading_preview_blocking": "Orria osatzen… Programak ez du erantzungo amaitu arte."
+  "app_loading_preview_blocking": "Orria osatzen… Programak ez du erantzungo amaitu arte.",
+  "help_menu_article_text": "Blogeko artikulua",
+  "menu_hint_article": "Zertarako balio duen klasean, adibide eta pantaila-argazkiekin",
+  "about_article_link": "Irakurri blogeko artikulua"
 }

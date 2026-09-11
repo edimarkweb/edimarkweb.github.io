@@ -5908,6 +5908,23 @@ const sesionCorriente = () => {
   }
 };
 
+test('La ayuda lleva al artículo del blog', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.click('#help-menu-btn');
+  const enlaces = await page.evaluate(() => ({
+    menu: document.getElementById('help-article-link')?.getAttribute('href'),
+    menuDestino: document.getElementById('help-article-link')?.getAttribute('target'),
+    acercaDe: document.getElementById('about-article-link')?.getAttribute('href'),
+  }));
+  // El manual cuenta cómo se hace cada cosa; el artículo, para qué sirve.
+  const articulo = 'https://educacion.bilateria.org/edimarkweb-escribir-en-markdown-y-entregar-en-cualquier-formato';
+  assert.equal(enlaces.menu, articulo);
+  assert.equal(enlaces.menuDestino, '_blank');
+  assert.equal(enlaces.acercaDe, articulo);
+});
+
 test('Un documento largo no se compone al arrancar y la ventana sigue viva', async (t) => {
   const { context, page } = await openApp({ initStorage: sesionLarga });
   t.after(() => context.close());

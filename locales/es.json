@@ -694,5 +694,8 @@
   "linked_image_embed_all_done_many": "{count} imágenes incrustadas en el documento.",
   "linked_image_embed_all_failed_one": "Una imagen no se ha podido incrustar.",
   "linked_image_embed_all_failed_many": "{count} imágenes no se han podido incrustar.",
-  "app_loading_preview_blocking": "Componiendo la hoja… El programa no responderá hasta terminar."
+  "app_loading_preview_blocking": "Componiendo la hoja… El programa no responderá hasta terminar.",
+  "help_menu_article_text": "Artículo del blog",
+  "menu_hint_article": "Para qué sirve en clase, con ejemplos y capturas",
+  "about_article_link": "Leer el artículo del blog"
 }

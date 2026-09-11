@@ -694,5 +694,8 @@
   "linked_image_embed_all_done_many": "{count} images embedded in the document.",
   "linked_image_embed_all_failed_one": "One image could not be embedded.",
   "linked_image_embed_all_failed_many": "{count} images could not be embedded.",
-  "app_loading_preview_blocking": "Laying out the page… The application will not respond until it finishes."
+  "app_loading_preview_blocking": "Laying out the page… The application will not respond until it finishes.",
+  "help_menu_article_text": "Blog article",
+  "menu_hint_article": "What it is for in class, with examples and screenshots",
+  "about_article_link": "Read the blog article"
 }
