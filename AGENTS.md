@@ -31,6 +31,10 @@ EdiMarkWeb is a vanilla-JS Markdown editor shipped two ways from one frontend: a
 - New root-level app file → add to its `appFiles` array.
 - New CDN library referenced in `index.html` → add matching entries to **both** `vendorFiles` and `indexReplacements`, at exactly the pinned npm versions. A URL mismatch aborts the build.
 
+## Big documents: it is the Linux engine
+
+A 1.5 MB document (a 300-page PDF imported) lays its preview out in ~0.1 s under Windows' WebView2 and ~0.27 s under WebKit, and in **123 s** under the WebKitGTK that ships with Linux — the engine is as fast as any other at plain loops and regexes, and falls apart only where the work allocates hundreds of thousands of small objects (marked's parse, `indexPreviewLines`). Typing costs about half a second per keystroke there too, which a bare `textarea` holding the same text pays just the same: that part is the browser, not this code, and only a virtualized editor would fix it. Hence everything around huge documents is decided by **measuring**, never by document size or platform: the preview waits to be asked for, a fast machine is marked and never asked again (`edimarkweb-hoja-rapida`), and the preview stops following the keyboard when a redraw costs over 1.5 s. Confirmed by hand on Windows: no waits there.
+
 ## Desktop dev gotcha
 
 `tauri dev` used to start `beforeDevCommand` (`build:desktop`) and `cargo run` at the same time, and `build:desktop` begins by wiping `dist/`: the window would open on a half-written `dist/`, whose `index.html` still carries the CDN URLs — the last build step is what swaps them for the local copies — and the CSP then blocks every script and stylesheet, so the app came up as raw unstyled text. `beforeDevCommand` now carries `"wait": true` for that reason; do not take it out. The same rule applies by hand: never rebuild `dist/` while a dev run is starting.
