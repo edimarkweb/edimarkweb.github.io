@@ -684,5 +684,14 @@
   "storage_purge_done_many": "S’han esborrat {count} imatges sense document.",
   "storage_purge_empty": "No hi havia cap imatge sense document.",
   "storage_purge_failed": "No s’han pogut esborrar les imatges.",
-  "storage_read_failed": "No s’ha pogut llegir l’emmagatzematge."
+  "storage_read_failed": "No s’ha pogut llegir l’emmagatzematge.",
+  "document_image_locate_btn": "Vés al text",
+  "document_image_locate_btn_title": "Porta el cursor on és la imatge dins del document",
+  "document_image_locate_error": "No s’ha pogut trobar la imatge al text.",
+  "linked_embed_all_btn": "Incrusta totes les enllaçades",
+  "linked_embed_all_btn_title": "Posa dins del document totes les imatges que estan enllaçades des de fitxers o adreces web",
+  "linked_image_embed_all_done_one": "1 imatge incrustada al document.",
+  "linked_image_embed_all_done_many": "{count} imatges incrustades al document.",
+  "linked_image_embed_all_failed_one": "Una imatge no s’ha pogut incrustar.",
+  "linked_image_embed_all_failed_many": "No s’han pogut incrustar {count} imatges."
 }

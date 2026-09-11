@@ -733,6 +733,9 @@ body.desktop-mode .markdown-textarea {
     display: flex;
     justify-content: flex-end;
     margin-top: 0.5rem;
+    /* Las dos conversiones en bloque no siempre caben en una línea. */
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 .base64-hidden-action-btn {
     display: inline-flex;

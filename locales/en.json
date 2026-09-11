@@ -684,5 +684,14 @@
   "storage_purge_done_many": "{count} images with no document deleted.",
   "storage_purge_empty": "There was no image without a document.",
   "storage_purge_failed": "The images could not be deleted.",
-  "storage_read_failed": "The storage could not be read."
+  "storage_read_failed": "The storage could not be read.",
+  "document_image_locate_btn": "Go to the text",
+  "document_image_locate_btn_title": "Take the cursor to where the image is in the document",
+  "document_image_locate_error": "The image could not be found in the text.",
+  "linked_embed_all_btn": "Embed every linked image",
+  "linked_embed_all_btn_title": "Puts inside the document every image that is linked from a file or a web address",
+  "linked_image_embed_all_done_one": "1 image embedded in the document.",
+  "linked_image_embed_all_done_many": "{count} images embedded in the document.",
+  "linked_image_embed_all_failed_one": "One image could not be embedded.",
+  "linked_image_embed_all_failed_many": "{count} images could not be embedded."
 }

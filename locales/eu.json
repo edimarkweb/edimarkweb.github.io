@@ -684,5 +684,14 @@
   "storage_purge_done_many": "Dokumenturik gabeko {count} irudi ezabatu dira.",
   "storage_purge_empty": "Ez zegoen dokumenturik gabeko irudirik.",
   "storage_purge_failed": "Ezin izan dira irudiak ezabatu.",
-  "storage_read_failed": "Ezin izan da biltegiratzea irakurri."
+  "storage_read_failed": "Ezin izan da biltegiratzea irakurri.",
+  "document_image_locate_btn": "Joan testura",
+  "document_image_locate_btn_title": "Eraman kurtsorea irudia dokumentuan dagoen tokira",
+  "document_image_locate_error": "Ezin izan da irudia testuan aurkitu.",
+  "linked_embed_all_btn": "Kapsulatu estekatutako guztiak",
+  "linked_embed_all_btn_title": "Fitxategietatik edo web helbideetatik estekatuta dauden irudi guztiak dokumentuaren barruan sartzen ditu",
+  "linked_image_embed_all_done_one": "Irudi 1 kapsulatu da dokumentuan.",
+  "linked_image_embed_all_done_many": "{count} irudi kapsulatu dira dokumentuan.",
+  "linked_image_embed_all_failed_one": "Irudi bat ezin izan da kapsulatu.",
+  "linked_image_embed_all_failed_many": "{count} irudi ezin izan dira kapsulatu."
 }

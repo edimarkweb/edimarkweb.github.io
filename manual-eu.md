@@ -94,6 +94,10 @@ Mahaigaineko aplikazioan, `Ctrl+S` teklek ireki duzun fitxategiaren gainean idaz
 
 Base64 kodeak milaka karaktere hartzen ditu; horregatik, EdiMarkWebek tolestu eta `__EDIMARK_B64_1__` moduko marka labur bat uzten du editorean, baina benetako edukia oso-osorik mantentzen da gordetzean, kopiatzean eta esportatzean. **Txertatutako irudiak karpetara eraman** botoiak itzulerako bidea egiten du: irudi bakoitza fitxategi bihurtzen da dokumentuaren baliabideen azpikarpetan (`nire-fitxategia.md` → `nire-fitxategia/images/`) eta Markdown-ean bere bidea geratzen da. Fitxategiak dokumentua gordetzean idazten dira, eta `Ctrl+Z` teklek aldaketa desegiten dute.
 
+Bi bihurketek dokumentu osorako botoia ere badute, zerrendaren gainean: **Txertatutako irudiak karpetara eraman** eta **Kapsulatu estekatutako guztiak**. Bakoitza bere noranzkoan bihurtzeko zerbait geratzen den bitartean bakarrik agertzen da; beraz, irudi guztiak mota berekoak dituen dokumentu batek bat bakarrik erakusten du, edo bat ere ez.
+
+Irudi bakoitzak **Joan testura** ere badu: kurtsorea Markdown-ean idatzita dagoen tokira eramaten du eta hautatuta uzten du. Hala jakiten da zerrendako irudi bat zein paragraforena den, eskuz bilatu gabe.
+
 ---
 
 ## Formula matematikoak

@@ -94,6 +94,10 @@ The **Image** button takes a file from disk or a URL, and asks how to insert it:
 
 Base64 code takes thousands of characters, so EdiMarkWeb folds it away and leaves a short marker such as `__EDIMARK_B64_1__` in the editor; the real content is kept intact when saving, copying and exporting. The **Move embedded images to the folder** button goes the other way: each image becomes a file inside the document resource subfolder (`my-file.md` → `my-file/images/`) and the Markdown keeps its path. The files are written when you save, and `Ctrl+Z` undoes the change.
 
+Both conversions also have a button for the whole document, above the list: **Move embedded images to the folder** and **Embed every linked image**. Each one appears only while something is left to convert its way, so a document whose images are all of the same kind shows one of them, or neither.
+
+Every image also has **Go to the text**, which takes the cursor to where it is written in the Markdown and leaves it selected. It is how you find out which paragraph an image on the list belongs to without hunting for it.
+
 ---
 
 ## Mathematical formulas

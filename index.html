@@ -699,6 +699,15 @@
                         <i data-lucide="folder-down" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
                         <span data-i18n-key="base64_extract_btn">Pasar las incrustadas a la carpeta</span>
                     </button>
+                    <!--
+                      Y el camino contrario, para dejar el documento en un solo
+                      archivo. Cada uno aparece solo cuando queda algo que
+                      convertir en su sentido.
+                    -->
+                    <button type="button" id="linked-embed-all-btn" class="base64-hidden-action-btn" data-i18n-key="linked_embed_all_btn_title" title="Mete dentro del documento todas las imágenes que están enlazadas desde archivos o direcciones web" hidden>
+                        <i data-lucide="file-down" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
+                        <span data-i18n-key="linked_embed_all_btn">Incrustar todas las enlazadas</span>
+                    </button>
                 </div>
                     <div id="base64-hidden-list" class="base64-hidden-list hidden" role="list"></div>
                 </div>

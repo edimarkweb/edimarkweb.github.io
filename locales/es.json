@@ -684,5 +684,14 @@
   "storage_purge_done_many": "Borradas {count} imágenes sin documento.",
   "storage_purge_empty": "No había ninguna imagen sin documento.",
   "storage_purge_failed": "No se han podido borrar las imágenes.",
-  "storage_read_failed": "No se ha podido leer el almacenamiento."
+  "storage_read_failed": "No se ha podido leer el almacenamiento.",
+  "document_image_locate_btn": "Ir al texto",
+  "document_image_locate_btn_title": "Llevar el cursor a donde está la imagen en el documento",
+  "document_image_locate_error": "No se ha podido encontrar la imagen en el texto.",
+  "linked_embed_all_btn": "Incrustar todas las enlazadas",
+  "linked_embed_all_btn_title": "Mete dentro del documento todas las imágenes que están enlazadas desde archivos o direcciones web",
+  "linked_image_embed_all_done_one": "1 imagen incrustada en el documento.",
+  "linked_image_embed_all_done_many": "{count} imágenes incrustadas en el documento.",
+  "linked_image_embed_all_failed_one": "Una imagen no se ha podido incrustar.",
+  "linked_image_embed_all_failed_many": "{count} imágenes no se han podido incrustar."
 }

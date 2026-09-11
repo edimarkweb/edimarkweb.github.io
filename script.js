@@ -187,6 +187,7 @@ let base64PreviewImage = null;
 let base64PreviewTitle = null;
 let base64PreviewMeta = null;
 let base64ExtractBtn = null;
+let linkedEmbedAllBtn = null;
 let base64ModalOverlayEl = null;
 let base64ModalTextarea = null;
 let base64ModalCopyBtn = null;
@@ -969,6 +970,98 @@ function linkedReplacementTarget(key) {
     };
 }
 
+/*
+  Ir a la imagen dentro del texto. Se busca sobre lo que el editor enseña —las
+  incrustadas viven ahí colapsadas en su marcador, no con sus miles de
+  caracteres— y por eso el marcador vale como aguja: es único por imagen. Las
+  enlazadas se repiten tal cual si la misma ruta aparece dos veces, así que se
+  cuenta cuál de ellas es.
+*/
+function positionFromDisplayIndex(text, index) {
+    const antes = text.slice(0, index);
+    return { line: (antes.match(/\n/g) || []).length, ch: index - (antes.lastIndexOf('\n') + 1) };
+}
+
+function revealImageInText(needle, occurrence = 0) {
+    if (!markdownEditor || !needle) return false;
+    const text = typeof markdownEditor.getDisplayValue === 'function'
+        ? markdownEditor.getDisplayValue()
+        : markdownEditor.getValue();
+    let index = -1;
+    let desde = 0;
+    for (let vuelta = 0; vuelta <= Math.max(0, Number(occurrence) || 0); vuelta += 1) {
+        index = text.indexOf(needle, desde);
+        if (index < 0) break;
+        desde = index + needle.length;
+    }
+    if (index < 0) {
+        notifyUser(getTranslation('document_image_locate_error', 'No se ha podido encontrar la imagen en el texto.'));
+        return false;
+    }
+    // Con la vista previa a pantalla completa no hay adónde llevar el cursor.
+    if (currentLayout === 'html') applyLayout('dual');
+    if (typeof markdownEditor.focus === 'function') markdownEditor.focus();
+    const desdePos = positionFromDisplayIndex(text, index);
+    if (typeof markdownEditor.markText === 'function') {
+        markdownEditor.markText(desdePos, positionFromDisplayIndex(text, index + needle.length));
+    }
+    if (typeof markdownEditor.scrollIntoView === 'function') markdownEditor.scrollIntoView(desdePos);
+    return true;
+}
+
+/*
+  Las dos conversiones en bloque. La de incrustar recoge los datos de cada
+  imagen —una descarga o una lectura de disco por imagen— y escribe una sola
+  vez al final: un setValue por imagen rehace el estado entero del editor y
+  dejaría los recortes siguientes apuntando a un texto que ya cambió.
+*/
+async function embedAllLinkedImages(button) {
+    const entradas = Array.from(currentLinkedImages.values());
+    if (!entradas.length || !markdownEditor) return;
+    if (button) button.disabled = true;
+    let texto = markdownEditor.getValue();
+    let hechas = 0;
+    let fallidas = 0;
+    try {
+        for (const info of entradas) {
+            try {
+                const dataUrl = await linkedImageAsDataUrl(info);
+                const reemplazo = dataUrl && info.snippet.replace(
+                    /(!\[[^\]]*?\]\(\s*)([^)\s]+)([^)]*\))$/,
+                    (_match, apertura, _fuente, cierre) => `${apertura}${dataUrl}${cierre}`,
+                );
+                const index = reemplazo && reemplazo !== info.snippet ? texto.indexOf(info.snippet) : -1;
+                if (index < 0) {
+                    fallidas += 1;
+                    continue;
+                }
+                texto = texto.slice(0, index) + reemplazo + texto.slice(index + info.snippet.length);
+                hechas += 1;
+            } catch (error) {
+                console.error('No se pudo incrustar una imagen enlazada:', error);
+                fallidas += 1;
+            }
+        }
+        if (hechas) markdownEditor.setValue(texto);
+        if (hechas) {
+            reportStatus(formatTranslation(
+                hechas === 1 ? 'linked_image_embed_all_done_one' : 'linked_image_embed_all_done_many',
+                hechas === 1 ? '1 imagen incrustada en el documento.' : '{count} imágenes incrustadas en el documento.',
+                { count: hechas },
+            ));
+        }
+        if (fallidas) {
+            notifyUser(formatTranslation(
+                fallidas === 1 ? 'linked_image_embed_all_failed_one' : 'linked_image_embed_all_failed_many',
+                fallidas === 1 ? 'Una imagen no se ha podido incrustar.' : '{count} imágenes no se han podido incrustar.',
+                { count: fallidas },
+            ));
+        }
+    } finally {
+        if (button && button.isConnected) button.disabled = false;
+    }
+}
+
 function openImageReplacement(target) {
     if (!target) {
         notifyUser(getTranslation('document_image_replace_error', 'No se pudo localizar la imagen que se quería reemplazar.'));
@@ -1056,12 +1149,14 @@ function updateBase64Ui(state) {
       asomara con el panel plegado, la cabecera dejaría de ser una línea y le
       comería al editor el alto que se le acaba de devolver.
     */
-    if (base64ExtractBtn) {
-        const showExtract = expanded && entries.length > 0;
-        base64ExtractBtn.toggleAttribute('hidden', !showExtract);
-        const actions = base64ExtractBtn.parentElement;
-        if (actions) actions.toggleAttribute('hidden', !showExtract);
-    }
+    const showExtract = expanded && entries.length > 0;
+    const showEmbedAll = expanded && linkedEntries.length > 0;
+    if (base64ExtractBtn) base64ExtractBtn.toggleAttribute('hidden', !showExtract);
+    if (linkedEmbedAllBtn) linkedEmbedAllBtn.toggleAttribute('hidden', !showEmbedAll);
+    // Cada conversión en bloque solo se ofrece cuando hay algo que convertir,
+    // y la barra desaparece con las dos: plegada, la cabecera es una línea.
+    const actions = base64ExtractBtn?.parentElement || linkedEmbedAllBtn?.parentElement;
+    if (actions) actions.toggleAttribute('hidden', !showExtract && !showEmbedAll);
 
     if (base64UiToggle) {
         base64UiToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
@@ -1082,6 +1177,10 @@ function updateBase64Ui(state) {
             thumbnailUrl: base64DataUri(info),
             onPreview: () => openBase64Preview(placeholder),
             actions: [{
+                label: getTranslation('document_image_locate_btn', 'Ir al texto'),
+                title: getTranslation('document_image_locate_btn_title', 'Llevar el cursor a donde está la imagen en el documento'),
+                run: () => revealImageInText(placeholder),
+            }, {
                 label: getTranslation('document_image_replace_btn', 'Reemplazar'),
                 title: getTranslation('document_image_replace_btn_title', 'Elegir otra imagen del portapapeles, del disco o de internet'),
                 run: () => openImageReplacement(base64ReplacementTarget(placeholder)),
@@ -1105,6 +1204,10 @@ function updateBase64Ui(state) {
             loadThumbnail: () => linkedImageUrl(info),
             onPreview: () => openLinkedImagePreview(key),
             actions: [{
+                label: getTranslation('document_image_locate_btn', 'Ir al texto'),
+                title: getTranslation('document_image_locate_btn_title', 'Llevar el cursor a donde está la imagen en el documento'),
+                run: () => revealImageInText(info.snippet, linkedReplacementTarget(key)?.occurrence || 0),
+            }, {
                 label: getTranslation('document_image_replace_btn', 'Reemplazar'),
                 title: getTranslation('document_image_replace_btn_title', 'Elegir otra imagen del portapapeles, del disco o de internet'),
                 run: () => openImageReplacement(linkedReplacementTarget(key)),
@@ -7935,6 +8038,10 @@ window.onload = async () => {
         });
     }
     base64ExtractBtn = document.getElementById('base64-extract-btn');
+    linkedEmbedAllBtn = document.getElementById('linked-embed-all-btn');
+    if (linkedEmbedAllBtn) {
+        linkedEmbedAllBtn.addEventListener('click', () => embedAllLinkedImages(linkedEmbedAllBtn));
+    }
     if (base64ExtractBtn) {
         base64ExtractBtn.addEventListener('click', async () => {
             // Un documento con muchas imágenes tarda un momento en pasarlas.

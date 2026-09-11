@@ -5874,6 +5874,52 @@ test('Las imágenes sin documento no se quedan ocupando sitio', async (t) => {
   assert.deepEqual(despues, { borradas: 2, huerfanas: 0, vivas: 1 });
 });
 
+test('Las imágenes se convierten en bloque y llevan al texto', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAJklEQVQoz2NgGAWjYBSMglEwCkbBKBgFo2AUjIJRMApGwSgYqgAABz0AAeHkQ+0AAAAASUVORK5CYII=';
+  await page.evaluate(([png]) => {
+    markdownEditor.setValue([
+      '# Imágenes de los dos tipos', '',
+      'Un párrafo antes, para que haya texto por encima.', '',
+      `![Incrustada](${png})`, '',
+      '![Enlazada](logo_100px.png)', '',
+      'Y el cierre.', '',
+    ].join('\n'));
+  }, [PNG]);
+  await page.waitForFunction(() => currentBase64State?.placeholders?.size === 1 && currentLinkedImages?.size === 1);
+  await page.click('#base64-hidden-toggle');
+  await page.waitForSelector('.base64-hidden-item');
+
+  // Cada conversión en bloque se ofrece solo mientras queda algo que convertir.
+  const visibles = () => page.evaluate(() => ({
+    extraer: !document.getElementById('base64-extract-btn').hidden,
+    incrustar: !document.getElementById('linked-embed-all-btn').hidden,
+  }));
+  assert.deepEqual(await visibles(), { extraer: true, incrustar: true });
+
+  // Ir al texto deja seleccionado el fragmento de esa imagen, y de la
+  // incrustada lo que se selecciona es su marcador, que es lo que se ve.
+  const seleccionTras = async nombre => page.evaluate((titulo) => {
+    const item = [...document.querySelectorAll('.base64-hidden-item')]
+      .find(candidato => candidato.querySelector('h4')?.textContent === titulo);
+    [...item.querySelectorAll('.base64-hidden-btn')]
+      .find(boton => boton.textContent === 'Ir al texto').click();
+    const area = document.getElementById('markdown-input');
+    return area.value.slice(area.selectionStart, area.selectionEnd);
+  }, nombre);
+  assert.equal(await seleccionTras('Enlazada'), '![Enlazada](logo_100px.png)');
+  assert.match(await seleccionTras('Incrustada'), /^__EDIMARK_B64_\d+__$/);
+
+  await page.click('#linked-embed-all-btn');
+  await page.waitForFunction(() => currentLinkedImages?.size === 0);
+  const texto = await page.evaluate(() => markdownEditor.getValue());
+  assert.ok(!texto.includes('(logo_100px.png)'), 'la enlazada sigue enlazada');
+  assert.equal((texto.match(/data:image\/png;base64,/g) || []).length, 2);
+  // Ya no queda ninguna enlazada, así que su botón sobra; el otro se queda.
+  assert.deepEqual(await visibles(), { extraer: true, incrustar: false });
+});
+
 test('El cuadro de Almacenamiento cuenta lo guardado y borra lo que sobra', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());

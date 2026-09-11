@@ -94,6 +94,10 @@ El botó **Imatge** admet un fitxer del disc o una URL, i pregunta com inserir-l
 
 El codi Base64 ocupa milers de caràcters, per això EdiMarkWeb el plega i deixa a l'editor una marca curta com ara `__EDIMARK_B64_1__`; el contingut real es conserva intacte en desar, copiar i exportar. El botó **Passar les incrustades a la carpeta** fa el camí de tornada: cada imatge es converteix en un fitxer dins de la subcarpeta de recursos del document (`el-meu-fitxer.md` → `el-meu-fitxer/images/`) i al Markdown hi queda la seva ruta. Els fitxers s'escriuen en desar, i `Ctrl+Z` desfà el canvi.
 
+Les dues conversions també tenen el seu botó per a tot el document, sobre la llista: **Passar les incrustades a la carpeta** i **Incrusta totes les enllaçades**. Cadascun apareix només mentre queda alguna cosa per convertir en el seu sentit, de manera que un document amb totes les imatges de la mateixa classe en mostra un de sol, o cap.
+
+Cada imatge porta a més **Vés al text**, que porta el cursor fins on és escrita al Markdown i la deixa seleccionada. És la manera de saber a quin paràgraf pertany una imatge de la llista sense buscar-la a mà.
+
 ---
 
 ## Fórmules matemàtiques

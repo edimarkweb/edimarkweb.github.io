@@ -94,6 +94,10 @@ O botón **Imaxe** admite un ficheiro do disco ou unha URL, e pregunta como inse
 
 O código Base64 ocupa milleiros de caracteres, polo que EdiMarkWeb o prega e deixa no editor unha marca curta como `__EDIMARK_B64_1__`; o contido real consérvase intacto ao gardar, copiar e exportar. O botón **Pasar as incrustadas ao cartafol** fai o camiño de volta: cada imaxe convértese nun ficheiro dentro do subcartafol de recursos do documento (`o-meu-ficheiro.md` → `o-meu-ficheiro/images/`) e no Markdown queda a súa ruta. Os ficheiros escríbense ao gardar, e `Ctrl+Z` desfai o cambio.
 
+As dúas conversións teñen tamén o seu botón para todo o documento, sobre a lista: **Pasar as incrustadas ao cartafol** e **Incrustar todas as ligadas**. Cada un aparece só mentres queda algo por converter no seu sentido, de xeito que un documento con todas as imaxes da mesma clase mostra un só, ou ningún.
+
+Cada imaxe leva ademais **Ir ao texto**, que leva o cursor ata onde está escrita no Markdown e déixaa seleccionada. É a forma de saber a que parágrafo pertence unha imaxe da lista sen buscala a man.
+
 ---
 
 ## Fórmulas matemáticas

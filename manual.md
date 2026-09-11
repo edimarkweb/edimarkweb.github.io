@@ -94,6 +94,10 @@ El botón **Imagen** admite un archivo del disco o una URL, y pregunta cómo ins
 
 El código Base64 ocupa miles de caracteres, por lo que EdiMarkWeb lo pliega y deja en el editor una marca corta como `__EDIMARK_B64_1__`; el contenido real se conserva intacto al guardar, copiar y exportar. El botón **Pasar las incrustadas a la carpeta** hace el camino de vuelta: cada imagen se convierte en un archivo dentro de la subcarpeta de recursos del documento (`mi-archivo.md` → `mi-archivo/images/`) y en el Markdown queda su ruta. Los archivos se escriben al guardar, y `Ctrl+Z` deshace el cambio.
 
+Las dos conversiones tienen también su botón para todo el documento, sobre la lista: **Pasar las incrustadas a la carpeta** y **Incrustar todas las enlazadas**. Cada uno aparece solo cuando queda algo que convertir en su sentido, de modo que un documento con todas sus imágenes de la misma clase muestra uno solo, o ninguno.
+
+Cada imagen lleva además **Ir al texto**, que lleva el cursor hasta donde está escrita en el Markdown y la deja seleccionada. Es la forma de saber a qué párrafo pertenece una imagen de la lista sin buscarla a mano.
+
 ---
 
 ## Fórmulas matemáticas
