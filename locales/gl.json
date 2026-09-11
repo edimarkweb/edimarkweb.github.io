@@ -693,5 +693,6 @@
   "linked_image_embed_all_done_one": "1 imaxe incrustada no documento.",
   "linked_image_embed_all_done_many": "{count} imaxes incrustadas no documento.",
   "linked_image_embed_all_failed_one": "Unha imaxe non se puido incrustar.",
-  "linked_image_embed_all_failed_many": "Non se puideron incrustar {count} imaxes."
+  "linked_image_embed_all_failed_many": "Non se puideron incrustar {count} imaxes.",
+  "app_loading_preview_blocking": "Compondo a páxina… O programa non responderá ata rematar."
 }

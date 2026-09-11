@@ -12,7 +12,7 @@ Cuando termines, tienes dos caminos: **Guardar** (`Ctrl+S`) deja un archivo `.md
 
 La primera vez, la aplicación abre este manual en una pestaña. Cuando lo cierres no volverá a abrirse solo: desde entonces una sesión vacía empieza con un documento en blanco, y el manual sigue a mano en **Ayuda** o con `F1`.
 
-Al abrirse, mientras monta los documentos de la última sesión, se ve una pantalla con una barra en marcha. Si la espera pasa de tres segundos aparece **Cancelar y abrir vacía**: arranca una sesión limpia y descarta los documentos guardados de la anterior —la salida cuando un documento cuelga el arranque una y otra vez—. Pregunta antes, porque eso se pierde; los archivos del disco no se tocan.
+Al abrirse, mientras monta los documentos de la última sesión, se ve una pantalla con una barra en marcha. Si la espera pasa de tres segundos aparece **Cancelar y abrir vacía**: arranca una sesión limpia y descarta los documentos guardados de la anterior —la salida cuando un documento cuelga el arranque una y otra vez—. Pregunta antes, porque eso se pierde; los archivos del disco no se tocan. La hoja de un documento largo no se compone al abrir: el editor aparece enseguida con el texto y la vista previa espera a que pulses **Mostrar la vista previa**, porque componerla deja la ventana sin responder unos segundos. Y cuando sí se compone, el botón de salir se retira mientras dura, para no ofrecer una salida que no podría atenderte.
 
 ---
 

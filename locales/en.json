@@ -693,5 +693,6 @@
   "linked_image_embed_all_done_one": "1 image embedded in the document.",
   "linked_image_embed_all_done_many": "{count} images embedded in the document.",
   "linked_image_embed_all_failed_one": "One image could not be embedded.",
-  "linked_image_embed_all_failed_many": "{count} images could not be embedded."
+  "linked_image_embed_all_failed_many": "{count} images could not be embedded.",
+  "app_loading_preview_blocking": "Laying out the page… The application will not respond until it finishes."
 }

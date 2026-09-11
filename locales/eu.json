@@ -693,5 +693,6 @@
   "linked_image_embed_all_done_one": "Irudi 1 kapsulatu da dokumentuan.",
   "linked_image_embed_all_done_many": "{count} irudi kapsulatu dira dokumentuan.",
   "linked_image_embed_all_failed_one": "Irudi bat ezin izan da kapsulatu.",
-  "linked_image_embed_all_failed_many": "{count} irudi ezin izan dira kapsulatu."
+  "linked_image_embed_all_failed_many": "{count} irudi ezin izan dira kapsulatu.",
+  "app_loading_preview_blocking": "Orria osatzen… Programak ez du erantzungo amaitu arte."
 }

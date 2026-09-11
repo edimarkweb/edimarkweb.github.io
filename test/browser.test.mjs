@@ -5876,6 +5876,78 @@ test('Las imágenes sin documento no se quedan ocupando sitio', async (t) => {
   assert.deepEqual(despues, { borradas: 2, huerfanas: 0, vivas: 1 });
 });
 
+/*
+  La cortina del arranque. Componer la hoja toma el hilo de una vez: mientras
+  dura no se repinta ni se atiende un clic, así que el botón de salir prometía
+  una salida que no existía. Un documento largo ya no se compone al abrir.
+*/
+// Estas funciones viajan al navegador serializadas y se ejecutan allí, así que
+// no pueden llamar a nada de aquí ni leer ninguna variable de fuera: cada una
+// se basta sola.
+const sesionLarga = () => {
+  try {
+    const relleno = 'La fotosíntesis convierte la luz en energía química. '.repeat(4000);
+    localStorage.setItem('edimarkweb-docslist', JSON.stringify([{ id: 'doc-largo', name: 'largo.md' }]));
+    localStorage.setItem('edimarkweb-active-doc', 'doc-largo');
+    localStorage.setItem('edimarkweb-autosave-doc-largo', `# Documento largo\n\n${relleno}`);
+    localStorage.removeItem('edimarkweb-hoja-rapida');
+  } catch (_error) {
+    // El script corre también para el documento opaco inicial.
+  }
+};
+
+const sesionCorriente = () => {
+  try {
+    const relleno = 'La fotosíntesis convierte la luz en energía química. '.repeat(90);
+    localStorage.setItem('edimarkweb-docslist', JSON.stringify([{ id: 'doc-largo', name: 'largo.md' }]));
+    localStorage.setItem('edimarkweb-active-doc', 'doc-largo');
+    localStorage.setItem('edimarkweb-autosave-doc-largo', `# Documento corriente\n\n${relleno}`);
+    localStorage.removeItem('edimarkweb-hoja-rapida');
+  } catch (_error) {
+    // El script corre también para el documento opaco inicial.
+  }
+};
+
+test('Un documento largo no se compone al arrancar y la ventana sigue viva', async (t) => {
+  const { context, page } = await openApp({ initStorage: sesionLarga });
+  t.after(() => context.close());
+
+  await page.waitForFunction(() => window.__edimarkReady === true, null, { timeout: 60000 });
+  const estado = await page.evaluate(() => ({
+    aviso: Boolean(document.querySelector('[data-edimark-on-demand]')),
+    boton: Boolean(document.querySelector('.preview-on-demand-btn')),
+    texto: document.getElementById('markdown-input')?.value.length,
+    salidaOculta: document.getElementById('app-loading-cancel')?.hasAttribute('hidden'),
+  }));
+  // El texto está, la hoja espera a que la pidan y la salida no se retiró,
+  // porque en este camino nada toma el hilo.
+  assert.equal(estado.aviso, true);
+  assert.equal(estado.boton, true);
+  assert.ok(estado.texto > 100000, `el documento no se restauró: ${estado.texto}`);
+  assert.equal(estado.salidaOculta, false);
+
+  // Y se compone cuando se pulsa.
+  await page.click('.preview-on-demand-btn');
+  await page.waitForFunction(() => !document.querySelector('[data-edimark-on-demand]'), null, { timeout: 60000 });
+  assert.ok(await page.locator('#html-output p').count() > 0);
+});
+
+test('Con un documento corriente la hoja se compone y la salida se retira', async (t) => {
+  const { context, page } = await openApp({ initStorage: sesionCorriente });
+  t.after(() => context.close());
+
+  await page.waitForFunction(() => window.__edimarkReady === true, null, { timeout: 60000 });
+  const estado = await page.evaluate(() => ({
+    aviso: Boolean(document.querySelector('[data-edimark-on-demand]')),
+    parrafos: document.querySelectorAll('#html-output p').length,
+    salidaOculta: document.getElementById('app-loading-cancel')?.hasAttribute('hidden'),
+  }));
+  assert.equal(estado.aviso, false);
+  assert.ok(estado.parrafos > 0, 'la hoja no se compuso');
+  // Durante ese tramo el hilo está tomado: el botón se va antes de empezar.
+  assert.equal(estado.salidaOculta, true);
+});
+
 test('Las imágenes se convierten en bloque y llevan al texto', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
@@ -5953,7 +6025,13 @@ test('El cuadro de Almacenamiento cuenta lo guardado y borra lo que sobra', asyn
   assert.match(leido.huerfanas, /^1 · /);
 
   await page.click('#storage-purge-btn');
-  await page.waitForFunction(() => document.getElementById('storage-purge-btn')?.disabled);
+  // El botón se apaga al empezar a borrar, así que esperar a eso es esperar a
+  // la mitad: lo que dice que ha terminado es el mensaje, que deja de tener
+  // puntos suspensivos.
+  await page.waitForFunction(() => {
+    const mensaje = document.getElementById('storage-modal-status')?.textContent || '';
+    return mensaje && !mensaje.includes('…');
+  });
   const tras = await page.evaluate(async () => ({
     estado: document.getElementById('storage-modal-status').textContent,
     huerfanas: (await readPersistedDocumentAssets('documento-que-ya-no-existe')).length,

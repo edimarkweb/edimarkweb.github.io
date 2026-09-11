@@ -12,7 +12,7 @@ Cando remates, tes dous camiños: **Gardar** (`Ctrl+S`) deixa un ficheiro `.md`,
 
 A primeira vez, a aplicación abre este manual nunha lapela. Cando o peches non se volverá abrir só: desde entón unha sesión baleira comeza cun documento en branco, e o manual segue á man en **Axuda** ou con `F1`.
 
-Ao abrirse, mentres monta os documentos da última sesión, vese unha pantalla cunha barra en marcha. Se a espera pasa de tres segundos aparece **Cancelar e abrir baleira**: arranca unha sesión limpa e descarta os documentos gardados da anterior —a saída cando un documento colga o arranque unha e outra vez—. Pregunta antes, porque iso pérdese; os ficheiros do disco non se tocan.
+Ao abrirse, mentres monta os documentos da última sesión, vese unha pantalla cunha barra en marcha. Se a espera pasa de tres segundos aparece **Cancelar e abrir baleira**: arranca unha sesión limpa e descarta os documentos gardados da anterior —a saída cando un documento colga o arranque unha e outra vez—. Pregunta antes, porque iso pérdese; os ficheiros do disco non se tocan. A páxina dun documento longo non se compón ao abrir: o editor aparece axiña co texto e a vista previa agarda a que premas **Mostrar a vista previa**, porque compoñela deixa a xanela sen responder uns segundos. E cando si se compón, o botón de saír retírase mentres dura, para non ofrecer unha saída que non che podería atender.
 
 ---
 

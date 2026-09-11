@@ -55,6 +55,15 @@ const hojasPedidas = new Set();
   dice lo que este equipo tarda de verdad, y si va sobrado no se vuelve a
   preguntar. La marca se guarda, así que la pregunta se hace una sola vez.
 */
+/*
+  Y el del arranque, más bajo que el de la hoja a petición: componerla es un
+  bloque de hilo tomado en el que la ventana no repinta ni atiende un clic, y
+  al abrir la aplicación nadie ha pedido esa espera todavía. Por debajo del
+  margen se compone, que es lo normal; por encima se pinta el aviso y se
+  compone cuando se pulsa. Si este equipo ya demostró ir sobrado, se compone
+  igual: la marca de abajo es esa medida.
+*/
+const MAXIMO_PARA_COMPONER_AL_ARRANCAR = 120000;
 const HOJA_RAPIDA_KEY = 'edimarkweb-hoja-rapida';
 const HOJA_RAPIDA_MS = 2000;
 const HOJA_LENTA_MS = 8000;
@@ -64,6 +73,13 @@ function laHojaEsperaAQueLaPidan(doc, texto) {
         && !hojasPedidas.has(doc.id)
         && safeLocalStorageGet(HOJA_RAPIDA_KEY, '') !== '1'
         && String(texto || '').length > MAXIMO_PARA_COMPONER_LA_HOJA;
+}
+
+function laHojaDelArranqueEspera(doc, texto) {
+    return Boolean(doc)
+        && !hojasPedidas.has(doc.id)
+        && safeLocalStorageGet(HOJA_RAPIDA_KEY, '') !== '1'
+        && String(texto || '').length > MAXIMO_PARA_COMPONER_AL_ARRANCAR;
 }
 
 function pintarLaHojaAplazada(htmlOutput, doc) {
@@ -10471,8 +10487,23 @@ window.onload = async () => {
             */
             await announceStartup('app_loading_document', 'Preparando el documento…');
             switchTo(inicial, { deferPreview: true });
-            await announceStartup('app_loading_preview', 'Componiendo la hoja…');
-            updateHtml();
+            if (laHojaDelArranqueEspera(documentoInicial, documentoInicial?.md)) {
+                /*
+                  La hoja de un documento largo no se compone al abrir: queda su
+                  aviso con el botón, y la ventana sigue viva. Es lo mismo que
+                  hace la vista previa a petición fuera del arranque.
+                */
+                pintarLaHojaAplazada(document.getElementById('html-output'), documentoInicial);
+            } else {
+                /*
+                  Y cuando sí se compone, el botón de salir se retira: durante
+                  este tramo el hilo está tomado y un clic suyo no se atiende
+                  hasta el final, de modo que prometía una salida que no había.
+                */
+                await announceStartup('app_loading_preview_blocking', 'Componiendo la hoja… El programa no responderá hasta terminar.');
+                document.getElementById('app-loading-cancel')?.setAttribute('hidden', '');
+                updateHtml();
+            }
         }
         if (!platform?.isDesktop) {
             docs.forEach(doc => {
