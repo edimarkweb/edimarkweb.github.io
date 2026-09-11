@@ -4,7 +4,10 @@
   "version": "2.52.1",
   "identifier": "io.github.edimarkweb",
   "build": {
-    "beforeDevCommand": "npm run build:desktop",
+    "beforeDevCommand": {
+      "script": "npm run build:desktop",
+      "wait": true
+    },
     "beforeBuildCommand": "npm run build:desktop",
     "frontendDist": "../dist"
   },

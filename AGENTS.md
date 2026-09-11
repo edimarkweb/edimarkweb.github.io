@@ -31,6 +31,10 @@ EdiMarkWeb is a vanilla-JS Markdown editor shipped two ways from one frontend: a
 - New root-level app file → add to its `appFiles` array.
 - New CDN library referenced in `index.html` → add matching entries to **both** `vendorFiles` and `indexReplacements`, at exactly the pinned npm versions. A URL mismatch aborts the build.
 
+## Desktop dev gotcha
+
+`tauri dev` used to start `beforeDevCommand` (`build:desktop`) and `cargo run` at the same time, and `build:desktop` begins by wiping `dist/`: the window would open on a half-written `dist/`, whose `index.html` still carries the CDN URLs — the last build step is what swaps them for the local copies — and the CSP then blocks every script and stylesheet, so the app came up as raw unstyled text. `beforeDevCommand` now carries `"wait": true` for that reason; do not take it out. The same rule applies by hand: never rebuild `dist/` while a dev run is starting.
+
 ## Versions & releases
 
 The app version lives in six places that must be bumped together: `package.json` (+ `package-lock.json`), `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` (+ `Cargo.lock`), `APP_VERSION` at the top of `script.js`, the desktop banner string in `index.html`, and the `?v=` on every own script/stylesheet in `index.html` (cache-busting: without it a browser serves a stale `script.js` alongside fresh HTML). `npm run test` fails on a stale `?v=`. `tauri.conf.json` is what names the installers, so a stale `Cargo.toml` ships quietly — 2.21.0 went out that way.
