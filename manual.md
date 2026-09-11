@@ -255,6 +255,8 @@ El botón recuerda el último formato y lo dice en un rótulo a su lado, así qu
 
 Es la misma aplicación —los mismos menús, atajos y formatos— instalada en **Linux, Windows y macOS**. Los instaladores están en la [página de descargas](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest): `.deb` y `.AppImage` para Linux, `.exe` y `.msi` para Windows, y `.dmg` para Mac con procesador Apple o Intel.
 
+**La primera vez en macOS.** El `.dmg` no está firmado con una cuenta de desarrollador de Apple, de modo que al abrirlo macOS avisa de que la aplicación «está dañada y debería moverse a la papelera». No lo está: es lo que dice el sistema ante cualquier aplicación sin firmar descargada de internet. Arrastra EdiMarkWeb a **Aplicaciones**, abre el **Terminal** y ejecuta `xattr -dr com.apple.quarantine /Applications/EdiMarkWeb.app`. Con eso abre con normalidad y no hay que repetirlo: esa orden solo quita la marca de «descargado de internet» a esa aplicación, sin cambiar ningún ajuste de seguridad del sistema.
+
 Frente al navegador añade:
 
 * **Doble clic para abrir**: los archivos `.md` y `.markdown` quedan asociados, muestran el icono de EdiMarkWeb en el explorador de archivos y se abren en la aplicación; si ya está abierta, el documento llega a esa misma ventana, que se pone delante. Y si ese archivo ya estaba abierto, vuelve a su pestaña en vez de duplicarse. (El icono lo instalan el paquete `.deb` y los instaladores de Windows; la AppImage no toca el sistema.)

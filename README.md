@@ -4,6 +4,7 @@ EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores t
 
 - 🌐 Aplicación publicada en: [https://edimarkweb.github.io/](https://edimarkweb.github.io/)
 - 💻 Aplicación de escritorio: [últimos instaladores para Linux, Windows y macOS](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest)
+  - 🍎 En macOS, la primera vez hay que quitar la cuarentena: `xattr -dr com.apple.quarantine /Applications/EdiMarkWeb.app` ([por qué](manual.md#la-aplicación-de-escritorio))
 - 📘 Manual de usuario: [manual.md](manual.md) (también en [inglés](manual-en.md), [català](manual-ca.md), [galego](manual-gl.md) y [euskara](manual-eu.md))
 - 🐞 Incidencias y mejoras: [Issues de GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues)
 
@@ -104,7 +105,11 @@ npm run desktop:build
 ```
 
 En Linux se generan paquetes DEB y AppImage; en Windows, instaladores MSI y NSIS; y en macOS,
-una imagen DMG por arquitectura, la de Apple silicon y la de Intel. El flujo
+una imagen DMG por arquitectura, la de Apple silicon y la de Intel. Los DMG no se firman con una
+identidad de desarrollador de Apple ni se notarizan, así que macOS los marca en cuarentena y al
+abrirlos avisa de que la aplicación «está dañada»; se resuelve una sola vez con
+`xattr -dr com.apple.quarantine /Applications/EdiMarkWeb.app`, que es lo que documenta el manual.
+Firmarlos exigiría una cuenta del Apple Developer Program y sus secretos en el flujo. El flujo
 `Native application builds` de GitHub Actions adjunta esos instaladores a GitHub Releases al
 crear una etiqueta `v*` o al indicar manualmente una etiqueta existente. Los paquetes de Linux se
 construyen en Ubuntu 22.04 a propósito: el binario queda atado a la glibc de la máquina que lo

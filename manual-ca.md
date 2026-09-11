@@ -255,6 +255,8 @@ El botó recorda l'últim format i ho diu en un rètol al seu costat, així que 
 
 És la mateixa aplicació —els mateixos menús, dreceres i formats— instal·lada a **Linux, Windows i macOS**. Els instal·ladors són a la [pàgina de descàrregues](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest): `.deb` i `.AppImage` per a Linux, `.exe` i `.msi` per a Windows, i `.dmg` per a Mac amb processador Apple o Intel.
 
+**La primera vegada a macOS.** El `.dmg` no està signat amb un compte de desenvolupador d'Apple, de manera que en obrir-lo macOS avisa que l'aplicació «està malmesa i s'hauria de moure a la paperera». No ho està: és el que diu el sistema davant de qualsevol aplicació sense signar baixada d'internet. Arrossega EdiMarkWeb a **Aplicacions**, obre el **Terminal** i executa `xattr -dr com.apple.quarantine /Applications/EdiMarkWeb.app`. Amb això s'obre amb normalitat i no cal repetir-ho: aquesta ordre només treu la marca de «baixat d'internet» a aquella aplicació, sense canviar cap paràmetre de seguretat del sistema.
+
 Respecte al navegador hi afegeix:
 
 * **Doble clic per obrir**: els fitxers `.md` i `.markdown` queden associats, mostren la icona d'EdiMarkWeb al gestor de fitxers i s'obren a l'aplicació; si ja és oberta, el document arriba a aquesta mateixa finestra, que es posa al davant. I si aquell fitxer ja era obert, torna a la seva pestanya en comptes de duplicar-se. (La icona la instal·len el paquet `.deb` i els instal·ladors de Windows; l'AppImage no toca el sistema.)

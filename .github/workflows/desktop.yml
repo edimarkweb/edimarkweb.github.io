@@ -78,6 +78,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/release-note-macos.md
+          sparse-checkout-cone-mode: false
       - uses: actions/download-artifact@v4
         with:
           name: edimarkweb-linux
@@ -108,3 +112,20 @@ jobs:
           gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
             || gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --generate-notes
           gh release upload "$RELEASE_TAG" "${installers[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+      - name: Tell macOS users how to clear the quarantine
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+        shell: bash
+        run: |
+          # The disk images carry no Apple developer signature, so macOS
+          # quarantines them and claims the application is damaged. The way out
+          # travels with the download; the marker inside the note keeps a re-run
+          # from appending it twice.
+          body=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body)
+          if [[ "$body" == *'<!-- macos-quarantine -->'* ]]; then
+            echo "The macOS note is already in the release body"
+            exit 0
+          fi
+          { printf '%s\n' "$body"; cat .github/release-note-macos.md; } \
+            | gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --notes-file -

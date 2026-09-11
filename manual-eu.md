@@ -255,6 +255,8 @@ Botoiak azken formatua gogoratzen du eta bere ondoko errotulu batean esaten du, 
 
 Aplikazio bera da —menu, lasterbide eta formatu berak— **Linux, Windows eta macOSen** instalatuta. Instalatzaileak [deskargen orrian](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest) daude: `.deb` eta `.AppImage` Linuxerako, `.exe` eta `.msi` Windowserako, eta `.dmg` Apple edo Intel prozesagailua duten Mac-etarako.
 
+**Lehen aldia macOSen.** `.dmg` fitxategia ez dago Apple-ren garatzaile-kontu batekin sinatuta, eta, beraz, irekitzean macOSek aplikazioa «hondatuta dagoela eta zakarrontzira eraman beharko litzatekeela» abisatzen du. Ez dago hondatuta: hori da sistemak internetetik deskargatutako sinatu gabeko edozein aplikaziori buruz esaten diona. Arrastatu EdiMarkWeb **Aplikazioak** karpetara, ireki **Terminala** eta exekutatu `xattr -dr com.apple.quarantine /Applications/EdiMarkWeb.app`. Horrekin normaltasunez irekitzen da eta ez da errepikatu behar: komando horrek aplikazio horri «internetetik deskargatua» marka kentzen dio soilik, sistemaren segurtasun-ezarpenik aldatu gabe.
+
 Nabigatzailearen aldean hau gehitzen du:
 
 * **Klik bikoitzez irekitzea**: `.md` eta `.markdown` fitxategiak lotuta geratzen dira, EdiMarkWeb-en ikonoa erakusten dute fitxategi-kudeatzailean eta aplikazioan irekitzen dira; jada irekita badago, dokumentua leiho horretara bertara iristen da, eta leihoa aurrera etortzen da. Eta fitxategi hori jada irekita bazegoen, bere fitxara itzultzen da bikoiztu beharrean. (Ikonoa `.deb` paketeak eta Windowseko instalatzaileek jartzen dute; AppImage-k ez du sistema ukitzen.)
