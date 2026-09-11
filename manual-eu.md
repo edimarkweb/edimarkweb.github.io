@@ -96,7 +96,7 @@ Base64 kodeak milaka karaktere hartzen ditu; horregatik, EdiMarkWebek tolestu et
 
 Bi bihurketek dokumentu osorako botoia ere badute, zerrendaren gainean: **Txertatutako irudiak karpetara eraman** eta **Kapsulatu estekatutako guztiak**. Bakoitza bere noranzkoan bihurtzeko zerbait geratzen den bitartean bakarrik agertzen da; beraz, irudi guztiak mota berekoak dituen dokumentu batek bat bakarrik erakusten du, edo bat ere ez.
 
-Irudi bakoitzak **Joan testura** ere badu: kurtsorea Markdown-ean idatzita dagoen tokira eramaten du eta hautatuta uzten du. Hala jakiten da zerrendako irudi bat zein paragraforena den, eskuz bilatu gabe.
+Irudi bakoitzak **Joan testura** ere badu: kurtsorea Markdown-ean idatzita dagoen tokira eramaten du eta hautatuta uzten du. Hala jakiten da zerrendako irudi bat zein paragraforena den, eskuz bilatu gabe. Panela estua denean botoiak beren ikonoan geratzen dira; sagua gainetik pasatuz gero, bakoitzak zer egiten duen irakur daiteke.
 
 ---
 

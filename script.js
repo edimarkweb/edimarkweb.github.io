@@ -1118,8 +1118,21 @@ function appendDocumentImageItem({ title, meta, thumbnailUrl = '', loadThumbnail
         const button = document.createElement('button');
         button.type = 'button';
         button.className = `base64-hidden-btn${action.danger ? ' base64-hidden-btn-danger' : ''}`;
-        button.textContent = action.label;
-        if (action.title) button.title = action.title;
+        /*
+          Icono y texto: en un panel estrecho el CSS esconde el texto y deja el
+          icono, que es lo que mantiene las cuatro acciones en una sola línea.
+          Por eso el rótulo va también en el título y en la etiqueta accesible:
+          cuando el texto no se ve, son lo único que dice qué hace el botón.
+        */
+        const icon = document.createElement('i');
+        icon.dataset.lucide = action.icon || 'circle';
+        icon.setAttribute('aria-hidden', 'true');
+        const text = document.createElement('span');
+        text.className = 'base64-hidden-btn-text';
+        text.textContent = action.label;
+        button.append(icon, text);
+        button.title = action.title || action.label;
+        button.setAttribute('aria-label', action.label);
         button.addEventListener('click', () => action.run(button));
         actionContainer.appendChild(button);
     });
@@ -1177,18 +1190,22 @@ function updateBase64Ui(state) {
             thumbnailUrl: base64DataUri(info),
             onPreview: () => openBase64Preview(placeholder),
             actions: [{
+                icon: 'crosshair',
                 label: getTranslation('document_image_locate_btn', 'Ir al texto'),
                 title: getTranslation('document_image_locate_btn_title', 'Llevar el cursor a donde está la imagen en el documento'),
                 run: () => revealImageInText(placeholder),
             }, {
+                icon: 'replace',
                 label: getTranslation('document_image_replace_btn', 'Reemplazar'),
                 title: getTranslation('document_image_replace_btn_title', 'Elegir otra imagen del portapapeles, del disco o de internet'),
                 run: () => openImageReplacement(base64ReplacementTarget(placeholder)),
             }, {
+                icon: 'code',
                 label: getTranslation('base64_view_code_btn', 'Ver código'),
                 title: getTranslation('base64_view_code_hint', 'Copiar el código de la imagen para pegarla en otro documento.'),
                 run: () => openBase64Modal(placeholder),
             }, {
+                icon: 'trash-2',
                 label: getTranslation('base64_delete_btn', 'Eliminar'),
                 danger: true,
                 run: () => removeBase64Entry(placeholder, title),
@@ -1204,18 +1221,22 @@ function updateBase64Ui(state) {
             loadThumbnail: () => linkedImageUrl(info),
             onPreview: () => openLinkedImagePreview(key),
             actions: [{
+                icon: 'crosshair',
                 label: getTranslation('document_image_locate_btn', 'Ir al texto'),
                 title: getTranslation('document_image_locate_btn_title', 'Llevar el cursor a donde está la imagen en el documento'),
                 run: () => revealImageInText(info.snippet, linkedReplacementTarget(key)?.occurrence || 0),
             }, {
+                icon: 'replace',
                 label: getTranslation('document_image_replace_btn', 'Reemplazar'),
                 title: getTranslation('document_image_replace_btn_title', 'Elegir otra imagen del portapapeles, del disco o de internet'),
                 run: () => openImageReplacement(linkedReplacementTarget(key)),
             }, {
+                icon: 'file-down',
                 label: getTranslation('linked_image_embed_btn', 'Incrustar'),
                 title: getTranslation('linked_image_embed_btn_title', 'Convertir la imagen a Base64 dentro del documento'),
                 run: button => convertLinkedImageToBase64(key, button),
             }, {
+                icon: 'trash-2',
                 label: getTranslation('base64_delete_btn', 'Eliminar'),
                 danger: true,
                 run: () => removeLinkedImageEntry(key),

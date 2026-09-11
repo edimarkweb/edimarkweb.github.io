@@ -96,7 +96,7 @@ O código Base64 ocupa milleiros de caracteres, polo que EdiMarkWeb o prega e de
 
 As dúas conversións teñen tamén o seu botón para todo o documento, sobre a lista: **Pasar as incrustadas ao cartafol** e **Incrustar todas as ligadas**. Cada un aparece só mentres queda algo por converter no seu sentido, de xeito que un documento con todas as imaxes da mesma clase mostra un só, ou ningún.
 
-Cada imaxe leva ademais **Ir ao texto**, que leva o cursor ata onde está escrita no Markdown e déixaa seleccionada. É a forma de saber a que parágrafo pertence unha imaxe da lista sen buscala a man.
+Cada imaxe leva ademais **Ir ao texto**, que leva o cursor ata onde está escrita no Markdown e déixaa seleccionada. É a forma de saber a que parágrafo pertence unha imaxe da lista sen buscala a man. Cando o panel é estreito os botóns quedan na súa icona, e abonda con pasar o rato por riba para ler que fai cada un.
 
 ---
 

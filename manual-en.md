@@ -96,7 +96,7 @@ Base64 code takes thousands of characters, so EdiMarkWeb folds it away and leave
 
 Both conversions also have a button for the whole document, above the list: **Move embedded images to the folder** and **Embed every linked image**. Each one appears only while something is left to convert its way, so a document whose images are all of the same kind shows one of them, or neither.
 
-Every image also has **Go to the text**, which takes the cursor to where it is written in the Markdown and leaves it selected. It is how you find out which paragraph an image on the list belongs to without hunting for it.
+Every image also has **Go to the text**, which takes the cursor to where it is written in the Markdown and leaves it selected. It is how you find out which paragraph an image on the list belongs to without hunting for it. When the panel is narrow the buttons shrink to their icon; hover over one to read what it does.
 
 ---
 

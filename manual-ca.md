@@ -96,7 +96,7 @@ El codi Base64 ocupa milers de caràcters, per això EdiMarkWeb el plega i deixa
 
 Les dues conversions també tenen el seu botó per a tot el document, sobre la llista: **Passar les incrustades a la carpeta** i **Incrusta totes les enllaçades**. Cadascun apareix només mentre queda alguna cosa per convertir en el seu sentit, de manera que un document amb totes les imatges de la mateixa classe en mostra un de sol, o cap.
 
-Cada imatge porta a més **Vés al text**, que porta el cursor fins on és escrita al Markdown i la deixa seleccionada. És la manera de saber a quin paràgraf pertany una imatge de la llista sense buscar-la a mà.
+Cada imatge porta a més **Vés al text**, que porta el cursor fins on és escrita al Markdown i la deixa seleccionada. És la manera de saber a quin paràgraf pertany una imatge de la llista sense buscar-la a mà. Quan el plafó és estret els botons es queden amb la seva icona, i només cal passar-hi el ratolí per sobre per llegir què fa cadascun.
 
 ---
 

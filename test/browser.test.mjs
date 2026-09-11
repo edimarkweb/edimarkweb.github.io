@@ -782,7 +782,9 @@ test('los controles de imágenes y de pegado se traducen', async (t) => {
   await page.evaluate(() => markdownEditor.setValue('![Demo](data:image/png;base64,iVBORw0KGgo=)'));
   await page.locator('.base64-hidden-title').getByText('Document images', { exact: true }).waitFor();
   await page.locator('#base64-hidden-toggle').click();
-  await page.locator('.base64-hidden-btn').getByText('View code', { exact: true }).click();
+  // Por su etiqueta accesible, no por el rótulo: en un panel estrecho el texto
+  // del botón no se dibuja y solo queda el icono.
+  await page.locator('.base64-hidden-btn[aria-label="View code"]').click();
   assert.equal(await page.locator('#base64-modal-title').textContent(), 'Image code');
   assert.equal(await page.locator('#copy-base64-code-btn').textContent(), 'Copy code');
   assert.equal(await page.locator('#close-base64-modal-btn').textContent(), 'Close');
@@ -5904,7 +5906,7 @@ test('Las imágenes se convierten en bloque y llevan al texto', async (t) => {
     const item = [...document.querySelectorAll('.base64-hidden-item')]
       .find(candidato => candidato.querySelector('h4')?.textContent === titulo);
     [...item.querySelectorAll('.base64-hidden-btn')]
-      .find(boton => boton.textContent === 'Ir al texto').click();
+      .find(boton => boton.getAttribute('aria-label') === 'Ir al texto').click();
     const area = document.getElementById('markdown-input');
     return area.value.slice(area.selectionStart, area.selectionEnd);
   }, nombre);

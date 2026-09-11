@@ -733,9 +733,21 @@ body.desktop-mode .markdown-textarea {
     display: flex;
     justify-content: flex-end;
     margin-top: 0.5rem;
-    /* Las dos conversiones en bloque no siempre caben en una línea. */
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.5rem;
+}
+.base64-hidden-container {
+    container-type: inline-size;
+}
+/*
+  Las dos conversiones de todo el documento tienen rótulos largos: por debajo
+  de este ancho se quedan en sus iconos, con la descripción emergente que ya
+  llevaban, antes que partirse en dos líneas.
+*/
+@container (max-width: 44rem) {
+    .base64-hidden-container > .base64-hidden-actions .base64-hidden-action-btn > span {
+        display: none;
+    }
 }
 .base64-hidden-action-btn {
     display: inline-flex;
@@ -842,9 +854,22 @@ body.desktop-mode .markdown-textarea {
 }
 .base64-hidden-actions {
     display: flex;
-    flex-wrap: wrap;
+    /*
+      Las acciones de una imagen van en una línea y no se parten: con el nombre
+      de archivo largo se repartían en dos y la tarjeta crecía al doble. Lo que
+      cede cuando falta sitio es el rótulo, que el CSS esconde más abajo, no la
+      fila.
+    */
+    flex-wrap: nowrap;
     gap: 0.5rem;
     align-items: center;
+}
+.base64-hidden-item > .base64-hidden-actions > .base64-hidden-btn {
+    flex: 0 0 auto;
+}
+/* Y lo que se recorta es el nombre, que además se lee entero en su título. */
+.base64-hidden-details {
+    min-width: 0;
 }
 /*
   En un panel estrecho los botones caben, pero dejaban la columna del nombre
@@ -862,6 +887,20 @@ body.desktop-mode .markdown-textarea {
         margin-top: 0;
     }
 }
+/*
+  El rótulo de cada acción es lo primero que cede. Con las cuatro acciones
+  rotuladas la fila mide unos 480 px, así que por debajo de este ancho solo
+  cabrían dejando el nombre del archivo en nada: se quedan en su icono, y lo
+  que dice qué hacen es la descripción emergente, que el botón lleva siempre.
+*/
+@container (max-width: 44rem) {
+    .base64-hidden-item .base64-hidden-btn-text {
+        display: none;
+    }
+    .base64-hidden-item .base64-hidden-btn {
+        padding: 0.4rem 0.55rem;
+    }
+}
 .base64-hidden-btn {
     display: inline-flex;
     align-items: center;
@@ -874,6 +913,11 @@ body.desktop-mode .markdown-textarea {
     background-color: #e0f2fe;
     color: #0369a1;
     transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.base64-hidden-btn svg,
+.base64-hidden-action-btn svg {
+    width: 1rem;
+    height: 1rem;
 }
 .base64-hidden-btn:hover {
     background-color: #bae6fd;

@@ -96,7 +96,7 @@ El código Base64 ocupa miles de caracteres, por lo que EdiMarkWeb lo pliega y d
 
 Las dos conversiones tienen también su botón para todo el documento, sobre la lista: **Pasar las incrustadas a la carpeta** y **Incrustar todas las enlazadas**. Cada uno aparece solo cuando queda algo que convertir en su sentido, de modo que un documento con todas sus imágenes de la misma clase muestra uno solo, o ninguno.
 
-Cada imagen lleva además **Ir al texto**, que lleva el cursor hasta donde está escrita en el Markdown y la deja seleccionada. Es la forma de saber a qué párrafo pertenece una imagen de la lista sin buscarla a mano.
+Cada imagen lleva además **Ir al texto**, que lleva el cursor hasta donde está escrita en el Markdown y la deja seleccionada. Es la forma de saber a qué párrafo pertenece una imagen de la lista sin buscarla a mano. Cuando el panel es estrecho los botones se quedan en su icono, y basta pasar el ratón por encima para leer qué hace cada uno.
 
 ---
 
