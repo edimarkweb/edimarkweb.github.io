@@ -238,6 +238,14 @@ Dokumentua bere YAML metadatuekin hasten bada, haiek agintzen dute.
 
 ---
 
+## Biltegiratzea
+
+**Konfigurazioa → Biltegiratzea…** atalean ikusten da EdiMarkWebek nabigatzaile honetan zer gordetzen duen: zenbat dokumentu dituzun irekita, haien testu automatikoki gordeak zenbat betetzen duen eta zenbat irudi dauden, beren tamainarekin. Horietako ezer ez da zure ekipotik ateratzen.
+
+Bereiz zenbatzen dira **dokumenturik gabeko irudiak**, hau da, aspaldi itxitako fitxenak edo aurreko saioetakoak. Aplikazioa irekitzean berez ezabatzen dira, eta **Ezabatu dokumenturik gabeko irudiak** botoiak berehala egiten du; erabilgarria da hainbat PDF inportatu ondoren, horiek baitira leku gehien hartzen dutenak. **Ahaztu gordetako saioa…** aukerak fitxak ixten ditu eta gordetako testua bere irudiekin baztertzen du, galdetu ondoren. Bi gauza horietako batek ere ez du zure diskoko fitxategirik ezabatzen.
+
+---
+
 ## Kopiatu deskargatu gabe
 
 Kopiatzeko botoiak, **Esportatu** aukeraren ondoan, gauza bera egiten du baina arbelera, lau formatutan:

@@ -238,6 +238,14 @@ Si el documento empieza con sus propios metadatos YAML, mandan ellos.
 
 ---
 
+## Almacenamiento
+
+En **Configuración → Almacenamiento…** se ve lo que EdiMarkWeb guarda en este navegador: cuántos documentos tienes abiertos, lo que ocupa su texto autoguardado y cuántas imágenes hay, con su tamaño. Nada de esto sale de tu equipo.
+
+Aparte se cuentan las **imágenes sin documento**, que son las de pestañas cerradas hace tiempo o de sesiones anteriores. Se borran solas al abrir la aplicación, y el botón **Borrar las imágenes sin documento** lo hace en el momento; es útil después de importar varios PDF, que son los que más ocupan. **Olvidar la sesión guardada…** cierra las pestañas y descarta el texto autoguardado con sus imágenes, tras preguntar. Ninguna de las dos cosas borra archivos de tu disco.
+
+---
+
 ## Copiar sin descargar
 
 El botón de copiar, junto a **Exportar**, hace lo mismo pero al portapapeles, en cuatro formatos:

@@ -5874,6 +5874,57 @@ test('Las imágenes sin documento no se quedan ocupando sitio', async (t) => {
   assert.deepEqual(despues, { borradas: 2, huerfanas: 0, vivas: 1 });
 });
 
+test('El cuadro de Almacenamiento cuenta lo guardado y borra lo que sobra', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  /*
+    Hasta la 2.54.0 lo único que vaciaba la base era el barrido del arranque y
+    la salida de emergencia de la cortina, que solo aparece cuando la carga ya
+    va lenta. Aquí se ve lo que ocupa y se borra cuando se quiera.
+  */
+  await page.evaluate(async () => {
+    const doc = docs.find(d => d.id === currentId);
+    await replacePersistedDocumentAssets(doc.id, [
+      { relativePath: 'vivo/images/01.png', contents: new Blob([new Uint8Array(2048)]) },
+    ]);
+    await replacePersistedDocumentAssets('documento-que-ya-no-existe', [
+      { relativePath: 'viejo/images/01.png', contents: new Blob([new Uint8Array(4096)]) },
+    ]);
+  });
+
+  await page.click('#settings-menu-btn');
+  await page.click('#storage-settings-btn');
+  await page.waitForFunction(() => document.getElementById('storage-orphans')?.textContent.includes('·'));
+  const leido = await page.evaluate(() => ({
+    documentos: document.getElementById('storage-documents').textContent,
+    imagenes: document.getElementById('storage-images').textContent,
+    huerfanas: document.getElementById('storage-orphans').textContent,
+  }));
+  assert.equal(leido.documentos, '1');
+  assert.match(leido.imagenes, /^1 · /);
+  assert.match(leido.huerfanas, /^1 · /);
+
+  await page.click('#storage-purge-btn');
+  await page.waitForFunction(() => document.getElementById('storage-purge-btn')?.disabled);
+  const tras = await page.evaluate(async () => ({
+    estado: document.getElementById('storage-modal-status').textContent,
+    huerfanas: (await readPersistedDocumentAssets('documento-que-ya-no-existe')).length,
+    vivas: (await readPersistedDocumentAssets(currentId)).length,
+  }));
+  // Se va lo que no tiene dueño y se queda lo del documento abierto.
+  assert.match(tras.estado, /1/);
+  assert.equal(tras.huerfanas, 0);
+  assert.equal(tras.vivas, 1);
+
+  // La pregunta de olvidar la sesión se hace dentro del cuadro, no con un
+  // `confirm` del navegador, que en la ventana de la aplicación llega apagado.
+  assert.equal(await page.evaluate(() => document.getElementById('storage-forget-confirm').hidden), true);
+  await page.click('#storage-forget-btn');
+  assert.equal(await page.evaluate(() => document.getElementById('storage-forget-confirm').hidden), false);
+  await page.click('#storage-forget-no');
+  assert.equal(await page.evaluate(() => document.getElementById('storage-forget-confirm').hidden), true);
+});
+
 test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modificar documentos', { timeout: 180000 }, async (t) => {
   const { context, page, requests } = await openApp();
   t.after(() => context.close());

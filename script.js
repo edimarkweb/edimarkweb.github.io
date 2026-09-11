@@ -4134,6 +4134,158 @@ async function purgeOrphanDocumentAssets(knownIds) {
     return removed;
 }
 
+/*
+  Lo que ocupa todo esto, para el cuadro de Configuración. Recorrer la base
+  entera cuesta lo que cuesta, pero solo se hace al abrir el cuadro y al
+  terminar un borrado, no en el arranque ni al escribir.
+*/
+function assetSize(record) {
+    const file = record?.file;
+    if (!file) return 0;
+    if (typeof file.size === 'number') return file.size;
+    if (typeof file.byteLength === 'number') return file.byteLength;
+    if (typeof file.length === 'number') return file.length;
+    return 0;
+}
+
+async function summarizeStoredAssets(knownIds) {
+    const resumen = { images: 0, bytes: 0, orphanImages: 0, orphanBytes: 0 };
+    const database = await openAssetDatabase();
+    if (!database) return resumen;
+    const transaction = database.transaction(ASSET_DB_STORE, 'readonly');
+    const store = transaction.objectStore(ASSET_DB_STORE);
+    await new Promise((resolve, reject) => {
+        const request = store.index('docId').openCursor();
+        request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor) return resolve();
+            const size = assetSize(cursor.value);
+            if (knownIds.has(cursor.value?.docId)) {
+                resumen.images += 1;
+                resumen.bytes += size;
+            } else {
+                resumen.orphanImages += 1;
+                resumen.orphanBytes += size;
+            }
+            cursor.continue();
+        };
+        request.onerror = () => reject(request.error);
+    }).catch(error => {
+        console.warn('No se pudo medir la base de imágenes:', error);
+    });
+    return resumen;
+}
+
+// Lo que ocupa el texto autoguardado, en bytes de verdad y no en caracteres:
+// una eñe son dos, y las cuentas de un documento largo se irían lejos.
+function autosaveStorageBytes() {
+    let total = 0;
+    let claves = 0;
+    try {
+        for (const key of Object.keys(window.localStorage)) {
+            if (!key.startsWith(AUTOSAVE_KEY_PREFIX)) continue;
+            claves += 1;
+            total += new Blob([window.localStorage.getItem(key) || '']).size;
+        }
+    } catch (error) {
+        console.warn('No se pudo medir el autoguardado:', error);
+    }
+    return { documents: claves, bytes: total };
+}
+
+function formatStorageSize(bytes) {
+    const idioma = document.documentElement.lang || 'es';
+    if (bytes < 1024) return `${bytes} B`;
+    const unidades = ['kB', 'MB', 'GB'];
+    let valor = bytes / 1024;
+    let unidad = 0;
+    while (valor >= 1024 && unidad < unidades.length - 1) {
+        valor /= 1024;
+        unidad += 1;
+    }
+    const decimales = valor >= 100 ? 0 : 1;
+    return `${valor.toLocaleString(idioma, { minimumFractionDigits: decimales, maximumFractionDigits: decimales })} ${unidades[unidad]}`;
+}
+
+/*
+  El cuadro de Configuración → Almacenamiento. Hasta aquí lo único que había
+  para vaciar era la salida de emergencia de la cortina de arranque, que solo
+  aparece cuando la carga ya va lenta: es decir, cuando el problema ya ha dado
+  la cara. Aquí se ve lo que ocupa y se borra cuando se quiera.
+*/
+let storageDialogBusy = false;
+
+function knownDocumentIds() {
+    const ids = new Set(docs.map(doc => doc.id));
+    for (const entry of closedDocs) ids.add(entry.doc.id);
+    return ids;
+}
+
+function setStorageStatus(message = '') {
+    const status = document.getElementById('storage-modal-status');
+    if (status) status.textContent = message;
+}
+
+async function refreshStorageFigures() {
+    const texto = autosaveStorageBytes();
+    const campos = {
+        'storage-documents': String(docs.length),
+        'storage-text': formatStorageSize(texto.bytes),
+    };
+    for (const [id, valor] of Object.entries(campos)) {
+        const campo = document.getElementById(id);
+        if (campo) campo.textContent = valor;
+    }
+    const imagenes = document.getElementById('storage-images');
+    const huerfanas = document.getElementById('storage-orphans');
+    if (imagenes) imagenes.textContent = '…';
+    if (huerfanas) huerfanas.textContent = '…';
+    const resumen = await summarizeStoredAssets(knownDocumentIds());
+    const cuenta = (n, bytes) => n
+        ? `${n.toLocaleString(document.documentElement.lang || 'es')} · ${formatStorageSize(bytes)}`
+        : formatStorageSize(0);
+    if (imagenes) imagenes.textContent = cuenta(resumen.images, resumen.bytes);
+    if (huerfanas) huerfanas.textContent = cuenta(resumen.orphanImages, resumen.orphanBytes);
+    const purgeBtn = document.getElementById('storage-purge-btn');
+    if (purgeBtn) purgeBtn.disabled = !resumen.orphanImages || storageDialogBusy;
+    return resumen;
+}
+
+function toggleStorageModal(show) {
+    const overlay = document.getElementById('storage-modal-overlay');
+    if (!overlay) return;
+    overlay.style.display = show ? 'flex' : 'none';
+    document.getElementById('storage-forget-confirm')?.setAttribute('hidden', '');
+    if (!show) return;
+    setStorageStatus('');
+    refreshStorageFigures().catch(error => {
+        console.warn('No se pudo leer el almacenamiento:', error);
+        setStorageStatus(getTranslation('storage_read_failed', 'No se ha podido leer el almacenamiento.'));
+    });
+}
+
+async function purgeOrphansFromDialog() {
+    if (storageDialogBusy) return;
+    storageDialogBusy = true;
+    const purgeBtn = document.getElementById('storage-purge-btn');
+    if (purgeBtn) purgeBtn.disabled = true;
+    setStorageStatus(getTranslation('storage_purge_working', 'Borrando…'));
+    try {
+        const borradas = await purgeOrphanDocumentAssets(knownDocumentIds());
+        storageDialogBusy = false;
+        await refreshStorageFigures();
+        const clave = borradas === 1 ? 'storage_purge_done_one' : 'storage_purge_done_many';
+        setStorageStatus(borradas
+            ? getTranslation(clave, 'Imágenes borradas: {count}.').replace('{count}', borradas)
+            : getTranslation('storage_purge_empty', 'No había ninguna imagen sin documento.'));
+    } catch (error) {
+        storageDialogBusy = false;
+        console.warn('No se pudieron borrar las imágenes sin documento:', error);
+        setStorageStatus(getTranslation('storage_purge_failed', 'No se han podido borrar las imágenes.'));
+        await refreshStorageFigures().catch(() => {});
+    }
+}
+
 async function deletePersistedDocumentAssets(docId) {
     const database = await openAssetDatabase();
     if (!database || !docId) return;
@@ -13254,6 +13406,30 @@ window.onload = async () => {
             toggleLatexSettingsModal(true);
         });
     }
+    const storageSettingsBtn = document.getElementById('storage-settings-btn');
+    if (storageSettingsBtn) {
+        storageSettingsBtn.addEventListener('click', () => {
+            closeActionsMenu();
+            closeSettingsMenu();
+            toggleStorageModal(true);
+        });
+    }
+    document.getElementById('storage-close-btn')?.addEventListener('click', () => toggleStorageModal(false));
+    document.getElementById('storage-modal-overlay')?.addEventListener('click', (event) => {
+        if (event.target === event.currentTarget && !storageDialogBusy) toggleStorageModal(false);
+    });
+    document.getElementById('storage-purge-btn')?.addEventListener('click', () => {
+        purgeOrphansFromDialog();
+    });
+    document.getElementById('storage-forget-btn')?.addEventListener('click', () => {
+        document.getElementById('storage-forget-confirm')?.removeAttribute('hidden');
+    });
+    document.getElementById('storage-forget-no')?.addEventListener('click', () => {
+        document.getElementById('storage-forget-confirm')?.setAttribute('hidden', '');
+    });
+    document.getElementById('storage-forget-yes')?.addEventListener('click', () => {
+        forgetSavedSessionAndReload();
+    });
     if (latexSettingsCancelBtn) {
         latexSettingsCancelBtn.addEventListener('click', () => toggleLatexSettingsModal(false));
     }

@@ -322,6 +322,14 @@
               </span>
               <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="menu_hint_export_options">Valores de partida para todos los documentos</span>
               </button>
+            <button type="button" id="storage-settings-btn" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
+              <span class="flex w-full items-center gap-2">
+              <i data-lucide="database" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
+              <span class="whitespace-nowrap" data-i18n-key="storage_settings_btn_text">Almacenamiento…</span>
+            
+              </span>
+              <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="menu_hint_storage">Cuánto ocupan los documentos y sus imágenes</span>
+              </button>
           </div>
         </div>
         </div>
@@ -943,6 +951,49 @@
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                     <span data-i18n-key="latex_import_convert_btn">Convertir a Markdown</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="storage-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="storage-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl dark:bg-slate-800">
+            <h3 id="storage-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="storage_modal_title">Almacenamiento</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" data-i18n-key="storage_modal_description">Lo que EdiMarkWeb guarda en este navegador: el texto de las pestañas abiertas y las imágenes de sus documentos. Nada de esto sale del equipo.</p>
+            <dl id="storage-modal-figures" class="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                <div class="flex items-baseline justify-between gap-4">
+                    <dt data-i18n-key="storage_modal_documents">Documentos abiertos</dt>
+                    <dd id="storage-documents" class="font-medium tabular-nums">—</dd>
+                </div>
+                <div class="flex items-baseline justify-between gap-4">
+                    <dt data-i18n-key="storage_modal_text">Texto autoguardado</dt>
+                    <dd id="storage-text" class="font-medium tabular-nums">—</dd>
+                </div>
+                <div class="flex items-baseline justify-between gap-4">
+                    <dt data-i18n-key="storage_modal_images">Imágenes de esos documentos</dt>
+                    <dd id="storage-images" class="font-medium tabular-nums">—</dd>
+                </div>
+                <div class="flex items-baseline justify-between gap-4">
+                    <dt data-i18n-key="storage_modal_orphans">Imágenes sin documento</dt>
+                    <dd id="storage-orphans" class="font-medium tabular-nums">—</dd>
+                </div>
+            </dl>
+            <p id="storage-modal-status" class="mt-4 text-sm text-slate-600 dark:text-slate-300 min-h-[1.5rem]" role="status" aria-live="polite"></p>
+            <!--
+              La pregunta va aquí dentro y no en un `confirm` del navegador: en
+              la ventana de la aplicación esos modales llegan apagados y una
+              pregunta que no se ve se responde sola que no.
+            -->
+            <div id="storage-forget-confirm" class="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-slate-700 dark:border-amber-700 dark:bg-amber-950/40 dark:text-slate-200" hidden>
+                <p data-i18n-key="storage_forget_confirm">Se cerrarán las pestañas y se descartará el texto guardado de esta sesión, con sus imágenes. Esto no borra ningún archivo del disco. ¿Continuar?</p>
+                <div class="mt-3 flex justify-end gap-3">
+                    <button id="storage-forget-no" class="px-3 py-1.5 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
+                    <button id="storage-forget-yes" class="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500" data-i18n-key="storage_forget_yes">Sí, olvidarla</button>
+                </div>
+            </div>
+            <div class="mt-6 flex flex-wrap justify-end gap-3">
+                <button id="storage-forget-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="storage_forget_btn">Olvidar la sesión guardada…</button>
+                <button id="storage-purge-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="storage_purge_btn">Borrar las imágenes sin documento</button>
+                <button id="storage-close-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="close_btn">Cerrar</button>
             </div>
         </div>
     </div>

@@ -238,6 +238,14 @@ Si el document comença amb les seves pròpies metadades YAML, manen elles.
 
 ---
 
+## Emmagatzematge
+
+A **Configuració → Emmagatzematge…** es veu què desa EdiMarkWeb en aquest navegador: quants documents tens oberts, què ocupa el seu text desat automàticament i quantes imatges hi ha, amb la seva mida. Res d'això surt del teu equip.
+
+A part es compten les **imatges sense document**, que són les de pestanyes tancades fa temps o de sessions anteriors. S'esborren soles en obrir l'aplicació, i el botó **Esborra les imatges sense document** ho fa a l'instant; va bé després d'importar uns quants PDF, que són els que més ocupen. **Oblida la sessió desada…** tanca les pestanyes i descarta el text desat amb les seves imatges, després de preguntar. Cap de les dues coses esborra fitxers del teu disc.
+
+---
+
 ## Copiar sense descarregar
 
 El botó de copiar, al costat d'**Exportar**, fa el mateix però al porta-retalls, en quatre formats:

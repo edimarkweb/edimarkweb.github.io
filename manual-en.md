@@ -238,6 +238,14 @@ If the document starts with its own YAML metadata, that is what counts.
 
 ---
 
+## Storage
+
+**Settings → Storage…** shows what EdiMarkWeb keeps in this browser: how many documents you have open, how much their autosaved text takes up, and how many images there are, with their size. None of it leaves your computer.
+
+Counted separately are the **images with no document**, left over from tabs closed a while ago or from earlier sessions. They are swept on startup, and the **Delete the images with no document** button does it right away; handy after importing several PDFs, which are what take up most room. **Forget the saved session…** closes the tabs and discards the autosaved text along with its images, after asking. Neither one deletes any file on your disk.
+
+---
+
 ## Copying without downloading
 
 The copy button, next to **Export**, does the same thing but to the clipboard, in four formats:
