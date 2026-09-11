@@ -60,11 +60,26 @@
     -->
     <div class="app-loading-bar" aria-hidden="true"><span></span></div>
     <!--
-      Y si la espera se alarga, la salida: aparece a los tres segundos, porque
-      ofrecer «cancelar» en un arranque de medio segundo solo invita a estropear
-      la sesión.
+      Y la salida, a la vista desde el primer momento. Estuvo tres segundos
+      escondida, para no invitar a estropear la sesión en un arranque de medio
+      segundo, pero entonces no se la veía nunca: cuando el arranque es corto
+      la pantalla se va antes, y cuando es largo el hilo está tomado montando
+      el documento y allí no corre ni un `setTimeout`. Aparece con la pantalla,
+      y lo que protege la sesión es la pregunta, no el retraso.
     -->
-    <button type="button" id="app-loading-cancel" class="app-loading-cancel" hidden data-i18n-key="app_loading_cancel">Cancelar y abrir vacía</button>
+    <button type="button" id="app-loading-cancel" class="app-loading-cancel" data-i18n-key="app_loading_cancel">Cancelar y abrir vacía</button>
+    <!--
+      La pregunta se hace aquí mismo y no con un `confirm`: en la ventana de la
+      aplicación los modales del navegador llegan apagados y una pregunta que no
+      se ve se responde sola que no, dejando el botón como si estuviera roto.
+    -->
+    <div id="app-loading-confirm" class="app-loading-confirm" hidden>
+        <p data-i18n-key="app_loading_cancel_confirm">Se abrirá una sesión vacía y se descartarán los documentos guardados de la sesión anterior. Esto no borra ningún archivo del disco. ¿Continuar?</p>
+        <div class="app-loading-confirm-actions">
+            <button type="button" id="app-loading-confirm-yes" class="app-loading-cancel" data-i18n-key="app_loading_cancel_yes">Sí, abrir vacía</button>
+            <button type="button" id="app-loading-confirm-no" class="app-loading-cancel" data-i18n-key="app_loading_cancel_no">Seguir esperando</button>
+        </div>
+    </div>
 </div>
 
 <main id="main-container" class="max-w-7xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-700 is-expanded">

@@ -2684,6 +2684,9 @@ code {
     100% { transform: translateX(150%) scaleX(.4); }
 }
 .app-loading-cancel {
+    opacity: 0;
+    will-change: opacity;
+    animation: app-loading-cancel-in .2s ease-out forwards;
     margin-top: 16px;
     padding: 6px 14px;
     border: 1px solid #cbd5e1;
@@ -2694,7 +2697,56 @@ code {
     cursor: pointer;
 }
 .app-loading-cancel:hover { background: #f1f5f9; }
-.app-loading-cancel[hidden] { display: none; }
+/*
+  El aviso que ocupa el sitio de la hoja mientras nadie la pide.
+*/
+.preview-on-demand {
+    max-width: 34rem;
+    margin: 3rem auto;
+    padding: 0 1.5rem;
+    text-align: center;
+    color: #475569;
+    font-size: .9rem;
+    line-height: 1.6;
+}
+.preview-on-demand-btn {
+    margin-top: 1rem;
+    padding: .5rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: .375rem;
+    background: #fff;
+    color: #1d4ed8;
+    font-size: .9rem;
+    cursor: pointer;
+}
+.preview-on-demand-btn:hover { background: #f1f5f9; }
+.preview-on-demand .app-loading-bar { margin: 1rem auto 0; }
+.dark .preview-on-demand { color: #cbd5e1; }
+.dark .preview-on-demand-btn { border-color: #334155; background: #1e293b; color: #93c5fd; }
+.dark .preview-on-demand-btn:hover { background: #334155; }
+
+.app-loading-confirm {
+    max-width: 420px;
+    margin-top: 14px;
+    padding: 0 16px;
+    text-align: center;
+    font-size: .85rem;
+    color: #475569;
+}
+.app-loading-confirm[hidden] { display: none; }
+.app-loading-confirm-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 10px;
+}
+.app-loading-confirm .app-loading-cancel { margin-top: 0; opacity: 1; animation: none; }
+.dark .app-loading-confirm { color: #cbd5e1; }
+@keyframes app-loading-cancel-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 .dark .app-loading-bar { background: #1e293b; }
 .dark .app-loading-bar > span { background: #60a5fa; }
 .dark .app-loading-cancel { border-color: #334155; background: #1e293b; color: #e2e8f0; }

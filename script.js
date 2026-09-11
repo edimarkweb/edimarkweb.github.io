@@ -32,6 +32,100 @@ const CORRUPT_DOCS_LIST_BACKUP_KEY = 'edimarkweb-docslist-corrupt-backup';
   blanco y el manual queda donde siempre, en Ayuda y en F1.
 */
 const MANUAL_DISMISSED_KEY = 'edimarkweb-manual-dismissed';
+/*
+  A partir de aquí, un documento no se abre solo al arrancar. La cifra es la de
+  un informe de unas cien páginas: por debajo, montarlo es cosa de un momento;
+  por encima, son minutos de ventana tomada que nadie ha pedido todavía.
+*/
+const MAXIMO_PARA_ABRIR_SOLO = 300000;
+/*
+  Y a partir de aquí tampoco se compone la hoja sola. Repartir un documento de
+  este tamaño en la vista previa —analizar el Markdown, construir la hoja,
+  indexar sus líneas— son minutos con la ventana tomada en un equipo donde el
+  recolector de basura del navegador entra en barrena, y se vuelven a pagar
+  cada vez que se abre. El texto está en el editor en un segundo, y la hoja se
+  compone cuando alguien la pide, que es cuando compensa esperarla.
+*/
+const MAXIMO_PARA_COMPONER_LA_HOJA = 300000;
+const hojasPedidas = new Set();
+/*
+  Pero no todos los equipos sufren igual: el mismo documento se compone en
+  décimas de segundo con el motor de Windows y tarda minutos con el de Linux.
+  En vez de decidirlo por el sistema, se mide: la primera hoja que alguien pide
+  dice lo que este equipo tarda de verdad, y si va sobrado no se vuelve a
+  preguntar. La marca se guarda, así que la pregunta se hace una sola vez.
+*/
+const HOJA_RAPIDA_KEY = 'edimarkweb-hoja-rapida';
+const HOJA_RAPIDA_MS = 2000;
+const HOJA_LENTA_MS = 8000;
+
+function laHojaEsperaAQueLaPidan(doc, texto) {
+    return Boolean(doc)
+        && !hojasPedidas.has(doc.id)
+        && safeLocalStorageGet(HOJA_RAPIDA_KEY, '') !== '1'
+        && String(texto || '').length > MAXIMO_PARA_COMPONER_LA_HOJA;
+}
+
+function pintarLaHojaAplazada(htmlOutput, doc) {
+    htmlOutput.replaceChildren();
+    const aviso = document.createElement('div');
+    aviso.className = 'preview-on-demand';
+    aviso.setAttribute('data-edimark-on-demand', '');
+    const texto = document.createElement('p');
+    texto.textContent = getTranslation(
+        'preview_on_demand',
+        'Este documento es muy largo y generar la vista previa tarda bastante, así que no se hace sola. Puedes escribir, guardar y exportar sin ella.',
+    );
+    const boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'preview-on-demand-btn';
+    boton.textContent = getTranslation('preview_on_demand_btn', 'Mostrar la vista previa');
+    /*
+      Componer toma el hilo de una vez y la ventana se queda muerta: sin decir
+      nada antes, lo que se ve es una aplicación colgada. El aviso cambia y se
+      ceden dos fotogramas para que llegue a la pantalla, y la barra —animada
+      desde el compositor— sigue moviéndose mientras el hilo está tomado.
+    */
+    boton.addEventListener('click', () => {
+        texto.textContent = getTranslation(
+            'preview_on_demand_working',
+            'Generando la vista previa… El programa no responderá mientras tanto.',
+        );
+        boton.remove();
+        const barra = document.createElement('div');
+        barra.className = 'app-loading-bar';
+        barra.setAttribute('aria-hidden', 'true');
+        barra.appendChild(document.createElement('span'));
+        aviso.appendChild(barra);
+        requestAnimationFrame(() => requestAnimationFrame(() => componerLaHojaAhora()));
+    });
+    aviso.append(texto, boton);
+    htmlOutput.appendChild(aviso);
+}
+
+function componerLaHojaAhora() {
+    const doc = docs.find(d => d.id === currentId);
+    if (!doc) return false;
+    if (hojasPedidas.has(doc.id)) return false;
+    hojasPedidas.add(doc.id);
+    const empezado = performance.now();
+    updateHtml();
+    const tardo = performance.now() - empezado;
+    // Lo que este equipo tarda de verdad, medido sobre un documento de los que
+    // cuestan: por debajo del margen no hay nada que preguntar nunca más, y por
+    // encima se vuelve a preguntar aunque antes fuera sobrado.
+    if (tardo < HOJA_RAPIDA_MS) safeLocalStorageSet(HOJA_RAPIDA_KEY, '1');
+    else if (tardo > HOJA_LENTA_MS) safeLocalStorageRemove(HOJA_RAPIDA_KEY);
+    return true;
+}
+
+// Para copiar el HTML o imprimir hace falta la hoja de verdad, no el aviso.
+function asegurarLaHoja() {
+    const doc = docs.find(d => d.id === currentId);
+    if (!doc || hojasPedidas.has(doc.id)) return;
+    const texto = markdownEditor ? markdownEditor.getValue() : doc.md;
+    if (laHojaEsperaAQueLaPidan(doc, texto)) componerLaHojaAhora();
+}
 const LAYOUT_KEY = 'edimarkweb-layout';
 /*
   Icono de cada disposición. Representa el panel que queda a la vista, no el
@@ -753,7 +847,28 @@ function base64EntryLabels(placeholder, info, index) {
     };
 }
 
+/*
+  Recorrer el documento con el analizador de Markdown para listar sus imágenes
+  cuesta medio segundo en un informe de trescientas páginas, y montarlo lo
+  pedía tres veces con el mismo texto: al ponerlo en el editor, al repintar la
+  hoja y al repasar el panel. La lista se guarda con el texto del que salió.
+*/
+let ultimasImagenesTexto = null;
+let ultimasImagenesClave = null;
+let ultimasImagenes = new Map();
+
 function collectLinkedImageEntries(sourceText, doc) {
+    const texto = String(sourceText || '');
+    const clave = `${doc?.id || ''}\u0000${doc?.filePath || ''}`;
+    if (texto === ultimasImagenesTexto && clave === ultimasImagenesClave) return ultimasImagenes;
+    const entries = collectLinkedImageEntriesUncached(texto, doc);
+    ultimasImagenesTexto = texto;
+    ultimasImagenesClave = clave;
+    ultimasImagenes = entries;
+    return entries;
+}
+
+function collectLinkedImageEntriesUncached(sourceText, doc) {
     const entries = new Map();
     if (
         !doc
@@ -3392,7 +3507,14 @@ function restoreDocView(view) {
     else setTimeout(reponer, 0);
 }
 
-function switchTo(id) {
+/*
+  `deferPreview` deja la hoja para después. Montar un documento largo es el
+  texto en el editor y la hoja pintada, y las dos cosas seguidas ocupan el hilo
+  de una vez: quien importa un informe de trescientas páginas ve la ventana
+  parada sin saber en qué anda. Partido en dos, cada mitad puede anunciarse y
+  la pantalla respira entre ellas.
+*/
+function switchTo(id, { deferPreview = false } = {}) {
     if (currentId && currentId !== id) {
         const previousDoc = docs.find(d => d.id === currentId);
         if (previousDoc) {
@@ -3435,7 +3557,7 @@ function switchTo(id) {
     doc.md = markdownEditor.getValue();
     doc.lastSaved = normalizeNewlines(doc.lastSaved || doc.md);
     publishLatexSettings(effectiveLatexSettings(doc));
-    updateHtml();
+    if (!deferPreview) updateHtml();
     if (!doc.bibliographyHydrationStarted && window.EdiMarkPlatform?.isDesktop && doc.filePath) {
         doc.bibliographyHydrationStarted = true;
         hydrateDocumentBibliography(doc).catch(error => {
@@ -4917,6 +5039,13 @@ function updateHtml() {
     const markdownText = splitDocumentFrontMatter(fullMarkdown).body;
     const htmlOutput = document.getElementById('html-output');
     updateMarkdownCharCounter(fullMarkdown);
+    const documentoActual = docs.find(d => d.id === currentId);
+    if (laHojaEsperaAQueLaPidan(documentoActual, fullMarkdown)) {
+        pintarLaHojaAplazada(htmlOutput, documentoActual);
+        updateDirtyIndicator(currentId, fullMarkdown !== documentoActual.lastSaved);
+        isUpdating = false;
+        return;
+    }
     refreshLinkedImagesUi(fullMarkdown, docs.find(d => d.id === currentId));
 
     const { text: markdownWithoutMath, segments: mathSegments } = protectMathSegments(markdownText);
@@ -6577,7 +6706,11 @@ async function createImportedPdfDocument(name, imported, onProgress, announce) {
       El aviso va antes, y cediendo fotogramas para que se vea.
     */
     if (typeof announce === 'function') await announce('pdf_mounting');
-    switchTo(doc.id);
+    switchTo(doc.id, { deferPreview: Boolean(announce) });
+    if (typeof announce === 'function') {
+        await announce('pdf_mounting_preview');
+        updateHtml();
+    }
     updateDirtyIndicator(doc.id, false);
     return doc;
 }
@@ -9215,7 +9348,9 @@ window.onload = async () => {
 
     async function copyPreviewHtml() {
         if (!copyHtmlBtn) return;
-        // Se copia lo que hay escrito, no lo último repintado.
+        // Se copia lo que hay escrito, no lo último repintado, y de la hoja de
+        // verdad: en un documento largo puede estar aún sin componer.
+        asegurarLaHoja();
         flushPendingPreviewRepaint();
         const html = isPreviewVisible() ? buildHtmlWithTex() : (htmlEditor ? htmlEditor.getValue() : '');
         await copyRich(html, copyHtmlBtn);
@@ -9962,6 +10097,7 @@ window.onload = async () => {
 
     const savedDocsList = loadSavedDocsList();
     if (savedDocsList.length > 0) {
+        await announceStartup('app_loading_session', 'Recuperando la sesión anterior…');
         savedDocsList.forEach(docInfo => {
             const md = safeLocalStorageGet(`${AUTOSAVE_KEY_PREFIX}-${docInfo.id}`, '');
             const normalized = normalizeNewlines(md);
@@ -9978,7 +10114,37 @@ window.onload = async () => {
         */
         const guardada = safeLocalStorageGet(ACTIVE_DOC_KEY, '');
         const inicial = docs.some(d => d.id === guardada) ? guardada : docs[0].id;
-        switchTo(inicial);
+        const documentoInicial = docs.find(d => d.id === inicial);
+        /*
+          Un documento enorme no se abre solo. Montarlo son minutos con la
+          ventana tomada, y al arrancar nadie los ha pedido: quien importó un
+          informe de trescientas páginas se encontraba con que cada apertura de
+          la aplicación se le iba en esperar, sin salida, una y otra vez. Su
+          pestaña está ahí, y se abre cuando se pulsa.
+        */
+        const demasiadoLargo = (documentoInicial?.md || '').length > MAXIMO_PARA_ABRIR_SOLO;
+        if (demasiadoLargo) {
+            const llevadero = docs.find(d => d.id !== inicial && (d.md || '').length <= MAXIMO_PARA_ABRIR_SOLO);
+            if (llevadero) switchTo(llevadero.id);
+            else newDoc();
+            reportStatus(formatTranslation(
+                'startup_document_too_long',
+                '«{name}» no se ha abierto por su tamaño: pulsa su pestaña cuando quieras abrirlo.',
+                { name: documentoInicial.name },
+            ));
+        } else {
+            /*
+              El documento entra en dos tiempos —el texto en el editor y después
+              la hoja—, con un fotograma de por medio. Seguido, un informe largo
+              es un único bloque de hilo tomado en el que la ventana no repinta
+              ni atiende un clic: la cortina se quedaba quieta y su botón de
+              salir, muerto.
+            */
+            await announceStartup('app_loading_document', 'Preparando el documento…');
+            switchTo(inicial, { deferPreview: true });
+            await announceStartup('app_loading_preview', 'Componiendo la hoja…');
+            updateHtml();
+        }
         if (!platform?.isDesktop) {
             docs.forEach(doc => {
                 restorePersistedDocumentAssets(doc).catch(error => {
@@ -10320,6 +10486,8 @@ window.onload = async () => {
         closeActionsMenu();
         closeSettingsMenu();
         closeExportMenu();
+        // Lo que se imprime es la hoja, así que hay que tenerla compuesta.
+        asegurarLaHoja();
         const citedPreview = await prepareCitationsForPrint();
         const preview = getPreviewScroller();
         if (preview) {
@@ -12142,6 +12310,16 @@ window.onload = async () => {
     const MARGEN_POR_DEFECTO_CM = 1.8;
     // El hueco entre dos hojas, como el que deja cualquier procesador de textos.
     const HUECO_ENTRE_PAGINAS = 24;
+    /*
+      Hasta dónde se dibujan las hojas. Repartir el texto en páginas obliga a
+      medir bloque a bloque y a rehacer la maquetación del documento entero
+      varias veces; en un informe de quinientas páginas eso son minutos con la
+      ventana muerta, y se repite cada vez que algo cambia de alto. Pasado este
+      tamaño la vista previa se enseña seguida —que es como se lee de todos
+      modos en un documento así— y lo que se exporta no cambia en nada.
+    */
+    const MAXIMO_DE_PAGINAS_DIBUJADAS = 150;
+    let avisoDeDocumentoSeguido = null;
 
     function limpiarPaginacion(sheet, layer) {
         layer.replaceChildren();
@@ -12216,6 +12394,26 @@ window.onload = async () => {
             bloque.removeAttribute('data-page-start');
             bloque.style.removeProperty('--page-jump');
         });
+
+        /*
+          Cuántas páginas saldrían, con una sola medida y ya sin saltos puestos.
+          Preguntarlo antes de repartir cuesta una maquetación; repartir un
+          documento larguísimo cuesta unas cuantas, y de nada sirven quinientas
+          hojas dibujadas que nadie va a mirar de una en una.
+        */
+        if (sheet.getBoundingClientRect().height / altoUtil > MAXIMO_DE_PAGINAS_DIBUJADAS) {
+            limpiarPaginacion(sheet, layer);
+            updateTocPageNumbers(0);
+            const doc = docs.find(d => d.id === currentId);
+            if (doc && avisoDeDocumentoSeguido !== doc.id) {
+                avisoDeDocumentoSeguido = doc.id;
+                reportStatus(getTranslation(
+                    'preview_unpaginated',
+                    'El documento es demasiado largo para repartirlo en páginas: la vista previa se muestra seguida. Lo que se exporte no cambia.',
+                ));
+            }
+            return;
+        }
 
         /*
           Las alturas se miden sin ningún salto puesto, así que son las de un
@@ -12300,15 +12498,31 @@ window.onload = async () => {
         // Con `getBoundingClientRect` y no `offsetTop`: este redondea al píxel,
         // y medio píxel por página se acumula hasta descuadrar la última.
         const origen = sheet.getBoundingClientRect().top - sheet.offsetTop;
-        inicios.forEach(({ bloque, pagina }) => {
+        /*
+          Todas las posiciones de una vez y las correcciones después. Medir una
+          página, corregirla y medir la siguiente obliga al navegador a rehacer
+          la maquetación entera entre medias, y en un informe de trescientas
+          páginas eso son trescientos repasos de un documento de kilómetro y
+          medio de texto: cinco minutos con la ventana muerta. Corregir un
+          bloque baja los que vienen detrás exactamente lo mismo que se le
+          suma, así que ese desplazamiento se lleva en cuenta en vez de volver
+          a preguntarlo.
+        */
+        const posiciones = inicios.map(({ bloque }) => bloque.getBoundingClientRect().top - origen);
+        let arrastre = 0;
+        inicios.forEach(({ bloque, pagina }, indice) => {
             const objetivo = sheet.offsetTop
                 + (pagina - 1) * (altoPagina + HUECO_ENTRE_PAGINAS)
                 + margenSuperior;
-            const actual = bloque.getBoundingClientRect().top - origen;
+            const actual = posiciones[indice] + arrastre;
             const desvio = objetivo - actual;
             if (Math.abs(desvio) < 0.5) return;
             const puesto = Number.parseFloat(bloque.style.getPropertyValue('--page-jump')) || 0;
-            bloque.style.setProperty('--page-jump', `${Math.max(0, puesto + desvio)}px`);
+            const nuevo = Math.max(0, puesto + desvio);
+            bloque.style.setProperty('--page-jump', `${nuevo}px`);
+            // Lo que de verdad se ha movido, que con el tope en cero no siempre
+            // es el desvío pedido.
+            arrastre += nuevo - puesto;
         });
 
         // Y las hojas, una por página, debajo del texto.
@@ -13827,32 +14041,40 @@ window.onload = async () => {
 /*
   La cortina del arranque. Montar un documento largo ocupa el hilo de golpe y
   la ventana se queda quieta: la barra se mueve sola desde el compositor para
-  decir que sigue viva, y si la espera pasa de tres segundos aparece la salida.
+  decir que sigue viva, y al lado está la salida.
   Cancelar arranca de cero y olvida la sesión guardada —es la única forma de
   escapar de un documento que cuelga el arranque una y otra vez—, así que se
   pregunta antes y se dice lo que se va a perder.
 */
-const STARTUP_CANCEL_DELAY_MS = 3000;
-let startupCancelTimer = setTimeout(() => {
-    document.getElementById('app-loading-cancel')?.removeAttribute('hidden');
-}, STARTUP_CANCEL_DELAY_MS);
+/*
+  Lo que la cortina va diciendo. Cada tramo se anuncia antes de empezar y
+  cediendo dos fotogramas, porque un mensaje escrito justo antes de un trabajo
+  que toma el hilo no llega a pintarse: la ventana se queda con el anterior.
+  Y mientras el hilo está tomado no corre nada —ni una animación, ni un clic—,
+  así que estos respiros son también los únicos huecos por los que se puede
+  atender el botón de salir.
+*/
+async function announceStartup(key, fallback) {
+    const hint = document.querySelector('#app-loading .app-loading-hint');
+    if (hint) hint.textContent = getTranslation(key, fallback);
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+}
+
+function startupCurtainVisible() {
+    const cortina = document.getElementById('app-loading');
+    return Boolean(cortina) && !cortina.hasAttribute('hidden');
+}
+
+// Cuándo se fue la cortina, para saber si un clic se dio antes o después.
+let startupCurtainHiddenAt = Infinity;
 
 function hideStartupCurtain() {
-    clearTimeout(startupCancelTimer);
-    startupCancelTimer = null;
+    if (startupCurtainVisible()) startupCurtainHiddenAt = performance.now();
     document.getElementById('app-loading')?.setAttribute('hidden', '');
 }
 
-async function cancelStartupAndForgetSession() {
-    // Un clic que llegó mientras el hilo estaba tomado se atiende cuando ya
-    // ha terminado de cargar: entonces no hay nada que cancelar.
-    if (!startupCancelTimer && document.getElementById('app-loading')?.hasAttribute('hidden')) return;
-    const documentos = loadSavedDocsList();
-    if (!await confirmAction(getTranslation(
-        'app_loading_cancel_confirm',
-        'Se abrirá una sesión vacía y se descartarán los documentos guardados de la sesión anterior. Esto no borra ningún archivo del disco. ¿Continuar?',
-    ))) return;
-    for (const doc of documentos) safeLocalStorageRemove(`${AUTOSAVE_KEY_PREFIX}-${doc.id}`);
+function forgetSavedSessionAndReload() {
+    for (const doc of loadSavedDocsList()) safeLocalStorageRemove(`${AUTOSAVE_KEY_PREFIX}-${doc.id}`);
     safeLocalStorageRemove(DOCS_LIST_KEY);
     safeLocalStorageRemove(ACTIVE_DOC_KEY);
     // Arrancar de nuevo, ya sin nada que montar. Las imágenes que se queden
@@ -13860,12 +14082,44 @@ async function cancelStartupAndForgetSession() {
     window.location.reload();
 }
 
+function askToCancelStartup(pulsadoEn = 0) {
+    /*
+      Mientras el hilo monta el documento no se atiende ni un clic: el que se dé
+      ahí espera su turno y llega cuando la carga ya ha terminado. Lo que decide
+      no es cuándo se atiende, sino cuándo se pulsó: con la cortina en pantalla,
+      quien pulsó quería salir y se le hace caso. Pulsado después ya no hay nada
+      que cancelar, y descartar la sesión a esas alturas sería tirar lo que
+      acaba de abrirse.
+    */
+    if (!startupCurtainVisible() && pulsadoEn >= startupCurtainHiddenAt) {
+        reportStatus(getTranslation(
+            'app_loading_cancel_late',
+            'La aplicación ya había terminado de abrirse: no se ha descartado nada.',
+        ));
+        return false;
+    }
+    // Con la carga ya terminada, la pregunta no cabe en una cortina que se ha
+    // ido: se descarta directamente lo que quien pulsó quería descartar.
+    if (!startupCurtainVisible()) {
+        forgetSavedSessionAndReload();
+        return true;
+    }
+    document.getElementById('app-loading-cancel')?.setAttribute('hidden', '');
+    document.getElementById('app-loading-confirm')?.removeAttribute('hidden');
+    return true;
+}
+
+function keepWaitingForStartup() {
+    document.getElementById('app-loading-confirm')?.setAttribute('hidden', '');
+    document.getElementById('app-loading-cancel')?.removeAttribute('hidden');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('app-loading-cancel')?.addEventListener('click', () => {
-        cancelStartupAndForgetSession().catch(error => {
-            console.error('No se pudo cancelar el arranque:', error);
-        });
+    document.getElementById('app-loading-cancel')?.addEventListener('click', (event) => {
+        askToCancelStartup(event.timeStamp);
     });
+    document.getElementById('app-loading-confirm-yes')?.addEventListener('click', forgetSavedSessionAndReload);
+    document.getElementById('app-loading-confirm-no')?.addEventListener('click', keepWaitingForStartup);
 });
 
 /* =========================================================

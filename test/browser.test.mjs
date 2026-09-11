@@ -5971,6 +5971,12 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   // Importar crea el documento, guarda sus recursos y lo activa, todo ello
   // después de cerrarse el diálogo: hay que esperar al editor, no al clic.
   await page.waitForFunction(() => /Apples/.test(markdownEditor.getValue()), null, { timeout: 60000 });
+  /*
+    El texto llega al editor antes de que el diálogo se vaya: montar el
+    documento se anuncia en dos tramos y el diálogo se queda a la vista
+    diciéndolo. Volver a importar exige esperar a que se cierre.
+  */
+  await page.waitForFunction(() => !document.querySelector('.pdf-import-dialog'), null, { timeout: 60000 });
   const imported = await page.evaluate(() => markdownEditor.getValue());
   assert.match(imported, /Apples/);
   assert.doesNotMatch(imported, /LEFT START/);
@@ -5997,6 +6003,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     null,
     { timeout: 60000 },
   );
+  await page.waitForFunction(() => !document.querySelector('.pdf-import-dialog'), null, { timeout: 60000 });
   const conFoto = await page.evaluate(() => markdownEditor.getValue());
   /*
     Pedir una sola página no impide reconocer lo que se repite: el encabezado
@@ -6327,30 +6334,127 @@ test('cancelar el arranque abre vacío y olvida la sesión guardada', async (t) 
   t.after(() => context.close());
 
   await page.locator('.tab-name').first().waitFor();
+  /*
+    La salida está a la vista desde el primer momento y no depende del hilo:
+    cuando el arranque es corto la pantalla se va antes de que ningún
+    temporizador llegue a disparar, y cuando es largo el hilo está tomado
+    montando el documento y allí no corre ni un `setTimeout`.
+  */
+  const salida = await page.evaluate(() => {
+    const boton = document.getElementById('app-loading-cancel');
+    const estilo = getComputedStyle(boton);
+    return {
+      escondido: boton.hasAttribute('hidden'),
+      animacion: estilo.animationName,
+      retraso: estilo.animationDelay,
+    };
+  });
+  assert.deepEqual(salida, { escondido: false, animacion: 'app-loading-cancel-in', retraso: '0s' });
+
   await page.locator('#markdown-input').fill('Trabajo de la sesión anterior.\n');
   await page.waitForFunction(() => localStorage.getItem('edimarkweb-docslist')?.includes('id'));
 
   // La cortina vuelve, como en un arranque que todavía no ha terminado.
-  await page.evaluate(() => {
-    window.__preguntas = [];
-    window.EdiMarkPlatform = {
-      ...(window.EdiMarkPlatform || {}),
-      confirm: async (message) => { window.__preguntas.push(message); return false; },
-    };
-    document.getElementById('app-loading').removeAttribute('hidden');
-    document.getElementById('app-loading-cancel').removeAttribute('hidden');
-  });
-  // Un «no» deja la sesión intacta.
+  await page.evaluate(() => document.getElementById('app-loading').removeAttribute('hidden'));
+  /*
+    La pregunta se hace en la propia pantalla: en la ventana de la aplicación
+    los modales del navegador llegan apagados, y una pregunta que no se ve se
+    responde sola que no.
+  */
   await page.locator('#app-loading-cancel').click();
-  await page.waitForFunction(() => window.__preguntas.length === 1);
+  await page.locator('#app-loading-confirm').waitFor({ state: 'visible' });
+  await page.locator('#app-loading-confirm-no').click();
+  await page.locator('#app-loading-confirm').waitFor({ state: 'hidden' });
+  assert.equal(await page.locator('#app-loading-cancel').isVisible(), true);
   assert.match(await page.evaluate(() => localStorage.getItem('edimarkweb-docslist') || ''), /id/);
 
-  await page.evaluate(() => { window.EdiMarkPlatform.confirm = async () => true; });
   await page.locator('#app-loading-cancel').click();
+  await page.locator('#app-loading-confirm-yes').click();
   await page.waitForFunction(() => window.__edimarkReady === true && !localStorage.getItem('edimarkweb-docslist'));
   assert.equal(await page.evaluate(() => localStorage.getItem('edimarkweb-active-doc')), null);
   // La sesión nueva empieza de cero: una sola pestaña, y sin lo de antes.
   await page.locator('.tab-name').first().waitFor();
   assert.equal(await page.locator('.tab').count(), 1);
   assert.doesNotMatch(await page.locator('#markdown-input').inputValue(), /sesión anterior/);
+
+  /*
+    Un clic dado después de que la carga terminara no descarta nada: quien lo
+    da ya está viendo su sesión, no la pantalla de apertura.
+  */
+  await page.locator('#markdown-input').fill('Otra sesión.\n');
+  await page.waitForFunction(() => localStorage.getItem('edimarkweb-docslist')?.includes('id'));
+  const tardio = await page.evaluate(() => {
+    askToCancelStartup(performance.now());
+    return Boolean(localStorage.getItem('edimarkweb-docslist'));
+  });
+  assert.equal(tardio, true);
+});
+
+/*
+  Un documento enorme no se abre solo al arrancar. Montarlo son minutos con la
+  ventana tomada, y quien importó un informe de trescientas páginas se
+  encontraba con que cada apertura de la aplicación se le iba en esperar, sin
+  salida posible. Su pestaña sigue ahí y se abre cuando se pulsa.
+*/
+test('un documento enorme espera en su pestaña en vez de tomar el arranque', async (t) => {
+  const enorme = `# Informe\n\n${'Texto corriente de relleno. '.repeat(14000)}\n`;
+  const { context, page } = await openApp({
+    initStorage: `(() => {
+      const md = ${JSON.stringify(enorme)};
+      localStorage.setItem('edimarkweb-docslist', JSON.stringify([{ id: 'gordo', name: 'Informe' }]));
+      localStorage.setItem('edimarkweb-autosave-gordo', md);
+      localStorage.setItem('edimarkweb-active-doc', 'gordo');
+    })()`,
+  });
+  t.after(() => context.close());
+
+  await page.waitForFunction(() => window.__edimarkReady === true);
+  // Su pestaña está, pero el editor abre en otra: no se ha montado.
+  await page.locator('.tab', { hasText: 'Informe' }).waitFor();
+  assert.doesNotMatch(await page.locator('#markdown-input').inputValue(), /Texto corriente de relleno/);
+  assert.match(await page.locator('#status-toast-message').innerText(), /Informe/);
+
+  // Y se abre cuando se pulsa, que es cuando alguien ha pedido la espera.
+  await page.locator('.tab', { hasText: 'Informe' }).click();
+  await page.waitForFunction(() => /Texto corriente de relleno/.test(markdownEditor.getValue()), null, { timeout: 60000 });
+});
+
+/*
+  La hoja de un documento enorme no se compone sola. Analizar el Markdown y
+  repartirlo en la vista previa son minutos con la ventana tomada en un equipo
+  donde el recolector de basura del navegador entra en barrena, y se vuelven a
+  pagar en cada apertura. El texto está en el editor enseguida; la hoja, cuando
+  alguien la pide.
+*/
+test('la vista previa de un documento enorme espera a que la pidan', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.locator('.tab-name').first().waitFor();
+
+  const enorme = `# Informe\n\n${'Un párrafo de relleno con unas cuantas palabras. '.repeat(7000)}\n`;
+  await page.evaluate((md) => markdownEditor.setValue(md), enorme);
+  await page.locator('#html-output .preview-on-demand').waitFor();
+  assert.equal(await page.locator('#html-output p').count(), 1, 'la hoja no debe componerse');
+  // El texto sí está, que es lo que se necesita para trabajar y para exportar.
+  assert.match(await page.locator('#markdown-input').inputValue(), /párrafo de relleno/);
+
+  await page.locator('.preview-on-demand-btn').click();
+  await page.waitForFunction(() => !document.querySelector('#html-output .preview-on-demand'));
+  assert.ok(await page.locator('#html-output h1').count() >= 1, 'pedida, la hoja se compone');
+
+  // Y una vez pedida, sigue repintándose al escribir, como cualquier otra.
+  await page.evaluate((md) => markdownEditor.setValue(`${md}\n\n## Añadido\n`), enorme);
+  await page.locator('#html-output h2', { hasText: 'Añadido' }).waitFor();
+
+  /*
+    No todos los equipos sufren igual: el mismo documento se compone en décimas
+    de segundo con el motor de Windows y tarda minutos con el de Linux. Aquí ha
+    ido rápido, así que el equipo queda marcado como sobrado y no se vuelve a
+    preguntar: otro documento igual de largo se compone sin avisos.
+  */
+  assert.equal(await page.evaluate(() => localStorage.getItem('edimarkweb-hoja-rapida')), '1');
+  await page.evaluate(() => { newDoc('Otro', ''); });
+  await page.evaluate((md) => markdownEditor.setValue(md), enorme);
+  await page.locator('#html-output h1').waitFor();
+  assert.equal(await page.locator('#html-output .preview-on-demand').count(), 0);
 });
