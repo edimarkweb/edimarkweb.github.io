@@ -6274,6 +6274,20 @@ test('el botón de releer trae lo que hay en el disco y avisa antes de descartar
   await page.waitForFunction(() => markdownEditor.getValue().includes('versión 1'));
   assert.equal(await boton.isDisabled(), false);
 
+  /*
+    Y solo en esa: una pestaña nueva no viene de ningún archivo, y sin ninguna
+    pestaña abierta tampoco hay nada que releer.
+  */
+  await page.evaluate(() => newDoc('Sin guardar', 'Escrito aquí mismo.'));
+  assert.equal(await boton.isDisabled(), true);
+  await page.evaluate(() => { const ids = docs.map(d => d.id); return closeDocs(ids); });
+  await page.waitForFunction(() => document.querySelectorAll('.tab').length === 0);
+  assert.equal(await boton.isDisabled(), true);
+
+  await page.evaluate(() => window.__edimarkOpenNativePaths(['/tmp/notas.md']));
+  await page.waitForFunction(() => markdownEditor.getValue().includes('versión 1'));
+  assert.equal(await boton.isDisabled(), false);
+
   // El archivo cambia por fuera y el editor no tiene nada sin guardar: entra
   // sin preguntar.
   await page.evaluate(() => { window.__disco = 'Del disco, versión 2.\n'; });
@@ -6457,4 +6471,44 @@ test('la vista previa de un documento enorme espera a que la pidan', async (t) =
   await page.evaluate((md) => markdownEditor.setValue(md), enorme);
   await page.locator('#html-output h1').waitFor();
   assert.equal(await page.locator('#html-output .preview-on-demand').count(), 0);
+});
+
+/*
+  Con la hoja a la vista, cada tecla la rehacía entera. Mientras eso cuesta
+  milisegundos no se nota, pero en un informe de cuatrocientas páginas son
+  minutos por pulsación: la vista previa se queda atrás a propósito, lo dice, y
+  se pone al día cuando se le pide.
+*/
+test('la vista previa deja de seguir al teclado cuando rehacerla cuesta demasiado', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.locator('.tab-name').first().waitFor();
+
+  await page.locator('#markdown-input').fill('# Corto\n\nUna línea.\n');
+  await page.locator('#html-output h1', { hasText: 'Corto' }).waitFor();
+  assert.equal(await page.locator('#preview-stale').isVisible(), false);
+
+  /*
+    Y ahora, como si el último repintado hubiera costado lo que cuesta el de un
+    informe de cuatrocientas páginas: es esa medida, y no el tamaño, la que
+    decide si la vista previa puede seguir al teclado.
+  */
+  await page.evaluate(() => { costeDeRehacerLaHoja = 30000; });
+
+  // Ya no sigue al teclado: avisa y espera a que se lo pidan.
+  await page.locator('#markdown-input').fill('# Corto\n\nTexto nuevo del todo.\n');
+  await page.locator('#preview-stale').waitFor({ state: 'visible' });
+  assert.doesNotMatch(await page.locator('#html-output').innerText(), /Texto nuevo del todo/);
+
+  await page.locator('#preview-stale-btn').click();
+  await page.waitForFunction(() => /Texto nuevo del todo/.test(document.getElementById('html-output').innerText));
+  await page.locator('#preview-stale').waitFor({ state: 'hidden' });
+
+  /*
+    Y como ese repintado ha resultado barato de verdad, la vista previa vuelve a
+    seguir al teclado sola: el documento pudo adelgazar por el camino.
+  */
+  await page.locator('#markdown-input').fill('# Corto\n\nÚltimo texto.\n');
+  await page.locator('#html-output', { hasText: 'Último texto' }).waitFor();
+  assert.equal(await page.locator('#preview-stale').isVisible(), false);
 });

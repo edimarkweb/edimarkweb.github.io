@@ -707,6 +707,16 @@
                 </div>
                 <div id="preview-desk" class="editor-pane preview-desk w-full">
                     <!--
+                      Cuando rehacer la hoja cuesta segundos, seguir al teclado
+                      es imposible: la vista previa se queda atrás a propósito y
+                      esta barra lo dice, con el botón para ponerla al día. Vive
+                      fuera de la hoja, que se rehace entera en cada repintado.
+                    -->
+                    <div id="preview-stale" class="preview-stale" hidden>
+                        <span data-i18n-key="preview_stale">La vista previa no se actualiza sola en este documento: rehacerla lleva demasiado tiempo.</span>
+                        <button type="button" id="preview-stale-btn" class="preview-stale-btn" data-i18n-key="preview_stale_btn">Actualizarla ahora</button>
+                    </div>
+                    <!--
                       El envoltorio mide lo que mide la hoja y nunca menos que
                       la mesa: así la hoja se centra cuando cabe y, cuando la
                       lupa la hace más grande que el panel, se puede llegar a su

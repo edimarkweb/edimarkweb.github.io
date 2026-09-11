@@ -2698,6 +2698,40 @@ code {
 }
 .app-loading-cancel:hover { background: #f1f5f9; }
 /*
+  La barra que avisa de que la hoja se ha quedado atrás, pegada arriba del panel.
+*/
+.preview-stale {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .75rem;
+    padding: .5rem .75rem;
+    border-bottom: 1px solid #fcd34d;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: .8rem;
+    text-align: center;
+}
+.preview-stale[hidden] { display: none; }
+.preview-stale-btn {
+    padding: .25rem .7rem;
+    border: 1px solid #fcd34d;
+    border-radius: .375rem;
+    background: #fff;
+    color: #92400e;
+    font-size: .8rem;
+    cursor: pointer;
+}
+.preview-stale-btn:hover { background: #fef3c7; }
+.dark .preview-stale { border-color: #78350f; background: #422006; color: #fde68a; }
+.dark .preview-stale-btn { border-color: #78350f; background: #1c1917; color: #fde68a; }
+.dark .preview-stale-btn:hover { background: #292524; }
+
+/*
   El aviso que ocupa el sitio de la hoja mientras nadie la pide.
 */
 .preview-on-demand {

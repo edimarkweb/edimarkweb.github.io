@@ -604,6 +604,8 @@
   "preview_on_demand": "Aquest document és molt llarg i generar la vista prèvia triga força, així que no es fa tota sola. Pots escriure, desar i exportar sense ella.",
   "preview_on_demand_btn": "Mostrar la vista prèvia",
   "preview_on_demand_working": "Generant la vista prèvia… El programa no respondrà mentrestant.",
+  "preview_stale": "La vista prèvia no s'actualitza sola en aquest document: refer-la triga massa.",
+  "preview_stale_btn": "Actualitzar-la ara",
   "preview_toc_title": "Índex",
   "doc_format_field_margins": "Marges de pàgina (cm)",
   "doc_format_margin_top": "Superior",

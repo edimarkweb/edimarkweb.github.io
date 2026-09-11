@@ -3110,11 +3110,44 @@ function countMarkdownWords(sourceText) {
     return (text.match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu) || []).length;
 }
 
-function updateMarkdownCharCounter(sourceText) {
+/*
+  Contar las palabras obliga a recorrer el documento entero con el segmentador
+  del idioma, y eso en un informe de cuatrocientas páginas es casi un segundo:
+  hacerlo en cada tecla convertía escribir en una sucesión de esperas. En
+  documentos así se cuenta cuando la escritura se detiene; el número de
+  caracteres, que es una resta, sigue al día desde el primer momento.
+*/
+const CONTAR_PALABRAS_AL_VUELO = 200000;
+const ESPERA_PARA_CONTAR_MS = 700;
+let contadorAplazado = null;
+
+function updateMarkdownCharCounter(sourceText, { aplazado = false } = {}) {
     if (!markdownCharCounterEl) return;
-    const text = typeof sourceText === 'string' ? sourceText : '';
-    const charCount = text.length;
-    const wordCount = countMarkdownWords(text);
+    const texto = typeof sourceText === 'string' ? sourceText : '';
+    if (!aplazado && texto.length > CONTAR_PALABRAS_AL_VUELO) {
+        pintarContador(texto.length, null);
+        clearTimeout(contadorAplazado);
+        contadorAplazado = setTimeout(
+            () => updateMarkdownCharCounter(texto, { aplazado: true }),
+            ESPERA_PARA_CONTAR_MS,
+        );
+        return;
+    }
+    clearTimeout(contadorAplazado);
+    contadorAplazado = null;
+    pintarContador(texto.length, countMarkdownWords(texto));
+}
+
+function pintarContador(charCount, wordCount) {
+    // Mientras no se hayan contado las palabras, el contador enseña solo los
+    // caracteres: un número a medias es peor que uno de menos.
+    if (wordCount === null) {
+        const soloCaracteres = `${charCount.toLocaleString()} ${getTranslation('char_counter_abbreviation', 'c')}`;
+        markdownCharCounterEl.textContent = soloCaracteres;
+        markdownCharCounterEl.title = soloCaracteres;
+        markdownCharCounterEl.setAttribute('aria-label', soloCaracteres);
+        return;
+    }
     const charUnit = charCount === 1
         ? getTranslation('char_counter_singular', 'carácter')
         : getTranslation('char_counter_plural', 'caracteres');
@@ -3642,8 +3675,11 @@ function updateReloadFromDiskState() {
     const button = document.getElementById('reload-from-disk-btn');
     if (!button || !window.EdiMarkPlatform?.isDesktop) return;
     button.classList.remove('hidden');
-    const doc = docs.find(d => d.id === currentId);
-    button.disabled = !doc?.filePath;
+    // Solo hay algo que releer cuando la pestaña abierta viene de un archivo:
+    // un documento nuevo, o uno importado que todavía no se ha guardado, no
+    // tiene de dónde.
+    const doc = currentId ? docs.find(d => d.id === currentId) : null;
+    button.disabled = !doc || !doc.filePath;
 }
 
 /*
@@ -3770,6 +3806,9 @@ async function closeDoc(id) {
                 markdownEditor.clearHistory();
             }
             updateUndoRedoButtons();
+            // Sin documento abierto no hay nada que releer: el botón se apaga
+            // aquí, porque el indicador de cambios ya no pasa por ninguno.
+            updateReloadFromDiskState();
             updateHtml();
         }
     }
@@ -5030,11 +5069,20 @@ function schedulePreviewBibliography(container) {
 }
 
 // --- Funciones principales ---
+/*
+  Lo que cuesta rehacer la hoja en este equipo y con este documento, medido en
+  el último repintado de verdad. De ahí sale la decisión de si la vista previa
+  puede seguir al teclado: no es cosa del tamaño ni del sistema, sino de lo que
+  se tarda aquí.
+*/
+let costeDeRehacerLaHoja = 0;
+
 function updateHtml() {
     // El idioma puede terminar de cargar antes de window.onload, que crea el
     // editor. No activar isUpdating todavía: bloquearía los repintados futuros.
     if (!markdownEditor || isUpdating) return;
     isUpdating = true;
+    const rehacerEmpezado = performance.now();
     const fullMarkdown = markdownEditor.getValue();
     const markdownText = splitDocumentFrontMatter(fullMarkdown).body;
     const htmlOutput = document.getElementById('html-output');
@@ -5121,6 +5169,7 @@ function updateHtml() {
     if (typeof window.__refreshDocumentToc === 'function') {
         window.__refreshDocumentToc();
     }
+    costeDeRehacerLaHoja = performance.now() - rehacerEmpezado;
     isUpdating = false;
 }
 window.__refreshBibliographyPreview = updateHtml;
@@ -13878,25 +13927,49 @@ window.onload = async () => {
       mientras dure la escritura.
     */
     const MS_ENTRE_REPINTADOS = 150;
+    /*
+      Y cuando rehacer la hoja cuesta más que esto, seguir al teclado deja de
+      tener sentido: cada letra costaría esa espera con la ventana tomada, y en
+      un informe de cuatrocientas páginas eso son minutos por pulsación. Pasado
+      el límite la vista previa se queda atrás a propósito, lo dice en una barra
+      y se pone al día cuando se le pide. El coste se mide en cada repintado, así
+      que si el documento adelgaza vuelve a seguir sola.
+    */
+    const REPINTADO_DEMASIADO_CARO_MS = 1500;
     let repaintTimer = null;
     let lastRepaintAt = 0;
+    const barraDeHojaAtrasada = document.getElementById('preview-stale');
+
+    function marcarHojaAtrasada(atrasada) {
+      if (!barraDeHojaAtrasada) return;
+      barraDeHojaAtrasada.toggleAttribute('hidden', !atrasada);
+    }
+
     function repaintPreview() {
       repaintTimer = null;
       lastRepaintAt = Date.now();
       updateHtml();
       syncFromMarkdown();
+      marcarHojaAtrasada(false);
     }
     function schedulePreviewRepaint() {
       if (repaintTimer !== null) return;
+      if (costeDeRehacerLaHoja > REPINTADO_DEMASIADO_CARO_MS) {
+        marcarHojaAtrasada(true);
+        return;
+      }
       const waited = Date.now() - lastRepaintAt;
       repaintTimer = setTimeout(repaintPreview, Math.max(0, MS_ENTRE_REPINTADOS - waited));
     }
+    document.getElementById('preview-stale-btn')?.addEventListener('click', () => repaintPreview());
     /*
       Quien vaya a leer el HTML ya generado (copiar, exportar) no puede
       encontrarse con un repintado pendiente: adelanta el que hubiera.
     */
     flushPendingPreviewRepaint = () => {
-      if (repaintTimer === null) return;
+      // También la que se dejó atrás por cara: copiar o exportar no puede
+      // llevarse una hoja de hace tres párrafos.
+      if (repaintTimer === null && (!barraDeHojaAtrasada || barraDeHojaAtrasada.hidden)) return;
       clearTimeout(repaintTimer);
       repaintPreview();
     };

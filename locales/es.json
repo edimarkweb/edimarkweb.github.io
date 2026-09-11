@@ -604,6 +604,8 @@
   "preview_on_demand": "Este documento es muy largo y generar la vista previa tarda bastante, así que no se hace sola. Puedes escribir, guardar y exportar sin ella.",
   "preview_on_demand_btn": "Mostrar la vista previa",
   "preview_on_demand_working": "Generando la vista previa… El programa no responderá mientras tanto.",
+  "preview_stale": "La vista previa no se actualiza sola en este documento: rehacerla lleva demasiado tiempo.",
+  "preview_stale_btn": "Actualizarla ahora",
   "preview_toc_title": "Índice",
   "doc_format_field_margins": "Márgenes de página (cm)",
   "doc_format_margin_top": "Superior",

@@ -604,6 +604,8 @@
   "preview_on_demand": "Dokumentu hau oso luzea da eta aurrebista sortzeak denbora dezente behar du, beraz ez da bakarrik egiten. Idatzi, gorde eta esportatu dezakezu hura gabe.",
   "preview_on_demand_btn": "Erakutsi aurrebista",
   "preview_on_demand_working": "Aurrebista sortzen… Programak ez du erantzungo bitartean.",
+  "preview_stale": "Aurrebista ez da bakarrik eguneratzen dokumentu honetan: berregiteak denbora gehiegi behar du.",
+  "preview_stale_btn": "Eguneratu orain",
   "preview_toc_title": "Aurkibidea",
   "doc_format_field_margins": "Orrialdearen marjinak (cm)",
   "doc_format_margin_top": "Goikoa",
