@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.56.2';
+const APP_VERSION = '2.56.3';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -7173,7 +7173,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
     if (format === 'pdf') {
         try {
-            const { importPdf } = await import('./pdf-import.js?v=2.56.2');
+            const { importPdf } = await import('./pdf-import.js?v=2.56.3');
             const name = getSafeDocumentName(file.name);
             // Crear el documento ocurre dentro del diálogo, que se queda a la
             // vista avisando: con un informe entero no es cosa de un instante.
@@ -8611,6 +8611,7 @@ window.onload = async () => {
     const statusToastEl = document.getElementById('status-toast');
     const statusToastMessageEl = document.getElementById('status-toast-message');
     let statusToastTimer = null;
+    let statusToastPersistent = false;
 
 
     /*
@@ -9601,9 +9602,10 @@ window.onload = async () => {
         }
     }
 
-    function updateExportStatus(message) {
+    function updateExportStatus(message, { persistent = false, force = false } = {}) {
         if (!statusToastEl || !statusToastMessageEl) return;
         const text = typeof message === 'string' ? message.trim() : '';
+        if (statusToastPersistent && !persistent && !force) return;
 
         if (statusToastTimer) {
             clearTimeout(statusToastTimer);
@@ -9611,6 +9613,7 @@ window.onload = async () => {
         }
 
         if (text) {
+            statusToastPersistent = persistent;
             statusToastMessageEl.textContent = text;
             statusToastEl.classList.remove('hidden');
             statusToastEl.setAttribute('aria-hidden', 'false');
@@ -9618,13 +9621,15 @@ window.onload = async () => {
 
             const trimmed = text.trim();
             const endsWithEllipsis = trimmed.endsWith('…') || trimmed.endsWith('...');
-            const shouldAutoHide = !endsWithEllipsis;
+            const shouldAutoHide = !persistent && !endsWithEllipsis;
             if (shouldAutoHide) {
                 statusToastTimer = setTimeout(() => {
                     updateExportStatus('');
                 }, 3200);
             }
         } else {
+            statusToastPersistent = false;
+            statusToastEl.classList.remove('chord-prompt');
             statusToastEl.classList.remove('visible');
             statusToastEl.setAttribute('aria-hidden', 'true');
             statusToastMessageEl.textContent = '';
@@ -14130,13 +14135,64 @@ window.onload = async () => {
 
     function startChord(chord) {
         chordPendiente = chord;
-        reportStatus(chord.hint());
+        updateExportStatus(chord.hint(), { persistent: chord.persistent });
+        if (!chord.persistent || !statusToastMessageEl || !statusToastEl) return;
+        statusToastEl.classList.add('chord-prompt');
+        statusToastMessageEl.textContent = '';
+
+        const header = document.createElement('span');
+        header.className = 'chord-prompt-header';
+        const symbol = document.createElement('span');
+        symbol.className = 'chord-prompt-symbol';
+        symbol.setAttribute('aria-hidden', 'true');
+        symbol.textContent = '∑';
+        const heading = document.createElement('span');
+        heading.className = 'chord-prompt-heading';
+        const title = document.createElement('strong');
+        title.className = 'chord-prompt-title';
+        title.textContent = chord.title();
+        const hint = document.createElement('small');
+        hint.className = 'chord-prompt-hint';
+        hint.textContent = chord.hint();
+        heading.append(title, hint);
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'chord-prompt-close';
+        closeButton.setAttribute('aria-label', chord.cancelLabel());
+        closeButton.title = chord.cancelLabel();
+        closeButton.textContent = '×';
+        closeButton.addEventListener('click', endChord);
+        header.append(symbol, heading, closeButton);
+        const choices = document.createElement('span');
+        choices.className = 'chord-prompt-choices';
+        chord.choices.forEach(({ key, label, syntax }) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'chord-prompt-choice';
+            const keyLabel = document.createElement('kbd');
+            keyLabel.textContent = key;
+            const choiceLabel = document.createElement('span');
+            choiceLabel.textContent = label();
+            const syntaxLabel = document.createElement('code');
+            syntaxLabel.textContent = syntax;
+            button.append(keyLabel, choiceLabel, syntaxLabel);
+            button.addEventListener('click', () => {
+                const action = chord.options[key];
+                endChord();
+                action();
+            });
+            choices.appendChild(button);
+        });
+        const cancelHint = document.createElement('small');
+        cancelHint.className = 'chord-prompt-cancel';
+        cancelHint.textContent = chord.cancelHint();
+        statusToastMessageEl.append(header, choices, cancelHint);
     }
 
     function endChord() {
         if (!chordPendiente) return;
         chordPendiente = null;
-        reportStatus('');
+        updateExportStatus('', { force: true });
     }
     window.__chordPending = () => Boolean(chordPendiente);
 
@@ -14151,6 +14207,20 @@ window.onload = async () => {
 
         const chord = chordPendiente;
         const elegida = chord.options[event.key];
+        if (chord.persistent) {
+            if (elegida) {
+                event.preventDefault();
+                endChord();
+                elegida();
+                return true;
+            }
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                endChord();
+                return true;
+            }
+            return false;
+        }
         // Intro y la propia letra del acorde repiten la opción de siempre: el
         // caso común se resuelve con dos pulsaciones cómodas y sin leer nada.
         const repetida = event.key === 'Enter' || event.key.toLowerCase() === chord.repeatKey;
@@ -14170,15 +14240,29 @@ window.onload = async () => {
 
     // Una espera olvidada se comería la siguiente tecla que se pulse: en cuanto
     // la atención se va a otra parte, se cancela sola.
-    document.addEventListener('mousedown', endChord);
-    window.addEventListener('blur', endChord);
+    document.addEventListener('mousedown', () => {
+        if (!chordPendiente?.persistent) endChord();
+    });
+    window.addEventListener('blur', () => {
+        if (!chordPendiente?.persistent) endChord();
+    });
 
     const FORMULA_CHORD = {
+        persistent: true,
         repeatKey: 'm',
+        title: () => getTranslation('formula_chord_title', 'Insertar fórmula'),
         hint: () => getTranslation(
             'formula_chord_hint',
-            'Fórmula: 1 \\(…\\) · 2 \\[…\\] · 3 $…$ · 4 $$…$$ · Esc cancela',
+            'Pulsa 1–4 o elige una opción',
         ),
+        cancelLabel: () => getTranslation('formula_chord_cancel_label', 'Cancelar'),
+        cancelHint: () => getTranslation('formula_chord_cancel', 'Esc · Cancelar'),
+        choices: [
+            { key: '1', syntax: '\\(…\\)', label: () => getTranslation('formula_chord_inline_latex', 'LaTeX en línea') },
+            { key: '2', syntax: '\\[…\\]', label: () => getTranslation('formula_chord_block_latex', 'LaTeX en bloque') },
+            { key: '3', syntax: '$…$', label: () => getTranslation('formula_chord_inline_markdown', 'Markdown en línea') },
+            { key: '4', syntax: '$$…$$', label: () => getTranslation('formula_chord_block_markdown', 'Markdown en bloque') },
+        ],
         options: {
             '1': () => applyFormat('latex-inline-paren'),
             '2': () => applyFormat('latex-block-bracket'),

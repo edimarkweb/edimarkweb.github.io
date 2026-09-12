@@ -3343,20 +3343,40 @@ test('Ctrl+M abre la espera y la segunda tecla elige el delimitador', async (t) 
   assert.equal(await acorde('Digit2'), '\n\\[\n\n\\]\n');
   assert.equal(await acorde('Digit3'), '$$');
   assert.equal(await acorde('Digit4'), '\n$$\n\n$$\n');
-  // El caso común, en dos pulsaciones y sin mirar la ayuda: el delimitador
-  // recomendado, que es el primero de la lista.
-  assert.equal(await acorde('Enter'), '\\(\\)');
-  assert.equal(await acorde('KeyM'), '\\(\\)');
-  // Escape cancela sin escribir; cualquier otra tecla cancela y se escribe.
+  // Escape cancela sin escribir.
   assert.equal(await acorde('Escape'), '');
-  assert.equal(await acorde('KeyA'), 'a');
 
-  // Mientras espera, la barra de estado dice qué teclas valen.
+  // Una tecla ajena se escribe pero no cierra la ayuda, ni esta caduca por el
+  // temporizador normal de los avisos.
   await editor.click();
   await page.keyboard.press('Control+KeyM');
-  assert.match(await page.locator('#status-toast-message').textContent(), /1 \\\(…\\\)/);
-  await page.keyboard.press('Digit1');
+  await page.keyboard.press('KeyA');
+  assert.equal(await page.evaluate(() => window.__chordPending()), true);
+  assert.equal(await editor.inputValue(), 'a');
+  await page.waitForTimeout(3400);
+  assert.equal(await page.locator('#status-toast').getAttribute('aria-hidden'), 'false');
+
+  // También se puede elegir con el ratón. El clic solo aplica la opción
+  // pulsada y entonces sí retira la tarjeta.
+  const choices = page.locator('.chord-prompt-choice');
+  assert.deepEqual(await choices.allTextContents(), [
+    '1LaTeX en línea\\(…\\)',
+    '2LaTeX en bloque\\[…\\]',
+    '3Markdown en línea$…$',
+    '4Markdown en bloque$$…$$',
+  ]);
+  await choices.nth(2).click();
+  assert.equal(await page.evaluate(() => window.__chordPending()), false);
+  assert.equal(await editor.inputValue(), 'a$$');
   assert.equal(await page.locator('#status-toast-message').textContent(), '');
+
+  // La equis permite cancelar también con el ratón, sin insertar nada.
+  await editor.fill('');
+  await editor.click();
+  await page.keyboard.press('Control+KeyM');
+  await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  assert.equal(await page.evaluate(() => window.__chordPending()), false);
+  assert.equal(await editor.inputValue(), '');
 
   // Y el menú enseña el acorde, para aprenderlo sin abrir el manual.
   await page.locator('#formula-btn').click();
