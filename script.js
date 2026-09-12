@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.56.3';
+const APP_VERSION = '2.57.0';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -624,6 +624,18 @@ const MARKDOWN_ESCAPABLE_CHARS = new Set("!\"#$%&'()*+,./:;<=>?@[\\]^_`{|}~-");
 */
 const SUBSCRIPT_PATTERN = /^~(?=[^\s~])((?:\\.|[^\\\s~])+)~/;
 const SUPERSCRIPT_PATTERN = /^\^(?=[^\s^])((?:\\.|[^\\\s^])+)\^/;
+/*
+  Los mismos tres pares, buscados en cualquier posición y con lo que ya venía
+  escapado fuera: es lo que necesita Turndown para devolver al Markdown un
+  texto que el autor escribió literal. Solo se escapa lo que volvería a leerse
+  como marcado, así que una virgulilla de las que no cierran nada —`~5 kg`,
+  `~/notas.md`, `2 ^ 3`— sigue viajando tal cual.
+*/
+const MARKDOWN_SCRIPT_ESCAPES = [
+    [/(?<!\\)~~(?=[^\s~])((?:\\.|[^\\])*?[^\s~])~~/g, '\\~\\~$1\\~\\~'],
+    [/(?<!\\)~(?=[^\s~])((?:\\.|[^\\\s~])+)~/g, '\\~$1\\~'],
+    [/(?<!\\)\^(?=[^\s^])((?:\\.|[^\\\s^])+)\^/g, '\\^$1\\^'],
+];
 const MATH_PLACEHOLDER_PREFIX = '@@EDIMATH';
 const MATH_PLACEHOLDER_SUFFIX = '@@';
 const MATH_DELIMITERS = [
@@ -7440,7 +7452,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
     if (format === 'pdf') {
         try {
-            const { importPdf } = await import('./pdf-import.js?v=2.56.3');
+            const { importPdf } = await import('./pdf-import.js?v=2.57.0');
             const name = getSafeDocumentName(file.name);
             // Crear el documento ocurre dentro del diálogo, que se queda a la
             // vista avisando: con un informe entero no es cosa de un instante.
@@ -10614,6 +10626,19 @@ window.onload = async () => {
             filter: node => node.nodeName === 'SUP' && !node.hasAttribute('data-edimark-footnote-ref'),
             replacement: scriptReplacement('^'),
         });
+        /*
+          Y lo que el autor escribió escapado tiene que volver escapado. La
+          lista de Turndown protege `*`, `_` o `#`, pero no la virgulilla ni el
+          circunflejo: un `\~2\~` volvía del editor visual como `~2~` y pasaba
+          a ser un subíndice en el repintado siguiente, sin que nadie lo
+          pidiera. El código no pasa por aquí (`node.isCode`), así que un
+          `` `H~2~O` `` sigue intacto.
+        */
+        const escapeMarkdown = turndownService.escape.bind(turndownService);
+        turndownService.escape = (text) => MARKDOWN_SCRIPT_ESCAPES.reduce(
+            (escaped, [pattern, replacement]) => escaped.replace(pattern, replacement),
+            escapeMarkdown(text),
+        );
         /*
           Y la sangría: Turndown separa el guion del texto con tres espacios,
           mientras que la barra escribe `- uno`. La continuación se sangra con

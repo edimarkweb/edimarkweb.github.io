@@ -1033,6 +1033,56 @@ test('subíndice y superíndice se pintan, no chocan con el tachado y vuelven a 
   for (const fragmento of ['H~2~O', 'm^2^', '~~tachado~~', '`H~2~O`', '[^1]']) {
     assert.ok(vuelta.includes(fragmento), `perdido ${fragmento} en:\n${vuelta}`);
   }
+  assert.ok(vuelta.includes('Literal: \\~2\\~'), `el literal volvió sin escapar:\n${vuelta}`);
+});
+
+/*
+  Lo que el autor escribió escapado tiene que seguir siéndolo al volver de la
+  hoja, o al repintarlo se convertiría en el marcado del que huía. Y solo eso:
+  una virgulilla que no cierra ningún par no se toca, que si no el documento se
+  llenaría de barras invertidas al pasar por el editor visual.
+*/
+test('las virgulillas literales vuelven escapadas y las sueltas no se tocan', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const source = [
+    'Escapado: \\~2\\~, \\^3\\^ y \\~\\~cuatro\\~\\~.',
+    '',
+    'Sueltas: aprox. ~5 kg, el archivo ~/notas.md, 2 ^ 3 y https://x.org/~juan.',
+    '',
+  ].join('\n');
+
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(md => markdownEditor.setValue(md), source);
+  await page.locator('#html-output p').first().waitFor();
+
+  const enLaHoja = await page.evaluate(() => document.getElementById('html-output').textContent);
+  assert.ok(enLaHoja.includes('Escapado: ~2~, ^3^ y ~~cuatro~~'), `la hoja interpretó un literal:\n${enLaHoja}`);
+
+  const vuelta = await page.evaluate(() => {
+    document.getElementById('html-output').focus();
+    forceMarkdownUpdate = true;
+    updateMarkdown();
+    return markdownEditor.getValue();
+  });
+  for (const fragmento of ['\\~2\\~', '\\^3\\^', '\\~\\~cuatro\\~\\~']) {
+    assert.ok(vuelta.includes(fragmento), `perdido el escape de ${fragmento} en:\n${vuelta}`);
+  }
+  for (const intacto of ['aprox. ~5 kg', 'el archivo ~/notas.md', '2 ^ 3', 'x.org/~juan']) {
+    assert.ok(vuelta.includes(intacto), `escapado de más «${intacto}» en:\n${vuelta}`);
+  }
+
+  // Y al repintarlo sigue diciendo lo mismo: la vuelta es estable.
+  await page.evaluate(md => markdownEditor.setValue(md), vuelta);
+  await page.waitForFunction(
+    () => document.getElementById('html-output').textContent.includes('Escapado: ~2~'),
+  );
+  const segundaHoja = await page.evaluate(() => ({
+    indices: document.querySelectorAll('#html-output sub, #html-output sup').length,
+    tachados: document.querySelectorAll('#html-output del, #html-output s').length,
+  }));
+  assert.deepEqual(segundaHoja, { indices: 0, tachados: 0 }, 'el literal se convirtió en marcado al repintarlo');
 });
 
 test('los botones de índice envuelven la selección en los dos paneles', async (t) => {
@@ -5004,6 +5054,9 @@ test('el formato de la barra se aplica también sobre la vista previa', async (t
   await seleccionarEnLaHoja(page, 'separador');
   await page.locator('[data-format="horizontal-rule"]').click();
   await page.waitForFunction(() => document.getElementById('html-output').querySelectorAll('hr').length === 1);
+  // La vuelta al Markdown va en un requestAnimationFrame: sin esperarla, esto
+  // fallaba de vez en cuando con la suite entera por delante.
+  await page.waitForFunction(() => /separador\.\n+---/.test(document.getElementById('markdown-input').value));
   assert.match(await page.locator('#markdown-input').inputValue(), /separador\.\n+---/);
 });
 
