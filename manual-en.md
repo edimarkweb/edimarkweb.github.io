@@ -67,7 +67,7 @@ Next to the logo sit the **File**, **Export** and **Settings** menus. On the rig
 * **Print (Ctrl+P)**: a view ready for paper or PDF.
 * **Help**: the **Manual (F1)**, **About EdiMarkWeb** — version, author and licences — and, on the desktop, **Check for updates…**.
 
-The toolbar below gathers undo and redo, bold, italics, headings (H1…H6), lists, quotes, code, links, images, tables, **bibliographic citations**, **Paste** and formulas. Each button says what it does, and its shortcut, when you hover over it. On small screens it folds into two buttons, **Actions** and **Format**.
+The toolbar below gathers undo and redo, bold, italics, strikethrough, superscript and subscript, headings (H1…H6), lists, quotes, code, links, images, tables, **bibliographic citations**, **Paste** and formulas. Each button says what it does, and its shortcut, when you hover over it. On small screens it folds into two buttons, **Actions** and **Format**. Superscript and subscript are written the Pandoc way, `m^2^` and `H~2~O`; strikethrough needs two tildes, `~~like this~~`.
 
 ---
 

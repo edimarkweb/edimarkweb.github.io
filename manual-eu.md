@@ -67,7 +67,7 @@ Logotipoaren ondoan **Fitxategia**, **Esportatu** eta **Ezarpenak** menuak daude
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia.
 * **Laguntza**: **Eskuliburua (F1)**, **EdiMarkWebi buruz** —bertsioa, egilea eta lizentziak— eta, mahaigainean, **Bilatu eguneraketak…**.
 
-Tresna-barrak, aurrekoaren azpian, desegin eta berregin, lodia, etzana, izenburuak (H1…H6), zerrendak, aipuak, kodea, estekak, irudiak, taulak, **bibliografia-aipuak**, **Itsatsi** eta formulak biltzen ditu. Botoi bakoitzak, sagua gainetik pasatzean, zer egiten duen eta zein lasterbiderekin esaten du. Pantaila txikietan bi botoitan tolesten da: **Ekintzak** eta **Formatua**.
+Tresna-barrak, aurrekoaren azpian, desegin eta berregin, lodia, etzana, marratua, goi-indizea eta azpiindizea, izenburuak (H1…H6), zerrendak, aipuak, kodea, estekak, irudiak, taulak, **bibliografia-aipuak**, **Itsatsi** eta formulak biltzen ditu. Botoi bakoitzak, sagua gainetik pasatzean, zer egiten duen eta zein lasterbiderekin esaten du. Pantaila txikietan bi botoitan tolesten da: **Ekintzak** eta **Formatua**. Goi-indizea eta azpiindizea Pandoc-en moduan idazten dira, `m^2^` eta `H~2~O`; marratuak bi tilet behar ditu, `~~honela~~`.
 
 ---
 

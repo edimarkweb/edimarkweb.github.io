@@ -980,6 +980,97 @@ test('los cuatro delimitadores se renderizan y sobreviven a la vuelta a Markdown
 });
 
 /*
+  La hoja y Pandoc tienen que leer la virgulilla igual, o el documento dice una
+  cosa en pantalla y otra al exportarlo: una sola es subíndice, dos son tachado
+  y la que no cierra nada es texto. Lo mismo con el acento circunflejo del
+  superíndice. Los casos de aquí están comprobados contra el pandoc.wasm que
+  lleva la aplicación.
+*/
+test('subíndice y superíndice se pintan, no chocan con el tachado y vuelven a Markdown', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const source = [
+    'El agua es H~2~O y ocupa 3 m^2^.',
+    '',
+    'Esto va ~~tachado~~ y esto ~texto con espacios~ no es nada.',
+    '',
+    'Literal: \\~2\\~ y en código `H~2~O`.',
+    '',
+    'La nota[^1] no es un superíndice cualquiera.',
+    '',
+    '[^1]: Una nota al pie.',
+    '',
+  ].join('\n');
+
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(md => markdownEditor.setValue(md), source);
+  await page.locator('#html-output sub').first().waitFor();
+
+  const render = await page.evaluate(() => ({
+    subindices: [...document.querySelectorAll('#html-output sub')].map(node => node.textContent),
+    superindices: [...document.querySelectorAll('#html-output sup:not(.footnote-reference)')]
+      .map(node => node.textContent),
+    notas: document.querySelectorAll('#html-output sup.footnote-reference').length,
+    tachados: [...document.querySelectorAll('#html-output del, #html-output s')].map(node => node.textContent),
+    codigo: document.querySelector('#html-output code')?.textContent || '',
+    texto: document.getElementById('html-output').textContent,
+  }));
+  assert.deepEqual(render.subindices, ['2'], 'subíndices de la hoja');
+  assert.deepEqual(render.superindices, ['2'], 'superíndices de la hoja');
+  assert.equal(render.notas, 1, 'la llamada de la nota al pie sigue siendo una sola');
+  assert.deepEqual(render.tachados, ['tachado'], 'la virgulilla suelta no tacha');
+  assert.equal(render.codigo, 'H~2~O', 'el código no interpreta la virgulilla');
+  assert.ok(render.texto.includes('~texto con espacios~'), `el par con espacios no es marcado:\n${render.texto}`);
+  assert.ok(render.texto.includes('Literal: ~2~'), `la virgulilla escapada abrió un subíndice:\n${render.texto}`);
+
+  const vuelta = await page.evaluate(() => {
+    document.getElementById('html-output').focus();
+    forceMarkdownUpdate = true;
+    updateMarkdown();
+    return markdownEditor.getValue();
+  });
+  for (const fragmento of ['H~2~O', 'm^2^', '~~tachado~~', '`H~2~O`', '[^1]']) {
+    assert.ok(vuelta.includes(fragmento), `perdido ${fragmento} en:\n${vuelta}`);
+  }
+});
+
+test('los botones de índice envuelven la selección en los dos paneles', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+
+  // Desde el panel Markdown.
+  for (const [formato, palabra, esperado] of [
+    ['superscript', 'superindice', 'Un párrafo de prueba para ^superindice^.'],
+    ['subscript', 'subindice', 'Un párrafo de prueba para ~subindice~.'],
+  ]) {
+    await documentoDePrueba(page, palabra);
+    await page.evaluate((texto) => {
+      const area = document.getElementById('markdown-input');
+      const inicio = area.value.indexOf(texto);
+      area.focus();
+      area.setSelectionRange(inicio, inicio + texto.length);
+      area.dispatchEvent(new Event('select'));
+    }, palabra);
+    await page.locator(`[data-format="${formato}"]`).click();
+    await page.waitForFunction(
+      (texto) => document.getElementById('markdown-input').value.trim() === texto,
+      esperado,
+    );
+  }
+
+  // Y desde la hoja, donde el navegador pone la etiqueta y vuelve por Turndown.
+  await documentoDePrueba(page, 'metros');
+  await seleccionarEnLaHoja(page, 'metros');
+  await page.locator('[data-format="superscript"]').click();
+  await page.waitForFunction(
+    () => document.getElementById('markdown-input').value.trim() === 'Un párrafo de prueba para ^metros^.',
+  );
+});
+
+/*
   Dentro del WASM no hay red ni sistema de archivos: una ruta relativa se pierde
   igual que una URL remota. El exportador tiene que descargarla antes, cosa que
   aquí se comprueba contando las peticiones (la vista previa hace la primera).
@@ -2648,6 +2739,100 @@ test('el bloque de metadatos no se ve en la vista previa y sobrevive a editarla'
   await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('editado en la vista previa'));
   const markdown = await page.locator('#markdown-input').inputValue();
   assert.match(markdown, /^---\nlang: "fr"\ntitle: "Mi documento"\n---\n/, `metadatos perdidos:\n${markdown}`);
+});
+
+/*
+  Marked no interpreta las notas de Pandoc por sí solo. La hoja debe numerarlas
+  por orden de aparición, reunirlas al final y, sobre todo, devolver exactamente
+  sus etiquetas y definiciones cuando se escribe en el editor visual.
+*/
+test('las notas al pie se leen en la hoja y sobreviven a editarla', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const source = [
+    '# Texto con notas',
+    '',
+    'Primera referencia[^larga], repetida[^larga], y otra[^2].',
+    '',
+    '`Esto no es una referencia[^2]`',
+    '',
+    '[^2]: Segunda nota con **negrita**.',
+    '[^larga]: Primera nota con *cursiva*.',
+    '    Tiene una continuación.',
+    '',
+  ].join('\n');
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').fill(source);
+  await page.locator('#html-output .footnotes').waitFor();
+
+  const render = await page.evaluate(() => ({
+    referencias: [...document.querySelectorAll('#html-output .footnote-reference a')].map(link => ({
+      texto: link.textContent,
+      destino: link.getAttribute('href'),
+    })),
+    notas: [...document.querySelectorAll('#html-output .footnotes li')].map(item => item.textContent.trim()),
+    cursivas: document.querySelectorAll('#html-output .footnotes em').length,
+    negritas: document.querySelectorAll('#html-output .footnotes strong').length,
+    codigo: document.querySelector('#html-output code')?.textContent || '',
+  }));
+  assert.deepEqual(render.referencias.map(ref => ref.texto), ['1', '1', '2']);
+  assert.deepEqual(render.referencias.map(ref => ref.destino), ['#footnote-1', '#footnote-1', '#footnote-2']);
+  assert.match(render.notas[0], /Primera nota con cursiva\.\s+Tiene una continuación\./);
+  assert.match(render.notas[1], /Segunda nota con negrita\./);
+  assert.equal(render.cursivas, 1);
+  assert.equal(render.negritas, 1);
+  assert.equal(render.codigo, 'Esto no es una referencia[^2]');
+
+  await page.evaluate(() => {
+    const output = document.getElementById('html-output');
+    output.focus();
+    output.querySelector('p').firstChild.textContent = 'Referencia editada';
+    output.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('Referencia editada'));
+  const roundTrip = await page.locator('#markdown-input').inputValue();
+  assert.match(roundTrip, /Referencia editada\[\^larga\], repetida\[\^larga\], y otra\[\^2\]\./);
+  assert.match(roundTrip, /\[\^larga\]: Primera nota con \*cursiva\*\.\n {4}Tiene una continuación\./);
+  assert.match(roundTrip, /\[\^2\]: Segunda nota con \*\*negrita\*\*\./);
+});
+
+test('el botón inserta notas al pie desde los dos editores', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  const markdown = page.locator('#markdown-input');
+  await markdown.fill('# Documento\n\nTexto');
+  await markdown.focus();
+  await page.evaluate(() => {
+    const editor = document.getElementById('markdown-input');
+    editor.setSelectionRange(editor.value.length, editor.value.length);
+  });
+
+  await page.locator('#footnote-btn').click();
+  await page.locator('#footnote-modal-overlay').waitFor({ state: 'visible' });
+  await page.waitForFunction(() => document.activeElement?.id === 'footnote-text');
+  assert.equal(await page.locator('#footnote-text').evaluate(field => field.selectionStart), 0);
+  assert.equal(await page.locator('#insert-footnote-btn').isDisabled(), true);
+  await page.locator('#footnote-text').fill('Nota con **formato**.');
+  assert.equal(await page.locator('#insert-footnote-btn').isEnabled(), true);
+  await page.locator('#insert-footnote-btn').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('Texto[^1]'));
+  assert.match(await markdown.inputValue(), /\[\^1\]: Nota con \*\*formato\*\*\./);
+  assert.equal(await page.locator('#html-output .footnote-reference').count(), 1);
+
+  await page.locator('#html-output > p').click();
+  await page.keyboard.press('End');
+  await page.locator('#footnote-btn').click();
+  await page.locator('#footnote-text').fill('Añadida desde la hoja.');
+  await page.locator('#insert-footnote-btn').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('[^2]: Añadida desde la hoja.'));
+  const finalMarkdown = await markdown.inputValue();
+  assert.match(finalMarkdown, /Texto\[\^1\]\[\^2\]/);
+  assert.equal(await page.locator('#html-output .footnote-reference').count(), 2);
+  assert.equal(await page.locator('#html-output .footnotes li').count(), 2);
+  assert.equal(await page.locator('#footnote-btn .lucide-notebook-pen').count(), 1);
 });
 
 /*

@@ -67,7 +67,7 @@ Al costat del logotip hi ha els menús **Fitxer**, **Exportar** i **Configuraci�
 * **Imprimir (Ctrl+P)**: una vista preparada per a paper o PDF.
 * **Ajuda**: el **Manual (F1)**, **Quant a EdiMarkWeb** —versió, autor i llicències— i, a l'escriptori, **Cercar actualitzacions…**.
 
-La barra d'eines, sota l'anterior, reuneix desfer i refer, negreta, cursiva, encapçalaments (H1…H6), llistes, cites, codi, enllaços, imatges, taules, **citacions bibliogràfiques**, **Enganxar** i les fórmules. Cada botó diu, en passar-hi el ratolí, què fa i amb quina drecera. A les pantalles petites es plega en dos botons, **Accions** i **Format**.
+La barra d'eines, sota l'anterior, reuneix desfer i refer, negreta, cursiva, ratllat, superíndex i subíndex, encapçalaments (H1…H6), llistes, cites, codi, enllaços, imatges, taules, **citacions bibliogràfiques**, **Enganxar** i les fórmules. Cada botó diu, en passar-hi el ratolí, què fa i amb quina drecera. A les pantalles petites es plega en dos botons, **Accions** i **Format**. El superíndex i el subíndex s'escriuen com a Pandoc, `m^2^` i `H~2~O`; el ratllat necessita dues titlles, `~~així~~`.
 
 ---
 

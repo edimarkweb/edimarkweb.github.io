@@ -67,7 +67,7 @@ Xunto ao logotipo están os menús **Ficheiro**, **Exportar** e **Configuración
 * **Imprimir (Ctrl+P)**: unha vista lista para papel ou PDF.
 * **Axuda**: o **Manual (F1)**, **Acerca de EdiMarkWeb** —versión, autor e licenzas— e, no escritorio, **Buscar actualizacións…**.
 
-A barra de ferramentas, baixo a anterior, reúne desfacer e refacer, negra, cursiva, cabeceiras (H1…H6), listas, citas, código, ligazóns, imaxes, táboas, **citas bibliográficas**, **Pegar** e as fórmulas. Cada botón di ao pasar o rato que fai e con que atallo. En pantallas pequenas pregase en dous botóns, **Accións** e **Formato**.
+A barra de ferramentas, baixo a anterior, reúne desfacer e refacer, negra, cursiva, riscado, superíndice e subíndice, cabeceiras (H1…H6), listas, citas, código, ligazóns, imaxes, táboas, **citas bibliográficas**, **Pegar** e as fórmulas. Cada botón di ao pasar o rato que fai e con que atallo. En pantallas pequenas pregase en dous botóns, **Accións** e **Formato**. O superíndice e o subíndice escríbense como en Pandoc, `m^2^` e `H~2~O`; o riscado precisa dous tiles, `~~así~~`.
 
 ---
 

@@ -67,7 +67,7 @@ Junto al logotipo están los menús **Archivo**, **Exportar** y **Configuración
 * **Imprimir (Ctrl+P)**: una vista lista para papel o PDF.
 * **Ayuda**: el **Manual (F1)**, **Acerca de EdiMarkWeb** —versión, autor y licencias— y, en escritorio, **Buscar actualizaciones…**.
 
-La barra de herramientas, bajo la anterior, reúne deshacer y rehacer, negrita, cursiva, encabezados (H1…H6), listas, citas, código, enlaces, imágenes, tablas, **citas bibliográficas**, **Pegar** y las fórmulas. Cada botón dice al pasar el ratón qué hace y con qué atajo. En pantallas pequeñas se pliega en dos botones, **Acciones** y **Formato**.
+La barra de herramientas, bajo la anterior, reúne deshacer y rehacer, negrita, cursiva, tachado, superíndice y subíndice, encabezados (H1…H6), listas, citas, código, enlaces, imágenes, tablas, **citas bibliográficas**, **Pegar** y las fórmulas. Cada botón dice al pasar el ratón qué hace y con qué atajo. En pantallas pequeñas se pliega en dos botones, **Acciones** y **Formato**. El superíndice y el subíndice se escriben como en Pandoc, `m^2^` y `H~2~O`; el tachado necesita dos virgulillas, `~~así~~`.
 
 ---
 

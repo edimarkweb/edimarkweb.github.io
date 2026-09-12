@@ -617,6 +617,13 @@ function sanitizeHtmlForMarkdown(html) {
 }
 
 const MARKDOWN_ESCAPABLE_CHARS = new Set("!\"#$%&'()*+,./:;<=>?@[\\]^_`{|}~-");
+/*
+  El subíndice y el superíndice de Pandoc: `H~2~O`, `m^2^`. Ninguno admite
+  espacios sin escapar —por eso `~texto con espacios~` no es nada, ni aquí ni
+  en Pandoc—, pero sí `\ `, que es como Pandoc escribe los de varias palabras.
+*/
+const SUBSCRIPT_PATTERN = /^~(?=[^\s~])((?:\\.|[^\\\s~])+)~/;
+const SUPERSCRIPT_PATTERN = /^\^(?=[^\s^])((?:\\.|[^\\\s^])+)\^/;
 const MATH_PLACEHOLDER_PREFIX = '@@EDIMATH';
 const MATH_PLACEHOLDER_SUFFIX = '@@';
 const MATH_DELIMITERS = [
@@ -5439,6 +5446,103 @@ function schedulePreviewBibliography(container) {
 */
 let costeDeRehacerLaHoja = 0;
 
+/*
+  Marked no trae notas al pie. Se preparan solo para la hoja: el Markdown del
+  documento no se toca y Pandoc sigue recibiendo su sintaxis original. Las
+  definiciones se sacan antes de analizar el cuerpo y se añaden al final; los
+  huecos conservan sus saltos de línea para no desajustar el seguimiento entre
+  el editor y la vista previa.
+*/
+function preparePreviewFootnotes(markdown) {
+    const lines = String(markdown || '').split('\n');
+    const definitions = new Map();
+    let fence = null;
+
+    for (let index = 0; index < lines.length; index += 1) {
+        const fenceMatch = /^ {0,3}(`{3,}|~{3,})/.exec(lines[index]);
+        if (fenceMatch) {
+            const marker = fenceMatch[1][0];
+            if (!fence) fence = marker;
+            else if (fence === marker) fence = null;
+            continue;
+        }
+        if (fence) continue;
+        const definition = /^ {0,3}\[\^([^\]\s]+)\]:[ \t]*(.*)$/.exec(lines[index]);
+        if (!definition) continue;
+
+        const label = definition[1];
+        const content = [definition[2]];
+        lines[index] = '';
+        let cursor = index + 1;
+        while (cursor < lines.length) {
+            const continuation = /^(?: {4}|\t)(.*)$/.exec(lines[cursor]);
+            if (continuation) {
+                content.push(continuation[1]);
+                lines[cursor] = '';
+                cursor += 1;
+                continue;
+            }
+            if (!lines[cursor].trim() && /^(?: {4}|\t)/.test(lines[cursor + 1] || '')) {
+                content.push('');
+                lines[cursor] = '';
+                cursor += 1;
+                continue;
+            }
+            break;
+        }
+        definitions.set(label, content.join('\n').trim());
+        index = cursor - 1;
+    }
+
+    const ordered = [];
+    const used = new Map();
+    fence = null;
+    const markdownWithReferences = lines.map(line => {
+        const fenceMatch = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+        if (fenceMatch) {
+            const marker = fenceMatch[1][0];
+            if (!fence) fence = marker;
+            else if (fence === marker) fence = null;
+            return line;
+        }
+        if (fence) return line;
+        return line.replace(/(`+[^`]*`+)|(?<!\\)\[\^([^\]\s]+)\]/g, (match, code, label) => {
+            if (code || !definitions.has(label)) return match;
+            let note = used.get(label);
+            if (!note) {
+                note = { label, number: ordered.length + 1, content: definitions.get(label), references: [] };
+                used.set(label, note);
+                ordered.push(note);
+            }
+            const referenceId = `footnote-ref-${note.number}-${note.references.length + 1}`;
+            note.references.push(referenceId);
+            const aria = escapeHtmlEntities(formatTranslation(
+                'footnote_reference_label',
+                'Nota al pie {number}',
+                { number: note.number },
+            ));
+            return `<sup class="footnote-reference" data-edimark-footnote-ref="${escapeHtmlEntities(label)}" contenteditable="false"><a id="${referenceId}" href="#footnote-${note.number}" aria-label="${aria}">${note.number}</a></sup>`;
+        });
+    }).join('\n');
+
+    return { markdown: markdownWithReferences, notes: ordered };
+}
+
+function renderPreviewFootnotes(notes) {
+    if (!notes.length || !window.marked) return '';
+    const title = escapeHtmlEntities(getTranslation('footnotes_title', 'Notas'));
+    const backLabel = escapeHtmlEntities(getTranslation('footnote_back_label', 'Volver al texto'));
+    const items = notes.map(note => {
+        const encoded = escapeHtmlEntities(encodeURIComponent(note.content));
+        const body = marked.parse(note.content || '');
+        const backlinks = note.references.map((referenceId, index) => (
+            `<a class="footnote-back" href="#${referenceId}" aria-label="${backLabel}">↩${note.references.length > 1 ? `<sup>${index + 1}</sup>` : ''}</a>`
+        )).join(' ');
+        return `<li id="footnote-${note.number}" data-edimark-footnote-label="${escapeHtmlEntities(note.label)}" data-edimark-footnote-markdown="${encoded}">${body}${backlinks}</li>`;
+    }).join('');
+    return `<section class="footnotes" data-edimark-footnotes contenteditable="false" role="doc-endnotes" aria-label="${title}"><hr><ol>${items}</ol></section>`;
+}
+
 function updateHtml() {
     // El idioma puede terminar de cargar antes de window.onload, que crea el
     // editor. No activar isUpdating todavía: bloquearía los repintados futuros.
@@ -5462,7 +5566,8 @@ function updateHtml() {
     const sanitizedText = preserveMarkdownEscapes(markdownWithoutMath);
     
     if (window.marked) {
-        const parsedHtml = marked.parse(sanitizedText);
+        const footnotes = preparePreviewFootnotes(sanitizedText);
+        const parsedHtml = marked.parse(footnotes.markdown) + renderPreviewFootnotes(footnotes.notes);
         const restoredHtml = restoreMathSegments(parsedHtml, mathSegments);
         htmlOutput.replaceChildren(previewFragmentFromHtml(restoredHtml));
         fitWidePreformattedBlocks(htmlOutput);
@@ -5484,7 +5589,7 @@ function updateHtml() {
           llegan a la hoja, así que sus líneas se suman aparte.
         */
         const bodyLineOffset = countNewlines(fullMarkdown.slice(0, Math.max(0, fullMarkdown.length - markdownText.length)));
-        indexPreviewLines(htmlOutput, sanitizedText, mathSegments, bodyLineOffset);
+        indexPreviewLines(htmlOutput, footnotes.markdown, mathSegments, bodyLineOffset);
 
         if (htmlEditor && !htmlEditor.hasFocus()) {
             skipNextHtmlEditorSync = true;
@@ -5989,6 +6094,8 @@ function applyFormatToPreview(format) {
         case 'bold': run('bold'); break;
         case 'italic': run('italic'); break;
         case 'strikethrough': run('strikeThrough'); break;
+        case 'superscript': run('superscript'); break;
+        case 'subscript': run('subscript'); break;
         case 'horizontal-rule': {
             // El separador pertenece al documento, no sustituye al texto que
             // estuviera seleccionado: se coloca detrás de su bloque.
@@ -6033,6 +6140,9 @@ function applyFormatToPreview(format) {
             return true;
         case 'image':
             toggleImageModal(true, previewSelectedText());
+            return true;
+        case 'footnote':
+            toggleFootnoteModal(true);
             return true;
         // La tabla no se hace con lo que haya seleccionado.
         case 'table': return false;
@@ -6086,6 +6196,22 @@ function applyFormat(format) {
             markdownEditor.setCursor({ line: cursor.line, ch: cursor.ch + 2 });
           }
           break;
+        /*
+          Un subíndice o un superíndice no admiten espacios sueltos: los de la
+          selección se escapan, que es como los escribe Pandoc, o el par se
+          quedaría en texto corriente al pintar la hoja.
+        */
+        case 'superscript':
+        case 'subscript': {
+          const marker = format === 'superscript' ? '^' : '~';
+          if (hadSelection) {
+            markdownEditor.replaceSelection(`${marker}${selectedText.replace(/\s+/g, '\\ ')}${marker}`, 'around');
+          } else {
+            markdownEditor.replaceSelection(`${marker}${marker}`);
+            markdownEditor.setCursor({ line: cursor.line, ch: cursor.ch + 1 });
+          }
+          break;
+        }
         case 'horizontal-rule':
           // Un separador no es formato para la selección: conserva el texto y
           // se inserta justo después, igual que al trabajar sobre la hoja.
@@ -6148,6 +6274,7 @@ function applyFormat(format) {
             break;
         case 'link': toggleLinkModal(true, selectedText); return;
         case 'image': toggleImageModal(true, selectedText); return;
+        case 'footnote': toggleFootnoteModal(true); return;
         case 'table': toggleTableModal(true); return;
     }
     
@@ -6203,6 +6330,146 @@ function toggleLinkModal(show, presetText = '') {
         document.getElementById('link-url').value  = '';
         focusModalField(document.getElementById(presetText ? 'link-url' : 'link-text'), { select: true });
     }
+}
+
+function toggleFootnoteModal(show) {
+    const overlay = document.getElementById('footnote-modal-overlay');
+    const field = document.getElementById('footnote-text');
+    const insertButton = document.getElementById('insert-footnote-btn');
+    if (!overlay) return;
+    overlay.style.display = show ? 'flex' : 'none';
+    if (!show) return;
+    if (field) field.value = '';
+    if (insertButton) insertButton.disabled = true;
+    focusModalField(field);
+    if (field && typeof field.setSelectionRange === 'function') {
+        field.setSelectionRange(0, 0);
+        const placeCaret = () => {
+            field.focus();
+            field.setSelectionRange(0, 0);
+        };
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(placeCaret);
+        else setTimeout(placeCaret, 0);
+    }
+}
+
+function nextFootnoteLabel(markdown) {
+    let largest = 0;
+    for (const match of String(markdown || '').matchAll(/\[\^(\d+)\]/g)) {
+        largest = Math.max(largest, Number.parseInt(match[1], 10) || 0);
+    }
+    return String(largest + 1);
+}
+
+function footnoteDefinition(label, noteText) {
+    const lines = String(noteText || '').split('\n');
+    return `[^${label}]: ${lines.map((line, index) => index ? `    ${line}` : line).join('\n')}`;
+}
+
+function insertFootnoteIntoMarkdown(label, noteText) {
+    if (!markdownEditor || !markdownTextareaEl) return false;
+    const selectionEnd = markdownTextareaEl.selectionEnd;
+    markdownTextareaEl.setSelectionRange(selectionEnd, selectionEnd);
+    markdownEditor.replaceSelection(`[^${label}]`);
+    const cursorAfterReference = markdownEditor.getCursor();
+    const current = markdownEditor.getValue();
+    const lines = current.split('\n');
+    const end = { line: lines.length - 1, ch: lines[lines.length - 1].length };
+    const separator = current.endsWith('\n\n') ? '' : current.endsWith('\n') ? '\n' : '\n\n';
+    markdownEditor.replaceRange(`${separator}${footnoteDefinition(label, noteText)}\n`, end, end);
+    markdownEditor.setCursor(cursorAfterReference);
+    markdownEditor.focus();
+    return true;
+}
+
+function insertFootnoteIntoPreview(label, noteText) {
+    const container = document.getElementById('html-output');
+    if (!container || !window.marked || !restorePreviewSelection()) return false;
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return false;
+
+    const notes = container.querySelector('[data-edimark-footnotes]');
+    const number = (notes ? notes.querySelectorAll('[data-edimark-footnote-label]').length : 0) + 1;
+    const referenceId = `footnote-ref-${number}-1`;
+    const reference = document.createElement('sup');
+    reference.className = 'footnote-reference';
+    reference.dataset.edimarkFootnoteRef = label;
+    reference.contentEditable = 'false';
+    const link = document.createElement('a');
+    link.id = referenceId;
+    link.href = `#footnote-${number}`;
+    link.textContent = String(number);
+    link.setAttribute('aria-label', formatTranslation(
+        'footnote_reference_label',
+        'Nota al pie {number}',
+        { number },
+    ));
+    reference.appendChild(link);
+
+    const range = selection.getRangeAt(0);
+    range.collapse(false);
+    let anchorElement = range.startContainer.nodeType === 3
+        ? range.startContainer.parentElement
+        : range.startContainer;
+    const existingReference = anchorElement && anchorElement.closest
+        ? anchorElement.closest('[data-edimark-footnote-ref]')
+        : null;
+    if (existingReference && container.contains(existingReference)) {
+        range.setStartAfter(existingReference);
+        range.collapse(true);
+    }
+    /*
+      Firefox puede representar un clic al final de un párrafo como un punto
+      entre dos hijos de la hoja, no como un punto dentro del párrafo. Un
+      `sup` suelto en la raíz no es contenido de bloque válido y Turndown lo
+      descarta. En ese caso se lleva el punto al final del bloque anterior.
+    */
+    if (range.startContainer === container) {
+        let candidate = container.childNodes[range.startOffset] || null;
+        if ((!candidate || candidate.nodeType !== 1 || candidate.matches('[data-edimark-footnotes]'))
+            && range.startOffset > 0) {
+            candidate = container.childNodes[range.startOffset - 1] || null;
+        }
+        if (candidate && candidate.nodeType === 1 && !candidate.matches('[data-edimark-footnotes]')) {
+            range.selectNodeContents(candidate);
+            range.collapse(false);
+        }
+    }
+    range.insertNode(reference);
+
+    let section = notes;
+    if (!section) {
+        section = document.createElement('section');
+        section.className = 'footnotes';
+        section.dataset.edimarkFootnotes = '';
+        section.contentEditable = 'false';
+        section.setAttribute('role', 'doc-endnotes');
+        section.setAttribute('aria-label', getTranslation('footnotes_title', 'Notas'));
+        section.appendChild(document.createElement('hr'));
+        section.appendChild(document.createElement('ol'));
+        container.appendChild(section);
+    }
+    const item = document.createElement('li');
+    item.id = `footnote-${number}`;
+    item.dataset.edimarkFootnoteLabel = label;
+    item.dataset.edimarkFootnoteMarkdown = encodeURIComponent(noteText);
+    item.appendChild(previewFragmentFromHtml(marked.parse(noteText)));
+    section.querySelector('ol').appendChild(item);
+    notifyPreviewEdited({ repaint: true });
+    return true;
+}
+
+function insertFootnoteFromModal() {
+    const field = document.getElementById('footnote-text');
+    const noteText = field ? field.value.trim() : '';
+    if (!noteText) {
+        focusModalField(field);
+        return;
+    }
+    const label = nextFootnoteLabel(markdownEditor ? markdownEditor.getValue() : '');
+    toggleFootnoteModal(false);
+    if (isPreviewFormatTarget() && insertFootnoteIntoPreview(label, noteText)) return;
+    insertFootnoteIntoMarkdown(label, noteText);
 }
 
 /*
@@ -8510,6 +8777,10 @@ window.onload = async () => {
     const linkModalOverlay = document.getElementById('link-modal-overlay');
     const insertLinkBtn = document.getElementById('insert-link-btn');
     const cancelLinkBtn = document.getElementById('cancel-link-btn');
+    const footnoteModalOverlay = document.getElementById('footnote-modal-overlay');
+    const footnoteText = document.getElementById('footnote-text');
+    const insertFootnoteBtn = document.getElementById('insert-footnote-btn');
+    const cancelFootnoteBtn = document.getElementById('cancel-footnote-btn');
     const imageModalOverlay = document.getElementById('image-modal-overlay');
     const insertImageBtn = document.getElementById('insert-image-btn');
     const cancelImageBtn = document.getElementById('cancel-image-btn');
@@ -10175,6 +10446,61 @@ window.onload = async () => {
     });
 
     // --- Inicialización de librerías ---
+    /*
+      El subíndice y el superíndice. La hoja pintaba `H~2~O` tachado —GFM
+      acepta el tachado con una sola virgulilla— y dejaba `m^2^` en crudo,
+      mientras Pandoc exportaba los dos como lo que son: el mismo documento
+      decía dos cosas según dónde se mirara.
+
+      Las extensiones se prueban antes que los tokenizadores propios de marked,
+      así que estas bastan para arbitrar las tres sintaxis sin tocar la
+      librería: dos virgulillas siguen siendo tachado, y una suelta que no
+      cierre un subíndice se queda como texto en lugar de abrir uno, que es lo
+      que hace Pandoc. La forma de escribir el tachado no cambia: la barra
+      siempre puso dos virgulillas, y Turndown las devuelve
+      (`edimarkStrikethrough`).
+    */
+    if (window.marked && typeof marked.use === 'function') {
+        const scriptTokens = (lexer, text) => lexer.inlineTokens(text.replace(/\\ /g, ' '));
+        marked.use({
+            extensions: [{
+                name: 'subscript',
+                level: 'inline',
+                start(src) {
+                    // Una virgulilla escapada no abre nada: sin esto el texto
+                    // anterior se cortaba en ella y `\~2\~` salía en subíndice.
+                    const index = src.search(/(?<!\\)~/);
+                    return index < 0 ? undefined : index;
+                },
+                tokenizer(src) {
+                    if (src.startsWith('~~')) return undefined;
+                    const match = SUBSCRIPT_PATTERN.exec(src);
+                    if (match) {
+                        return { type: 'subscript', raw: match[0], tokens: scriptTokens(this.lexer, match[1]) };
+                    }
+                    return src.startsWith('~') ? { type: 'text', raw: '~', text: '~' } : undefined;
+                },
+                renderer(token) {
+                    return `<sub>${this.parser.parseInline(token.tokens)}</sub>`;
+                },
+            }, {
+                name: 'superscript',
+                level: 'inline',
+                start(src) {
+                    const index = src.search(/(?<!\\)\^/);
+                    return index < 0 ? undefined : index;
+                },
+                tokenizer(src) {
+                    const match = SUPERSCRIPT_PATTERN.exec(src);
+                    if (!match) return undefined;
+                    return { type: 'superscript', raw: match[0], tokens: scriptTokens(this.lexer, match[1]) };
+                },
+                renderer(token) {
+                    return `<sup>${this.parser.parseInline(token.tokens)}</sup>`;
+                },
+            }],
+        });
+    }
     if (window.TurndownService) {
         /*
           Los delimitadores son los mismos que escribe la barra en el panel
@@ -10208,6 +10534,25 @@ window.onload = async () => {
             if (MEDIOS_CRUDOS.has(node.nodeName)) return true;
             return node.nodeName === 'FIGURE'
                 && Boolean(node.querySelector('audio, video, iframe, embed, object'));
+        });
+        turndownService.addRule('edimarkFootnoteReference', {
+            filter: node => node.nodeName === 'SUP' && node.hasAttribute('data-edimark-footnote-ref'),
+            replacement: (content, node) => `[^${node.getAttribute('data-edimark-footnote-ref')}]`,
+        });
+        turndownService.addRule('edimarkFootnotes', {
+            filter: node => node.nodeName === 'SECTION' && node.hasAttribute('data-edimark-footnotes'),
+            replacement: (content, node) => {
+                const definitions = Array.from(node.querySelectorAll('[data-edimark-footnote-label]')).map(item => {
+                    const label = item.getAttribute('data-edimark-footnote-label') || '';
+                    let markdown = '';
+                    try {
+                        markdown = decodeURIComponent(item.getAttribute('data-edimark-footnote-markdown') || '');
+                    } catch (_) {}
+                    const indented = markdown.split('\n').map((line, index) => index ? `    ${line}` : line).join('\n');
+                    return `[^${label}]: ${indented}`;
+                });
+                return definitions.length ? `\n\n${definitions.join('\n\n')}\n\n` : '';
+            },
         });
         turndownService.addRule('edimarkCitation', {
             filter: node => node.nodeName === 'SPAN' && node.hasAttribute('data-edimark-citation'),
@@ -10246,6 +10591,28 @@ window.onload = async () => {
         turndownService.addRule('edimarkStrikethrough', {
             filter: ['del', 's', 'strike'],
             replacement: content => `~~${content}~~`,
+        });
+        /*
+          Y el subíndice vuelve con una sola, que es la que lee tanto la hoja
+          como Pandoc. Sin regla, Turndown tiraba las etiquetas y `H~2~O` se
+          quedaba en `H2O` en cuanto se tocaba algo en el editor visual: la
+          pérdida no se veía en pantalla, solo en el Markdown o al guardar. Los
+          espacios van escapados porque ninguno de los dos los admite sueltos.
+
+          El superíndice comparte etiqueta con la llamada de una nota al pie,
+          que tiene su propia regla y su propia marca: esta se aparta de ella
+          en vez de confiar en el orden en que Turndown las recorre.
+        */
+        const scriptReplacement = (marker) => (content) => (
+            content.trim() ? `${marker}${content.replace(/\s+/g, '\\ ')}${marker}` : content
+        );
+        turndownService.addRule('edimarkSubscript', {
+            filter: 'sub',
+            replacement: scriptReplacement('~'),
+        });
+        turndownService.addRule('edimarkSuperscript', {
+            filter: node => node.nodeName === 'SUP' && !node.hasAttribute('data-edimark-footnote-ref'),
+            replacement: scriptReplacement('^'),
         });
         /*
           Y la sangría: Turndown separa el guion del texto con tres espacios,
@@ -13812,6 +14179,28 @@ window.onload = async () => {
     });
     cancelLinkBtn.addEventListener('click', () => toggleLinkModal(false));
     linkModalOverlay.addEventListener('click', e => { if (e.target === linkModalOverlay) toggleLinkModal(false); });
+
+    if (footnoteModalOverlay) {
+        footnoteText?.addEventListener('input', () => {
+            if (insertFootnoteBtn) insertFootnoteBtn.disabled = !footnoteText.value.trim();
+        });
+        footnoteText?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                insertFootnoteFromModal();
+            }
+        });
+        insertFootnoteBtn?.addEventListener('click', insertFootnoteFromModal);
+        cancelFootnoteBtn?.addEventListener('click', () => toggleFootnoteModal(false));
+        footnoteModalOverlay.addEventListener('click', (event) => {
+            if (event.target === footnoteModalOverlay) toggleFootnoteModal(false);
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && footnoteModalOverlay.style.display === 'flex') {
+                toggleFootnoteModal(false);
+            }
+        });
+    }
 
     const mathModalOverlay = document.getElementById('math-modal-overlay');
     const mathCodeInput = document.getElementById('math-code');

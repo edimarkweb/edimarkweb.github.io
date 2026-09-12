@@ -695,17 +695,7 @@ body.desktop-mode .markdown-textarea {
 .dark .base64-hidden-chevron {
     color: #94a3b8;
 }
-/* Todo en una línea: el título y el contador enteros, y la pista con lo que
-   sobre, que en un panel estrecho es nada. */
-.base64-hidden-summary .base64-hidden-hint {
-    flex: 1 1 auto;
-    min-width: 0;
-    margin-left: auto;
-    text-align: right;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+/* Todo en una línea: el título y el contador enteros. */
 .base64-hidden-title,
 .base64-hidden-summary .base64-hidden-count-text {
     white-space: nowrap;
@@ -717,13 +707,11 @@ body.desktop-mode .markdown-textarea {
 .dark .base64-hidden-title {
     color: #e2e8f0;
 }
-.base64-hidden-count-text,
-.base64-hidden-hint {
+.base64-hidden-count-text {
     font-size: 0.875rem;
     color: #475569;
 }
-.dark .base64-hidden-count-text,
-.dark .base64-hidden-hint {
+.dark .base64-hidden-count-text {
     color: #94a3b8;
 }
 /*
@@ -1487,6 +1475,96 @@ body.desktop-mode .markdown-textarea {
 .dark .chord-prompt-hint,
 .dark .chord-prompt-cancel {
     color: #cbd5e1;
+}
+
+/* Subíndices y superíndices. El interlineado a cero es lo que impide que
+   `H~2~O` separe de más las líneas del párrafo que lo lleva. */
+#html-output sub,
+#html-output sup:not(.footnote-reference) {
+    font-size: 0.75em;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+}
+
+#html-output sup:not(.footnote-reference) {
+    top: -0.5em;
+}
+
+#html-output sub {
+    bottom: -0.25em;
+}
+
+/* Notas al pie de la vista previa. El Markdown original sigue siendo el que
+   entiende Pandoc; esta composición solo hace legible la hoja. */
+#html-output .footnote-reference {
+    margin-left: 0.08em;
+    font-size: 0.72em;
+    line-height: 0;
+    vertical-align: super;
+}
+
+#html-output .footnote-reference a {
+    color: #2563eb;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+#html-output .footnotes {
+    margin-top: 2.5rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid #cbd5e1;
+    color: #475569;
+    font-size: 0.82em;
+}
+
+#html-output .footnotes hr {
+    display: none;
+}
+
+#html-output .footnotes ol {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+#html-output .footnotes li {
+    padding-left: 0.2rem;
+    scroll-margin-top: 1.5rem;
+}
+
+#html-output .footnotes li + li {
+    margin-top: 0.45rem;
+}
+
+#html-output .footnotes li:target {
+    border-radius: 0.35rem;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+#html-output .footnotes p {
+    display: inline;
+    margin: 0;
+}
+
+#html-output .footnote-back {
+    margin-left: 0.35rem;
+    color: #2563eb;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.dark #html-output .footnote-reference a,
+.dark #html-output .footnote-back {
+    color: #60a5fa;
+}
+
+.dark #html-output .footnotes {
+    border-top-color: #475569;
+    color: #cbd5e1;
+}
+
+.dark #html-output .footnotes li:target {
+    background: rgba(96, 165, 250, 0.12);
 }
 
 .chord-prompt-cancel {

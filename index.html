@@ -555,6 +555,8 @@
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="bold" data-i18n-key="bold_btn_title" title="Negrita (Ctrl+B)"><i data-lucide="bold"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="italic" data-i18n-key="italic_btn_title" title="Cursiva (Ctrl+I)"><i data-lucide="italic"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="strikethrough" data-i18n-key="strikethrough_btn_title" title="Tachado"><i data-lucide="strikethrough"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="superscript" data-i18n-key="superscript_btn_title" title="Superíndice (m^2^)"><i data-lucide="superscript"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="subscript" data-i18n-key="subscript_btn_title" title="Subíndice (H~2~O)"><i data-lucide="subscript"></i></button>
                 <div class="relative" id="heading-dropdown-container">
                     <button id="heading-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="heading_btn_title" title="Encabezado (Ctrl+1..6)" aria-haspopup="true" aria-expanded="false"><i data-lucide="heading-1"></i><i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i></button>
                     <div id="heading-options" class="hidden absolute z-20 -left-2 mt-2 w-40 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
@@ -581,6 +583,7 @@
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="image" data-i18n-key="image_btn_title" title="Imagen (Ctrl+Shift+I)"><i data-lucide="image"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="table" data-i18n-key="table_btn_title" title="Tabla (Ctrl+Shift+T)"><i data-lucide="table"></i></button>
                 <button id="citation-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="citation_btn_title" title="Insertar cita (Ctrl+Alt+B)" aria-keyshortcuts="Control+Alt+B"><i data-lucide="book-open"></i></button>
+                <button id="footnote-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="footnote" data-i18n-key="footnote_btn_title" title="Insertar nota al pie"><i data-lucide="notebook-pen"></i></button>
             </div>
             <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
             <div class="flex items-center gap-1">
@@ -704,7 +707,6 @@
                     <i data-lucide="chevron-right" class="base64-hidden-chevron" aria-hidden="true"></i>
                     <span class="base64-hidden-title" data-i18n-key="base64_hidden_title">Imágenes del documento</span>
                     <span id="base64-hidden-count" class="base64-hidden-count-text">0 encontradas</span>
-                    <span class="base64-hidden-hint" data-i18n-key="base64_hidden_hint">Incrustadas, enlazadas desde archivos o en línea.</span>
                 </button>
                 <!--
                   Sacar las imágenes incrustadas del texto. Va aquí, junto
@@ -1566,6 +1568,20 @@
             <div class="mt-6 flex justify-end gap-3">
                 <button id="cancel-link-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
                 <button id="insert-link-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="insert_btn">Insertar</button>
+            </div>
+        </div>
+    </div>
+    <div id="footnote-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="footnote-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm dark:bg-slate-800">
+            <h3 id="footnote-modal-title" class="text-lg font-bold mb-4 text-slate-800 dark:text-slate-100" data-i18n-key="insert_footnote_modal_title">Insertar nota al pie</h3>
+            <div>
+                <label for="footnote-text" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="footnote_text_label">Texto de la nota</label>
+                <textarea id="footnote-text" rows="4" class="mt-1 block w-full resize-y rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"></textarea>
+                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400" data-i18n-key="footnote_text_help">Puedes utilizar formato Markdown dentro de la nota.</p>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="cancel-footnote-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
+                <button id="insert-footnote-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50" data-i18n-key="insert_btn" disabled>Insertar</button>
             </div>
         </div>
     </div>
