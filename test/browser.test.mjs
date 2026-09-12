@@ -2870,6 +2870,9 @@ test('el botón inserta notas al pie desde los dos editores', async (t) => {
   await page.locator('#insert-footnote-btn').click();
   await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('Texto[^1]'));
   assert.match(await markdown.inputValue(), /\[\^1\]: Nota con \*\*formato\*\*\./);
+  // La hoja se repinta aparte del Markdown: contar sin esperarla fallaba en el
+  // Chromium de CI, que llega al recuento antes que el repintado.
+  await page.locator('#html-output .footnote-reference').first().waitFor();
   assert.equal(await page.locator('#html-output .footnote-reference').count(), 1);
 
   await page.locator('#html-output > p').click();
@@ -2880,6 +2883,7 @@ test('el botón inserta notas al pie desde los dos editores', async (t) => {
   await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('[^2]: Añadida desde la hoja.'));
   const finalMarkdown = await markdown.inputValue();
   assert.match(finalMarkdown, /Texto\[\^1\]\[\^2\]/);
+  await page.waitForFunction(() => document.querySelectorAll('#html-output .footnote-reference').length === 2);
   assert.equal(await page.locator('#html-output .footnote-reference').count(), 2);
   assert.equal(await page.locator('#html-output .footnotes li').count(), 2);
   assert.equal(await page.locator('#footnote-btn .lucide-notebook-pen').count(), 1);
