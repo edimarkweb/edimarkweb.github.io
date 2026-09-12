@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.55.0';
+const APP_VERSION = '2.56.0';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -3819,7 +3819,15 @@ function updateReloadFromDiskState() {
     // un documento nuevo, o uno importado que todavía no se ha guardado, no
     // tiene de dónde.
     const doc = currentId ? docs.find(d => d.id === currentId) : null;
-    button.disabled = !doc || !doc.filePath;
+    const disabled = !doc || !doc.filePath;
+    button.disabled = disabled;
+    // El título dice por qué está apagado, y va por la clave del idioma para
+    // que cambiar de idioma con el botón así lo siga traduciendo.
+    const key = disabled ? 'reload_from_disk_btn_title_disabled' : 'reload_from_disk_btn_title';
+    button.setAttribute('data-i18n-key', key);
+    button.title = disabled
+        ? getTranslation(key, 'La pestaña no está guardada en ningún archivo: no hay nada que releer.')
+        : getTranslation(key, 'Releer el documento del disco');
 }
 
 /*
@@ -5918,6 +5926,25 @@ function applyFormatToPreview(format) {
     switch (format) {
         case 'bold': run('bold'); break;
         case 'italic': run('italic'); break;
+        case 'strikethrough': run('strikeThrough'); break;
+        case 'horizontal-rule': {
+            // El separador pertenece al documento, no sustituye al texto que
+            // estuviera seleccionado: se coloca detrás de su bloque.
+            const selection = window.getSelection();
+            const range = selection && selection.rangeCount ? selection.getRangeAt(0) : null;
+            const block = range && topLevelPreviewBlock(range.startContainer);
+            const rule = document.createElement('hr');
+            if (block) block.after(rule);
+            else document.getElementById('html-output')?.appendChild(rule);
+            if (selection) {
+                const after = document.createRange();
+                after.setStartAfter(rule);
+                after.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(after);
+            }
+            break;
+        }
         case 'code':
             if (!applyInlineCodeToPreview()) return false;
             break;
@@ -5989,6 +6016,22 @@ function applyFormat(format) {
             markdownEditor.replaceSelection('**');
             markdownEditor.setCursor({ line: cursor.line, ch: cursor.ch + 1 });
           }
+          break;
+        case 'strikethrough':
+          if (hadSelection) markdownEditor.replaceSelection(`~~${selectedText}~~`, 'around');
+          else {
+            markdownEditor.replaceSelection('~~~~');
+            markdownEditor.setCursor({ line: cursor.line, ch: cursor.ch + 2 });
+          }
+          break;
+        case 'horizontal-rule':
+          // Un separador no es formato para la selección: conserva el texto y
+          // se inserta justo después, igual que al trabajar sobre la hoja.
+          if (hadSelection && markdownTextareaEl) {
+            const end = markdownTextareaEl.selectionEnd;
+            markdownTextareaEl.setSelectionRange(end, end);
+          }
+          markdownEditor.replaceSelection('\n\n---\n\n');
           break;
         case 'code':
           if (hadSelection) markdownEditor.replaceSelection(`\`\`\`\n${selectedText}\n\`\`\`` , 'around');
@@ -7068,7 +7111,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
     if (format === 'pdf') {
         try {
-            const { importPdf } = await import('./pdf-import.js?v=2.55.0');
+            const { importPdf } = await import('./pdf-import.js?v=2.56.0');
             const name = getSafeDocumentName(file.name);
             // Crear el documento ocurre dentro del diálogo, que se queda a la
             // vista avisando: con un informe entero no es cosa de un instante.
@@ -7992,7 +8035,9 @@ window.onload = async () => {
     const mobileActionsToggle = document.getElementById('mobile-actions-toggle');
     const mobileFormatToggle = document.getElementById('mobile-format-toggle');
     const openFileBtn = document.getElementById('open-file-btn');
+    const openQuickBtn = document.getElementById('open-quick-btn');
     const fileInput = document.getElementById('file-input');
+    const importQuickBtn = document.getElementById('import-quick-btn');
     const saveBtn = document.getElementById('save-btn');
     // El mismo Guardar en dos sitios: el icono de la cabecera, que es la vía
     // rápida, y la entrada del menú Archivo, donde se lee su atajo.
@@ -10075,6 +10120,7 @@ window.onload = async () => {
             codeBlockStyle: 'fenced',
             bulletListMarker: '-',
             emDelimiter: '*',
+            hr: '---',
         });
         /*
           El HTML que Markdown no sabe escribir se conserva tal cual: un
@@ -10128,6 +10174,12 @@ window.onload = async () => {
                 replacement: (content, node) => (node.checked ? '[x] ' : '[ ] '),
             });
         }
+        // El complemento GFM devuelve una sola virgulilla; la barra escribe la
+        // forma inequívoca y más extendida de Markdown, con dos a cada lado.
+        turndownService.addRule('edimarkStrikethrough', {
+            filter: ['del', 's', 'strike'],
+            replacement: content => `~~${content}~~`,
+        });
         /*
           Y la sangría: Turndown separa el guion del texto con tres espacios,
           mientras que la barra escribe `- uno`. La continuación se sangra con
@@ -10742,6 +10794,12 @@ window.onload = async () => {
         }
         fileInput.click();
     });
+    // Abrir e Importar siguen explicados en el menú Archivo, pero tienen junto
+    // a Guardar estos accesos de un clic. Delegar en el botón del menú mantiene
+    // una única ruta para web y escritorio.
+    if (openQuickBtn) {
+        openQuickBtn.addEventListener('click', () => openFileBtn.click());
+    }
     fileInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -10760,6 +10818,9 @@ window.onload = async () => {
             closeSettingsMenu();
             importFileInput.click();
         });
+        if (importQuickBtn) {
+            importQuickBtn.addEventListener('click', () => importFileBtn.click());
+        }
         importFileInput.addEventListener('change', async (event) => {
             const archivos = Array.from(event.target.files || []);
             importFileInput.value = '';

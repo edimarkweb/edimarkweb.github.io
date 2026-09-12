@@ -285,7 +285,8 @@ body.desktop-mode #toggle-width-btn,
 body.desktop-mode #desktop-window-toolbar-btn,
 body.desktop-mode #desktop-window-separator,
 #desktop-window-toolbar-btn.hidden,
-#desktop-window-separator.hidden {
+#desktop-window-separator.hidden,
+.action-btn.hidden {
     display: none;
 }
 .dark body.desktop-mode {
@@ -1365,9 +1366,24 @@ body.desktop-mode .markdown-textarea {
     -moz-appearance: none;
     appearance: none;
 }
-.action-btn:hover { background-color: #f1f5f9; color: #1e293b; }
+.action-btn:not(:disabled):hover { background-color: #f1f5f9; color: #1e293b; }
 .dark .action-btn { color: #94a3b8; }
-.dark .action-btn:hover { background-color: #1e293b; color: #e2e8f0; }
+.dark .action-btn:not(:disabled):hover { background-color: #1e293b; color: #e2e8f0; }
+/*
+  Apagado tiene que verse apagado: sin el fondo del hover, atenuado y con el
+  cursor de «aquí no se pulsa». Los eventos siguen llegando —el botón
+  deshabilitado no responde al clic de todas formas— para que el `title` pueda
+  seguir explicando por qué no está disponible.
+*/
+.action-btn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background-color: transparent !important;
+    color: #94a3b8 !important;
+}
+.dark .action-btn[disabled] {
+    color: #64748b !important;
+}
 
 /*
   Las tres disposiciones, a la vista y en el orden en que están los paneles:

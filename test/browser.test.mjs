@@ -3110,11 +3110,28 @@ test('la cabecera separa los menús de las acciones del documento', async (t) =>
     ['Archivo', 'Exportar', 'Configuración'],
   );
 
-  // Guardar sale a la barra como icono, que es la vía rápida, y está además en
-  // el menú: «Guardar como…» sin «Guardar» al lado se lee mal, y en el menú la
-  // opción lleva su atajo escrito, que el icono solo enseña al pasar el ratón.
+  // Abrir, Importar y Guardar salen a la barra como iconos, que son la vía
+  // rápida, y siguen además en el menú, donde se explican y muestran su atajo.
   const acciones = page.locator('#document-actions-group');
+  assert.deepEqual(
+    await acciones.locator(':scope > button').evaluateAll(buttons => buttons.map(button => button.id)),
+    ['open-quick-btn', 'import-quick-btn', 'save-btn', 'print-btn', 'open-search-btn'],
+  );
+  assert.equal(await acciones.locator('#open-quick-btn').getAttribute('title'), 'Abrir archivo (Ctrl+O)');
+  assert.equal(await acciones.locator('#import-quick-btn').getAttribute('title'), 'Importar archivo (Ctrl+Alt+O)');
   assert.equal(await acciones.locator('#save-btn').count(), 1);
+  await page.evaluate(() => {
+    window.__selectoresRapidos = [];
+    for (const id of ['file-input', 'import-file-input']) {
+      document.getElementById(id).addEventListener('click', (event) => {
+        event.preventDefault();
+        window.__selectoresRapidos.push(id);
+      });
+    }
+  });
+  await acciones.locator('#open-quick-btn').click();
+  await acciones.locator('#import-quick-btn').click();
+  assert.deepEqual(await page.evaluate(() => window.__selectoresRapidos), ['file-input', 'import-file-input']);
   assert.equal(await page.locator('#actions-menu #save-btn').count(), 0);
   assert.equal(await page.locator('#actions-menu #save-menu-btn').count(), 1);
   assert.equal(await page.locator('#actions-menu #save-as-btn').count(), 1);
@@ -4737,6 +4754,7 @@ test('el formato de la barra se aplica también sobre la vista previa', async (t
   for (const [formato, palabra, esperado] of [
     ['bold', 'negrita', 'Un párrafo de prueba para **negrita**.'],
     ['italic', 'cursiva', 'Un párrafo de prueba para *cursiva*.'],
+    ['strikethrough', 'tachado', 'Un párrafo de prueba para ~~tachado~~.'],
     ['code', 'código', 'Un párrafo de prueba para `código`.'],
     ['quote', 'cita', '> Un párrafo de prueba para cita.'],
     ['list-ul', 'lista', '- Un párrafo de prueba para lista.'],
@@ -4772,6 +4790,37 @@ test('el formato de la barra se aplica también sobre la vista previa', async (t
   await page.waitForFunction(
     () => document.getElementById('markdown-input').value.trim() === 'Un párrafo de prueba para **atajo**.',
   );
+
+  // Una línea horizontal es un bloque nuevo y no borra el párrafo en el que
+  // estaba el cursor de la hoja.
+  await documentoDePrueba(page, 'separador');
+  await seleccionarEnLaHoja(page, 'separador');
+  await page.locator('[data-format="horizontal-rule"]').click();
+  await page.waitForFunction(() => document.getElementById('html-output').querySelectorAll('hr').length === 1);
+  assert.match(await page.locator('#markdown-input').inputValue(), /separador\.\n+---/);
+});
+
+test('tachado y línea horizontal se insertan desde el panel Markdown', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#layout-switch [data-layout="md"]').click();
+  await page.locator('#html-panel').waitFor({ state: 'hidden' });
+  await page.evaluate(() => {
+    markdownEditor.setValue('Texto tachado');
+    markdownEditor.focus();
+    document.getElementById('markdown-input').setSelectionRange(0, 13);
+  });
+  await page.locator('[data-format="strikethrough"]').click();
+  assert.equal(await page.locator('#markdown-input').inputValue(), '~~Texto tachado~~');
+
+  await page.evaluate(() => {
+    markdownEditor.focus();
+    document.getElementById('markdown-input').setSelectionRange(0, markdownEditor.getValue().length);
+  });
+  await page.locator('[data-format="horizontal-rule"]').click();
+  assert.equal(await page.locator('#markdown-input').inputValue(), '~~Texto tachado~~\n\n---\n\n');
 });
 
 test('desde la vista previa se insertan títulos, enlaces, imágenes y tablas', async (t) => {
@@ -6446,6 +6495,11 @@ test('el botón de releer trae lo que hay en el disco y avisa antes de descartar
   const { context, page } = await openApp();
   t.after(() => context.close());
 
+  // En la web no hay una ruta de disco que releer: la clase `hidden` debe
+  // prevalecer sobre el `display:flex` común de los botones de acción.
+  const boton = page.locator('#reload-from-disk-btn');
+  assert.equal(await boton.isVisible(), false);
+
   // El escritorio, de mentira: un archivo cuyo contenido decide la prueba.
   await page.evaluate(() => {
     window.__disco = 'Del disco, versión 1.\n';
@@ -6458,11 +6512,16 @@ test('el botón de releer trae lo que hay en el disco y avisa antes de descartar
       confirm: async (message) => { window.__preguntas.push(message); return window.__respuesta; },
     };
   });
-  const boton = page.locator('#reload-from-disk-btn');
   // En una pestaña que no viene de ningún archivo no hay nada que releer.
   await page.evaluate(() => updateReloadFromDiskState());
   assert.equal(await boton.isVisible(), true);
   assert.equal(await boton.isDisabled(), true);
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  const fondoDesactivado = await boton.evaluate(element => getComputedStyle(element).backgroundColor);
+  await boton.hover();
+  assert.equal(await boton.evaluate(element => getComputedStyle(element).backgroundColor), fondoDesactivado);
+  assert.equal(fondoDesactivado, 'rgba(0, 0, 0, 0)');
+  assert.equal(await boton.evaluate(element => getComputedStyle(element).opacity), '0.45');
 
   await page.evaluate(() => window.__edimarkOpenNativePaths(['/tmp/notas.md']));
   await page.waitForFunction(() => markdownEditor.getValue().includes('versión 1'));

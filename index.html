@@ -40,7 +40,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/split.js@1.6.5/dist/split.min.js" integrity="sha384-q2ksSc8z6Q4ZUnxlfZj9AXZLpSdWmD3q/YrId1twTeNHh56fNh98YbJSpppzGUvL" crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" href="style.css?v=2.55.0">
+    <link rel="stylesheet" href="style.css?v=2.56.0">
 </head>
 <body class="p-4 sm:p-6 md:p-8">
 <!--
@@ -345,6 +345,12 @@
         </div>
         <div id="toolbar-actions" class="toolbar-actions flex items-center justify-end gap-1 sm:gap-2 flex-wrap sm:ml-auto">
             <div class="toolbar-group flex items-center gap-1 sm:gap-2" id="document-actions-group">
+                <button type="button" id="open-quick-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="open_btn_title" title="Abrir archivo (Ctrl+O)" aria-keyshortcuts="Control+O">
+                    <i data-lucide="folder-open"></i>
+                </button>
+                <button type="button" id="import-quick-btn" class="action-btn focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="import_btn_title" title="Importar archivo (Ctrl+Alt+O)" aria-keyshortcuts="Control+Alt+O">
+                    <i data-lucide="upload"></i>
+                </button>
                 <button type="button" id="save-btn" class="action-btn relative focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400" data-i18n-key="save_btn_title" title="Guardar archivo (Ctrl+S)" aria-keyshortcuts="Control+S">
                     <i data-lucide="save"></i>
                     <span id="save-dirty-dot" class="save-dirty-dot hidden" aria-hidden="true"></span>
@@ -480,7 +486,7 @@
     <section id="desktop-release-banner" class="desktop-release-banner" role="status" hidden>
         <i data-lucide="monitor-down" class="desktop-release-banner-icon" aria-hidden="true"></i>
         <div class="desktop-release-banner-content">
-            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.55.0 está disponible para Linux, Windows y macOS.</p>
+            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.56.0 está disponible para Linux, Windows y macOS.</p>
             <a id="desktop-banner-download-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="desktop_banner_download">Ver descargas</a>
             <label class="desktop-release-banner-never">
                 <input id="desktop-banner-never-show" type="checkbox">
@@ -548,6 +554,7 @@
              <div class="flex items-center gap-1">
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="bold" data-i18n-key="bold_btn_title" title="Negrita (Ctrl+B)"><i data-lucide="bold"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="italic" data-i18n-key="italic_btn_title" title="Cursiva (Ctrl+I)"><i data-lucide="italic"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="strikethrough" data-i18n-key="strikethrough_btn_title" title="Tachado"><i data-lucide="strikethrough"></i></button>
                 <div class="relative" id="heading-dropdown-container">
                     <button id="heading-btn" class="toolbar-btn flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="heading_btn_title" title="Encabezado (Ctrl+1..6)" aria-haspopup="true" aria-expanded="false"><i data-lucide="heading-1"></i><i data-lucide="chevron-down" class="w-4 h-4 opacity-80"></i></button>
                     <div id="heading-options" class="hidden absolute z-20 -left-2 mt-2 w-40 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-800">
@@ -565,6 +572,7 @@
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="quote" data-i18n-key="quote_btn_title" title="Cita (Ctrl+Shift+Q)"><i data-lucide="quote"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="list-ul" data-i18n-key="ul_list_btn_title" title="Lista (Ctrl+Shift+L)"><i data-lucide="list"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="list-ol" data-i18n-key="ol_list_btn_title" title="Lista numerada (Ctrl+Shift+O)"><i data-lucide="list-ordered"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="horizontal-rule" data-i18n-key="horizontal_rule_btn_title" title="Línea horizontal"><i data-lucide="minus"></i></button>
             </div>
             <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
             <div class="flex items-center gap-1">
@@ -1647,13 +1655,13 @@
         </div>
     </div>
 
-    <script src="asset-paths.js?v=2.55.0"></script>
-    <script src="bibliography.js?v=2.55.0"></script>
-    <script src="document-format.js?v=2.55.0"></script>
-    <script src="format-profiles.js?v=2.55.0"></script>
-    <script src="platform-api.js?v=2.55.0"></script>
-    <script src="desktop-updater.js?v=2.55.0"></script>
-    <script type="module" src="pandoc-exporter.js?v=2.55.0"></script>
+    <script src="asset-paths.js?v=2.56.0"></script>
+    <script src="bibliography.js?v=2.56.0"></script>
+    <script src="document-format.js?v=2.56.0"></script>
+    <script src="format-profiles.js?v=2.56.0"></script>
+    <script src="platform-api.js?v=2.56.0"></script>
+    <script src="desktop-updater.js?v=2.56.0"></script>
+    <script type="module" src="pandoc-exporter.js?v=2.56.0"></script>
     <script>
     (function () {
       var ANALYTICS_FALLBACK_ENDPOINT = 'https://bilateria.org/app/estadistica/edimarkweb/track.php';
@@ -1833,8 +1841,8 @@
       });
     })();
     </script>
-    <script src="script.js?v=2.55.0&amp;rev=search-scroll" defer></script>
-    <script src="search.js?v=2.55.0" defer></script>
-    <script src="i18n.js?v=2.55.0" defer></script>
+    <script src="script.js?v=2.56.0&amp;rev=search-scroll" defer></script>
+    <script src="search.js?v=2.56.0" defer></script>
+    <script src="i18n.js?v=2.56.0" defer></script>
 </body>
 </html>
