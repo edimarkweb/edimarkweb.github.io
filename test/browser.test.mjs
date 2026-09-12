@@ -5385,6 +5385,11 @@ async function documentoConImagenIncrustada(page, extra = '') {
   }
 }
 
+async function pasarPrimeraImagenIncrustadaALaCarpeta(page) {
+  await page.locator('.base64-hidden-item').first()
+    .getByRole('button', { name: 'Pasar a la carpeta' }).click();
+}
+
 test('las imágenes incrustadas se pueden pasar a la carpeta del documento', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
@@ -5393,7 +5398,9 @@ test('las imágenes incrustadas se pueden pasar a la carpeta del documento', asy
   await nombrarDocumento(page, 'Mi archivo');
   // La segunda imagen comprueba que no se pisa una ruta ya usada.
   await documentoConImagenIncrustada(page, '\n![Ya suelta](Mi-archivo/01.png)\n');
-  await page.locator('#base64-extract-btn').click();
+  assert.equal(await page.locator('#base64-extract-btn').isVisible(), false, 'con una sola incrustada no se repite la acción general');
+  assert.equal(await page.getByRole('button', { name: 'Ver código' }).count(), 0);
+  await pasarPrimeraImagenIncrustadaALaCarpeta(page);
 
   await page.waitForFunction(() => !document.getElementById('markdown-input').value.includes('base64,'));
   const markdown = await page.locator('#markdown-input').inputValue();
@@ -5429,7 +5436,7 @@ test('en escritorio una imagen pendiente sobrevive al reinicio sin guardar el do
     window.EdiMarkPlatform = { ...(window.EdiMarkPlatform || {}), isDesktop: true };
     return currentId;
   });
-  await page.locator('#base64-extract-btn').click();
+  await pasarPrimeraImagenIncrustadaALaCarpeta(page);
   await page.waitForFunction(async (id) => (await readPersistedDocumentAssets(id)).length === 1, docId);
   await page.evaluate(() => autosaveCurrentDoc());
 
@@ -5491,7 +5498,7 @@ test('las imágenes pasadas a la carpeta se escriben al guardar', async (t) => {
   await page.locator('#new-tab-btn').click();
   await documentoConImagenIncrustada(page);
   await nombrarDocumento(page, 'tema-3');
-  await page.locator('#base64-extract-btn').click();
+  await pasarPrimeraImagenIncrustadaALaCarpeta(page);
   await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('tema-3/images/01.png'));
 
   await page.keyboard.press('Control+s');
@@ -5533,7 +5540,7 @@ test('al guardar por primera vez la carpeta propia toma el nombre elegido', asyn
 
   await page.locator('#new-tab-btn').click();
   await documentoConImagenIncrustada(page);
-  await page.locator('#base64-extract-btn').click();
+  await pasarPrimeraImagenIncrustadaALaCarpeta(page);
   // Sin nombre todavía: la carpeta se llama como la pestaña.
   await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('/images/01.png'));
   assert.match(await page.locator('#markdown-input').inputValue(), /!\[Un gráfico\]\(Documento-sin-título\/images\/01\.png\)/);
@@ -6067,11 +6074,12 @@ test('Las imágenes se convierten en bloque y llevan al texto', async (t) => {
       '# Imágenes de los dos tipos', '',
       'Un párrafo antes, para que haya texto por encima.', '',
       `![Incrustada](${png})`, '',
+      `![Otra incrustada](${png})`, '',
       '![Enlazada](logo_100px.png)', '',
       'Y el cierre.', '',
     ].join('\n'));
   }, [PNG]);
-  await page.waitForFunction(() => currentBase64State?.placeholders?.size === 1 && currentLinkedImages?.size === 1);
+  await page.waitForFunction(() => currentBase64State?.placeholders?.size === 2 && currentLinkedImages?.size === 1);
   await page.click('#base64-hidden-toggle');
   await page.waitForSelector('.base64-hidden-item');
 
@@ -6081,6 +6089,16 @@ test('Las imágenes se convierten en bloque y llevan al texto', async (t) => {
     incrustar: !document.getElementById('linked-embed-all-btn').hidden,
   }));
   assert.deepEqual(await visibles(), { extraer: true, incrustar: true });
+
+  // La acción individual toca solo su línea. Al quedar una sola incrustada,
+  // la acción general desaparece porque ya sería un duplicado.
+  await page.locator('.base64-hidden-item').filter({ hasText: 'Otra incrustada' })
+    .getByRole('button', { name: 'Pasar a la carpeta' }).click();
+  await page.waitForFunction(() => currentBase64State?.placeholders?.size === 1);
+  const trasIndividual = await page.evaluate(() => markdownEditor.getValue());
+  assert.equal((trasIndividual.match(/data:image\/png;base64,/g) || []).length, 1);
+  assert.match(trasIndividual, /!\[Otra incrustada\]\([^/)]+\/images\/01\.png\)/);
+  assert.deepEqual(await visibles(), { extraer: false, incrustar: true });
 
   // Ir al texto deja seleccionado el fragmento de esa imagen, y de la
   // incrustada lo que se selecciona es su marcador, que es lo que se ve.
@@ -6099,8 +6117,8 @@ test('Las imágenes se convierten en bloque y llevan al texto', async (t) => {
   await page.waitForFunction(() => currentLinkedImages?.size === 0);
   const texto = await page.evaluate(() => markdownEditor.getValue());
   assert.ok(!texto.includes('(logo_100px.png)'), 'la enlazada sigue enlazada');
-  assert.equal((texto.match(/data:image\/png;base64,/g) || []).length, 2);
-  // Ya no queda ninguna enlazada, así que su botón sobra; el otro se queda.
+  assert.equal((texto.match(/data:image\/png;base64,/g) || []).length, 3);
+  // Ya no queda ninguna enlazada y vuelven a ser dos incrustadas.
   assert.deepEqual(await visibles(), { extraer: true, incrustar: false });
 });
 

@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.56.1';
+const APP_VERSION = '2.56.2';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -1178,7 +1178,9 @@ function updateBase64Ui(state) {
       asomara con el panel plegado, la cabecera dejaría de ser una línea y le
       comería al editor el alto que se le acaba de devolver.
     */
-    const showExtract = expanded && entries.length > 0;
+    // Cada imagen lleva su propia acción. La conversión en bloque solo evita
+    // trabajo cuando hay al menos dos incrustadas; con una sería un duplicado.
+    const showExtract = expanded && entries.length > 1;
     const showEmbedAll = expanded && linkedEntries.length > 0;
     if (base64ExtractBtn) base64ExtractBtn.toggleAttribute('hidden', !showExtract);
     if (linkedEmbedAllBtn) linkedEmbedAllBtn.toggleAttribute('hidden', !showEmbedAll);
@@ -1216,10 +1218,10 @@ function updateBase64Ui(state) {
                 title: getTranslation('document_image_replace_btn_title', 'Elegir otra imagen del portapapeles, del disco o de internet'),
                 run: () => openImageReplacement(base64ReplacementTarget(placeholder)),
             }, {
-                icon: 'code',
-                label: getTranslation('base64_view_code_btn', 'Ver código'),
-                title: getTranslation('base64_view_code_hint', 'Copiar el código de la imagen para pegarla en otro documento.'),
-                run: () => openBase64Modal(placeholder),
+                icon: 'folder-input',
+                label: getTranslation('base64_extract_one_btn', 'Pasar a la carpeta'),
+                title: getTranslation('base64_extract_one_btn_title', 'Escribir esta imagen como archivo en la carpeta del documento y dejar su ruta en el texto'),
+                run: button => extractOneBase64Image(placeholder, button),
             }, {
                 icon: 'trash-2',
                 label: getTranslation('base64_delete_btn', 'Eliminar'),
@@ -4620,12 +4622,16 @@ function registerExtractedAssets(doc, files) {
 }
 
 // Prepare linked assets before a PDF can enter localStorage or the editor.
-function prepareEmbeddedImageExtraction(markdown, documentName) {
+function prepareEmbeddedImageExtraction(markdown, documentName, shouldExtract = () => true) {
     const used = relativeImagePathsInMarkdown(markdown);
     const folder = extractedAssetsFolderName(documentName);
     const extracted = [];
     let counter = 0;
+    let matchIndex = 0;
     const rewritten = markdown.replace(BASE64_IMAGE_REGEX, (match, alt, prefix, mime, data, tail) => {
+        const extractThis = shouldExtract(match, matchIndex);
+        matchIndex += 1;
+        if (!extractThis) return match;
         let bytes;
         try {
             bytes = base64ToBytes(data);
@@ -4651,7 +4657,7 @@ function prepareEmbeddedImageExtraction(markdown, documentName) {
     return { markdown: rewritten, files: extracted };
 }
 
-async function extractBase64Images() {
+async function extractBase64Images(shouldExtract) {
     const doc = docs.find(d => d.id === currentId);
     if (!doc || !markdownEditor) return 0;
     const markdown = markdownEditor.getValue();
@@ -4659,7 +4665,7 @@ async function extractBase64Images() {
         reportStatus(getTranslation('base64_extract_empty', 'No hay imágenes incrustadas en este documento.'));
         return 0;
     }
-    const { markdown: rewritten, files: extracted } = prepareEmbeddedImageExtraction(markdown, doc.name);
+    const { markdown: rewritten, files: extracted } = prepareEmbeddedImageExtraction(markdown, doc.name, shouldExtract);
     const folder = extractedAssetsFolder(doc);
 
     if (!extracted.length) {
@@ -4685,6 +4691,28 @@ async function extractBase64Images() {
         { count: extracted.length, folder: `${folder}/images/` },
     ));
     return extracted.length;
+}
+
+async function extractOneBase64Image(placeholder, button) {
+    const target = base64ReplacementTarget(placeholder);
+    if (!target) return 0;
+    let occurrence = 0;
+    const shouldExtract = match => {
+        if (match !== target.snippet) return false;
+        const selected = occurrence === target.occurrence;
+        occurrence += 1;
+        return selected;
+    };
+    if (button) button.disabled = true;
+    try {
+        return await extractBase64Images(shouldExtract);
+    } catch (error) {
+        console.error('No se pudo pasar la imagen a la carpeta:', error);
+        notifyUser(getTranslation('base64_extract_one_error', 'No se pudo pasar la imagen a la carpeta.'));
+        return 0;
+    } finally {
+        if (button && button.isConnected) button.disabled = false;
+    }
 }
 
 async function persistLinkedDocumentAssets(doc, content) {
@@ -7145,7 +7173,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
     if (format === 'pdf') {
         try {
-            const { importPdf } = await import('./pdf-import.js?v=2.56.1');
+            const { importPdf } = await import('./pdf-import.js?v=2.56.2');
             const name = getSafeDocumentName(file.name);
             // Crear el documento ocurre dentro del diálogo, que se queda a la
             // vista avisando: con un informe entero no es cosa de un instante.
