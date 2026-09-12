@@ -784,11 +784,13 @@ test('los controles de imágenes y de pegado se traducen', async (t) => {
   await page.locator('#base64-hidden-toggle').click();
   // Por su etiqueta accesible, no por el rótulo: en un panel estrecho el texto
   // del botón no se dibuja y solo queda el icono.
-  await page.locator('.base64-hidden-btn[aria-label="View code"]').click();
-  assert.equal(await page.locator('#base64-modal-title').textContent(), 'Image code');
-  assert.equal(await page.locator('#copy-base64-code-btn').textContent(), 'Copy code');
-  assert.equal(await page.locator('#close-base64-modal-btn').textContent(), 'Close');
-  assert.equal(await page.locator('#base64-modal-text').getAttribute('aria-label'), 'Image base64 code');
+  const moveButton = page.locator('.base64-hidden-btn[aria-label="Move to folder"]');
+  await moveButton.waitFor();
+  assert.equal(
+    await moveButton.getAttribute('title'),
+    'Writes this image as a file in the document folder and leaves its path in the text',
+  );
+  assert.equal(await page.locator('#base64-extract-btn').isVisible(), false);
 });
 
 test('los id de encabezado conservan palabras, guiones y dígitos', async (t) => {
