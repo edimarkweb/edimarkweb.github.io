@@ -5418,6 +5418,50 @@ test('las imágenes incrustadas se pueden pasar a la carpeta del documento', asy
   assert.match(extraida.src, /^blob:/);
 });
 
+test('en escritorio una imagen pendiente sobrevive al reinicio sin guardar el documento', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  await nombrarDocumento(page, 'cosa');
+  await documentoConImagenIncrustada(page);
+  const docId = await page.evaluate(() => {
+    window.EdiMarkPlatform = { ...(window.EdiMarkPlatform || {}), isDesktop: true };
+    return currentId;
+  });
+  await page.locator('#base64-extract-btn').click();
+  await page.waitForFunction(async (id) => (await readPersistedDocumentAssets(id)).length === 1, docId);
+  await page.evaluate(() => autosaveCurrentDoc());
+
+  // En el siguiente arranque se comporta como Tauri. Allí no se hace la
+  // restauración anticipada de la web: la vista previa debe recuperar la
+  // imagen de IndexedDB cuando intenta resolver su ruta.
+  await context.addInitScript(() => {
+    document.addEventListener('DOMContentLoaded', () => {
+      window.EdiMarkPlatform = { ...(window.EdiMarkPlatform || {}), isDesktop: true };
+    }, { once: true });
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.__edimarkReady === true);
+  await page.locator(`.tab[data-id="${docId}"]`).click();
+  await page.waitForFunction(() => {
+    const img = document.querySelector('#html-output img');
+    return Boolean(img
+      && img.getAttribute('src')?.startsWith('blob:')
+      && img.complete
+      && img.naturalWidth > 0);
+  });
+
+  assert.equal(
+    await page.locator('#markdown-input').inputValue(),
+    '# Con una imagen\n\n![Un gráfico](cosa/images/01.png)\n',
+  );
+  assert.equal(
+    await page.locator('#missing-assets-notice').evaluate(el => el.classList.contains('hidden')),
+    true,
+  );
+});
+
 test('las imágenes pasadas a la carpeta se escriben al guardar', async (t) => {
   const { context, page } = await openApp({
     initStorage: () => {

@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.56.0';
+const APP_VERSION = '2.56.1';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -4233,6 +4233,33 @@ async function replacePersistedDocumentAssets(docId, assets, onProgress) {
     }
 }
 
+/*
+  Añade archivos pendientes sin borrar los que ya tuviera el documento. En el
+  escritorio se usa al sacar una imagen del Markdown: todavía no existe junto
+  al `.md`, pero debe sobrevivir al cierre de la aplicación. No se recopilan
+  aquí las demás rutas del documento, porque esas ya viven en el disco y un
+  informe grande acabaría duplicado entero en IndexedDB por extraer una foto.
+*/
+async function mergePersistedDocumentAssets(docId, assets) {
+    const database = await openAssetDatabase();
+    if (!database || !docId || !assets.length) return false;
+    const transaction = database.transaction(ASSET_DB_STORE, 'readwrite');
+    const store = transaction.objectStore(ASSET_DB_STORE);
+    assets.forEach(asset => store.put({
+        key: `${docId}\u0000${asset.relativePath}`,
+        docId,
+        relativePath: asset.relativePath,
+        file: asset.contents,
+    }));
+    try {
+        await assetTransactionFinished(transaction);
+        return true;
+    } catch (error) {
+        reportStorageFailure(error);
+        return false;
+    }
+}
+
 async function readPersistedDocumentAssets(docId) {
     const database = await openAssetDatabase();
     if (!database || !docId) return [];
@@ -4644,7 +4671,14 @@ async function extractBase64Images() {
     markdownEditor.setValue(rewritten);
     doc.md = rewritten;
     updateHtml();
-    await persistLinkedDocumentAssets(doc, rewritten);
+    if (window.EdiMarkPlatform?.isDesktop) {
+        await mergePersistedDocumentAssets(doc.id, extracted.map(file => ({
+            relativePath: file.relativePath,
+            contents: file.blob,
+        })));
+    } else {
+        await persistLinkedDocumentAssets(doc, rewritten);
+    }
     reportStatus(formatTranslation(
         extracted.length === 1 ? 'base64_extract_done_one' : 'base64_extract_done_many',
         '{count} imágenes pasadas a «{folder}». Se escribirán al guardar el documento.',
@@ -7111,7 +7145,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
     if (format === 'pdf') {
         try {
-            const { importPdf } = await import('./pdf-import.js?v=2.56.0');
+            const { importPdf } = await import('./pdf-import.js?v=2.56.1');
             const name = getSafeDocumentName(file.name);
             // Crear el documento ocurre dentro del diálogo, que se queda a la
             // vista avisando: con un informe entero no es cosa de un instante.
