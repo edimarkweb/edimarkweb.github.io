@@ -1,5 +1,5 @@
 
-/* Paleta exclusiva de la copia integrada en EdiMarkWeb Desktop. */
+/* Paleta exclusiva de la copia integrada en EdiMarkdown Desktop. */
 html[data-edimark-theme] {
     color-scheme: light;
     --primary-color: #2563eb;

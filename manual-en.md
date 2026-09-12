@@ -1,8 +1,8 @@
-![EdiMarkWeb logo](logo_100px.png)
+![EdiMarkdown logo](logo_100px.png)
 
-# EdiMarkWeb manual
+# EdiMarkdown manual
 
-EdiMarkWeb is a **Markdown text editor** made for teachers and content creators: you write quickly, export to Word, LibreOffice, EPUB, HTML, LaTeX and PDF, and you can add mathematical formulas. It runs **in the browser**, with nothing to install, and also as a **desktop application** for Linux, Windows and macOS. Either way the work happens on your own computer: neither the documents nor the images leave it.
+EdiMarkdown is a **Markdown text editor** made for teachers and content creators: you write quickly, export to Word, LibreOffice, EPUB, HTML, LaTeX and PDF, and you can add mathematical formulas. It runs **in the browser**, with nothing to install, and also as a **desktop application** for Linux, Windows and macOS. Either way the work happens on your own computer: neither the documents nor the images leave it.
 
 ## Getting started
 
@@ -41,7 +41,7 @@ All of this belongs to the two panes side by side, where one's width is taken fr
 
 ### Paste anything
 
-With `Ctrl+V` or the **Paste** button, EdiMarkWeb puts whatever is on the clipboard into the right pane: plain text and Markdown go to the Markdown editor, at the cursor position; formatted content (Word, LibreOffice, a web page, a formula from a chatbot) and even images are rendered in the visual editor and generate their Markdown. No intermediate steps: copy from wherever and paste.
+With `Ctrl+V` or the **Paste** button, EdiMarkdown puts whatever is on the clipboard into the right pane: plain text and Markdown go to the Markdown editor, at the cursor position; formatted content (Word, LibreOffice, a web page, a formula from a chatbot) and even images are rendered in the visual editor and generate their Markdown. No intermediate steps: copy from wherever and paste.
 
 Holding `Ctrl` (or `Cmd`), a click on a link in the visual editor opens it; in the desktop application, in your usual browser.
 
@@ -63,9 +63,9 @@ Next to the logo sit the **File**, **Export** and **Settings** menus. On the rig
 
 * **File**: `Open (Ctrl+O)`, `Import (Ctrl+Alt+O)` and `Paste LaTeX (Ctrl+Shift+V)` bring content in; `Save (Ctrl+S)` and `Save as… (Ctrl+Shift+S)` take it out. In the desktop application it ends with **Quit**, which saves before closing.
 * **Export (Ctrl+Alt+E)**: the six formats, each with a line saying what it is for.
-* **Settings (Ctrl+,)**: interface **Language**; **Theme** (System, Light or Dark, remembered); **Separate window**, which opens EdiMarkWeb with no tabs or address bar (web version only); **Spell checker**, which underlines mistakes using the dictionaries installed on your computer and follows the document language; and **General document options…**.
+* **Settings (Ctrl+,)**: interface **Language**; **Theme** (System, Light or Dark, remembered); **Separate window**, which opens EdiMarkdown with no tabs or address bar (web version only); **Spell checker**, which underlines mistakes using the dictionaries installed on your computer and follows the document language; and **General document options…**.
 * **Print (Ctrl+P)**: a view ready for paper or PDF.
-* **Help**: the **Manual (F1)**, **About EdiMarkWeb** — version, author and licences — and, on the desktop, **Check for updates…**.
+* **Help**: the **Manual (F1)**, **About EdiMarkdown** — version, author and licences — and, on the desktop, **Check for updates…**.
 
 The toolbar below gathers undo and redo, bold, italics, strikethrough, superscript and subscript, headings (H1…H6), lists, quotes, code, links, images, tables, **bibliographic citations**, **Paste** and formulas. Each button says what it does, and its shortcut, when you hover over it. On small screens it folds into two buttons, **Actions** and **Format**. Superscript and subscript are written the Pandoc way, `m^2^` and `H~2~O`; strikethrough needs two tildes, `~~like this~~`.
 
@@ -92,7 +92,7 @@ The **Image** button takes a file from disk or a URL, and asks how to insert it:
 
 **Image manager.** Under the Markdown editor, a list brings together the images in the document. Every image can be **viewed**, **replaced** with another pasted from the clipboard, chosen from disk or entered as a URL, and **removed from the document**. Linked images show their path or URL and can also be **embedded** as Base64; removing the reference does not delete the original file or remote image. For online images, conversion depends on the server allowing the browser to download them; if it blocks the request, the document does not change. Images that are already embedded show their format and size and let you view or copy their code.
 
-Base64 code takes thousands of characters, so EdiMarkWeb folds it away and leaves a short marker such as `__EDIMARK_B64_1__` in the editor; the real content is kept intact when saving, copying and exporting. The **Move embedded images to the folder** button goes the other way: each image becomes a file inside the document resource subfolder (`my-file.md` → `my-file/images/`) and the Markdown keeps its path. The files are written when you save, and `Ctrl+Z` undoes the change.
+Base64 code takes thousands of characters, so EdiMarkdown folds it away and leaves a short marker such as `__EDIMARK_B64_1__` in the editor; the real content is kept intact when saving, copying and exporting. The **Move embedded images to the folder** button goes the other way: each image becomes a file inside the document resource subfolder (`my-file.md` → `my-file/images/`) and the Markdown keeps its path. The files are written when you save, and `Ctrl+Z` undoes the change.
 
 Both conversions also have a button for the whole document, above the list: **Move embedded images to the folder** and **Embed every linked image**. Each one appears only while something is left to convert its way, so a document whose images are all of the same kind shows one of them, or neither.
 
@@ -164,7 +164,7 @@ Under **Settings → General document options… → Citations**, load a **BibTe
 
 The book button —or `Ctrl+Alt+B`— opens a search by author, title, year or key, with **Add a reference manually** always at hand to write a new one without leaving the dialog. At the foot of the dialog you can read which style the citations will use—APA, Chicago, MLA, IEEE or the CSL file you loaded—and a link opens the bibliography options to change it. The **parenthetical** form produces `[@garcia2024]`; the **narrative** form, `@garcia2024`; and **year only**, `[-@garcia2024]`, for a name already written in the sentence. With one reference you can add pages or another locator, such as `[@garcia2024, p. 5]` or `@garcia2024 [pp. 5–7]`. Multiple citations use the parenthetical form. If the cursor is inside a citation, the same button edits all these details. The final bibliography appears in the preview and all exports.
 
-When `my-file.md` is saved, EdiMarkWeb copies the library to `my-file/references.bib`—or `references.json`—and declares that path in the YAML metadata. Its own images are grouped under `my-file/images/`. To move the work, keep the Markdown and its `my-file` folder together. If you use your own CSL file, it is copied beside it, as `my-file/style.csl`, and declared too, so the citations look the same on any computer. The desktop app retrieves the library and the style automatically; in the web version, for security, link the document's folder—the **Find its folder…** notice above the preview—after opening it in another browser or computer.
+When `my-file.md` is saved, EdiMarkdown copies the library to `my-file/references.bib`—or `references.json`—and declares that path in the YAML metadata. Its own images are grouped under `my-file/images/`. To move the work, keep the Markdown and its `my-file` folder together. If you use your own CSL file, it is copied beside it, as `my-file/style.csl`, and declared too, so the citations look the same on any computer. The desktop app retrieves the library and the style automatically; in the web version, for security, link the document's folder—the **Find its folder…** notice above the preview—after opening it in another browser or computer.
 
 ---
 
@@ -244,7 +244,7 @@ If the document starts with its own YAML metadata, that is what counts.
 
 ## Storage
 
-**Settings → Storage…** shows what EdiMarkWeb keeps in this browser: how many documents you have open, how much their autosaved text takes up, and how many images there are, with their size. None of it leaves your computer.
+**Settings → Storage…** shows what EdiMarkdown keeps in this browser: how many documents you have open, how much their autosaved text takes up, and how many images there are, with their size. None of it leaves your computer.
 
 Counted separately are the **images with no document**, left over from tabs closed a while ago or from earlier sessions. They are swept on startup, and the **Delete the images with no document** button does it right away; handy after importing several PDFs, which are what take up most room. **Forget the saved session…** closes the tabs and discards the autosaved text along with its images, after asking. Neither one deletes any file on your disk.
 
@@ -267,16 +267,16 @@ The button remembers the last format and shows it on a small label beside it, so
 
 It is the same application — the same menus, shortcuts and formats — installed on **Linux, Windows and macOS**. The installers are on the [downloads page](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest): `.deb` and `.AppImage` for Linux, `.exe` and `.msi` for Windows, and `.dmg` for Macs with Apple or Intel processors.
 
-**The first run on macOS.** The `.dmg` is not signed with an Apple developer account, so when you open it macOS warns that the application “is damaged and should be moved to the Bin”. It is not: that is what the system says about any unsigned application downloaded from the internet. Drag EdiMarkWeb to **Applications**, open **Terminal** and run `xattr -dr com.apple.quarantine /Applications/EdiMarkWeb.app`. It then opens normally and there is nothing to repeat: that command only removes the “downloaded from the internet” mark from that application, and changes no security setting on the system.
+**The first run on macOS.** The `.dmg` is not signed with an Apple developer account, so when you open it macOS warns that the application “is damaged and should be moved to the Bin”. It is not: that is what the system says about any unsigned application downloaded from the internet. Drag EdiMarkdown to **Applications**, open **Terminal** and run `xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app`. It then opens normally and there is nothing to repeat: that command only removes the “downloaded from the internet” mark from that application, and changes no security setting on the system.
 
 Compared with the browser it adds:
 
-* **Double-click to open**: `.md` and `.markdown` files are associated with EdiMarkWeb, show its icon in the file manager and open in the application; if it is already running, the document reaches that same window, which comes to the front. And if that file was already open, it goes back to its tab instead of being duplicated. (The icon is installed by the `.deb` package and the Windows installers; the AppImage touches nothing on the system.)
+* **Double-click to open**: `.md` and `.markdown` files are associated with EdiMarkdown, show its icon in the file manager and open in the application; if it is already running, the document reaches that same window, which comes to the front. And if that file was already open, it goes back to its tab instead of being duplicated. (The icon is installed by the `.deb` package and the Windows installers; the AppImage touches nothing on the system.)
 * **Save writes to the real file**, with no trip through the downloads folder.
 * **System spell checker**, using the dictionaries on your computer (on Linux you may have to install them, for example `hunspell-en-gb`).
 * **Works offline**: it carries Pandoc and EdiCuaTeX inside. The internet is only needed to check for new versions.
 
-**Updates**: on startup it checks once a day for a newer version and, when there is one, a notice appears with **Download and install**, which fetches the installer and launches it. Since no installer can replace the files of a running application, the same notice offers **Close EdiMarkWeb**, which saves and quits. With an AppImage, the application downloads the new one and opens its folder so you can replace the old file. You can ask for the check whenever you like from **Help → Check for updates…**, or turn it off with the **Check on startup** box.
+**Updates**: on startup it checks once a day for a newer version and, when there is one, a notice appears with **Download and install**, which fetches the installer and launches it. Since no installer can replace the files of a running application, the same notice offers **Close EdiMarkdown**, which saves and quits. With an AppImage, the application downloads the new one and opens its folder so you can replace the old file. You can ask for the check whenever you like from **Help → Check for updates…**, or turn it off with the **Check on startup** box.
 
 The documents are the same plain Markdown files in both versions and move from one to the other with no conversion; what is not shared is the autosave, because each version keeps its working copy in its own storage.
 
@@ -333,7 +333,7 @@ Single-letter shortcuts act on the document, so they are paused while the search
 
 ## Licence and contributions
 
-EdiMarkWeb is free software under the [GNU Affero General Public License v3.0](LICENSE): you may use it in your classroom, adapt it and deploy it on your own servers, as long as you share any improvement under the same licence and offer the code to whoever uses your version. If you find a problem or want to propose changes, open an issue on [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) or send a pull request.
+EdiMarkdown is free software under the [GNU Affero General Public License v3.0](LICENSE): you may use it in your classroom, adapt it and deploy it on your own servers, as long as you share any improvement under the same licence and offer the code to whoever uses your version. If you find a problem or want to propose changes, open an issue on [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) or send a pull request.
 
 
 ## Import PDF

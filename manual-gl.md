@@ -1,8 +1,8 @@
-![Logotipo de EdiMarkWeb](logo_100px.png)
+![Logotipo de EdiMarkdown](logo_100px.png)
 
-# Manual de EdiMarkWeb
+# Manual de EdiMarkdown
 
-EdiMarkWeb é un **editor de textos en Markdown** pensado para docentes e creadores de contido: escríbese rápido, expórtase a Word, LibreOffice, EPUB, HTML, LaTeX e PDF, e admite fórmulas matemáticas. Funciona **no navegador**, sen instalar nada, e tamén como **aplicación de escritorio** para Linux, Windows e macOS. Nos dous casos o traballo ocorre no teu equipo: nin os documentos nin as imaxes saen del.
+EdiMarkdown é un **editor de textos en Markdown** pensado para docentes e creadores de contido: escríbese rápido, expórtase a Word, LibreOffice, EPUB, HTML, LaTeX e PDF, e admite fórmulas matemáticas. Funciona **no navegador**, sen instalar nada, e tamén como **aplicación de escritorio** para Linux, Windows e macOS. Nos dous casos o traballo ocorre no teu equipo: nin os documentos nin as imaxes saen del.
 
 ## Para comezar
 
@@ -41,7 +41,7 @@ Todo isto é cousa dos dous paneis á vez, que é onde a largura dun lla quita a
 
 ### Pegar calquera cousa
 
-Con `Ctrl+V` ou o botón **Pegar**, EdiMarkWeb coloca no panel axeitado o que haxa no portapapeis: o texto plano e o Markdown van ao editor Markdown, na posición do cursor; o contido con formato (Word, LibreOffice, unha páxina web, unha fórmula dun chatbot) e mesmo as imaxes recompóñense no editor visual e xeran o seu Markdown. Non fan falta pasos intermedios: copia de onde sexa e pega.
+Con `Ctrl+V` ou o botón **Pegar**, EdiMarkdown coloca no panel axeitado o que haxa no portapapeis: o texto plano e o Markdown van ao editor Markdown, na posición do cursor; o contido con formato (Word, LibreOffice, unha páxina web, unha fórmula dun chatbot) e mesmo as imaxes recompóñense no editor visual e xeran o seu Markdown. Non fan falta pasos intermedios: copia de onde sexa e pega.
 
 Con `Ctrl` (ou `Cmd`) premido, un clic nunha ligazón do editor visual ábrea; na aplicación de escritorio, no teu navegador habitual.
 
@@ -63,9 +63,9 @@ Xunto ao logotipo están os menús **Ficheiro**, **Exportar** e **Configuración
 
 * **Ficheiro**: `Abrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` e `Pegar LaTeX (Ctrl+Maiús+V)` traen contido; `Gardar (Ctrl+S)` e `Gardar como… (Ctrl+Maiús+S)` sácano. Na aplicación de escritorio remata con **Saír**, que garda antes de pechar.
 * **Exportar (Ctrl+Alt+E)**: os seis formatos, cada un cunha liña que di para que serve.
-* **Configuración (Ctrl+,)**: **Idioma** da interface; **Tema** (Sistema, Claro ou Escuro, lémbrase); **Xanela independente**, que abre EdiMarkWeb sen lapelas nin barra de enderezos (só na versión web); **Corrector ortográfico**, que subliña as faltas cos dicionarios do equipo e segue o idioma do documento; e **Opcións xerais…**.
+* **Configuración (Ctrl+,)**: **Idioma** da interface; **Tema** (Sistema, Claro ou Escuro, lémbrase); **Xanela independente**, que abre EdiMarkdown sen lapelas nin barra de enderezos (só na versión web); **Corrector ortográfico**, que subliña as faltas cos dicionarios do equipo e segue o idioma do documento; e **Opcións xerais…**.
 * **Imprimir (Ctrl+P)**: unha vista lista para papel ou PDF.
-* **Axuda**: o **Manual (F1)**, **Acerca de EdiMarkWeb** —versión, autor e licenzas— e, no escritorio, **Buscar actualizacións…**.
+* **Axuda**: o **Manual (F1)**, **Acerca de EdiMarkdown** —versión, autor e licenzas— e, no escritorio, **Buscar actualizacións…**.
 
 A barra de ferramentas, baixo a anterior, reúne desfacer e refacer, negra, cursiva, riscado, superíndice e subíndice, cabeceiras (H1…H6), listas, citas, código, ligazóns, imaxes, táboas, **citas bibliográficas**, **Pegar** e as fórmulas. Cada botón di ao pasar o rato que fai e con que atallo. En pantallas pequenas pregase en dous botóns, **Accións** e **Formato**. O superíndice e o subíndice escríbense como en Pandoc, `m^2^` e `H~2~O`; o riscado precisa dous tiles, `~~así~~`.
 
@@ -92,7 +92,7 @@ O botón **Imaxe** admite un ficheiro do disco ou unha URL, e pregunta como inse
 
 **Xestor de imaxes.** Baixo o editor Markdown, unha lista reúne as imaxes do documento. Todas poden **verse**, **substituírse** por outra pegada desde o portapapeis, escollida do disco ou indicada mediante un URL, e **eliminarse do documento**. As ligadas mostran a ruta ou o URL e tamén poden **incrustarse** en Base64; eliminar a referencia non borra o ficheiro orixinal nin a imaxe remota. Nas imaxes en liña, a conversión depende de que o servidor permita descargalas; se a bloquea, o documento non cambia. As que xa están incrustadas mostran o formato e o tamaño e permiten ver ou copiar o seu código.
 
-O código Base64 ocupa milleiros de caracteres, polo que EdiMarkWeb o prega e deixa no editor unha marca curta como `__EDIMARK_B64_1__`; o contido real consérvase intacto ao gardar, copiar e exportar. O botón **Pasar as incrustadas ao cartafol** fai o camiño de volta: cada imaxe convértese nun ficheiro dentro do subcartafol de recursos do documento (`o-meu-ficheiro.md` → `o-meu-ficheiro/images/`) e no Markdown queda a súa ruta. Os ficheiros escríbense ao gardar, e `Ctrl+Z` desfai o cambio.
+O código Base64 ocupa milleiros de caracteres, polo que EdiMarkdown o prega e deixa no editor unha marca curta como `__EDIMARK_B64_1__`; o contido real consérvase intacto ao gardar, copiar e exportar. O botón **Pasar as incrustadas ao cartafol** fai o camiño de volta: cada imaxe convértese nun ficheiro dentro do subcartafol de recursos do documento (`o-meu-ficheiro.md` → `o-meu-ficheiro/images/`) e no Markdown queda a súa ruta. Os ficheiros escríbense ao gardar, e `Ctrl+Z` desfai o cambio.
 
 As dúas conversións teñen tamén o seu botón para todo o documento, sobre a lista: **Pasar as incrustadas ao cartafol** e **Incrustar todas as ligadas**. Cada un aparece só mentres queda algo por converter no seu sentido, de xeito que un documento con todas as imaxes da mesma clase mostra un só, ou ningún.
 
@@ -164,7 +164,7 @@ En **Configuración → Opcións xerais… → Citas** podes cargar unha bibliot
 
 O botón do libro —ou `Ctrl+Alt+B`— abre un buscador por autor, título, ano ou clave, con **Engadir unha referencia manualmente** sempre á man para escribir unha nova sen saír do cadro. Ao pé do cadro lese con que estilo se van compoñer as citas —APA, Chicago, MLA, IEEE ou o CSL que cargases— e unha ligazón leva ás opcións da bibliografía para cambialo. A forma **parentética** produce `[@garcia2024]`; a **narrativa**, `@garcia2024`; e **só o ano**, `[-@garcia2024]`, cando o nome xa está na frase. Cunha soa referencia podes engadir páxinas ou outro localizador, como `[@garcia2024, p. 5]` ou `@garcia2024 [pp. 5–7]`. As citas múltiples usan a forma parentética. Se o cursor está dentro dunha cita, o mesmo botón permite editar todos estes datos. A bibliografía final aparece na vista previa e en todas as exportacións.
 
-Ao gardar `o-meu-ficheiro.md`, EdiMarkWeb copia a biblioteca en `o-meu-ficheiro/references.bib` —ou `references.json`— e declara esa ruta nos metadatos YAML. As imaxes propias agrúpanse en `o-meu-ficheiro/images/`. Para trasladar o traballo abonda con conservar xuntos o Markdown e o seu cartafol `o-meu-ficheiro`. Se usas un ficheiro CSL propio, cópiase ao lado, en `o-meu-ficheiro/style.csl`, e tamén queda declarado: así as citas vense igual en calquera equipo. A aplicación de escritorio recupera a biblioteca e mais o estilo automaticamente; na versión web, por seguridade, hai que vincular o cartafol do documento —o aviso **Buscar o seu cartafol…** que aparece sobre a vista previa— ao abrilo noutro navegador ou ordenador.
+Ao gardar `o-meu-ficheiro.md`, EdiMarkdown copia a biblioteca en `o-meu-ficheiro/references.bib` —ou `references.json`— e declara esa ruta nos metadatos YAML. As imaxes propias agrúpanse en `o-meu-ficheiro/images/`. Para trasladar o traballo abonda con conservar xuntos o Markdown e o seu cartafol `o-meu-ficheiro`. Se usas un ficheiro CSL propio, cópiase ao lado, en `o-meu-ficheiro/style.csl`, e tamén queda declarado: así as citas vense igual en calquera equipo. A aplicación de escritorio recupera a biblioteca e mais o estilo automaticamente; na versión web, por seguridade, hai que vincular o cartafol do documento —o aviso **Buscar o seu cartafol…** que aparece sobre a vista previa— ao abrilo noutro navegador ou ordenador.
 
 ---
 
@@ -244,7 +244,7 @@ Se o documento comeza cos seus propios metadatos YAML, mandan eles.
 
 ## Almacenamento
 
-En **Configuración → Almacenamento…** vese o que EdiMarkWeb garda neste navegador: cantos documentos tes abertos, o que ocupa o seu texto gardado automaticamente e cantas imaxes hai, co seu tamaño. Nada disto sae do teu equipo.
+En **Configuración → Almacenamento…** vese o que EdiMarkdown garda neste navegador: cantos documentos tes abertos, o que ocupa o seu texto gardado automaticamente e cantas imaxes hai, co seu tamaño. Nada disto sae do teu equipo.
 
 Á parte cóntanse as **imaxes sen documento**, que son as de lapelas pechadas hai tempo ou de sesións anteriores. Bórranse soas ao abrir a aplicación, e o botón **Borrar as imaxes sen documento** faino no momento; é útil despois de importar varios PDF, que son os que máis ocupan. **Esquecer a sesión gardada…** pecha as lapelas e descarta o texto gardado coas súas imaxes, tras preguntar. Ningunha das dúas cousas borra ficheiros do teu disco.
 
@@ -267,16 +267,16 @@ O botón lembra o último formato e dio nun rótulo ao seu carón, así que repe
 
 É a mesma aplicación —os mesmos menús, atallos e formatos— instalada en **Linux, Windows e macOS**. Os instaladores están na [páxina de descargas](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest): `.deb` e `.AppImage` para Linux, `.exe` e `.msi` para Windows, e `.dmg` para Mac con procesador Apple ou Intel.
 
-**A primeira vez en macOS.** O `.dmg` non está asinado cunha conta de desenvolvedor de Apple, así que ao abrilo macOS avisa de que a aplicación «está danada e debería moverse ao lixo». Non o está: é o que di o sistema ante calquera aplicación sen asinar descargada de internet. Arrastra EdiMarkWeb a **Aplicacións**, abre o **Terminal** e executa `xattr -dr com.apple.quarantine /Applications/EdiMarkWeb.app`. Con iso ábrese con normalidade e non hai que repetilo: esa orde só quita a marca de «descargado de internet» a esa aplicación, sen cambiar ningún axuste de seguranza do sistema.
+**A primeira vez en macOS.** O `.dmg` non está asinado cunha conta de desenvolvedor de Apple, así que ao abrilo macOS avisa de que a aplicación «está danada e debería moverse ao lixo». Non o está: é o que di o sistema ante calquera aplicación sen asinar descargada de internet. Arrastra EdiMarkdown a **Aplicacións**, abre o **Terminal** e executa `xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app`. Con iso ábrese con normalidade e non hai que repetilo: esa orde só quita a marca de «descargado de internet» a esa aplicación, sen cambiar ningún axuste de seguranza do sistema.
 
 Fronte ao navegador engade:
 
-* **Dobre clic para abrir**: os ficheiros `.md` e `.markdown` quedan asociados, amosan a icona de EdiMarkWeb no xestor de ficheiros e ábrense na aplicación; se xa está aberta, o documento chega a esa mesma xanela, que se pon diante. E se ese ficheiro xa estaba aberto, volve á súa lapela en vez de duplicarse. (A icona instálana o paquete `.deb` e os instaladores de Windows; a AppImage non toca o sistema.)
+* **Dobre clic para abrir**: os ficheiros `.md` e `.markdown` quedan asociados, amosan a icona de EdiMarkdown no xestor de ficheiros e ábrense na aplicación; se xa está aberta, o documento chega a esa mesma xanela, que se pon diante. E se ese ficheiro xa estaba aberto, volve á súa lapela en vez de duplicarse. (A icona instálana o paquete `.deb` e os instaladores de Windows; a AppImage non toca o sistema.)
 * **Gardar escribe no ficheiro de verdade**, sen pasar polo cartafol de descargas.
 * **Corrector ortográfico do sistema**, cos dicionarios do equipo (en Linux pode facer falta instalalos, por exemplo `hunspell-gl`).
 * **Funciona sen conexión**: leva dentro Pandoc e EdiCuaTeX. Só fai falta internet para comprobar se hai versións novas.
 
-**Actualizacións**: ao arrincar comproba unha vez ao día se hai versión nova e, se a hai, aparece un aviso con **Descargar e instalar**, que baixa o instalador e láncao. Como ningún instalador pode substituír os ficheiros dunha aplicación aberta, o mesmo aviso trae **Pechar EdiMarkWeb**, que garda e pecha. Cunha AppImage, a aplicación descarga a nova e abre o seu cartafol para que substitúas a anterior. Podes pedir a comprobación cando queiras desde **Axuda → Buscar actualizacións…**, ou desactivala coa caixa **Comprobar ao iniciar**.
+**Actualizacións**: ao arrincar comproba unha vez ao día se hai versión nova e, se a hai, aparece un aviso con **Descargar e instalar**, que baixa o instalador e láncao. Como ningún instalador pode substituír os ficheiros dunha aplicación aberta, o mesmo aviso trae **Pechar EdiMarkdown**, que garda e pecha. Cunha AppImage, a aplicación descarga a nova e abre o seu cartafol para que substitúas a anterior. Podes pedir a comprobación cando queiras desde **Axuda → Buscar actualizacións…**, ou desactivala coa caixa **Comprobar ao iniciar**.
 
 Os documentos son os mesmos ficheiros Markdown nas dúas versións e pasan dunha a outra sen conversións; o que non se comparte é o autogardado, porque cada versión garda a súa copia de traballo no seu propio espazo.
 
@@ -333,7 +333,7 @@ Os atallos dunha soa letra actúan sobre o documento, así que quedan en pausa m
 
 ## Licenza e contribucións
 
-EdiMarkWeb é software libre baixo a [GNU Affero General Public License v3.0](LICENSE): podes usalo na túa aula, adaptalo e despregalo en servidores propios, sempre que compartas calquera mellora baixo a mesma licenza e ofrezas o código a quen use a túa versión. Se detectas un problema ou queres propoñer cambios, abre unha incidencia en [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) ou envía un pull request.
+EdiMarkdown é software libre baixo a [GNU Affero General Public License v3.0](LICENSE): podes usalo na túa aula, adaptalo e despregalo en servidores propios, sempre que compartas calquera mellora baixo a mesma licenza e ofrezas o código a quen use a túa versión. Se detectas un problema ou queres propoñer cambios, abre unha incidencia en [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) ou envía un pull request.
 
 
 ## Importar PDF

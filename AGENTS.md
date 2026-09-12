@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-EdiMarkWeb is a vanilla-JS Markdown editor shipped two ways from one frontend: as a static site (GitHub Pages) and as a Tauri 2 desktop app for Linux/Windows/macOS. No framework; the web app has no bundler.
+EdiMarkdown is a vanilla-JS Markdown editor shipped two ways from one frontend: as a static site (GitHub Pages) and as a Tauri 2 desktop app for Linux/Windows/macOS. No framework; the web app has no bundler.
 
 ## Architecture
 

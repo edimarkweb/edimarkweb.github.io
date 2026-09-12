@@ -1256,7 +1256,7 @@ export async function appendEpubStylesheet(archiveBytes, css) {
     if (!name) return archiveBytes;
 
     const sheet = new TextDecoder().decode(entries.get(name));
-    const updated = `${sheet.trimEnd()}\n\n/* Formato del documento (EdiMarkWeb) */\n${css}\n`;
+    const updated = `${sheet.trimEnd()}\n\n/* Formato del documento (EdiMarkdown) */\n${css}\n`;
 
     const rebuilt = new Map();
     if (entries.has('mimetype')) rebuilt.set('mimetype', entries.get('mimetype'));

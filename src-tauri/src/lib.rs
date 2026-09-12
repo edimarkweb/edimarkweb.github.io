@@ -719,7 +719,7 @@ fn install_downloaded_update(
         .ok()
         .filter(|dir| dir.is_dir())
         .unwrap_or_else(std::env::temp_dir)
-        .join("EdiMarkWeb");
+        .join("EdiMarkdown");
     std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
     let destination = directory.join(&name);
     std::fs::write(&destination, bytes).map_err(|error| error.to_string())?;
@@ -920,7 +920,7 @@ pub fn run() {
             set_spell_checking
         ])
         .build(tauri::generate_context!())
-        .expect("error al preparar EdiMarkWeb")
+        .expect("error al preparar EdiMarkdown")
         .run(
             |#[allow(unused_variables)] app, #[allow(unused_variables)] event| {
                 // Finder entrega los documentos asociados mediante el evento

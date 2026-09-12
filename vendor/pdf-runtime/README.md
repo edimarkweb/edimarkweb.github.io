@@ -6,7 +6,7 @@ and the desktop bundle. No document uploads, OCR or remote conversion service.
 Pinned distribution: Pyodide 0.29.3 (Python 3.13 ABI 2025_0), PyMuPDF and
 PyMuPDF4LLM 1.28.2. `manifest.json` records exact upstream URLs, sizes and SHA-256
 checksums. Wheels include their license metadata; extracted notices are in
-`licenses/`. PyMuPDF/PyMuPDF4LLM are AGPL; EdiMarkWeb is AGPL-3.0-only.
+`licenses/`. PyMuPDF/PyMuPDF4LLM are AGPL; EdiMarkdown is AGPL-3.0-only.
 Pyodide source and notices: https://github.com/pyodide/pyodide/tree/0.29.3
 PyMuPDF source: https://github.com/pymupdf/PyMuPDF/tree/1.28.2
 PyMuPDF4LLM source: https://github.com/pymupdf/pymupdf4llm

@@ -1,8 +1,8 @@
-![EdiMarkWeb-en logotipoa](logo_100px.png)
+![EdiMarkdown-en logotipoa](logo_100px.png)
 
-# EdiMarkWeb eskuliburua
+# EdiMarkdown eskuliburua
 
-EdiMarkWeb **Markdown testu-editore** bat da, irakasleentzat eta eduki-sortzaileentzat pentsatua: azkar idazten da, Word, LibreOffice, EPUB, HTML, LaTeX eta PDF formatuetara esportatzen du, eta formula matematikoak onartzen ditu. **Nabigatzailean** funtzionatzen du, ezer instalatu gabe, eta baita **mahaigaineko aplikazio** gisa ere Linux, Windows eta macOSerako. Bi kasuetan lana zure ekipoan gertatzen da: ez dokumentuak ez irudiak ez dira handik ateratzen.
+EdiMarkdown **Markdown testu-editore** bat da, irakasleentzat eta eduki-sortzaileentzat pentsatua: azkar idazten da, Word, LibreOffice, EPUB, HTML, LaTeX eta PDF formatuetara esportatzen du, eta formula matematikoak onartzen ditu. **Nabigatzailean** funtzionatzen du, ezer instalatu gabe, eta baita **mahaigaineko aplikazio** gisa ere Linux, Windows eta macOSerako. Bi kasuetan lana zure ekipoan gertatzen da: ez dokumentuak ez irudiak ez dira handik ateratzen.
 
 ## Hasteko
 
@@ -41,7 +41,7 @@ Hau guztia bi panelak batera daudenean gertatzen da, batak bestearen zabalera ha
 
 ### Edozer itsatsi
 
-`Ctrl+V` teklekin edo **Itsatsi** botoiarekin, EdiMarkWebek arbelean dagoena panel egokian jartzen du: testu soila eta Markdown-a Markdown editorera doaz, kurtsorearen kokalekura; formatudun edukia (Word, LibreOffice, web-orri bat, chatbot baten formula bat) eta baita irudiak ere editore bisualean osatzen dira eta beren Markdown-a sortzen dute. Ez da tarteko urratsik behar: kopiatu nahi duzun tokitik eta itsatsi.
+`Ctrl+V` teklekin edo **Itsatsi** botoiarekin, EdiMarkdownek arbelean dagoena panel egokian jartzen du: testu soila eta Markdown-a Markdown editorera doaz, kurtsorearen kokalekura; formatudun edukia (Word, LibreOffice, web-orri bat, chatbot baten formula bat) eta baita irudiak ere editore bisualean osatzen dira eta beren Markdown-a sortzen dute. Ez da tarteko urratsik behar: kopiatu nahi duzun tokitik eta itsatsi.
 
 `Ctrl` (edo `Cmd`) sakatuta, editore bisualeko esteka batean klik eginda irekitzen da; mahaigaineko aplikazioan, zure ohiko nabigatzailean.
 
@@ -63,9 +63,9 @@ Logotipoaren ondoan **Fitxategia**, **Esportatu** eta **Ezarpenak** menuak daude
 
 * **Fitxategia**: `Ireki (Ctrl+O)`, `Inportatu (Ctrl+Alt+O)` eta `Itsatsi LaTeX (Ctrl+Shift+V)` aukerek edukia ekartzen dute; `Gorde (Ctrl+S)` eta `Gorde honela… (Ctrl+Shift+S)` aukerek atera. Mahaigaineko aplikazioan **Irten** aukerarekin amaitzen da, eta horrek itxi aurretik gordetzen du.
 * **Esportatu (Ctrl+Alt+E)**: sei formatuak, bakoitza zertarako den dioen lerro batekin.
-* **Ezarpenak (Ctrl+,)**: interfazearen **Hizkuntza**; **Gaia** (Sistema, Argia edo Iluna, gogoratu egiten da); **Leiho independentea**, EdiMarkWeb fitxarik eta helbide-barrarik gabe irekitzen duena (web bertsioan soilik); **Zuzentzaile ortografikoa**, akatsak ekipoko hiztegiekin azpimarratzen dituena eta dokumentuaren hizkuntza jarraitzen duena; eta **Aukera orokorrak…**.
+* **Ezarpenak (Ctrl+,)**: interfazearen **Hizkuntza**; **Gaia** (Sistema, Argia edo Iluna, gogoratu egiten da); **Leiho independentea**, EdiMarkdown fitxarik eta helbide-barrarik gabe irekitzen duena (web bertsioan soilik); **Zuzentzaile ortografikoa**, akatsak ekipoko hiztegiekin azpimarratzen dituena eta dokumentuaren hizkuntza jarraitzen duena; eta **Aukera orokorrak…**.
 * **Inprimatu (Ctrl+P)**: papererako edo PDFrako prest dagoen ikuspegia.
-* **Laguntza**: **Eskuliburua (F1)**, **EdiMarkWebi buruz** —bertsioa, egilea eta lizentziak— eta, mahaigainean, **Bilatu eguneraketak…**.
+* **Laguntza**: **Eskuliburua (F1)**, **EdiMarkdowni buruz** —bertsioa, egilea eta lizentziak— eta, mahaigainean, **Bilatu eguneraketak…**.
 
 Tresna-barrak, aurrekoaren azpian, desegin eta berregin, lodia, etzana, marratua, goi-indizea eta azpiindizea, izenburuak (H1…H6), zerrendak, aipuak, kodea, estekak, irudiak, taulak, **bibliografia-aipuak**, **Itsatsi** eta formulak biltzen ditu. Botoi bakoitzak, sagua gainetik pasatzean, zer egiten duen eta zein lasterbiderekin esaten du. Pantaila txikietan bi botoitan tolesten da: **Ekintzak** eta **Formatua**. Goi-indizea eta azpiindizea Pandoc-en moduan idazten dira, `m^2^` eta `H~2~O`; marratuak bi tilet behar ditu, `~~honela~~`.
 
@@ -92,7 +92,7 @@ Mahaigaineko aplikazioan, `Ctrl+S` teklek ireki duzun fitxategiaren gainean idaz
 
 **Irudien kudeatzailea.** Markdown editorearen azpian, zerrenda batek dokumentuko irudiak biltzen ditu. Guztiak **ikus**, arbeletik itsatsitako, diskotik aukeratutako edo URL baten bidez adierazitako beste irudi batekin **ordeztu**, eta **dokumentutik kendu** daitezke. Estekatutakoek bidea edo URLa erakusten dute, eta Base64 gisa ere **txerta** daitezke; erreferentzia kentzeak ez du jatorrizko fitxategia edo urruneko irudia ezabatzen. Sareko irudietan, bihurketa zerbitzariak haiek deskargatzea baimentzearen mende dago; blokeatzen badu, dokumentua ez da aldatzen. Lehendik txertatuta daudenek formatua eta tamaina erakusten dituzte, eta kodea ikusi edo kopiatzeko aukera ematen dute.
 
-Base64 kodeak milaka karaktere hartzen ditu; horregatik, EdiMarkWebek tolestu eta `__EDIMARK_B64_1__` moduko marka labur bat uzten du editorean, baina benetako edukia oso-osorik mantentzen da gordetzean, kopiatzean eta esportatzean. **Txertatutako irudiak karpetara eraman** botoiak itzulerako bidea egiten du: irudi bakoitza fitxategi bihurtzen da dokumentuaren baliabideen azpikarpetan (`nire-fitxategia.md` → `nire-fitxategia/images/`) eta Markdown-ean bere bidea geratzen da. Fitxategiak dokumentua gordetzean idazten dira, eta `Ctrl+Z` teklek aldaketa desegiten dute.
+Base64 kodeak milaka karaktere hartzen ditu; horregatik, EdiMarkdownek tolestu eta `__EDIMARK_B64_1__` moduko marka labur bat uzten du editorean, baina benetako edukia oso-osorik mantentzen da gordetzean, kopiatzean eta esportatzean. **Txertatutako irudiak karpetara eraman** botoiak itzulerako bidea egiten du: irudi bakoitza fitxategi bihurtzen da dokumentuaren baliabideen azpikarpetan (`nire-fitxategia.md` → `nire-fitxategia/images/`) eta Markdown-ean bere bidea geratzen da. Fitxategiak dokumentua gordetzean idazten dira, eta `Ctrl+Z` teklek aldaketa desegiten dute.
 
 Bi bihurketek dokumentu osorako botoia ere badute, zerrendaren gainean: **Txertatutako irudiak karpetara eraman** eta **Kapsulatu estekatutako guztiak**. Bakoitza bere noranzkoan bihurtzeko zerbait geratzen den bitartean bakarrik agertzen da; beraz, irudi guztiak mota berekoak dituen dokumentu batek bat bakarrik erakusten du, edo bat ere ez.
 
@@ -164,7 +164,7 @@ Greziar letrak ($\alpha$, $\beta$, $\Omega$), azpiindizeak ($H_2O$), konparazioa
 
 Liburuaren botoiak —edo `Ctrl+Alt+B`— egilearen, izenburuaren, urtearen edo gakoaren araberako bilaketa irekitzen du, eta **Gehitu erreferentzia eskuz** beti eskura dago koadrotik atera gabe berri bat idazteko. Koadroaren oinean irakur daiteke aipuak zein estilorekin osatuko diren —APA, Chicago, MLA, IEEE edo kargatu duzun CSLa— eta esteka batek bibliografiaren aukeretara eramaten du hura aldatzeko. Forma **parentetikoak** `[@garcia2024]` sortzen du; **narratiboak**, `@garcia2024`; eta **urtea bakarrik** aukerak, `[-@garcia2024]`, izena esaldian dagoenean. Erreferentzia bakarrarekin orriak edo beste kokatzaile bat gehi daiteke, adibidez `[@garcia2024, p. 5]` edo `@garcia2024 [pp. 5–7]`. Aipu anitzek forma parentetikoa erabiltzen dute. Kurtsorea aipu baten barruan badago, botoi berak xehetasun horiek guztiak editatzen ditu. Amaierako bibliografia aurrebistan eta esportazio guztietan agertzen da.
 
-`nire-fitxategia.md` gordetzean, EdiMarkWebek liburutegia `nire-fitxategia/references.bib` fitxategira —edo `references.json` fitxategira— kopiatzen du eta bide hori YAML metadatuetan adierazten du. Bere irudiak `nire-fitxategia/images/` karpetan biltzen dira. Lana lekuz aldatzeko, nahikoa da Markdown fitxategia eta haren `nire-fitxategia` karpeta elkarrekin mantentzea. Norberaren CSL fitxategia erabiltzen baduzu, ondoan kopiatzen da, `nire-fitxategia/style.csl` gisa, eta hura ere adierazita geratzen da: horrela aipuak berdin ikusten dira edozein ekipotan. Mahaigaineko aplikazioak liburutegia eta estiloa automatikoki berreskuratzen ditu; web bertsioan, segurtasunagatik, dokumentuaren karpeta lotu behar da —aurrebistaren gainean agertzen den **Bilatu bere karpeta…** oharra— beste nabigatzaile edo ordenagailu batean irekitzean.
+`nire-fitxategia.md` gordetzean, EdiMarkdownek liburutegia `nire-fitxategia/references.bib` fitxategira —edo `references.json` fitxategira— kopiatzen du eta bide hori YAML metadatuetan adierazten du. Bere irudiak `nire-fitxategia/images/` karpetan biltzen dira. Lana lekuz aldatzeko, nahikoa da Markdown fitxategia eta haren `nire-fitxategia` karpeta elkarrekin mantentzea. Norberaren CSL fitxategia erabiltzen baduzu, ondoan kopiatzen da, `nire-fitxategia/style.csl` gisa, eta hura ere adierazita geratzen da: horrela aipuak berdin ikusten dira edozein ekipotan. Mahaigaineko aplikazioak liburutegia eta estiloa automatikoki berreskuratzen ditu; web bertsioan, segurtasunagatik, dokumentuaren karpeta lotu behar da —aurrebistaren gainean agertzen den **Bilatu bere karpeta…** oharra— beste nabigatzaile edo ordenagailu batean irekitzean.
 
 ---
 
@@ -244,7 +244,7 @@ Dokumentua bere YAML metadatuekin hasten bada, haiek agintzen dute.
 
 ## Biltegiratzea
 
-**Konfigurazioa → Biltegiratzea…** atalean ikusten da EdiMarkWebek nabigatzaile honetan zer gordetzen duen: zenbat dokumentu dituzun irekita, haien testu automatikoki gordeak zenbat betetzen duen eta zenbat irudi dauden, beren tamainarekin. Horietako ezer ez da zure ekipotik ateratzen.
+**Konfigurazioa → Biltegiratzea…** atalean ikusten da EdiMarkdownek nabigatzaile honetan zer gordetzen duen: zenbat dokumentu dituzun irekita, haien testu automatikoki gordeak zenbat betetzen duen eta zenbat irudi dauden, beren tamainarekin. Horietako ezer ez da zure ekipotik ateratzen.
 
 Bereiz zenbatzen dira **dokumenturik gabeko irudiak**, hau da, aspaldi itxitako fitxenak edo aurreko saioetakoak. Aplikazioa irekitzean berez ezabatzen dira, eta **Ezabatu dokumenturik gabeko irudiak** botoiak berehala egiten du; erabilgarria da hainbat PDF inportatu ondoren, horiek baitira leku gehien hartzen dutenak. **Ahaztu gordetako saioa…** aukerak fitxak ixten ditu eta gordetako testua bere irudiekin baztertzen du, galdetu ondoren. Bi gauza horietako batek ere ez du zure diskoko fitxategirik ezabatzen.
 
@@ -267,16 +267,16 @@ Botoiak azken formatua gogoratzen du eta bere ondoko errotulu batean esaten du, 
 
 Aplikazio bera da —menu, lasterbide eta formatu berak— **Linux, Windows eta macOSen** instalatuta. Instalatzaileak [deskargen orrian](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest) daude: `.deb` eta `.AppImage` Linuxerako, `.exe` eta `.msi` Windowserako, eta `.dmg` Apple edo Intel prozesagailua duten Mac-etarako.
 
-**Lehen aldia macOSen.** `.dmg` fitxategia ez dago Apple-ren garatzaile-kontu batekin sinatuta, eta, beraz, irekitzean macOSek aplikazioa «hondatuta dagoela eta zakarrontzira eraman beharko litzatekeela» abisatzen du. Ez dago hondatuta: hori da sistemak internetetik deskargatutako sinatu gabeko edozein aplikaziori buruz esaten diona. Arrastatu EdiMarkWeb **Aplikazioak** karpetara, ireki **Terminala** eta exekutatu `xattr -dr com.apple.quarantine /Applications/EdiMarkWeb.app`. Horrekin normaltasunez irekitzen da eta ez da errepikatu behar: komando horrek aplikazio horri «internetetik deskargatua» marka kentzen dio soilik, sistemaren segurtasun-ezarpenik aldatu gabe.
+**Lehen aldia macOSen.** `.dmg` fitxategia ez dago Apple-ren garatzaile-kontu batekin sinatuta, eta, beraz, irekitzean macOSek aplikazioa «hondatuta dagoela eta zakarrontzira eraman beharko litzatekeela» abisatzen du. Ez dago hondatuta: hori da sistemak internetetik deskargatutako sinatu gabeko edozein aplikaziori buruz esaten diona. Arrastatu EdiMarkdown **Aplikazioak** karpetara, ireki **Terminala** eta exekutatu `xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app`. Horrekin normaltasunez irekitzen da eta ez da errepikatu behar: komando horrek aplikazio horri «internetetik deskargatua» marka kentzen dio soilik, sistemaren segurtasun-ezarpenik aldatu gabe.
 
 Nabigatzailearen aldean hau gehitzen du:
 
-* **Klik bikoitzez irekitzea**: `.md` eta `.markdown` fitxategiak lotuta geratzen dira, EdiMarkWeb-en ikonoa erakusten dute fitxategi-kudeatzailean eta aplikazioan irekitzen dira; jada irekita badago, dokumentua leiho horretara bertara iristen da, eta leihoa aurrera etortzen da. Eta fitxategi hori jada irekita bazegoen, bere fitxara itzultzen da bikoiztu beharrean. (Ikonoa `.deb` paketeak eta Windowseko instalatzaileek jartzen dute; AppImage-k ez du sistema ukitzen.)
+* **Klik bikoitzez irekitzea**: `.md` eta `.markdown` fitxategiak lotuta geratzen dira, EdiMarkdown-en ikonoa erakusten dute fitxategi-kudeatzailean eta aplikazioan irekitzen dira; jada irekita badago, dokumentua leiho horretara bertara iristen da, eta leihoa aurrera etortzen da. Eta fitxategi hori jada irekita bazegoen, bere fitxara itzultzen da bikoiztu beharrean. (Ikonoa `.deb` paketeak eta Windowseko instalatzaileek jartzen dute; AppImage-k ez du sistema ukitzen.)
 * **Gordetzeak benetako fitxategian idazten du**, deskargen karpetatik pasatu gabe.
 * **Sistemaren zuzentzaile ortografikoa**, ekipoko hiztegiekin (Linuxen instalatu behar izan daitezke, adibidez `hunspell-eu`).
 * **Konexiorik gabe funtzionatzen du**: Pandoc eta EdiCuaTeX barruan daramatza. Internet bertsio berririk dagoen egiaztatzeko bakarrik behar da.
 
-**Eguneraketak**: abiaraztean egunean behin egiaztatzen du bertsio berririk dagoen eta, badago, abisu bat agertzen da **Deskargatu eta instalatu** botoiarekin, instalatzailea jaitsi eta abiarazten duena. Instalatzaile batek ere ezin dituenez aplikazio ireki baten fitxategiak ordeztu, abisu berak **Itxi EdiMarkWeb** dakar, gorde eta ixten duena. AppImage batekin, aplikazioak berria deskargatzen du eta bere karpeta irekitzen du aurrekoa ordez dezazun. Egiaztapena nahi duzunean eska dezakezu **Laguntza → Bilatu eguneraketak…** atalean, edo desaktibatu **Egiaztatu abiaraztean** laukiarekin.
+**Eguneraketak**: abiaraztean egunean behin egiaztatzen du bertsio berririk dagoen eta, badago, abisu bat agertzen da **Deskargatu eta instalatu** botoiarekin, instalatzailea jaitsi eta abiarazten duena. Instalatzaile batek ere ezin dituenez aplikazio ireki baten fitxategiak ordeztu, abisu berak **Itxi EdiMarkdown** dakar, gorde eta ixten duena. AppImage batekin, aplikazioak berria deskargatzen du eta bere karpeta irekitzen du aurrekoa ordez dezazun. Egiaztapena nahi duzunean eska dezakezu **Laguntza → Bilatu eguneraketak…** atalean, edo desaktibatu **Egiaztatu abiaraztean** laukiarekin.
 
 Dokumentuak Markdown fitxategi berberak dira bi bertsioetan eta batetik bestera pasatzen dira bihurketarik gabe; partekatzen ez dena gordetze automatikoa da, bertsio bakoitzak bere lan-kopia bere espazioan gordetzen baitu.
 
@@ -333,7 +333,7 @@ Letra bakarreko lasterbideek dokumentuaren gainean eragiten dute, beraz eten egi
 
 ## Lizentzia eta ekarpenak
 
-EdiMarkWeb software librea da [GNU Affero General Public License v3.0](LICENSE) lizentziapean: zure ikasgelan erabil dezakezu, egokitu eta zure zerbitzarietan zabaldu, betiere edozein hobekuntza lizentzia beraren pean partekatzen baduzu eta zure bertsioa erabiltzen dutenei kodea eskaintzen badiezu. Arazoren bat aurkitzen baduzu edo aldaketak proposatu nahi badituzu, ireki gorabehera bat [GitHuben](https://github.com/edimarkweb/edimarkweb.github.io/issues) edo bidali pull request bat.
+EdiMarkdown software librea da [GNU Affero General Public License v3.0](LICENSE) lizentziapean: zure ikasgelan erabil dezakezu, egokitu eta zure zerbitzarietan zabaldu, betiere edozein hobekuntza lizentzia beraren pean partekatzen baduzu eta zure bertsioa erabiltzen dutenei kodea eskaintzen badiezu. Arazoren bat aurkitzen baduzu edo aldaketak proposatu nahi badituzu, ireki gorabehera bat [GitHuben](https://github.com/edimarkweb/edimarkweb.github.io/issues) edo bidali pull request bat.
 
 
 ## PDFa inportatzea

@@ -170,7 +170,7 @@ test('un idioma no disponible recurre al español', async (t) => {
   t.after(() => context.close());
 
   await page.waitForFunction(() => document.documentElement.lang === 'es');
-  assert.equal(await page.locator('#html-output h1').textContent(), 'Manual de EdiMarkWeb');
+  assert.equal(await page.locator('#html-output h1').textContent(), 'Manual de EdiMarkdown');
   assert.equal(requests.some(url => url.endsWith('/locales/fr.json')), false);
   assert.equal(await page.locator('.site-footer').count(), 0);
   assert.equal(await page.locator('#desktop-release-banner').isVisible(), true);
@@ -1234,7 +1234,7 @@ test('el manual sigue recargándose al cambiar de idioma tras renombrar su pesta
   t.after(() => context.close());
 
   await page.waitForFunction(() => document.documentElement.lang === 'es');
-  await page.locator('#html-output h1').getByText('Manual de EdiMarkWeb', { exact: true }).waitFor();
+  await page.locator('#html-output h1').getByText('Manual de EdiMarkdown', { exact: true }).waitFor();
 
   await page.evaluate(() => {
     const doc = docs.find(d => d.isManual);
@@ -1247,7 +1247,7 @@ test('el manual sigue recargándose al cambiar de idioma tras renombrar su pesta
     select.value = 'en';
     select.dispatchEvent(new Event('change', { bubbles: true }));
   });
-  await page.locator('#html-output h1').getByText('EdiMarkWeb manual', { exact: true }).waitFor();
+  await page.locator('#html-output h1').getByText('EdiMarkdown manual', { exact: true }).waitFor();
 });
 
 test('el autoguardado no reescribe un documento que no ha cambiado', async (t) => {
@@ -5935,7 +5935,7 @@ test('al guardar el manual se lleva consigo su imagen', async (t) => {
   t.after(() => context.close());
 
   await page.keyboard.press('F1');
-  await page.locator('#html-output h1').getByText('Manual de EdiMarkWeb', { exact: true }).waitFor();
+  await page.locator('#html-output h1').getByText('Manual de EdiMarkdown', { exact: true }).waitFor();
   await page.keyboard.press('Control+s');
   await page.waitForFunction(() => window.__manualSaveCalls.some(call => call[0] === 'write-image'));
 
@@ -5944,7 +5944,7 @@ test('al guardar el manual se lleva consigo su imagen', async (t) => {
   assert.equal(imagen[1], 'logo_100px.png');
   assert.ok(imagen[2] > 0, 'la imagen guardada no puede ir vacía');
   const escrito = calls.find(call => call[0] === 'text');
-  assert.match(escrito[2], /!\[Logotipo de EdiMarkWeb\]\(logo_100px\.png\)/);
+  assert.match(escrito[2], /!\[Logotipo de EdiMarkdown\]\(logo_100px\.png\)/);
 });
 
 test('los esquemas preformateados se reducen para caber sin alterar el Markdown', async (t) => {

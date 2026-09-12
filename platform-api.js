@@ -354,14 +354,14 @@
         el diálogo del sistema la pregunta se ve y la respuesta es la del
         usuario. En el navegador siguen valiendo los de siempre.
       */
-      async confirm(text, { title = 'EdiMarkWeb' } = {}) {
+      async confirm(text, { title = 'EdiMarkdown' } = {}) {
         if (desktop && dialog && typeof dialog.ask === 'function') {
           return Boolean(await dialog.ask(String(text), { title, kind: 'warning' }));
         }
         return Boolean(root.confirm(String(text)));
       },
 
-      async notify(text, { title = 'EdiMarkWeb', kind = 'info' } = {}) {
+      async notify(text, { title = 'EdiMarkdown', kind = 'info' } = {}) {
         if (desktop && dialog && typeof dialog.message === 'function') {
           await dialog.message(String(text), { title, kind });
           return;

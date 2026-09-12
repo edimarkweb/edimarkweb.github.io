@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.57.3';
+const APP_VERSION = '3.0.0';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -3357,7 +3357,7 @@ function updateVersionLabel() {
     document.querySelectorAll('[data-i18n-key="desktop_banner_message"]').forEach((element) => {
         element.textContent = formatTranslation(
             'desktop_banner_message',
-            'EdiMarkWeb Desktop {version} está disponible para Linux, Windows y macOS.',
+            'EdiMarkdown Desktop {version} está disponible para Linux, Windows y macOS.',
             { version: `v${APP_VERSION}` },
         );
     });
@@ -7538,7 +7538,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
     if (format === 'pdf') {
         try {
-            const { importPdf } = await import('./pdf-import.js?v=2.57.3');
+            const { importPdf } = await import('./pdf-import.js?v=3.0.0');
             const name = getSafeDocumentName(file.name);
             // Crear el documento ocurre dentro del diálogo, que se queda a la
             // vista avisando: con un informe entero no es cosa de un instante.
@@ -9369,12 +9369,12 @@ window.onload = async () => {
             updateBannerMessage.textContent = asset
                 ? formatTranslation(
                     'update_available_message',
-                    'EdiMarkWeb {version} ya está disponible; tienes la {current}.',
+                    'EdiMarkdown {version} ya está disponible; tienes la {current}.',
                     { version, current: currentVersion },
                 )
                 : formatTranslation(
                     'update_manual_download_message',
-                    'EdiMarkWeb {version} ya está disponible, pero no hay ningún instalador para este sistema. Descárgala desde la página de novedades.',
+                    'EdiMarkdown {version} ya está disponible, pero no hay ningún instalador para este sistema. Descárgala desde la página de novedades.',
                     { version },
                 );
         }
@@ -9456,12 +9456,12 @@ window.onload = async () => {
             const message = /\.appimage$/i.test(asset.name)
                 ? formatTranslation(
                     'update_ready_appimage',
-                    'Descargado en {path}. Cierra EdiMarkWeb y sustituye tu AppImage por este archivo.',
+                    'Descargado en {path}. Cierra EdiMarkdown y sustituye tu AppImage por este archivo.',
                     { path },
                 )
                 : getTranslation(
                     'update_ready_installer',
-                    'El instalador ya está abierto. Cierra EdiMarkWeb para que pueda sustituir los archivos y vuelve a abrirlo al terminar.',
+                    'El instalador ya está abierto. Cierra EdiMarkdown para que pueda sustituir los archivos y vuelve a abrirlo al terminar.',
                 );
             if (updateBannerMessage) updateBannerMessage.textContent = message;
             reportStatus(message);

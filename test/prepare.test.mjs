@@ -452,7 +452,7 @@ test('collectFetchableImageUrls recoge también las rutas relativas', () => {
 
 /*
   Un manual que explica cómo se escribe una imagen no está usando ninguna. Sin
-  esto, exportar el manual de EdiMarkWeb descargaba `imagenes/01.png`, recibía
+  esto, exportar el manual de EdiMarkdown descargaba `imagenes/01.png`, recibía
   del servidor la página de la aplicación entera y la incrustaba como texto:
   páginas y páginas de base64 en el DOCX, el ODT y el EPUB.
 */

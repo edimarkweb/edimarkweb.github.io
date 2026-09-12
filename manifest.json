@@ -1,6 +1,6 @@
 {
-  "name": "EdiMarkWeb",
-  "short_name": "EdiMarkWeb",
+  "name": "EdiMarkdown",
+  "short_name": "EdiMarkdown",
   "description": "Editor Markdown con soporte LaTeX",
   "start_url": "./index.html",
   "display": "standalone",

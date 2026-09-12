@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="color-scheme" content="light dark">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <title data-i18n-key="title">EdiMarkWeb: Editor de textos Markdown</title>
+    <title data-i18n-key="title">EdiMarkdown: Editor de textos Markdown</title>
 
     <link rel="stylesheet" href="tailwind.build.css">
 
@@ -40,7 +40,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/split.js@1.6.5/dist/split.min.js" integrity="sha384-q2ksSc8z6Q4ZUnxlfZj9AXZLpSdWmD3q/YrId1twTeNHh56fNh98YbJSpppzGUvL" crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" href="style.css?v=2.57.3">
+    <link rel="stylesheet" href="style.css?v=3.0.0">
 </head>
 <body class="p-4 sm:p-6 md:p-8">
 <!--
@@ -50,7 +50,7 @@
   no en el guion: se ve aunque el guion todavía no haya soltado el hilo.
 -->
 <div id="app-loading" role="status" aria-live="polite">
-    <p data-i18n-key="app_loading_title">Abriendo EdiMarkWeb…</p>
+    <p data-i18n-key="app_loading_title">Abriendo EdiMarkdown…</p>
     <p class="app-loading-hint" data-i18n-key="app_loading_hint">Un documento largo puede tardar unos segundos.</p>
     <!--
       La barra no mide nada: montar el documento ocupa el hilo de golpe y no
@@ -85,9 +85,9 @@
 <main id="main-container" class="max-w-7xl mx-auto bg-white rounded-xl shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-700 is-expanded">
     <header class="px-4 py-2 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 dark:border-slate-700">
         <div class="flex items-center gap-3">
-            <img src="logo_256.png" alt="Logo EdiMarkWeb" class="w-9 h-9">
+            <img src="logo_256.png" alt="Logo EdiMarkdown" class="w-9 h-9">
             <div class="app-brand-label">
-                <h1 data-i18n-key="h1" class="text-lg font-semibold text-slate-800 dark:text-slate-100">EdiMarkWeb</h1>
+                <h1 data-i18n-key="h1" class="text-lg font-semibold text-slate-800 dark:text-slate-100">EdiMarkdown</h1>
                 <span class="app-brand-version text-slate-400 dark:text-slate-500" aria-label="Versión:" data-i18n-key="about_version_label"><span aria-hidden="true">v</span><span data-app-version>—</span></span>
             </div>
         </div>
@@ -450,7 +450,7 @@
                         <button type="button" id="about-btn" class="flex w-full flex-col items-stretch px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700" role="menuitem">
                             <span class="flex w-full items-center gap-2">
                             <i data-lucide="info" class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400"></i>
-                            <span class="whitespace-nowrap" data-i18n-key="about_btn_text">Acerca de EdiMarkWeb</span>
+                            <span class="whitespace-nowrap" data-i18n-key="about_btn_text">Acerca de EdiMarkdown</span>
                         
                             </span>
                             <span class="pl-6 text-xs font-normal text-slate-400 dark:text-slate-500" data-i18n-key="menu_hint_about">Versión, autor, licencia y enlaces</span>
@@ -486,7 +486,7 @@
     <section id="desktop-release-banner" class="desktop-release-banner" role="status" hidden>
         <i data-lucide="monitor-down" class="desktop-release-banner-icon" aria-hidden="true"></i>
         <div class="desktop-release-banner-content">
-            <p data-i18n-key="desktop_banner_message">EdiMarkWeb Desktop v2.57.3 está disponible para Linux, Windows y macOS.</p>
+            <p data-i18n-key="desktop_banner_message">EdiMarkdown Desktop v3.0.0 está disponible para Linux, Windows y macOS.</p>
             <a id="desktop-banner-download-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="desktop_banner_download">Ver descargas</a>
             <label class="desktop-release-banner-never">
                 <input id="desktop-banner-never-show" type="checkbox">
@@ -501,9 +501,9 @@
     <section id="update-banner" class="desktop-release-banner update-banner" role="status" hidden>
         <i data-lucide="download" class="desktop-release-banner-icon" aria-hidden="true"></i>
         <div class="desktop-release-banner-content">
-            <p id="update-banner-message">Hay una versión nueva de EdiMarkWeb.</p>
+            <p id="update-banner-message">Hay una versión nueva de EdiMarkdown.</p>
             <button id="update-install-btn" type="button" class="update-banner-action" data-i18n-key="update_install_btn">Descargar e instalar</button>
-            <button id="update-quit-btn" type="button" class="update-banner-action" data-i18n-key="update_quit_btn" hidden>Cerrar EdiMarkWeb</button>
+            <button id="update-quit-btn" type="button" class="update-banner-action" data-i18n-key="update_quit_btn" hidden>Cerrar EdiMarkdown</button>
             <a id="update-notes-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="update_notes_link">Ver novedades</a>
             <label class="desktop-release-banner-never">
                 <input id="update-auto-check" type="checkbox">
@@ -905,7 +905,7 @@
             <div class="flex items-center gap-3 mb-4">
                 <img src="logo_256.png" alt="" class="w-12 h-12">
                 <div>
-                    <h3 id="about-modal-title" class="text-lg font-bold text-slate-800 dark:text-slate-100" data-i18n-key="about_modal_title">Acerca de EdiMarkWeb</h3>
+                    <h3 id="about-modal-title" class="text-lg font-bold text-slate-800 dark:text-slate-100" data-i18n-key="about_modal_title">Acerca de EdiMarkdown</h3>
                     <p class="text-sm text-slate-500 dark:text-slate-400" data-i18n-key="footer_tagline">Editor de textos Markdown.</p>
                 </div>
             </div>
@@ -934,7 +934,7 @@
                     <li>Lucide — ISC</li>
                 </ul>
             </details>
-            <nav class="about-resource-links" data-i18n-key="about_links_label" aria-label="Enlaces de EdiMarkWeb">
+            <nav class="about-resource-links" data-i18n-key="about_links_label" aria-label="Enlaces de EdiMarkdown">
                 <a id="about-web-link" href="https://edimarkweb.github.io/" target="_blank" rel="noreferrer noopener">
                     <i data-lucide="globe-2" aria-hidden="true"></i>
                     <span data-i18n-key="about_web_link">Abrir la versión web</span>
@@ -990,7 +990,7 @@
     <div id="storage-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="storage-modal-title">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl dark:bg-slate-800">
             <h3 id="storage-modal-title" class="text-lg font-bold mb-2 text-slate-800 dark:text-slate-100" data-i18n-key="storage_modal_title">Almacenamiento</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" data-i18n-key="storage_modal_description">Lo que EdiMarkWeb guarda en este navegador: el texto de las pestañas abiertas y las imágenes de sus documentos. Nada de esto sale del equipo.</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" data-i18n-key="storage_modal_description">Lo que EdiMarkdown guarda en este navegador: el texto de las pestañas abiertas y las imágenes de sus documentos. Nada de esto sale del equipo.</p>
             <dl id="storage-modal-figures" class="space-y-2 text-sm text-slate-700 dark:text-slate-300">
                 <div class="flex items-baseline justify-between gap-4">
                     <dt data-i18n-key="storage_modal_documents">Documentos abiertos</dt>
@@ -1671,13 +1671,13 @@
         </div>
     </div>
 
-    <script src="asset-paths.js?v=2.57.3"></script>
-    <script src="bibliography.js?v=2.57.3"></script>
-    <script src="document-format.js?v=2.57.3"></script>
-    <script src="format-profiles.js?v=2.57.3"></script>
-    <script src="platform-api.js?v=2.57.3"></script>
-    <script src="desktop-updater.js?v=2.57.3"></script>
-    <script type="module" src="pandoc-exporter.js?v=2.57.3"></script>
+    <script src="asset-paths.js?v=3.0.0"></script>
+    <script src="bibliography.js?v=3.0.0"></script>
+    <script src="document-format.js?v=3.0.0"></script>
+    <script src="format-profiles.js?v=3.0.0"></script>
+    <script src="platform-api.js?v=3.0.0"></script>
+    <script src="desktop-updater.js?v=3.0.0"></script>
+    <script type="module" src="pandoc-exporter.js?v=3.0.0"></script>
     <script>
     (function () {
       var ANALYTICS_FALLBACK_ENDPOINT = 'https://bilateria.org/app/estadistica/edimarkweb/track.php';
@@ -1857,8 +1857,8 @@
       });
     })();
     </script>
-    <script src="script.js?v=2.57.3" defer></script>
-    <script src="search.js?v=2.57.3" defer></script>
-    <script src="i18n.js?v=2.57.3" defer></script>
+    <script src="script.js?v=3.0.0" defer></script>
+    <script src="search.js?v=3.0.0" defer></script>
+    <script src="i18n.js?v=3.0.0" defer></script>
 </body>
 </html>

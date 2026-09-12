@@ -1,5 +1,5 @@
 /*
-  Pandoc exporter for EdiMarkWeb.
+  Pandoc exporter for EdiMarkdown.
   Reuses the Pandoc WASM bridge from MDAITex (pandoc-wasm.js).
 */
 import { pandoc } from './pandoc-wasm.js';

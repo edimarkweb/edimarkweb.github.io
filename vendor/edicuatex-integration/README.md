@@ -1,4 +1,4 @@
-# EdiCuaTeX en EdiMarkWeb Desktop
+# EdiCuaTeX en EdiMarkdown Desktop
 
 La web abre el editor de fórmulas publicado en <https://edicuatex.github.io/>,
 así que recibe cada versión nueva sin hacer nada. La aplicación de escritorio no
@@ -39,7 +39,7 @@ EdiCuaTeX no obligue a rehacer ningún parche:
 - `theme.css` se añade al final de `css/edicuatex.css`.
 - `theme.js` se antepone a `js/edicuatex-tools.js`.
 
-Entre los dos aplican la paleta de EdiMarkWeb cuando `script.js` abre el editor
+Entre los dos aplican la paleta de EdiMarkdown cuando `script.js` abre el editor
 con `?mode=light` o `?mode=dark`.
 
 ## Lo que ya no hace falta parchear

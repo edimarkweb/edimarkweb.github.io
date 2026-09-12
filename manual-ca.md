@@ -1,8 +1,8 @@
-![Logotip d'EdiMarkWeb](logo_100px.png)
+![Logotip d'EdiMarkdown](logo_100px.png)
 
-# Manual d'EdiMarkWeb
+# Manual d'EdiMarkdown
 
-EdiMarkWeb és un **editor de textos en Markdown** pensat per a docents i creadors de contingut: s'escriu de pressa, s'exporta a Word, LibreOffice, EPUB, HTML, LaTeX i PDF, i admet fórmules matemàtiques. Funciona **al navegador**, sense instal·lar res, i també com a **aplicació d'escriptori** per a Linux, Windows i macOS. En tots dos casos la feina passa al teu equip: ni els documents ni les imatges en surten.
+EdiMarkdown és un **editor de textos en Markdown** pensat per a docents i creadors de contingut: s'escriu de pressa, s'exporta a Word, LibreOffice, EPUB, HTML, LaTeX i PDF, i admet fórmules matemàtiques. Funciona **al navegador**, sense instal·lar res, i també com a **aplicació d'escriptori** per a Linux, Windows i macOS. En tots dos casos la feina passa al teu equip: ni els documents ni les imatges en surten.
 
 ## Per començar
 
@@ -41,7 +41,7 @@ Tot això és cosa dels dos plafons alhora, que és on l'amplada d'un se la pren
 
 ### Enganxar qualsevol cosa
 
-Amb `Ctrl+V` o el botó **Enganxar**, EdiMarkWeb col·loca al plafó adequat el que hi hagi al porta-retalls: el text pla i el Markdown van a l'editor Markdown, a la posició del cursor; el contingut amb format (Word, LibreOffice, una pàgina web, una fórmula d'un chatbot) i fins i tot les imatges es recomponen a l'editor visual i generen el seu Markdown. No calen passos intermedis: copia d'on sigui i enganxa.
+Amb `Ctrl+V` o el botó **Enganxar**, EdiMarkdown col·loca al plafó adequat el que hi hagi al porta-retalls: el text pla i el Markdown van a l'editor Markdown, a la posició del cursor; el contingut amb format (Word, LibreOffice, una pàgina web, una fórmula d'un chatbot) i fins i tot les imatges es recomponen a l'editor visual i generen el seu Markdown. No calen passos intermedis: copia d'on sigui i enganxa.
 
 Amb `Ctrl` (o `Cmd`) premut, un clic a un enllaç de l'editor visual l'obre; a l'aplicació d'escriptori, al teu navegador habitual.
 
@@ -63,9 +63,9 @@ Al costat del logotip hi ha els menús **Fitxer**, **Exportar** i **Configuraci�
 
 * **Fitxer**: `Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)` porten contingut; `Desar (Ctrl+S)` i `Desar com a… (Ctrl+Maj+S)` el treuen. A l'aplicació d'escriptori acaba amb **Sortir**, que desa abans de tancar.
 * **Exportar (Ctrl+Alt+E)**: els sis formats, cadascun amb una línia que diu per a què serveix.
-* **Configuració (Ctrl+,)**: **Idioma** de la interfície; **Tema** (Sistema, Clar o Fosc, es recorda); **Finestra independent**, que obre EdiMarkWeb sense pestanyes ni barra d'adreces (només a la versió web); **Corrector ortogràfic**, que subratlla les faltes amb els diccionaris de l'equip i segueix l'idioma del document; i **Opcions generals…**.
+* **Configuració (Ctrl+,)**: **Idioma** de la interfície; **Tema** (Sistema, Clar o Fosc, es recorda); **Finestra independent**, que obre EdiMarkdown sense pestanyes ni barra d'adreces (només a la versió web); **Corrector ortogràfic**, que subratlla les faltes amb els diccionaris de l'equip i segueix l'idioma del document; i **Opcions generals…**.
 * **Imprimir (Ctrl+P)**: una vista preparada per a paper o PDF.
-* **Ajuda**: el **Manual (F1)**, **Quant a EdiMarkWeb** —versió, autor i llicències— i, a l'escriptori, **Cercar actualitzacions…**.
+* **Ajuda**: el **Manual (F1)**, **Quant a EdiMarkdown** —versió, autor i llicències— i, a l'escriptori, **Cercar actualitzacions…**.
 
 La barra d'eines, sota l'anterior, reuneix desfer i refer, negreta, cursiva, ratllat, superíndex i subíndex, encapçalaments (H1…H6), llistes, cites, codi, enllaços, imatges, taules, **citacions bibliogràfiques**, **Enganxar** i les fórmules. Cada botó diu, en passar-hi el ratolí, què fa i amb quina drecera. A les pantalles petites es plega en dos botons, **Accions** i **Format**. El superíndex i el subíndex s'escriuen com a Pandoc, `m^2^` i `H~2~O`; el ratllat necessita dues titlles, `~~així~~`.
 
@@ -92,7 +92,7 @@ El botó **Imatge** admet un fitxer del disc o una URL, i pregunta com inserir-l
 
 **Gestor d'imatges.** Sota l'editor Markdown, una llista reuneix les imatges del document. Totes es poden **veure**, **reemplaçar** per una altra enganxada des del porta-retalls, triada del disc o indicada mitjançant un URL, i **eliminar del document**. Les enllaçades mostren la ruta o l'URL i també es poden **incrustar** en Base64; eliminar la referència no esborra el fitxer original ni la imatge remota. En les imatges en línia, la conversió depèn que el servidor permeti descarregar-les; si la bloqueja, el document no canvia. Les que ja estan incrustades mostren el format i la mida i permeten veure'n o copiar-ne el codi.
 
-El codi Base64 ocupa milers de caràcters, per això EdiMarkWeb el plega i deixa a l'editor una marca curta com ara `__EDIMARK_B64_1__`; el contingut real es conserva intacte en desar, copiar i exportar. El botó **Passar les incrustades a la carpeta** fa el camí de tornada: cada imatge es converteix en un fitxer dins de la subcarpeta de recursos del document (`el-meu-fitxer.md` → `el-meu-fitxer/images/`) i al Markdown hi queda la seva ruta. Els fitxers s'escriuen en desar, i `Ctrl+Z` desfà el canvi.
+El codi Base64 ocupa milers de caràcters, per això EdiMarkdown el plega i deixa a l'editor una marca curta com ara `__EDIMARK_B64_1__`; el contingut real es conserva intacte en desar, copiar i exportar. El botó **Passar les incrustades a la carpeta** fa el camí de tornada: cada imatge es converteix en un fitxer dins de la subcarpeta de recursos del document (`el-meu-fitxer.md` → `el-meu-fitxer/images/`) i al Markdown hi queda la seva ruta. Els fitxers s'escriuen en desar, i `Ctrl+Z` desfà el canvi.
 
 Les dues conversions també tenen el seu botó per a tot el document, sobre la llista: **Passar les incrustades a la carpeta** i **Incrusta totes les enllaçades**. Cadascun apareix només mentre queda alguna cosa per convertir en el seu sentit, de manera que un document amb totes les imatges de la mateixa classe en mostra un de sol, o cap.
 
@@ -164,7 +164,7 @@ A **Configuració → Opcions generals… → Citacions** pots carregar una bibl
 
 El botó del llibre —o `Ctrl+Alt+B`— obre un cercador per autor, títol, any o clau, amb **Afegeix una referència manualment** sempre a mà per escriure'n una de nova sense sortir del quadre. Al peu del quadre es llegeix amb quin estil es compondran les citacions —APA, Chicago, MLA, IEEE o el CSL que hagis carregat— i un enllaç duu a les opcions de la bibliografia per canviar-lo. La forma **parentètica** produeix `[@garcia2024]`; la **narrativa**, `@garcia2024`; i **només l'any**, `[-@garcia2024]`, quan el nom ja és a la frase. Amb una sola referència pots afegir pàgines o un altre localitzador, com `[@garcia2024, p. 5]` o `@garcia2024 [pp. 5–7]`. Les citacions múltiples usen la forma parentètica. Si el cursor és dins d'una citació, el mateix botó permet editar-ne tots els detalls. La bibliografia final apareix a la vista prèvia i a totes les exportacions.
 
-En desar `el-meu-fitxer.md`, EdiMarkWeb copia la biblioteca a `el-meu-fitxer/references.bib` —o `references.json`— i declara aquesta ruta a les metadades YAML. Les imatges pròpies s'agrupen a `el-meu-fitxer/images/`. Per traslladar el treball n'hi ha prou de conservar junts el Markdown i la carpeta `el-meu-fitxer`. Si fas servir un fitxer CSL propi, es copia al costat, a `el-meu-fitxer/style.csl`, i també queda declarat: així les citacions es veuen igual en qualsevol equip. L'aplicació d'escriptori recupera la biblioteca i l'estil automàticament; a la versió web, per seguretat, cal vincular la carpeta del document —l'avís **Cerca la seva carpeta…** que apareix sobre la vista prèvia— en obrir-lo en un altre navegador o ordinador.
+En desar `el-meu-fitxer.md`, EdiMarkdown copia la biblioteca a `el-meu-fitxer/references.bib` —o `references.json`— i declara aquesta ruta a les metadades YAML. Les imatges pròpies s'agrupen a `el-meu-fitxer/images/`. Per traslladar el treball n'hi ha prou de conservar junts el Markdown i la carpeta `el-meu-fitxer`. Si fas servir un fitxer CSL propi, es copia al costat, a `el-meu-fitxer/style.csl`, i també queda declarat: així les citacions es veuen igual en qualsevol equip. L'aplicació d'escriptori recupera la biblioteca i l'estil automàticament; a la versió web, per seguretat, cal vincular la carpeta del document —l'avís **Cerca la seva carpeta…** que apareix sobre la vista prèvia— en obrir-lo en un altre navegador o ordinador.
 
 ---
 
@@ -244,7 +244,7 @@ Si el document comença amb les seves pròpies metadades YAML, manen elles.
 
 ## Emmagatzematge
 
-A **Configuració → Emmagatzematge…** es veu què desa EdiMarkWeb en aquest navegador: quants documents tens oberts, què ocupa el seu text desat automàticament i quantes imatges hi ha, amb la seva mida. Res d'això surt del teu equip.
+A **Configuració → Emmagatzematge…** es veu què desa EdiMarkdown en aquest navegador: quants documents tens oberts, què ocupa el seu text desat automàticament i quantes imatges hi ha, amb la seva mida. Res d'això surt del teu equip.
 
 A part es compten les **imatges sense document**, que són les de pestanyes tancades fa temps o de sessions anteriors. S'esborren soles en obrir l'aplicació, i el botó **Esborra les imatges sense document** ho fa a l'instant; va bé després d'importar uns quants PDF, que són els que més ocupen. **Oblida la sessió desada…** tanca les pestanyes i descarta el text desat amb les seves imatges, després de preguntar. Cap de les dues coses esborra fitxers del teu disc.
 
@@ -267,16 +267,16 @@ El botó recorda l'últim format i ho diu en un rètol al seu costat, així que 
 
 És la mateixa aplicació —els mateixos menús, dreceres i formats— instal·lada a **Linux, Windows i macOS**. Els instal·ladors són a la [pàgina de descàrregues](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest): `.deb` i `.AppImage` per a Linux, `.exe` i `.msi` per a Windows, i `.dmg` per a Mac amb processador Apple o Intel.
 
-**La primera vegada a macOS.** El `.dmg` no està signat amb un compte de desenvolupador d'Apple, de manera que en obrir-lo macOS avisa que l'aplicació «està malmesa i s'hauria de moure a la paperera». No ho està: és el que diu el sistema davant de qualsevol aplicació sense signar baixada d'internet. Arrossega EdiMarkWeb a **Aplicacions**, obre el **Terminal** i executa `xattr -dr com.apple.quarantine /Applications/EdiMarkWeb.app`. Amb això s'obre amb normalitat i no cal repetir-ho: aquesta ordre només treu la marca de «baixat d'internet» a aquella aplicació, sense canviar cap paràmetre de seguretat del sistema.
+**La primera vegada a macOS.** El `.dmg` no està signat amb un compte de desenvolupador d'Apple, de manera que en obrir-lo macOS avisa que l'aplicació «està malmesa i s'hauria de moure a la paperera». No ho està: és el que diu el sistema davant de qualsevol aplicació sense signar baixada d'internet. Arrossega EdiMarkdown a **Aplicacions**, obre el **Terminal** i executa `xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app`. Amb això s'obre amb normalitat i no cal repetir-ho: aquesta ordre només treu la marca de «baixat d'internet» a aquella aplicació, sense canviar cap paràmetre de seguretat del sistema.
 
 Respecte al navegador hi afegeix:
 
-* **Doble clic per obrir**: els fitxers `.md` i `.markdown` queden associats, mostren la icona d'EdiMarkWeb al gestor de fitxers i s'obren a l'aplicació; si ja és oberta, el document arriba a aquesta mateixa finestra, que es posa al davant. I si aquell fitxer ja era obert, torna a la seva pestanya en comptes de duplicar-se. (La icona la instal·len el paquet `.deb` i els instal·ladors de Windows; l'AppImage no toca el sistema.)
+* **Doble clic per obrir**: els fitxers `.md` i `.markdown` queden associats, mostren la icona d'EdiMarkdown al gestor de fitxers i s'obren a l'aplicació; si ja és oberta, el document arriba a aquesta mateixa finestra, que es posa al davant. I si aquell fitxer ja era obert, torna a la seva pestanya en comptes de duplicar-se. (La icona la instal·len el paquet `.deb` i els instal·ladors de Windows; l'AppImage no toca el sistema.)
 * **Desar escriu al fitxer de veritat**, sense passar per la carpeta de descàrregues.
 * **Corrector ortogràfic del sistema**, amb els diccionaris de l'equip (a Linux pot caldre instal·lar-los, per exemple `hunspell-ca`).
 * **Funciona sense connexió**: duu a dins el Pandoc i l'EdiCuaTeX. Només cal internet per comprovar si hi ha versions noves.
 
-**Actualitzacions**: en arrencar comprova un cop al dia si hi ha versió nova i, si n'hi ha, apareix un avís amb **Descarregar i instal·lar**, que baixa l'instal·lador i el llança. Com que cap instal·lador no pot substituir els fitxers d'una aplicació oberta, el mateix avís duu **Tancar EdiMarkWeb**, que desa i tanca. Amb una AppImage, l'aplicació descarrega la nova i obre la seva carpeta perquè substitueixis l'anterior. Pots demanar la comprovació quan vulguis des d'**Ajuda → Cercar actualitzacions…**, o desactivar-la amb la casella **Comprovar en iniciar**.
+**Actualitzacions**: en arrencar comprova un cop al dia si hi ha versió nova i, si n'hi ha, apareix un avís amb **Descarregar i instal·lar**, que baixa l'instal·lador i el llança. Com que cap instal·lador no pot substituir els fitxers d'una aplicació oberta, el mateix avís duu **Tancar EdiMarkdown**, que desa i tanca. Amb una AppImage, l'aplicació descarrega la nova i obre la seva carpeta perquè substitueixis l'anterior. Pots demanar la comprovació quan vulguis des d'**Ajuda → Cercar actualitzacions…**, o desactivar-la amb la casella **Comprovar en iniciar**.
 
 Els documents són els mateixos fitxers Markdown a les dues versions i passen d'una a l'altra sense conversions; el que no es comparteix és el desament automàtic, perquè cada versió en guarda la còpia de treball al seu propi espai.
 
@@ -333,7 +333,7 @@ Les dreceres d'una sola lletra actuen sobre el document, així que queden en pau
 
 ## Llicència i contribucions
 
-EdiMarkWeb és programari lliure sota la [GNU Affero General Public License v3.0](LICENSE): pots fer-lo servir a l'aula, adaptar-lo i desplegar-lo en servidors propis, sempre que comparteixis qualsevol millora sota la mateixa llicència i ofereixis el codi a qui faci servir la teva versió. Si detectes un problema o vols proposar canvis, obre una incidència a [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) o envia un pull request.
+EdiMarkdown és programari lliure sota la [GNU Affero General Public License v3.0](LICENSE): pots fer-lo servir a l'aula, adaptar-lo i desplegar-lo en servidors propis, sempre que comparteixis qualsevol millora sota la mateixa llicència i ofereixis el codi a qui faci servir la teva versió. Si detectes un problema o vols proposar canvis, obre una incidència a [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) o envia un pull request.
 
 
 ## Importar PDF

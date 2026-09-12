@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "EdiMarkWeb",
-  "version": "2.57.3",
+  "productName": "EdiMarkdown",
+  "version": "3.0.0",
   "identifier": "io.github.edimarkweb",
   "build": {
     "beforeDevCommand": {
@@ -15,7 +15,7 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": "EdiMarkWeb",
+        "title": "EdiMarkdown",
         "width": 1280,
         "height": 850,
         "minWidth": 900,
@@ -31,7 +31,7 @@
     "active": true,
     "category": "Productivity",
     "shortDescription": "Editor Markdown con soporte LaTeX",
-    "longDescription": "EdiMarkWeb es un editor de Markdown con vista previa, fórmulas LaTeX y exportación a varios formatos.",
+    "longDescription": "EdiMarkdown es un editor de Markdown con vista previa, fórmulas LaTeX y exportación a varios formatos.",
     "homepage": "https://edimarkweb.github.io/",
     "linux": {
       "deb": {

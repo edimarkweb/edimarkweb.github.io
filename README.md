@@ -1,14 +1,14 @@
-# EdiMarkWeb
+# EdiMarkdown
 
-EdiMarkWeb es un editor Markdown orientado a docentes, estudiantes y creadores técnicos que necesitan escribir, visualizar y exportar contenido sin montar una cadena de herramientas. Funciona en el navegador y también como aplicación de escritorio para Linux, Windows y macOS, con las mismas prestaciones: edición Markdown y HTML sincronizada, soporte completo de LaTeX con KaTeX y utilidades de importación/exportación basadas en Pandoc.
+EdiMarkdown es un editor Markdown orientado a docentes, estudiantes y creadores técnicos que necesitan escribir, visualizar y exportar contenido sin montar una cadena de herramientas. Funciona en el navegador y también como aplicación de escritorio para Linux, Windows y macOS, con las mismas prestaciones: edición Markdown y HTML sincronizada, soporte completo de LaTeX con KaTeX y utilidades de importación/exportación basadas en Pandoc.
 
 - 🌐 Aplicación publicada en: [https://edimarkweb.github.io/](https://edimarkweb.github.io/)
 - 💻 Aplicación de escritorio: [últimos instaladores para Linux, Windows y macOS](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest)
-  - 🍎 En macOS, la primera vez hay que quitar la cuarentena: `xattr -dr com.apple.quarantine /Applications/EdiMarkWeb.app` ([por qué](manual.md#la-aplicación-de-escritorio))
+  - 🍎 En macOS, la primera vez hay que quitar la cuarentena: `xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app` ([por qué](manual.md#la-aplicación-de-escritorio))
 - 📘 Manual de usuario: [manual.md](manual.md) (también en [inglés](manual-en.md), [català](manual-ca.md), [galego](manual-gl.md) y [euskara](manual-eu.md))
 - 🐞 Incidencias y mejoras: [Issues de GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues)
 
-![Interfaz de EdiMarkWeb](logo.png)
+![Interfaz de EdiMarkdown](logo.png)
 
 ## Características principales
 
@@ -108,7 +108,7 @@ En Linux se generan paquetes DEB y AppImage; en Windows, instaladores MSI y NSIS
 una imagen DMG por arquitectura, la de Apple silicon y la de Intel. Los DMG no se firman con una
 identidad de desarrollador de Apple ni se notarizan, así que macOS los marca en cuarentena y al
 abrirlos avisa de que la aplicación «está dañada»; se resuelve una sola vez con
-`xattr -dr com.apple.quarantine /Applications/EdiMarkWeb.app`, que es lo que documenta el manual.
+`xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app`, que es lo que documenta el manual.
 Firmarlos exigiría una cuenta del Apple Developer Program y sus secretos en el flujo. El flujo
 `Native application builds` de GitHub Actions adjunta esos instaladores a GitHub Releases al
 crear una etiqueta `v*` o al indicar manualmente una etiqueta existente. Los paquetes de Linux se
@@ -156,4 +156,4 @@ Para reportar errores o proponer mejoras, utiliza las [incidencias de GitHub](ht
 
 ## Licencia
 
-El código de EdiMarkWeb se distribuye bajo la [GNU Affero General Public License v3.0](LICENSE). Puedes usarlo, modificarlo y desplegarlo siempre que mantengas la misma licencia, publiques las mejoras y entregues el código fuente cuando la aplicación se ofrezca como servicio.
+El código de EdiMarkdown se distribuye bajo la [GNU Affero General Public License v3.0](LICENSE). Puedes usarlo, modificarlo y desplegarlo siempre que mantengas la misma licencia, publiques las mejoras y entregues el código fuente cuando la aplicación se ofrezca como servicio.
