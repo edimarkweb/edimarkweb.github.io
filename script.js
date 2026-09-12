@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.57.2';
+const APP_VERSION = '2.57.3';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -954,12 +954,16 @@ function refreshLinkedImagesUi(sourceText, doc) {
 }
 
 function linkedImageLabels(info) {
+    const kind = getTranslation(
+        info.kind === 'remote' ? 'linked_image_online_label' : 'linked_image_file_label',
+        info.kind === 'remote' ? 'En línea' : 'Archivo',
+    );
     return {
         title: info.title,
-        meta: `${getTranslation(
-            info.kind === 'remote' ? 'linked_image_online_label' : 'linked_image_file_label',
-            info.kind === 'remote' ? 'En línea' : 'Archivo',
-        )} · ${info.source}`,
+        // Una URL completa nunca cabe en la ficha y ya se conserva como
+        // destino interno de sus acciones. En los archivos locales la ruta sí
+        // ayuda a distinguir imágenes con el mismo nombre.
+        meta: info.kind === 'remote' ? kind : `${kind} · ${info.source}`,
     };
 }
 
@@ -7534,7 +7538,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
     if (format === 'pdf') {
         try {
-            const { importPdf } = await import('./pdf-import.js?v=2.57.2');
+            const { importPdf } = await import('./pdf-import.js?v=2.57.3');
             const name = getSafeDocumentName(file.name);
             // Crear el documento ocurre dentro del diálogo, que se queda a la
             // vista avisando: con un informe entero no es cosa de un instante.

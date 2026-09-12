@@ -3972,10 +3972,13 @@ test('las imágenes en línea se pueden ver, incrustar y quitar', async (t) => {
   const items = page.locator('.base64-hidden-item');
   await items.first().locator('.base64-hidden-thumb img').waitFor();
   assert.equal(await items.count(), 2, 'también se admite una URL sin extensión de imagen');
+  const remoteItem = items.filter({ hasText: 'remota' });
+  assert.equal(await remoteItem.locator('.base64-hidden-details p').textContent(), 'En línea');
+  assert.doesNotMatch(await remoteItem.innerText(), /https:\/\//);
 
-  await items.filter({ hasText: 'remota' }).locator('.base64-hidden-thumb').click();
+  await remoteItem.locator('.base64-hidden-thumb').click();
   await page.locator('#base64-preview-overlay').waitFor({ state: 'visible' });
-  assert.equal(await page.locator('#base64-preview-meta').textContent(), `En línea · ${firstUrl}`);
+  assert.equal(await page.locator('#base64-preview-meta').textContent(), 'En línea');
   assert.equal(await page.locator('#base64-preview-image').getAttribute('src'), firstUrl);
   await page.keyboard.press('Escape');
 
