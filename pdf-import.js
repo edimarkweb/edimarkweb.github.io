@@ -186,7 +186,7 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
         <iframe id="pdf-import-preview" sandbox="" referrerpolicy="no-referrer"></iframe>
         <div class="pdf-import-actions">
           <button id="pdf-cancel" type="button"></button>
-          <button id="pdf-preview" type="button" disabled></button>
+          <button id="pdf-preview" class="pdf-primary-action" type="button" disabled></button>
           <button id="pdf-accept" type="button" disabled></button>
         </div>
       </form>`;
@@ -324,14 +324,26 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
             $('.pdf-ocr-language').hidden = !enabled || !scannedPages;
             $('#pdf-ocr-language').disabled = busy || !enabled;
         }
+        /*
+          El diálogo tiene un orden deliberado: primero se convierte y solo
+          después se importa. La acción principal y el único botón disponible
+          avanzan juntos; tocar cualquier opción invalida el resultado y
+          devuelve el énfasis a Convertir.
+        */
+        function syncActionState() {
+            const converted = Boolean(markdown);
+            $('#pdf-preview').disabled = busy || !inspected || converted;
+            $('#pdf-accept').disabled = busy || !converted;
+            $('#pdf-preview').classList.toggle('pdf-primary-action', !converted);
+            $('#pdf-accept').classList.toggle('pdf-primary-action', converted);
+        }
         function setBusy(value) {
             busy = value;
             renewWatchdog();
             if (!value) clearProgress();
-            $('#pdf-preview').disabled = value || !inspected;
             for (const input of dialog.querySelectorAll('input, select')) input.disabled = value;
             syncOcrLanguage();
-            $('#pdf-accept').disabled = value || !markdown;
+            syncActionState();
             dialog.setAttribute('aria-busy', String(value));
         }
         function fail(key) {
@@ -531,7 +543,7 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
         };
         for (const input of dialog.querySelectorAll('input, select')) input.addEventListener('input', () => {
             markdown = null;
-            $('#pdf-accept').disabled = true;
+            syncActionState();
             syncOcrLanguage();
             setPreview();
             $('#pdf-import-status').textContent = t('pdf_changed');

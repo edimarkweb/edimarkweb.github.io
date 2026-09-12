@@ -6526,6 +6526,66 @@ test('El cuadro de Almacenamiento cuenta lo guardado y borra lo que sobra', asyn
   assert.equal(await page.evaluate(() => document.getElementById('storage-forget-confirm').hidden), true);
 });
 
+test('el diálogo PDF guía convertir, importar y volver a convertir tras un cambio', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.evaluate(async () => {
+    window.Worker = class FakePdfWorker {
+      postMessage(message) {
+        if (message.operation === 'inspect') {
+          queueMicrotask(() => {
+            this.onmessage?.({ data: { type: 'info', result: { pages: 1 } } });
+            this.onmessage?.({ data: { type: 'scanned', result: { scanned: 0, scannedPages: [], pages: 1 } } });
+          });
+          return;
+        }
+        if (message.operation === 'convert') {
+          setTimeout(() => this.onmessage?.({ data: {
+            type: 'result',
+            result: { markdown: '# Documento convertido', pages: 1, textPages: 1, ocrPages: [] },
+          } }), 80);
+        }
+      }
+      terminate() {}
+    };
+    const { importPdf } = await import('./pdf-import.js?test=pdf-action-order');
+    window.__pdfActionOrder = importPdf(
+      new File(['pdf'], 'orden.pdf', { type: 'application/pdf' }),
+      key => key,
+    );
+  });
+
+  await page.waitForFunction(() => document.querySelector('.pdf-import-dialog')?.getAttribute('aria-busy') === 'false');
+  const esPrincipal = selector => page.locator(selector)
+    .evaluate(button => button.classList.contains('pdf-primary-action'));
+  assert.equal(await page.locator('#pdf-cancel').isDisabled(), false);
+  assert.equal(await page.locator('#pdf-preview').isDisabled(), false);
+  assert.equal(await page.locator('#pdf-accept').isDisabled(), true);
+  assert.equal(await esPrincipal('#pdf-preview'), true);
+  assert.equal(await esPrincipal('#pdf-accept'), false);
+
+  await page.locator('#pdf-preview').click();
+  assert.equal(await page.locator('#pdf-cancel').isDisabled(), false);
+  assert.equal(await page.locator('#pdf-preview').isDisabled(), true);
+  assert.equal(await page.locator('#pdf-accept').isDisabled(), true);
+  assert.equal(await esPrincipal('#pdf-preview'), true);
+  await page.waitForFunction(() => document.querySelector('.pdf-import-dialog')?.getAttribute('aria-busy') === 'false');
+  assert.equal(await page.locator('#pdf-preview').isDisabled(), true);
+  assert.equal(await page.locator('#pdf-accept').isDisabled(), false);
+  assert.equal(await esPrincipal('#pdf-preview'), false);
+  assert.equal(await esPrincipal('#pdf-accept'), true);
+
+  await page.locator('#pdf-pages').fill('1');
+  assert.equal(await page.locator('#pdf-cancel').isDisabled(), false);
+  assert.equal(await page.locator('#pdf-preview').isDisabled(), false);
+  assert.equal(await page.locator('#pdf-accept').isDisabled(), true);
+  assert.equal(await esPrincipal('#pdf-preview'), true);
+  assert.equal(await esPrincipal('#pdf-accept'), false);
+  await page.locator('#pdf-cancel').click();
+  await page.waitForFunction(() => !document.querySelector('.pdf-import-dialog'));
+});
+
 test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modificar documentos', { timeout: 180000 }, async (t) => {
   const { context, page, requests } = await openApp();
   t.after(() => context.close());
@@ -6542,6 +6602,8 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     }).observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
   });
   await page.locator('#import-file-input').setInputFiles(fixture);
+  await page.locator('.pdf-import-dialog').waitFor();
+  assert.equal(await page.locator('#pdf-cancel').isDisabled(), false);
   await page.waitForFunction(
     () => document.querySelector('#pdf-import-info')?.textContent.includes('7'),
     null,
@@ -6561,9 +6623,15 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.equal(await page.locator('.pdf-ocr-option').isHidden(), true);
   assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /escaneadas/);
   assert.equal(await page.locator('#pdf-preview').isDisabled(), false);
+  assert.equal(await page.locator('#pdf-preview').evaluate(button => button.classList.contains('pdf-primary-action')), true);
+  assert.equal(await page.locator('#pdf-accept').evaluate(button => button.classList.contains('pdf-primary-action')), false);
   await page.locator('#pdf-preview').click();
+  assert.equal(await page.locator('#pdf-cancel').isDisabled(), false);
   await page.waitForFunction(() => document.querySelector('.pdf-import-dialog').getAttribute('aria-busy') === 'false', null, { timeout: 120000 });
   assert.equal(await page.locator('#pdf-accept').isDisabled(), false, await page.locator('#pdf-import-status').innerText());
+  assert.equal(await page.locator('#pdf-preview').isDisabled(), true);
+  assert.equal(await page.locator('#pdf-preview').evaluate(button => button.classList.contains('pdf-primary-action')), false);
+  assert.equal(await page.locator('#pdf-accept').evaluate(button => button.classList.contains('pdf-primary-action')), true);
   /*
     Convertir un PDF largo lleva minutos: sin señal de avance el diálogo se
     confunde con uno colgado, así que la barra tiene que haber contado páginas
@@ -6609,6 +6677,9 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.equal(await page.evaluate(() => markdownEditor.getValue()), initial);
   await page.locator('#pdf-pages').fill('99');
   assert.equal(await page.locator('#pdf-accept').isDisabled(), true);
+  assert.equal(await page.locator('#pdf-preview').isDisabled(), false);
+  assert.equal(await page.locator('#pdf-preview').evaluate(button => button.classList.contains('pdf-primary-action')), true);
+  assert.equal(await page.locator('#pdf-accept').evaluate(button => button.classList.contains('pdf-primary-action')), false);
   await page.locator('#pdf-preview').click();
   await page.waitForFunction(() => document.querySelector('#pdf-import-status').textContent.includes('Intervalo'));
   await page.locator('#pdf-pages').fill('2');

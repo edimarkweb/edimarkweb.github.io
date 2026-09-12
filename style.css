@@ -2926,7 +2926,7 @@ code {
 .pdf-import-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 .pdf-import-actions button { padding: 8px 14px; border: 1px solid #64748b; border-radius: 6px; }
 .pdf-import-actions button:disabled { opacity: .45; cursor: not-allowed; }
-#pdf-accept { background: #0369a1; color: white; }
+.pdf-import-actions .pdf-primary-action { background: #0369a1; color: white; }
 /*
   La barra de la importación. Con un PDF largo la conversión tarda minutos, y
   un diálogo quieto no se distingue de uno colgado: la barra avanza por páginas
