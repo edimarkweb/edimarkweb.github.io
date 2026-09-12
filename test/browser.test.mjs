@@ -4956,9 +4956,92 @@ test('los dos paneles se siguen por la línea, no por la proporción', async (t)
     const textarea = document.getElementById('markdown-input');
     const linea = textarea.value.split('\n').indexOf('## Apartado 7');
     const medida = markdownEditor.lineMetrics(linea);
-    return medida.top >= textarea.scrollTop && medida.top <= textarea.scrollTop + textarea.clientHeight;
+    return {
+      visible: medida.top >= textarea.scrollTop && medida.top <= textarea.scrollTop + textarea.clientHeight,
+      linea,
+      top: medida.top,
+      scrollTop: textarea.scrollTop,
+      alto: textarea.clientHeight,
+    };
   });
-  assert.ok(lineaVisible, 'el Markdown no llegó a la línea del bloque pinchado');
+  assert.ok(lineaVisible.visible, `el Markdown no llegó a la línea del bloque pinchado: ${JSON.stringify(lineaVisible)}`);
+});
+
+test('las barras verticales mantienen sincronizados los dos paneles', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.locator('#new-tab-btn').click();
+  const apartados = [];
+  for (let i = 1; i <= 50; i += 1) {
+    apartados.push(`## Tramo ${i}`, '', `Contenido visible del tramo ${i}. `.repeat(16), '');
+  }
+  await page.locator('#markdown-input').fill(apartados.join('\n'));
+  await page.waitForFunction(() => document.querySelectorAll('#html-output h2').length === 50);
+
+  // El cursor se queda arriba mientras solo se arrastra la barra. Firefox
+  // puede desplazar el textarea para enseñar una selección recién cambiada,
+  // así que se deja terminar ese gesto antes de probar la barra por separado.
+  await page.evaluate(() => {
+    const textarea = document.getElementById('markdown-input');
+    textarea.setSelectionRange(0, 0);
+    textarea.dispatchEvent(new Event('select'));
+  });
+  await page.waitForTimeout(100);
+
+  // Simula arrastrar la barra izquierda hasta que el tramo 36 cruza el punto
+  // de referencia. No se mueve el cursor: el único origen es el scroll.
+  await page.evaluate(() => {
+    const textarea = document.getElementById('markdown-input');
+    const linea = textarea.value.split('\n').indexOf('## Tramo 36');
+    const medida = markdownEditor.lineMetrics(linea);
+    textarea.scrollTop = medida.top - textarea.clientHeight * 0.25;
+    textarea.dispatchEvent(new Event('scroll'));
+  });
+  await page.waitForTimeout(200);
+  const izquierdaADerecha = await page.evaluate(() => {
+    const mesa = document.getElementById('preview-desk');
+    const titulo = Array.from(document.querySelectorAll('#html-output h2'))
+      .find(elemento => elemento.textContent.trim() === 'Tramo 36');
+    const esperado = mesa.getBoundingClientRect().top + mesa.clientHeight * 0.25;
+    return Math.abs(titulo.getBoundingClientRect().top - esperado);
+  });
+  assert.ok(izquierdaADerecha < 30, `la barra Markdown dejó una diferencia de ${izquierdaADerecha}px`);
+
+  // En un textarea real, soltar su barra también genera mouseup. No debe
+  // confundirse con un clic en el texto ni devolver la hoja al cursor antiguo.
+  await page.locator('#markdown-input').dispatchEvent('mouseup');
+  await page.waitForTimeout(200);
+  const trasSoltar = await page.evaluate(() => {
+    const mesa = document.getElementById('preview-desk');
+    const titulo = Array.from(document.querySelectorAll('#html-output h2'))
+      .find(elemento => elemento.textContent.trim() === 'Tramo 36');
+    const esperado = mesa.getBoundingClientRect().top + mesa.clientHeight * 0.25;
+    return Math.abs(titulo.getBoundingClientRect().top - esperado);
+  });
+  assert.ok(trasSoltar < 30, `al soltar la barra Markdown la hoja retrocedió ${trasSoltar}px`);
+
+  // Ahora la barra derecha manda y lleva el tramo 12 al mismo punto del
+  // editor Markdown, de nuevo sin clic ni cambio de selección.
+  await page.evaluate(() => {
+    const mesa = document.getElementById('preview-desk');
+    const titulo = Array.from(document.querySelectorAll('#html-output h2'))
+      .find(elemento => elemento.textContent.trim() === 'Tramo 12');
+    const caja = titulo.getBoundingClientRect();
+    const cajaMesa = mesa.getBoundingClientRect();
+    const top = caja.top - cajaMesa.top + mesa.scrollTop;
+    mesa.scrollTop = top - mesa.clientHeight * 0.25;
+    mesa.dispatchEvent(new Event('scroll'));
+  });
+  await page.waitForTimeout(200);
+  const derechaAIzquierda = await page.evaluate(() => {
+    const textarea = document.getElementById('markdown-input');
+    const linea = textarea.value.split('\n').indexOf('## Tramo 12');
+    const medida = markdownEditor.lineMetrics(linea);
+    const esperado = textarea.scrollTop + textarea.clientHeight * 0.25;
+    return Math.abs(medida.top - esperado);
+  });
+  assert.ok(derechaAIzquierda < 30, `la barra de la hoja dejó una diferencia de ${derechaAIzquierda}px`);
 });
 
 /*

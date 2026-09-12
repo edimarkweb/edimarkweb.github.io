@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '2.57.0';
+const APP_VERSION = '2.57.1';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -5172,16 +5172,32 @@ function previewBlockForLine(line) {
   no, se coloca a la altura que ocupa en el panel desde el que se pide, de modo
   que los dos paneles enseñen lo mismo a la misma altura.
 */
-function alignScrollerTo(scroller, top, anchor) {
+const programmaticScrollTops = new WeakMap();
+
+function setProgrammaticScrollTop(scroller, top) {
+    if (!scroller) return;
+    const limit = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    const target = Math.max(0, Math.min(top, limit));
+    programmaticScrollTops.set(scroller, target);
+    scroller.scrollTop = target;
+}
+
+function consumeProgrammaticScroll(scroller) {
+    if (!scroller || !programmaticScrollTops.has(scroller)) return false;
+    const expected = programmaticScrollTops.get(scroller);
+    programmaticScrollTops.delete(scroller);
+    return Math.abs(scroller.scrollTop - expected) <= 1;
+}
+
+function alignScrollerTo(scroller, top, anchor, force = false) {
     if (!scroller) return;
     const view = scroller.clientHeight;
     if (!view) return;
     const margin = Math.min(96, view * 0.15);
     const current = scroller.scrollTop;
-    if (top >= current + margin && top <= current + view - margin) return;
+    if (!force && top >= current + margin && top <= current + view - margin) return;
     const place = Math.min(0.85, Math.max(0.15, typeof anchor === 'number' ? anchor : 0.35));
-    const limit = Math.max(0, scroller.scrollHeight - view);
-    scroller.scrollTop = Math.max(0, Math.min(top - view * place, limit));
+    setProgrammaticScrollTop(scroller, top - view * place);
 }
 
 function markdownCursorAnchor(line) {
@@ -5192,27 +5208,93 @@ function markdownCursorAnchor(line) {
     return (metrics.top - scroller.scrollTop) / scroller.clientHeight;
 }
 
-function scrollPreviewToLine(line, anchor) {
+function scrollPreviewToLine(line, anchor, withinLine = 0, force = false) {
     const block = previewBlockForLine(line);
     const scroller = getPreviewScroller();
     if (!block || !scroller || !block.el.isConnected) return false;
     const span = Math.max(1, block.endLine - block.line);
-    const fraction = Math.min(1, Math.max(0, (line - block.line) / span));
+    const fraction = Math.min(1, Math.max(0, (line - block.line + withinLine) / span));
     const rect = block.el.getBoundingClientRect();
     const scrollerRect = scroller.getBoundingClientRect();
     const top = rect.top - scrollerRect.top + scroller.scrollTop + rect.height * fraction;
-    alignScrollerTo(scroller, top, anchor);
+    alignScrollerTo(scroller, top, anchor, force);
     return true;
 }
 
-function scrollMarkdownToLine(line, fraction = 0, anchor) {
+function scrollMarkdownToLine(line, fraction = 0, anchor, force = false) {
     if (!markdownEditor || typeof markdownEditor.lineMetrics !== 'function') return false;
     const scroller = markdownEditor.getScrollerElement();
     const metrics = markdownEditor.lineMetrics(line);
     if (!scroller || !metrics) return false;
     const top = metrics.top + metrics.height * Math.min(1, Math.max(0, fraction));
-    alignScrollerTo(scroller, top, anchor);
+    alignScrollerTo(scroller, top, anchor, force);
     return true;
+}
+
+/*
+  La barra puede quedar en medio de una línea Markdown partida en pantalla.
+  Además de la línea lógica se conserva cuánto se ha recorrido dentro de su
+  altura, para que un párrafo largo no haga avanzar la otra barra a saltos.
+*/
+function markdownLineAtScrollAnchor(anchor) {
+    if (!markdownEditor || typeof markdownEditor.lineMetrics !== 'function') return null;
+    const scroller = markdownEditor.getScrollerElement();
+    const count = markdownEditor.lineCount();
+    if (!scroller || !count || !scroller.clientHeight) return null;
+    const target = scroller.scrollTop + scroller.clientHeight * anchor;
+    let low = 0;
+    let high = count - 1;
+    let line = 0;
+    while (low <= high) {
+        const mid = (low + high) >> 1;
+        const metrics = markdownEditor.lineMetrics(mid);
+        // Firefox redondea scrollTop a píxeles enteros aunque offsetTop pueda
+        // conservar fracciones: una tolerancia de un píxel evita escoger la
+        // línea vacía anterior cuando el ancla cae sobre el encabezado.
+        if (metrics && metrics.top <= target + 1) {
+            line = mid;
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+    const metrics = markdownEditor.lineMetrics(line);
+    const fraction = metrics && metrics.height
+        ? Math.min(1, Math.max(0, (target - metrics.top) / metrics.height))
+        : 0;
+    return { line, fraction, anchor };
+}
+
+/*
+  Los bloques están ordenados por línea y, por tanto, por su posición en la
+  hoja. Una búsqueda binaria evita medir el documento entero en cada evento de
+  la barra; dentro del bloque se interpola hasta la línea Markdown equivalente.
+*/
+function previewLineAtScrollAnchor(anchor) {
+    const scroller = getPreviewScroller();
+    if (!scroller || !scroller.clientHeight || !previewLineBlocks.length) return null;
+    const target = scroller.getBoundingClientRect().top + scroller.clientHeight * anchor;
+    let low = 0;
+    let high = previewLineBlocks.length - 1;
+    let index = 0;
+    while (low <= high) {
+        const mid = (low + high) >> 1;
+        const block = previewLineBlocks[mid];
+        if (block.el.isConnected && block.el.getBoundingClientRect().top <= target + 1) {
+            index = mid;
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+    const block = previewLineBlocks[index];
+    if (!block || !block.el.isConnected) return null;
+    const rect = block.el.getBoundingClientRect();
+    const within = rect.height
+        ? Math.min(1, Math.max(0, (target - rect.top) / rect.height))
+        : 0;
+    const line = block.line + within * Math.max(1, block.endLine - block.line);
+    return { line: Math.floor(line), fraction: line - Math.floor(line), anchor };
 }
 
 /*
@@ -7452,7 +7534,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
     if (format === 'pdf') {
         try {
-            const { importPdf } = await import('./pdf-import.js?v=2.57.0');
+            const { importPdf } = await import('./pdf-import.js?v=2.57.1');
             const name = getSafeDocumentName(file.name);
             // Crear el documento ocurre dentro del diálogo, que se queda a la
             // vista avisando: con un informe entero no es cosa de un instante.
@@ -14845,7 +14927,7 @@ window.onload = async () => {
     function scrollMarkdownToRatio(r) {
       if (!syncEnabled) return;
       const scroller = markdownEditor.getScrollerElement();
-      scroller.scrollTop = r * (scroller.scrollHeight - scroller.clientHeight);
+      setProgrammaticScrollTop(scroller, r * (scroller.scrollHeight - scroller.clientHeight));
     }
     /*
       La línea del cursor manda: se busca el bloque de la vista previa que
@@ -14871,6 +14953,60 @@ window.onload = async () => {
       if (!target) return false;
       return scrollMarkdownToLine(target.line, 0, target.anchor);
     }
+    /*
+      Al arrastrar una barra manda el panel que recibe el gesto. Se toma un
+      punto algo por debajo del borde superior: allí suele haber contenido aun
+      cuando la hoja tiene margen, y conservar ese mismo punto en el otro panel
+      evita saltos visuales. Cada destino queda marcado para que su propio
+      evento `scroll` no devuelva el movimiento al panel de origen.
+    */
+    const SCROLL_SYNC_ANCHOR = 0.25;
+    let markdownScrollSyncFrame = null;
+    let previewScrollSyncFrame = null;
+    let markdownSelectionAtLastScroll = null;
+
+    function syncFromMarkdownScroll() {
+      markdownScrollSyncFrame = null;
+      if (!syncEnabled) return;
+      const target = markdownLineAtScrollAnchor(SCROLL_SYNC_ANCHOR);
+      if (target && scrollPreviewToLine(target.line, target.anchor, target.fraction, true)) return;
+      const markdownScroller = markdownEditor.getScrollerElement();
+      const previewScroller = getPreviewScroller();
+      const limit = Math.max(1, markdownScroller.scrollHeight - markdownScroller.clientHeight);
+      setProgrammaticScrollTop(
+        previewScroller,
+        (markdownScroller.scrollTop / limit) * (previewScroller.scrollHeight - previewScroller.clientHeight),
+      );
+    }
+
+    function syncFromPreviewScroll() {
+      previewScrollSyncFrame = null;
+      if (!syncEnabled) return;
+      const target = previewLineAtScrollAnchor(SCROLL_SYNC_ANCHOR);
+      if (target && scrollMarkdownToLine(target.line, target.fraction, target.anchor, true)) return;
+      const previewScroller = getPreviewScroller();
+      const limit = Math.max(1, previewScroller.scrollHeight - previewScroller.clientHeight);
+      scrollMarkdownToRatio(previewScroller.scrollTop / limit);
+    }
+
+    const markdownScroller = markdownEditor.getScrollerElement();
+    const previewScroller = getPreviewScroller();
+    markdownScroller.addEventListener('scroll', () => {
+      if (consumeProgrammaticScroll(markdownScroller)) return;
+      // Soltar la barra de un textarea genera `mouseup` aunque el cursor no se
+      // haya movido. Se guarda la selección que había durante el gesto para
+      // que ese aviso no vuelva a imponer la posición antigua del cursor.
+      markdownSelectionAtLastScroll = {
+        start: markdownScroller.selectionStart,
+        end: markdownScroller.selectionEnd,
+      };
+      if (markdownScrollSyncFrame !== null) return;
+      markdownScrollSyncFrame = requestAnimationFrame(syncFromMarkdownScroll);
+    }, { passive: true });
+    previewScroller.addEventListener('scroll', () => {
+      if (consumeProgrammaticScroll(previewScroller) || previewScrollSyncFrame !== null) return;
+      previewScrollSyncFrame = requestAnimationFrame(syncFromPreviewScroll);
+    }, { passive: true });
     /*
       Repintar la vista previa no es barato: reanaliza el documento entero,
       sustituye todo el HTML del panel, reescribe el editor HTML y vuelve a
@@ -14940,7 +15076,17 @@ window.onload = async () => {
     });
     markdownEditor.on('cursorActivity', () => {
       if (skipNextCursorSync) return;
-      captureMarkdownSelectionFromTextarea();
+      const selection = captureMarkdownSelectionFromTextarea();
+      if (markdownSelectionAtLastScroll
+          && selection.start === markdownSelectionAtLastScroll.start
+          && selection.end === markdownSelectionAtLastScroll.end) {
+        return;
+      }
+      markdownSelectionAtLastScroll = null;
+      if (markdownScrollSyncFrame !== null) {
+        cancelAnimationFrame(markdownScrollSyncFrame);
+        markdownScrollSyncFrame = null;
+      }
       requestAnimationFrame(syncFromMarkdown);
     });
     let previewSyncScheduled = false;
@@ -15000,6 +15146,15 @@ window.onload = async () => {
     }
     htmlEditor.on('change', () => scheduleHtmlEditorSync());
     htmlOutput.addEventListener('click', e => {
+      // Un clic concreto manda sobre el último movimiento de barra, aunque
+      // ambos hayan ocurrido dentro del mismo fotograma. El evento `scroll`
+      // que provocó el movimiento puede llegar después del propio clic; se
+      // marca también la posición actual para consumir ese aviso tardío.
+      if (previewScrollSyncFrame !== null) {
+          cancelAnimationFrame(previewScrollSyncFrame);
+          previewScrollSyncFrame = null;
+      }
+      programmaticScrollTops.set(previewScroller, previewScroller.scrollTop);
       const accelPressed = e.ctrlKey || e.metaKey || ctrlPressed;
       const linkEl = e.target.closest('a');
       if (accelPressed && linkEl) {
