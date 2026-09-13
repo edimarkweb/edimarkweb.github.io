@@ -6348,7 +6348,13 @@ test('Las imágenes sin documento no se quedan ocupando sitio', async (t) => {
     registro vive en memoria: al cerrar la aplicación se pierde y las imágenes
     se quedaban sin dueño. Unas cuantas importaciones de prueba dejaron así
     101 MB en la base de datos.
+
+    La propia aplicación hace esta limpieza al arrancar, en un rato ocioso y
+    después de declararse lista. Hay que esperarla: si llega mientras se
+    preparan las imágenes de la prueba, se lleva las huérfanas antes de que se
+    cuenten, y en Firefox eso pasaba una vez de cada pocas.
   */
+  await page.evaluate(() => window.__edimarkAssetPurge);
   const antes = await page.evaluate(async () => {
     const doc = docs.find(d => d.id === currentId);
     await replacePersistedDocumentAssets('documento-que-ya-no-existe', [

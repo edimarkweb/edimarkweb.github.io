@@ -15264,11 +15264,21 @@ window.onload = async () => {
       Y la basura de sesiones anteriores, cuando ya no estorba: sin prisa, para
       no retrasar la primera pestaña.
     */
-    const limpiar = () => purgeOrphanDocumentAssets(new Set(docs.map(doc => doc.id)))
-        .then(borradas => { if (borradas) console.info(`Imágenes sin documento borradas: ${borradas}`); })
-        .catch(error => console.warn('No se pudo limpiar la base de imágenes:', error));
-    if (typeof requestIdleCallback === 'function') requestIdleCallback(limpiar, { timeout: 5000 });
-    else setTimeout(limpiar, 2000);
+    /*
+      La promesa queda a la vista para las pruebas: la limpieza llega hasta
+      cinco segundos después de que la ventana diga que está lista, y una
+      prueba que escribiera imágenes sin dueño en ese rato podía verlas
+      desaparecer antes de contarlas. En Firefox, que reparte los ratos ociosos
+      de otra manera, pasaba una vez de cada pocas.
+    */
+    window.__edimarkAssetPurge = new Promise((resolve) => {
+        const limpiar = () => purgeOrphanDocumentAssets(new Set(docs.map(doc => doc.id)))
+            .then(borradas => { if (borradas) console.info(`Imágenes sin documento borradas: ${borradas}`); })
+            .catch(error => console.warn('No se pudo limpiar la base de imágenes:', error))
+            .finally(resolve);
+        if (typeof requestIdleCallback === 'function') requestIdleCallback(limpiar, { timeout: 5000 });
+        else setTimeout(limpiar, 2000);
+    });
 
     // Fuera la cortina: la ventana ya está montada y responde.
     hideStartupCurtain();
