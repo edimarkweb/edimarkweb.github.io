@@ -4620,7 +4620,7 @@ test('el reparto en páginas se retira cuando la hoja no cabe entera', async (t)
   await page.setViewportSize({ width: 700, height: 900 });
   await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length === 0);
   assert.equal(
-    await page.locator('#html-output > [data-page-start]').count(),
+    await page.locator('#html-output [data-page-start], #html-output [data-page-split]').count(),
     0,
     'quedaron saltos aplicados sin páginas que los sostengan',
   );
@@ -4631,6 +4631,58 @@ test('el reparto en páginas se retira cuando la hoja no cabe entera', async (t)
     window.__refreshPageBreaks();
   });
   await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length > 1);
+});
+
+/*
+  El reparto trabaja sobre los hijos de la hoja, y una lista, una cita o la
+  sección de notas son un solo hijo por largas que sean. Cuando uno de ellos
+  medía más que la página caía en el caso del bloque que no cabe en ninguna
+  parte: se contaban las páginas y el hueco entre hojas atravesaba el texto a
+  media línea. Pasaba con las notas de cualquier PDF oficial importado, y con
+  cualquier lista larga escrita a mano. Ahora el contenedor se reparte por sus
+  hijos, y ningún punto, párrafo de cita ni nota queda partido por un corte.
+*/
+test('una lista, una cita o las notas más largas que la página se reparten por dentro', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.locator('#new-tab-btn').click();
+  const documento = [
+    Array.from({ length: 60 }, (_, i) => `- Punto ${i + 1} de una lista larga, con texto de sobra para ocupar su línea entera.`).join('\n'),
+    Array.from({ length: 40 }, (_, i) => `> Párrafo ${i + 1} de una cita larga que ocupa más de una página.`).join('\n>\n'),
+    Array.from({ length: 20 }, (_, i) => `Párrafo ${i + 1} con su llamada[^${i + 1}].`).join('\n\n'),
+    Array.from({ length: 20 }, (_, i) => `[^${i + 1}]: Nota ${i + 1}, bastante larga para que la sección de notas mida más que una página de la hoja.`).join('\n\n'),
+  ].join('\n\n');
+  await page.locator('#markdown-input').fill(documento);
+  await page.locator('#layout-switch [data-layout="html"]').click();
+  await page.waitForFunction(() => document.querySelectorAll('.page-sheet').length > 3);
+  await page.locator('#html-output .footnotes li').last().waitFor();
+  // El reparto se rehace al asentarse la hoja: se mide cuando ya no cambia.
+  await page.waitForFunction(() => {
+    const huella = [...document.querySelectorAll('#html-output [data-page-start]')]
+      .map(bloque => bloque.style.getPropertyValue('--page-jump')).join('|');
+    const anterior = window.__huellaDelReparto;
+    window.__huellaDelReparto = huella;
+    return anterior === huella;
+  }, null, { polling: 400 });
+
+  const medida = await page.evaluate(() => {
+    const cortes = [...document.querySelectorAll('.page-sheet')].slice(0, -1)
+      .map(hoja => hoja.getBoundingClientRect().bottom);
+    const partidos = [...document.querySelectorAll('#html-output li, #html-output blockquote p')]
+      .filter((bloque) => {
+        const caja = bloque.getBoundingClientRect();
+        return cortes.some(corte => caja.top < corte - 2 && caja.bottom > corte + 2);
+      })
+      .map(bloque => bloque.textContent.trim().slice(0, 40));
+    return {
+      partidos,
+      saltosDentro: document.querySelectorAll('#html-output [data-page-split] [data-page-start]').length,
+    };
+  });
+  assert.deepEqual(medida.partidos, [], 'hay puntos, párrafos o notas partidos por un corte de página');
+  assert.ok(medida.saltosDentro >= 2, `el reparto no bajó dentro de los contenedores (${medida.saltosDentro})`);
 });
 
 /*

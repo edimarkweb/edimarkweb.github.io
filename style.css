@@ -1154,8 +1154,19 @@ body.desktop-mode .markdown-textarea {
   se pinta con él, así que un bloque de código —que tiene fondo propio— llenaba
   de color el hueco entre las dos hojas. El margen es aire.
 */
-#html-output > [data-page-start] {
-    margin-top: var(--page-jump, 0px);
+/*
+  Descendiente y no hijo: un contenedor más alto que la página —una lista, una
+  cita, la sección de notas— se reparte por dentro, así que el bloque que
+  estrena página puede ser uno de sus hijos.
+
+  Y con `!important`, porque el salto tiene que ganar siempre al margen propio
+  del bloque. Sin él empataba en especificidad con reglas como la de las notas
+  (`#html-output .footnotes`), y a igualdad manda la que va después en el
+  archivo: la sección de notas nunca se podía llevar a otra página, y el hueco
+  entre hojas la atravesaba por mucho salto que se le calculase.
+*/
+#html-output [data-page-start] {
+    margin-top: var(--page-jump, 0px) !important;
 }
 @media print {
     .page-sheets {
@@ -1166,7 +1177,7 @@ body.desktop-mode .markdown-textarea {
         width: auto !important;
         min-width: 0 !important;
     }
-    #html-output > [data-page-start] {
+    #html-output [data-page-start] {
         margin-top: 0 !important;
         break-before: page;
     }
@@ -1174,8 +1185,16 @@ body.desktop-mode .markdown-textarea {
       Y lo que la pantalla no parte, el papel tampoco: sin esto un párrafo
       cortado a media línea en el PDF dejaría de coincidir con lo que se vio.
     */
-    #html-output > * {
+    #html-output > *,
+    #html-output [data-page-split] > * {
         break-inside: avoid;
+    }
+    /*
+      Salvo lo que la pantalla sí reparte por dentro: si el papel lo mantuviera
+      entero, el corte dejaría de caer donde se vio.
+    */
+    #html-output [data-page-split] {
+        break-inside: auto;
     }
 }
 

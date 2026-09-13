@@ -13296,9 +13296,50 @@ window.onload = async () => {
     function limpiarPaginacion(sheet, layer) {
         layer.replaceChildren();
         sheet.classList.remove('is-paginated');
-        sheet.querySelectorAll(':scope > [data-page-start]').forEach((bloque) => {
+        sheet.querySelectorAll('[data-page-start]').forEach((bloque) => {
             bloque.removeAttribute('data-page-start');
             bloque.style.removeProperty('--page-jump');
+        });
+        sheet.querySelectorAll('[data-page-split]').forEach((bloque) => {
+            bloque.removeAttribute('data-page-split');
+        });
+    }
+
+    /*
+      Un contenedor que se puede repartir por dentro. Una lista, una cita o la
+      sección de notas son un solo hijo de la hoja por largas que sean, y hasta
+      aquí cualquier hijo más alto que la caja de texto se dejaba pasar entero:
+      el hueco entre hojas lo atravesaba y el texto se partía a media línea.
+      Sus hijos, en cambio, sí son bloques enteros que se pueden empujar.
+
+      Un `pre` no está: dentro no hay elementos que empujar, solo líneas de
+      texto. Una tabla tampoco, que partirla pide repetir la cabecera y eso es
+      otra cosa. Las dos siguen pasando enteras, como en un procesador de
+      textos.
+
+      El `div` está por la bibliografía, que llega como sección, envoltorio y
+      lista de referencias, cada una dentro de la anterior. Pero un `div` puede
+      ser una rejilla o una fila flexible, con los hijos uno al lado del otro, y
+      ahí empujar uno hacia abajo no parte nada: descoloca la fila. Por eso solo
+      se abre un contenedor que se maqueta en bloque.
+    */
+    const CONTENEDORES_PARTIBLES = new Set(['UL', 'OL', 'BLOCKQUOTE', 'SECTION', 'DIV']);
+    const MAQUETACION_EN_BLOQUE = new Set(['block', 'list-item', 'flow-root']);
+    // Lista dentro de cita dentro de sección: más adentro no hace falta ir, y
+    // el tope evita recorrer un documento entero elemento por elemento.
+    const PROFUNDIDAD_MAXIMA = 3;
+
+    function bloquesPaginables(elemento, altoUtil, profundidad = 0) {
+        return Array.from(elemento.children).flatMap((hijo) => {
+            if (hijo.getBoundingClientRect().height <= altoUtil
+                || profundidad >= PROFUNDIDAD_MAXIMA
+                || !CONTENEDORES_PARTIBLES.has(hijo.tagName)
+                || !hijo.children.length
+                || !MAQUETACION_EN_BLOQUE.has(getComputedStyle(hijo).display)) {
+                return [hijo];
+            }
+            hijo.setAttribute('data-page-split', '');
+            return bloquesPaginables(hijo, altoUtil, profundidad + 1);
         });
     }
 
@@ -13361,11 +13402,14 @@ window.onload = async () => {
         // Desde cero: con los saltos de la vuelta anterior puestos, las alturas
         // que se midieran serían las de la página anterior, no las de esta.
         sheet.classList.add('is-paginated');
-        const bloques = Array.from(sheet.children);
-        bloques.forEach((bloque) => {
+        sheet.querySelectorAll('[data-page-start]').forEach((bloque) => {
             bloque.removeAttribute('data-page-start');
             bloque.style.removeProperty('--page-jump');
         });
+        sheet.querySelectorAll('[data-page-split]').forEach((bloque) => {
+            bloque.removeAttribute('data-page-split');
+        });
+        const bloques = bloquesPaginables(sheet, altoUtil);
 
         /*
           Cuántas páginas saldrían, con una sola medida y ya sin saltos puestos.
