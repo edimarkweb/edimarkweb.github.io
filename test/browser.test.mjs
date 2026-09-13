@@ -6666,13 +6666,13 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   await page.locator('.pdf-import-dialog').waitFor();
   assert.equal(await page.locator('#pdf-cancel').isDisabled(), false);
   await page.waitForFunction(
-    () => document.querySelector('#pdf-import-info')?.textContent.includes('12'),
+    () => document.querySelector('#pdf-import-info')?.textContent.includes('13'),
     null,
     { timeout: 120000 },
   );
-  assert.match(await page.locator('#pdf-import-info').innerText(), /12/);
+  assert.match(await page.locator('#pdf-import-info').innerText(), /13/);
   // Ya no hay tope de páginas que anunciar, ni por qué avisar de la espera:
-  // doce páginas se convierten en un momento.
+  // trece páginas se convierten en un momento.
   assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /200/);
   assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /varios minutos/);
   // Y en un documento sin una sola página escaneada, el OCR no se ofrece.
@@ -6698,7 +6698,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     confunde con uno colgado, así que la barra tiene que haber contado páginas
     y desaparecer al terminar.
   */
-  assert.ok(avance.some(paso => /\b1 (de|of|\/) 12\b|1 de 12/.test(paso)), avance.join(' | '));
+  assert.ok(avance.some(paso => /\b1 (de|of|\/) 13\b|1 de 13/.test(paso)), avance.join(' | '));
   assert.ok(avance.includes('100'), avance.join(' | '));
   assert.equal(await page.locator('#pdf-import-progress').isHidden(), true);
   const preview = page.frameLocator('#pdf-import-preview');
@@ -6789,6 +6789,17 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.match(text, /se mide en m\s*2 y no cambia/);
   assert.doesNotMatch(text, /aula20|Materia21|pie22/, text);
 
+  /*
+    Una tabla enmarcada celda a celda, con filas altas y un título justo encima
+    del marco. restore_table_grid está para redibujar las verticales que le
+    faltan a una tabla impresa; a esta no le falta ninguna, y restaurarla
+    igualmente estiraba la primera fila hasta el título y lo cortaba por las
+    columnas: «T | abla enmarcada».
+  */
+  assert.match(text, /Tabla enmarcada/);
+  assert.equal(await preview.locator('table', { hasText: 'enmarcada' }).count(), 0, text);
+  assert.equal(await preview.locator('table', { hasText: 'Tabla del 7' }).locator('tr').count(), 2, text);
+
   const rejilla = text.slice(text.indexOf('REJILLA DECORATIVA'));
   assert.match(rejilla, /Este parrafo cruza las reglas de la rejilla y debe/);
   assert.match(rejilla, /llegar entero, sin celdas y sin tachados\./);
@@ -6855,7 +6866,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     base64: es lo que permitió importar informes que antes agotaban la memoria.
   */
   await page.locator('#import-file-input').setInputFiles(fixture);
-  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('12'), null, { timeout: 120000 });
+  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('13'), null, { timeout: 120000 });
   await page.locator('#pdf-pages').fill('1');
   await page.locator('#pdf-preview').click();
   // El botón, no el aria-busy: entre pulsar y ponerse a trabajar hay un
@@ -6894,7 +6905,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.ok(avance.some(paso => /Guardando imágenes… \d+ de \d+/.test(paso)), avance.slice(-8).join(' | '));
 
   await page.locator('#import-file-input').setInputFiles(fixture);
-  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('12'), null, { timeout: 120000 });
+  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('13'), null, { timeout: 120000 });
   await page.locator('#pdf-preview').click();
   await page.locator('#pdf-cancel').click();
   assert.equal(await page.locator('.pdf-import-dialog').count(), 0);

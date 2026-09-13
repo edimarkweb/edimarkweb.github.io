@@ -623,6 +623,23 @@ def text_rows(page, band):
     return rows
 
 
+def ruled_column(vertical, x, top, bottom, tolerance=2, coverage=.9):
+    """Whether a column edge already carries a drawn rule down the band.
+
+    The rule may come in pieces, one per cell, as a browser prints it; what
+    counts is how much of the band's height the pieces at that edge cover.
+    """
+    spans = sorted((max(rect.y0, top), min(rect.y1, bottom)) for rect in vertical
+                   if rect.x0 - tolerance <= x <= rect.x1 + tolerance and rect.y1 > top and rect.y0 < bottom)
+    covered, reach = 0, top
+    for start, end in spans:
+        start = max(start, reach)
+        if end > start:
+            covered += end - start
+            reach = end
+    return covered >= (bottom - top) * coverage
+
+
 def restore_table_grid(page):
     """Redraw the grid that printing engines leave out.
 
@@ -642,6 +659,14 @@ def restore_table_grid(page):
         x0, x1 = band['span']
         top, bottom = band['ys'][0], band['ys'][-1]
         edges, rows = sorted(band['cuts']), []
+        if len(edges) >= 3 and all(ruled_column(vertical, x, top, bottom) for x in edges):
+            # The grid is already drawn, every column from the first rule to
+            # the last: there is nothing to restore, and PyMuPDF reads such a
+            # table as it is. Restoring it anyway still reached up for a header
+            # row, and with rows as tall as a column of multiplication tables
+            # that reach took in the page title above the frame and cut it
+            # into the columns: `|Tabla de multiplica|r|`.
+            continue
         if len(edges) < 3:
             # Rules without cuts: only worth guessing when nothing else divides
             # the band, or an inferred column would fight the real ones.

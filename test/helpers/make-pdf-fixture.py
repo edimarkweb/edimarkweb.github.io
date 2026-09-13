@@ -153,6 +153,30 @@ page.insert_text((40, 730), '22 La marca que va en el titulo de la pagina.', fon
 
 
 path=Path(__file__).resolve().parents[1]/'fixtures'/'pdf-import.pdf'
+# Decimotercera página: una tabla enmarcada del todo, celda a celda, con las
+# filas altas de una columna de tablas de multiplicar, y un título justo encima
+# del marco. restore_table_grid está para redibujar las verticales que faltan;
+# aquí no falta ninguna, y restaurarla igualmente estiraba la primera fila
+# hasta el título y lo partía por las columnas.
+page = doc.new_page(width=595, height=842)
+# Con su cabecera y su pie repetidos: al pasar de doce páginas, el umbral con el
+# que remove_running_text da un margen por repetido sube a siete, y el pie de
+# las seis primeras dejaba de quitarse.
+page.insert_text((40, 25), 'REPEATED HEADER', fontsize=10)
+page.insert_text((40, 820), 'REPEATED FOOTER 13', fontsize=10)
+page.insert_text((200, 100), 'Tabla enmarcada', fontsize=14)
+for fila in range(2):
+    for columna in range(3):
+        x0, y0 = 40 + columna * 170, 110 + fila * 160
+        x1, y1 = x0 + 170, y0 + 160
+        for borde in (pymupdf.Rect(x0, y0, x1, y0 + 1), pymupdf.Rect(x0, y1 - 1, x1, y1),
+                      pymupdf.Rect(x0, y0, x0 + 1, y1), pymupdf.Rect(x1 - 1, y0, x1, y1)):
+            page.draw_rect(borde, color=None, fill=(0, 0, 0))
+        numero = fila * 3 + columna + 2
+        page.insert_text((x0 + 15, y0 + 25), f'Tabla del {numero}', fontsize=11)
+        for paso in range(4):
+            page.insert_text((x0 + 15, y0 + 50 + paso * 25), f'{numero} x {paso + 1} = {numero * (paso + 1)}', fontsize=11)
+
 # insert_htmlbox incrusta la fuente entera: sin quedarse con los glifos que se
 # usan, las tres líneas de las notas al pie multiplicaban el fixture por seis.
 doc.subset_fonts()
