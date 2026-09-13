@@ -718,5 +718,6 @@
   "app_loading_preview_blocking": "Compondo a páxina… O programa non responderá ata rematar.",
   "help_menu_article_text": "Artigo do blog",
   "menu_hint_article": "Para que serve na clase, con exemplos e capturas",
-  "about_article_link": "Ler o artigo do blog"
+  "about_article_link": "Ler o artigo do blog",
+  "about_thanks_text": "Grazas a Enrique Brito, que probou o programa desde as primeiras versións e sinalou erros e propuxo melloras."
 }

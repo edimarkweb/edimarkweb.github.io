@@ -718,5 +718,6 @@
   "app_loading_preview_blocking": "Laying out the page… The application will not respond until it finishes.",
   "help_menu_article_text": "Blog article",
   "menu_hint_article": "What it is for in class, with examples and screenshots",
-  "about_article_link": "Read the blog article"
+  "about_article_link": "Read the blog article",
+  "about_thanks_text": "Thanks to Enrique Brito, who has tested the program since its earliest versions, reporting bugs and suggesting improvements."
 }

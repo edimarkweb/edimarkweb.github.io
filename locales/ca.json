@@ -718,5 +718,6 @@
   "app_loading_preview_blocking": "Component la pàgina… El programa no respondrà fins que acabi.",
   "help_menu_article_text": "Article del blog",
   "menu_hint_article": "Per a què serveix a classe, amb exemples i captures",
-  "about_article_link": "Llegir l’article del blog"
+  "about_article_link": "Llegir l’article del blog",
+  "about_thanks_text": "Gràcies a Enrique Brito, que ha provat el programa des de les primeres versions i n’ha assenyalat errors i proposat millores."
 }
