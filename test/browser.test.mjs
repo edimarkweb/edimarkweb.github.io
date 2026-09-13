@@ -6716,6 +6716,16 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   */
   assert.ok(await preview.locator('table').count() >= 8, text);
   assert.match(text, /Total/);
+  /*
+    En esa misma tabla, el símbolo y el número de la última celda están a la
+    misma altura pero llegan de MuPDF como dos líneas, igual que los trozos de
+    una fila en una tabla guardada desde una página web. El extractor ponía un
+    salto entre ellas: «6 × 0 = 0» salía en tres líneas.
+  */
+  assert.equal(
+    (await preview.locator('table', { hasText: 'Variable' }).locator('tr', { hasText: 'y' }).locator('td').nth(1).innerText()).trim(),
+    '= 24',
+  );
   assert.match(text, /Negrita/);
   assert.match(text, /Uvas/);
   /*

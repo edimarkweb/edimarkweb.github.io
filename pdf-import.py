@@ -381,16 +381,24 @@ def repair_table_headers(markdown):
 
 
 
-# Below: PyMuPDF's own `extract_cells`, copied verbatim from 1.28.2 with one
-# branch added, the one marked in the body. The library's cell extractor
-# handles bold, italic, monospaced and strikeout but not superscript, so a
-# footnote marker inside a table cell arrives glued to the word before it
-# (`Matèria/Àmbit2`) while the very same marker in a paragraph comes out as
-# `<sup>2</sup>`. There is no hook to add the missing case: the styling is
-# decided span by span inside the loop. Copying is the price of being exact.
+# Below: PyMuPDF's own `extract_cells`, copied verbatim from 1.28.2 with two
+# changes, each marked ADDED in the body.
+#
+# The superscript branch. The library's cell extractor handles bold, italic,
+# monospaced and strikeout but not superscript, so a footnote marker inside a
+# table cell arrives glued to the word before it (`Matèria/Àmbit2`) while the
+# very same marker in a paragraph comes out as `<sup>2</sup>`.
+#
+# The joining of lines on the same row. The extractor puts a break between
+# every line MuPDF hands it, and MuPDF hands over as separate lines the pieces
+# of one visual row that sit apart on the page, as a table saved from a web
+# page does: `6 × 0 = 0` arrived as three lines.
+#
+# There is no hook for either: both are decided line by line and span by span
+# inside the loop. Copying is the price of being exact.
 #
 # Keep the copy faithful. When PyMuPDF is upgraded, the test above fails:
-# take the new `extract_cells`, add the same branch, and move the version.
+# take the new `extract_cells`, add both changes, and move the version.
 
 
 def extract_cells_with_superscripts(textpage, cell, markdown=False):
@@ -410,6 +418,7 @@ def extract_cells_with_superscripts(textpage, cell, markdown=False):
         A string with the text extracted from the cell.
     """
     text = ""
+    previous = None  # ADDED: the box of the line written last.
     for block in textpage.extractRAWDICT()["blocks"]:
         if block["type"] != 0:
             continue
@@ -434,7 +443,19 @@ def extract_cells_with_superscripts(textpage, cell, markdown=False):
                 continue  # skip line outside cell
 
             if text:  # must be a new line in the cell
-                text += "<br>" if markdown else "\n"
+                # ADDED: a line at the very height of the previous one, and to
+                # its right, is the same visual line. MuPDF hands over as
+                # separate lines the pieces of a row that an HTML page laid out
+                # in cells of their own — `6 ×`, `0 =`, `0` — and a break
+                # between each turned `6 × 0 = 0` into three lines.
+                same_row = (
+                    previous is not None
+                    and abs(lbbox[1] - previous[1]) < 1
+                    and abs(lbbox[3] - previous[3]) < 1
+                    and lbbox[0] >= previous[2] - 1
+                )
+                text += " " if same_row else ("<br>" if markdown else "\n")
+            previous = lbbox
 
             # strikeout detection only works with horizontal text
             horizontal = line["dir"] == (0, 1) or line["dir"] == (1, 0)
