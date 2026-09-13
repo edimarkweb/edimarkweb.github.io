@@ -3671,7 +3671,13 @@ function captureDocView() {
 
 function applyScroll(element, position) {
     if (!element) return;
-    element.scrollTop = position ? position.top : 0;
+    /*
+      Como desplazamiento del programa y no del usuario: la sincronización de
+      paneles toma cualquier `scroll` por un gesto y recoloca el otro panel, así
+      que reponer el editor al volver a una pestaña movía la hoja a la altura
+      que ella calculaba, pisando la que se acababa de reponer.
+    */
+    setProgrammaticScrollTop(element, position ? position.top : 0);
     element.scrollLeft = position ? position.left : 0;
 }
 
