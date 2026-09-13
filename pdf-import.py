@@ -37,6 +37,12 @@ IMAGE_EXTENSIONS = {'jpeg': 'jpg', 'svg+xml': 'svg'}
 # What the converter marks as struck out or underlined.
 RULE_EMPHASIS = re.compile(r'~~|</?u>')
 
+# A Markdown table as the converter writes it: the header row, the separator
+# below it, and the rows that follow. And the name it invents for a header
+# cell it found empty, which is `Col` plus the position of the column.
+TABLE_SEPARATOR = re.compile(r'\|(?:\s*:?-+:?\s*\|)+')
+INVENTED_NAME = 'Col{}'
+
 
 def selected_pages(value, count):
     if not value.strip():
@@ -154,6 +160,61 @@ def drop_rule_emphasis(markdown):
     one a real strikeout sets.
     """
     return RULE_EMPHASIS.sub('', markdown)
+
+
+def table_cells(line):
+    """The cells of a Markdown table row, or None if the line is not one."""
+    if len(line) < 2 or not line.startswith('|') or not line.endswith('|'):
+        return None
+    return line[1:-1].split('|')
+
+
+def repair_table_headers(markdown):
+    """A first row that looks like the rows below it is not a header.
+
+    Markdown has no table without a header, so the converter promotes the
+    first row of every table it finds and, for each cell of that row it finds
+    empty, writes a name of its own: `Col2`. On a form — a column of labels
+    beside a column of blanks to fill in — that costs the first label its row
+    and puts in the document a word that was never there.
+
+    Two repairs, both of them general. An invented name becomes the empty cell
+    it stands for, because Markdown allows a header cell to be empty and the
+    document never said `Col2`. And when that row's pattern of filled and
+    empty cells is the same as every row below, it is not a header at all but
+    one more row, so the table is written with an empty header and its first
+    row restored.
+
+    Only a table carrying an invented name is considered: a header whose cells
+    all hold text is a header, whatever the rows below it look like. That
+    leaves alone the ordinary case of a form with real column titles, and the
+    cross table whose corner cell is empty on purpose — there the row above
+    and the rows below differ, which is what tells them apart.
+    """
+    lines = markdown.split('\n')
+    out, index = [], 0
+    while index < len(lines):
+        header = table_cells(lines[index])
+        if header is None or index + 1 >= len(lines) or not TABLE_SEPARATOR.fullmatch(lines[index + 1]):
+            out.append(lines[index])
+            index += 1
+            continue
+        end = index + 2
+        while end < len(lines) and table_cells(lines[end]) is not None:
+            end += 1
+        rows = [table_cells(line) for line in lines[index + 2:end]]
+        invented = [n for n, cell in enumerate(header) if cell.strip() == INVENTED_NAME.format(n + 1)]
+        if invented:
+            header = ['' if n in invented else cell for n, cell in enumerate(header)]
+            shape = [bool(cell.strip()) for cell in header]
+            if rows and all([bool(cell.strip()) for cell in row] == shape for row in rows):
+                rows.insert(0, header)
+                header = [''] * len(header)
+        out.append('|' + '|'.join(header) + '|')
+        out.append(lines[index + 1])
+        out.extend('|' + '|'.join(row) + '|' for row in rows)
+        index = end
+    return '\n'.join(out)
 
 
 def table_bands(page):
@@ -417,7 +478,7 @@ def batch_markdown(source, batch, keep_images, image_format, tables=True):
             image_format=image_format, table_strategy='lines_strict' if tables else None,
             ignore_graphics=not tables,
         )
-        return markdown if tables else drop_rule_emphasis(markdown)
+        return repair_table_headers(markdown) if tables else drop_rule_emphasis(markdown)
     finally:
         chunk.close()
 

@@ -6608,13 +6608,13 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   await page.locator('.pdf-import-dialog').waitFor();
   assert.equal(await page.locator('#pdf-cancel').isDisabled(), false);
   await page.waitForFunction(
-    () => document.querySelector('#pdf-import-info')?.textContent.includes('10'),
+    () => document.querySelector('#pdf-import-info')?.textContent.includes('11'),
     null,
     { timeout: 120000 },
   );
-  assert.match(await page.locator('#pdf-import-info').innerText(), /10/);
+  assert.match(await page.locator('#pdf-import-info').innerText(), /11/);
   // Ya no hay tope de páginas que anunciar, ni por qué avisar de la espera:
-  // diez páginas se convierten en un momento.
+  // once páginas se convierten en un momento.
   assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /200/);
   assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /varios minutos/);
   // Y en un documento sin una sola página escaneada, el OCR no se ofrece.
@@ -6640,7 +6640,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     confunde con uno colgado, así que la barra tiene que haber contado páginas
     y desaparecer al terminar.
   */
-  assert.ok(avance.some(paso => /\b1 (de|of|\/) 10\b|1 de 10/.test(paso)), avance.join(' | '));
+  assert.ok(avance.some(paso => /\b1 (de|of|\/) 11\b|1 de 11/.test(paso)), avance.join(' | '));
   assert.ok(avance.includes('100'), avance.join(' | '));
   assert.equal(await page.locator('#pdf-import-progress').isHidden(), true);
   const preview = page.frameLocator('#pdf-import-preview');
@@ -6656,7 +6656,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     la propia aplicación; y la cuarta lleva reglas de ancho completo sin ningún
     borde de columna, al estilo de LaTeX.
   */
-  assert.ok(await preview.locator('table').count() >= 6, text);
+  assert.ok(await preview.locator('table').count() >= 8, text);
   assert.match(text, /Total/);
   assert.match(text, /Negrita/);
   assert.match(text, /Uvas/);
@@ -6676,6 +6676,26 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     que el párrafo tiene que llegar entero, fuera de toda celda y sin tachar.
   */
   assert.match(text, /REJILLA DECORATIVA/);
+  /*
+    Y las dos tablas sin título de columna. Markdown no tiene tabla sin
+    cabecera, así que el conversor asciende la primera fila y bautiza «Col2»
+    cada celda que encuentra vacía: en un formulario eso le cuesta su fila a la
+    primera etiqueta y mete en el documento una palabra que nunca tuvo. La
+    tabla de doble entrada es el caso contrario, y distinguirlas es el motivo
+    de que las dos estén aquí: su primera fila sí titula las columnas, aunque
+    la esquina esté vacía, y tiene que seguir siendo la cabecera.
+  */
+  assert.doesNotMatch(text, /\bCol[12]\b/, text);
+  const formulario = preview.locator('table', { hasText: 'Asignatura' });
+  assert.equal((await formulario.locator('thead').innerText()).trim(), '');
+  assert.deepEqual(
+    await formulario.locator('tbody tr td:first-child').allInnerTexts(),
+    ['Titulo', 'Curso', 'Asignatura'],
+  );
+  const dobleEntrada = preview.locator('table', { hasText: 'Ambito' });
+  assert.deepEqual(await dobleEntrada.locator('thead th').allInnerTexts(), ['', 'Saber', 'Ambito']);
+  assert.deepEqual(await dobleEntrada.locator('tbody tr td:first-child').allInnerTexts(), ['1', '2']);
+
   const rejilla = text.slice(text.indexOf('REJILLA DECORATIVA'));
   assert.match(rejilla, /Este parrafo cruza las reglas de la rejilla y debe/);
   assert.match(rejilla, /llegar entero, sin celdas y sin tachados\./);
@@ -6742,7 +6762,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     base64: es lo que permitió importar informes que antes agotaban la memoria.
   */
   await page.locator('#import-file-input').setInputFiles(fixture);
-  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('10'), null, { timeout: 120000 });
+  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('11'), null, { timeout: 120000 });
   await page.locator('#pdf-pages').fill('1');
   await page.locator('#pdf-preview').click();
   // El botón, no el aria-busy: entre pulsar y ponerse a trabajar hay un
@@ -6781,7 +6801,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.ok(avance.some(paso => /Guardando imágenes… \d+ de \d+/.test(paso)), avance.slice(-8).join(' | '));
 
   await page.locator('#import-file-input').setInputFiles(fixture);
-  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('10'), null, { timeout: 120000 });
+  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('11'), null, { timeout: 120000 });
   await page.locator('#pdf-preview').click();
   await page.locator('#pdf-cancel').click();
   assert.equal(await page.locator('.pdf-import-dialog').count(), 0);

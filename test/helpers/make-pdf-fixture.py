@@ -101,6 +101,27 @@ for fila in range(8):
     for columna in range(6):
         page.insert_text((36 + columna * 89, 140 + fila * 75), f'C{columna}F{fila}', fontsize=9)
 
+# Undécima página: las dos tablas sin título de columna. Markdown no tiene tabla
+# sin cabecera, así que el conversor asciende la primera fila y bautiza «Col2»
+# cada celda que encuentra vacía.
+page = doc.new_page(width=595, height=842)
+page.insert_text((40, 100), 'Tablas sin cabecera', fontsize=16)
+# Un formulario: etiquetas a la izquierda, huecos por rellenar a la derecha. No
+# hay cabecera ninguna, y la primera fila vale tanto como las otras dos.
+for y in range(140, 291, 50): page.draw_line((40, y), (500, y))
+for x in (40, 250, 500): page.draw_line((x, 140), (x, 290))
+for fila, texto in enumerate(['Titulo', 'Curso', 'Asignatura']):
+    page.insert_text((50, 170 + fila * 50), texto)
+# Una tabla de doble entrada: la esquina de arriba a la izquierda está vacía a
+# propósito y las demás celdas de esa fila sí titulan su columna. Aquí la
+# primera fila sí es una cabecera, y tiene que seguir siéndolo.
+for y in range(360, 511, 50): page.draw_line((40, y), (500, y))
+for x in (40, 200, 350, 500): page.draw_line((x, 360), (x, 510))
+page.insert_text((210, 390), 'Saber')
+page.insert_text((360, 390), 'Ambito')
+for fila, texto in enumerate(['1', '2']):
+    page.insert_text((50, 440 + fila * 50), texto)
+
 path=Path(__file__).resolve().parents[1]/'fixtures'/'pdf-import.pdf'
 doc.save(path,deflate=True)
 
