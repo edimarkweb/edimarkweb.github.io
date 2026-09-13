@@ -18,6 +18,23 @@ const OCR_CDN = {
     corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0',
 };
 
+/*
+  La misma composición de notas al pie que la hoja del documento. El programa
+  las resuelve él, antes de entregarle el texto a `marked`, así que quien mira
+  esta vista previa veía `[^1]` y `[^1]: …` en crudo mientras el documento ya
+  importado los enseñaba compuestos. Las dos funciones son globales de
+  `script.js`; si faltaran, se compone sin notas antes que no componer nada.
+*/
+function parseWithFootnotes(markdown) {
+    const prepare = window.preparePreviewFootnotes;
+    const render = window.renderPreviewFootnotes;
+    if (typeof prepare !== 'function' || typeof render !== 'function') {
+        return window.marked.parse(markdown);
+    }
+    const footnotes = prepare(markdown);
+    return window.marked.parse(footnotes.markdown) + render(footnotes.notes);
+}
+
 function defaultOcrLanguage() {
     const uiLanguage = (document.documentElement.lang || 'es').split('-')[0].toLowerCase();
     return OCR_LANGUAGE_BY_UI[uiLanguage] || 'spa';
@@ -476,9 +493,9 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
                         const shown = notes.length
                             ? `${preview.markdown}\n\n*${notes.join(' ')}*`
                             : preview.markdown;
-                        const html = stripUnsafeMarkup(window.marked.parse(shown));
+                        const html = stripUnsafeMarkup(parseWithFootnotes(shown));
                         // No scripts, network requests, forms or parent access in the preview.
-                        await setPreview(`<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline';"><style>body{font:16px/1.5 system-ui;padding:16px;color:#182536;background:#fff;overflow-wrap:anywhere}img{max-width:100%}table{border-collapse:collapse}td,th{border:1px solid #94a3b8;padding:6px}pre{white-space:pre-wrap}a{pointer-events:none}</style>${html}`);
+                        await setPreview(`<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline';"><style>body{font:16px/1.5 system-ui;padding:16px;color:#182536;background:#fff;overflow-wrap:anywhere}img{max-width:100%}table{border-collapse:collapse}td,th{border:1px solid #94a3b8;padding:6px}pre{white-space:pre-wrap}a{pointer-events:none}.footnotes{margin-top:2.5rem;padding-top:.8rem;border-top:1px solid #cbd5e1;color:#475569;font-size:.82em}.footnotes hr{display:none}.footnotes ol{margin:0;padding-left:1.5rem}.footnotes li+li{margin-top:.45rem}.footnotes p{display:inline;margin:0}.footnote-back{margin-left:.35rem;color:#2563eb;font-weight:700;text-decoration:none}</style>${html}`);
                         if (closed || !busy) return;
                         const usedOcr = Array.isArray(data.result.ocrPages) && data.result.ocrPages.length > 0 && $('#pdf-ocr').checked;
                         $('#pdf-import-status').textContent = t(

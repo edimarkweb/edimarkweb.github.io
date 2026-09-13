@@ -6608,13 +6608,13 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   await page.locator('.pdf-import-dialog').waitFor();
   assert.equal(await page.locator('#pdf-cancel').isDisabled(), false);
   await page.waitForFunction(
-    () => document.querySelector('#pdf-import-info')?.textContent.includes('11'),
+    () => document.querySelector('#pdf-import-info')?.textContent.includes('12'),
     null,
     { timeout: 120000 },
   );
-  assert.match(await page.locator('#pdf-import-info').innerText(), /11/);
+  assert.match(await page.locator('#pdf-import-info').innerText(), /12/);
   // Ya no hay tope de páginas que anunciar, ni por qué avisar de la espera:
-  // once páginas se convierten en un momento.
+  // doce páginas se convierten en un momento.
   assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /200/);
   assert.doesNotMatch(await page.locator('#pdf-import-info').innerText(), /varios minutos/);
   // Y en un documento sin una sola página escaneada, el OCR no se ofrece.
@@ -6640,7 +6640,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     confunde con uno colgado, así que la barra tiene que haber contado páginas
     y desaparecer al terminar.
   */
-  assert.ok(avance.some(paso => /\b1 (de|of|\/) 11\b|1 de 11/.test(paso)), avance.join(' | '));
+  assert.ok(avance.some(paso => /\b1 (de|of|\/) 12\b|1 de 12/.test(paso)), avance.join(' | '));
   assert.ok(avance.includes('100'), avance.join(' | '));
   assert.equal(await page.locator('#pdf-import-progress').isHidden(), true);
   const preview = page.frameLocator('#pdf-import-preview');
@@ -6695,6 +6695,31 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   const dobleEntrada = preview.locator('table', { hasText: 'Ambito' });
   assert.deepEqual(await dobleEntrada.locator('thead th').allInnerTexts(), ['', 'Saber', 'Ambito']);
   assert.deepEqual(await dobleEntrada.locator('tbody tr td:first-child').allInnerTexts(), ['1', '2']);
+
+  /*
+    Y las notas al pie, que son dos mitades confirmándose entre sí: el número
+    en superíndice arriba y la línea en cuerpo menor que empieza por ese mismo
+    número abajo. Donde solo hay una de las dos no se toca nada, y por eso la
+    página lleva un exponente, «m²», cuyo número no tiene nota: tiene que
+    seguir siendo un exponente y no convertirse en llamada.
+
+    Las tres llamadas están además donde el conversor las perdía: una en el
+    cuerpo, otra en la fila de cabecera de una tabla, y la tercera en el
+    título, que se escribe con el texto plano de su línea y se deja el estilo.
+  */
+  const notas = preview.locator('[data-edimark-footnotes] li');
+  assert.deepEqual(
+    (await notas.allInnerTexts()).map(nota => nota.replace(/[↩\s]+$/, '')),
+    [
+      'La marca que va en el titulo de la pagina.',
+      'Medida tomada en el curso anterior.',
+      'Agrupacion de materias que se imparten juntas.',
+    ],
+    text,
+  );
+  assert.equal(await preview.locator('sup.footnote-reference').count(), 3, text);
+  assert.match(text, /se mide en m\s*2 y no cambia/);
+  assert.doesNotMatch(text, /aula20|Materia21|pie22/, text);
 
   const rejilla = text.slice(text.indexOf('REJILLA DECORATIVA'));
   assert.match(rejilla, /Este parrafo cruza las reglas de la rejilla y debe/);
@@ -6762,7 +6787,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
     base64: es lo que permitió importar informes que antes agotaban la memoria.
   */
   await page.locator('#import-file-input').setInputFiles(fixture);
-  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('11'), null, { timeout: 120000 });
+  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('12'), null, { timeout: 120000 });
   await page.locator('#pdf-pages').fill('1');
   await page.locator('#pdf-preview').click();
   // El botón, no el aria-busy: entre pulsar y ponerse a trabajar hay un
@@ -6801,7 +6826,7 @@ test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modific
   assert.ok(avance.some(paso => /Guardando imágenes… \d+ de \d+/.test(paso)), avance.slice(-8).join(' | '));
 
   await page.locator('#import-file-input').setInputFiles(fixture);
-  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('11'), null, { timeout: 120000 });
+  await page.waitForFunction(() => document.querySelector('#pdf-import-info')?.textContent.includes('12'), null, { timeout: 120000 });
   await page.locator('#pdf-preview').click();
   await page.locator('#pdf-cancel').click();
   assert.equal(await page.locator('.pdf-import-dialog').count(), 0);

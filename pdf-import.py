@@ -7,6 +7,7 @@ from collections import defaultdict
 from io import BytesIO
 from PIL import Image
 import pymupdf
+import pymupdf.table
 import pymupdf4llm
 
 pymupdf4llm.use_layout(False)
@@ -36,6 +37,28 @@ IMAGE_EXTENSIONS = {'jpeg': 'jpg', 'svg+xml': 'svg'}
 
 # What the converter marks as struck out or underlined.
 RULE_EMPHASIS = re.compile(r'~~|</?u>')
+
+# The version of PyMuPDF that `extract_cells_with_superscripts` was copied
+# from. `test/pdf-runtime.test.mjs` compares it with the version the runtime
+# manifest pins, so upgrading PyMuPDF fails the test suite instead of quietly
+# carrying a stale copy of somebody else's function.
+PATCHED_PYMUPDF = '1.28.2'
+
+
+# A footnote, as a page shows one: a superscript number in the text and, in
+# smaller type at the foot, a line that begins with that same number. Neither
+# half means anything alone.
+FOOTNOTE_BODY_MARGIN = .5
+FOOTNOTE_MARKER = re.compile(r'\d{1,3}')
+FOOTNOTE_SUPERSCRIPT = re.compile(r'<sup>(.*?)</sup>')
+# The number may reach the Markdown dressed in the marks the converter puts on
+# it, `**9**` as easily as `9`, both in the marker and at the foot.
+FOOTNOTE_MARKUP = re.compile(r'[*_`~]|</?u>')
+# The space after the number is not always there: on some pages the number is
+# a span of its own, set tight against the word that follows it. A letter has
+# to follow, so that a year or a figure at the start of a line is not taken
+# for a note.
+FOOTNOTE_DEFINITION = re.compile(r'[*_`~]*(\d{1,3})[*_`~]*[\s\u00a0]*([^\W\d_].*)')
 
 # A Markdown table as the converter writes it: the header row, the separator
 # below it, and the rows that follow. And the name it invents for a header
@@ -162,6 +185,146 @@ def drop_rule_emphasis(markdown):
     return RULE_EMPHASIS.sub('', markdown)
 
 
+def page_footnotes(page):
+    """Numbers that are a marker in the text and a definition at the foot.
+
+    A superscript number on its own is an exponent, and a small line that
+    begins with a number on its own is a list; the page only has a footnote
+    where the same number is both, and nothing is rewritten otherwise. That
+    is the whole safeguard, and it is what keeps this away from the documents
+    that have no footnotes: there is nothing to pair, so nothing happens.
+
+    What the notes are smaller than is the rest of the page, never the page as
+    a whole: on a page carrying more note than text — an official form is
+    often exactly that — the notes are themselves the commonest size, and
+    measuring against that finds none of them.
+
+    Each number comes back with the line that carries its marker, which is
+    what lets a marker be found again in a heading, where the converter drops
+    the styling and the number arrives bare.
+    """
+    markers, hosts, lines = set(), {}, []
+    for block in page.get_text('dict')['blocks']:
+        for line in block.get('lines', []):
+            text, rest, size, weight = '', '', None, 0
+            found = []
+            for span in line['spans']:
+                stripped = span['text'].strip()
+                if not stripped:
+                    continue
+                text += span['text']
+                weight += len(stripped)
+                size = span['size'] if size is None else min(size, span['size'])
+                if span['flags'] & pymupdf.TEXT_FONT_SUPERSCRIPT and FOOTNOTE_MARKER.fullmatch(stripped):
+                    markers.add(stripped)
+                    found.append(stripped)
+                else:
+                    rest += span['text']
+            for number in found:
+                hosts.setdefault(number, rest.strip())
+            if text.strip():
+                lines.append((text.strip(), round(size, 1), weight))
+    if not markers:
+        return {}
+    candidates, body = {}, defaultdict(int)
+    for text, size, weight in lines:
+        definition = FOOTNOTE_DEFINITION.fullmatch(text)
+        if definition and definition.group(1) in markers:
+            candidates.setdefault(definition.group(1), (definition.group(2), size))
+        else:
+            body[size] += weight
+    if not body:
+        return {}
+    dominant = max(body.items(), key=lambda item: item[1])[0]
+    return {number: (content, hosts.get(number, ''))
+            for number, (content, size) in candidates.items()
+            if size < dominant - FOOTNOTE_BODY_MARGIN}
+
+
+def unmarked(text):
+    """The text without the inline marks the converter may have put on it."""
+    return FOOTNOTE_MARKUP.sub('', text).strip()
+
+
+def condensed(text):
+    """The bare letters, for comparing what two readings of a line say."""
+    return re.sub(r'\s+', '', unmarked(text))
+
+
+def heading_reference(line, notes, referenced):
+    """Put back the marker a heading lost on the way to Markdown.
+
+    The converter writes a heading from the plain text of its line, applying
+    only whole-line styling, so a superscript number that titles the page
+    arrives bare and indistinguishable from a heading that simply ends in a
+    number. The page itself settles it: the marker is only restored when the
+    heading says, letter for letter, what the line carrying the marker said.
+    Anything else — a heading broken over two lines, a link resolved inside
+    it — fails the comparison and is left exactly as it came.
+    """
+    level = len(line) - len(line.lstrip('#'))
+    if not level or level >= len(line) or not line[level].isspace():
+        return line
+    body = line[level:].strip()
+    for number, (_, host) in notes.items():
+        if not host or not body.endswith(number):
+            continue
+        if condensed(body) != condensed(host) + number:
+            continue
+        referenced.add(number)
+        return f"{'#' * level} {body[:-len(number)].rstrip()}[^{number}]"
+    return line
+
+
+def link_footnotes(markdown, notes):
+    """Write the pairs the pages confirmed as Markdown footnotes.
+
+    A definition nobody points at must never be written as one: the preview
+    takes the definition out of the text and renders only the notes that some
+    reference reached, so an unpaired `[^9]:` would not be a worse footnote,
+    it would be a paragraph that disappears. Hence the order here — the
+    markers are replaced first, and only a number that ended up with a
+    reference in the text is allowed to rewrite its line at the foot.
+
+    The rest stays as it arrived, which is what it has always been: readable
+    text at the end of the page.
+    """
+    if not notes:
+        return markdown
+    referenced = set()
+
+    def reference(match):
+        number = unmarked(match.group(1))
+        if number not in notes:
+            return match.group(0)
+        referenced.add(number)
+        return f'[^{number}]'
+
+    lines = [heading_reference(line, notes, referenced)
+             for line in FOOTNOTE_SUPERSCRIPT.sub(reference, markdown).split('\n')]
+    if not referenced:
+        return '\n'.join(lines)
+    out, index = [], 0
+    while index < len(lines):
+        definition = FOOTNOTE_DEFINITION.fullmatch(lines[index].strip())
+        number = definition.group(1) if definition else None
+        if (number in referenced
+                and unmarked(definition.group(2)).startswith(unmarked(notes[number][0])[:20])):
+            out.append(f'[^{number}]: {definition.group(2)}')
+            referenced.discard(number)
+            index += 1
+            # The rest of the paragraph belongs to the note, and only an
+            # indented line does: left flush it would stay behind as text of
+            # its own, with the note keeping just its first line.
+            while index < len(lines) and lines[index].strip():
+                out.append('    ' + lines[index])
+                index += 1
+            continue
+        out.append(lines[index])
+        index += 1
+    return '\n'.join(out)
+
+
 def table_cells(line):
     """The cells of a Markdown table row, or None if the line is not one."""
     if len(line) < 2 or not line.startswith('|') or not line.endswith('|'):
@@ -215,6 +378,169 @@ def repair_table_headers(markdown):
         out.extend('|' + '|'.join(row) + '|' for row in rows)
         index = end
     return '\n'.join(out)
+
+
+
+# Below: PyMuPDF's own `extract_cells`, copied verbatim from 1.28.2 with one
+# branch added, the one marked in the body. The library's cell extractor
+# handles bold, italic, monospaced and strikeout but not superscript, so a
+# footnote marker inside a table cell arrives glued to the word before it
+# (`Matèria/Àmbit2`) while the very same marker in a paragraph comes out as
+# `<sup>2</sup>`. There is no hook to add the missing case: the styling is
+# decided span by span inside the loop. Copying is the price of being exact.
+#
+# Keep the copy faithful. When PyMuPDF is upgraded, the test above fails:
+# take the new `extract_cells`, add the same branch, and move the version.
+
+
+def extract_cells_with_superscripts(textpage, cell, markdown=False):
+    """Extract text from a rect-like 'cell' as plain or MD styled text.
+
+    This function should ultimately be used to extract text from a table cell.
+    Markdown output will only work correctly if extraction flag bit
+    TEXT_COLLECT_STYLES is set.
+
+    Args:
+        textpage: A PyMuPDF TextPage object. Must have been created with
+            TEXTFLAGS_TEXT | TEXT_COLLECT_STYLES.
+        cell: A tuple (x0, y0, x1, y1) defining the cell's bbox.
+        markdown: If True, return text formatted for Markdown.
+
+    Returns:
+        A string with the text extracted from the cell.
+    """
+    text = ""
+    for block in textpage.extractRAWDICT()["blocks"]:
+        if block["type"] != 0:
+            continue
+        block_bbox = block["bbox"]
+        if (
+            0
+            or block_bbox[0] > cell[2]
+            or block_bbox[2] < cell[0]
+            or block_bbox[1] > cell[3]
+            or block_bbox[3] < cell[1]
+        ):
+            continue  # skip block outside cell
+        for line in block["lines"]:
+            lbbox = line["bbox"]
+            if (
+                0
+                or lbbox[0] > cell[2]
+                or lbbox[2] < cell[0]
+                or lbbox[1] > cell[3]
+                or lbbox[3] < cell[1]
+            ):
+                continue  # skip line outside cell
+
+            if text:  # must be a new line in the cell
+                text += "<br>" if markdown else "\n"
+
+            # strikeout detection only works with horizontal text
+            horizontal = line["dir"] == (0, 1) or line["dir"] == (1, 0)
+
+            for span in line["spans"]:
+                sbbox = span["bbox"]
+                if (
+                    0
+                    or sbbox[0] > cell[2]
+                    or sbbox[2] < cell[0]
+                    or sbbox[1] > cell[3]
+                    or sbbox[3] < cell[1]
+                ):
+                    continue  # skip spans outside cell
+
+                # only include chars with more than 50% bbox overlap
+                span_text = ""
+                for char in span["chars"]:
+                    this_char = char["c"]
+                    bbox = pymupdf.Rect(char["bbox"])
+                    if abs(bbox & cell) > 0.5 * abs(bbox):
+                        span_text += this_char
+                    elif this_char in pymupdf.table.white_spaces:
+                        span_text += " "
+
+                if not span_text:
+                    continue  # skip empty span
+
+                if not markdown:  # no MD styling
+                    text += span_text
+                    continue
+
+                prefix = ""
+                suffix = ""
+                # LA ÚNICA LÍNEA AÑADIDA AL ORIGINAL, y el motivo del parche.
+                if span["flags"] & pymupdf.TEXT_FONT_SUPERSCRIPT:
+                    prefix += "<sup>"
+                    suffix = "</sup>" + suffix
+                if horizontal and span["char_flags"] & pymupdf.table.TEXT_STRIKEOUT:
+                    prefix += "~~"
+                    suffix = "~~" + suffix
+                if span["char_flags"] & pymupdf.table.TEXT_BOLD:
+                    prefix += "**"
+                    suffix = "**" + suffix
+                if span["flags"] & pymupdf.TEXT_FONT_ITALIC:
+                    prefix += "_"
+                    suffix = "_" + suffix
+                if span["flags"] & pymupdf.TEXT_FONT_MONOSPACED:
+                    prefix += "`"
+                    suffix = "`" + suffix
+
+                if len(span["chars"]) > 2:
+                    span_text = span_text.rstrip()
+
+                # if span continues previous styling: extend cell text
+                if (ls := len(suffix)) and text.endswith(suffix):
+                    text = text[:-ls] + span_text + suffix
+                else:  # append the span with new styling
+                    if not span_text.strip():
+                        text += " "
+                    else:
+                        text += prefix + span_text + suffix
+
+    return text.strip()
+
+
+def styled_header_names(table):
+    """Re-read the header row with the styling every other row already gets.
+
+    `to_markdown` writes the header from `header.names`, which come from the
+    plain extraction and therefore carry no marks at all. A footnote marker
+    that lands in a header cell arrives glued to the word before it even with
+    the cell extractor patched, because the header never goes through it.
+
+    A wrapper is enough here — the names are a list on the header object —
+    so no second copy of anybody's function is needed.
+    """
+    if table.textpage is None or not table.header or not table.header.cells:
+        return
+    table.header.names = [
+        extract_cells_with_superscripts(table.textpage, cell, markdown=True) if cell else ''
+        for cell in table.header.cells
+    ]
+
+
+def patch_cell_extraction():
+    """Make the converter mark a superscript inside a table cell.
+
+    Refuse to patch a PyMuPDF the copy was not taken from: a stale copy of an
+    internal function is worse than the missing marker it fixes. The test
+    suite is what makes sure this never passes unnoticed.
+    """
+    if pymupdf.version[0] != PATCHED_PYMUPDF:
+        return False
+    pymupdf.table.extract_cells = extract_cells_with_superscripts
+    original = pymupdf.table.Table.to_markdown
+
+    def to_markdown(self, *args, **kwargs):
+        styled_header_names(self)
+        return original(self, *args, **kwargs)
+
+    pymupdf.table.Table.to_markdown = to_markdown
+    return True
+
+
+patch_cell_extraction()
 
 
 def table_bands(page):
@@ -518,11 +844,16 @@ def convert_pdf(data, options, progress=None, emit_image=None):
         ]
         math_regions = 0
         keep_images = options.get('keepImages', True)
-        decorated = []
+        decorated, notes = [], {}
         for number, page in enumerate(source, 1):
             # Before any table lookup, math detection included.
             grid = background_grid(page)
             decorated.append(grid)
+            # Numbering that starts over on every page cannot be linked: the
+            # same number would then stand for two different notes, so both
+            # are left as they came.
+            for label, note in page_footnotes(page).items():
+                notes[label] = None if label in notes and notes[label] != note else note
             if not grid:
                 restore_table_grid(page)
             if keep_images:
@@ -565,7 +896,8 @@ def convert_pdf(data, options, progress=None, emit_image=None):
                 chunks.append(page_markdown)
             report('converting', done, total)
         return {
-            'markdown': ''.join(chunks),
+            'markdown': link_footnotes(
+                ''.join(chunks), {k: v for k, v in notes.items() if v is not None}),
             'pages': total,
             'textPages': text_pages,
             'mathRegions': math_regions,

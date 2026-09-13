@@ -122,8 +122,41 @@ page.insert_text((360, 390), 'Ambito')
 for fila, texto in enumerate(['1', '2']):
     page.insert_text((50, 440 + fila * 50), texto)
 
+# Duodécima página: una llamada de nota al pie y su nota, dentro y fuera de una
+# tabla. El número en superíndice y la línea en cuerpo menor que empieza por ese
+# mismo número son las dos mitades que tienen que confirmarse entre sí. Va
+# además un exponente, «m2», cuyo número no tiene nota abajo: es el caso que
+# tiene que quedarse como está. Con insert_htmlbox, que es lo que compone un
+# superíndice de verdad; insert_text a una altura distinta no activa la bandera.
+page = doc.new_page(width=595, height=842)
+# El título lleva su propia llamada: el conversor escribe un encabezado con el
+# texto plano de su línea y se deja el superíndice, así que esta marca llega
+# desnuda y hay que reconocerla por lo que dice la línea, no por el número.
+page.insert_htmlbox(pymupdf.Rect(40, 78, 520, 112),
+                    '<div style="font-size:16px">Notas al pie<sup>22</sup></div>')
+page.insert_htmlbox(pymupdf.Rect(40, 120, 520, 200),
+                    '<div style="font-size:11px">La superficie del aula<sup>20</sup> '
+                    'se mide en m<sup>2</sup> y no cambia.</div>')
+# La misma llamada dentro de una tabla, y en la fila de cabecera, que es por
+# donde el conversor no pasaba el estilo.
+for y in (240, 280, 320): page.draw_line((40, y), (500, y))
+for x in (40, 270, 500): page.draw_line((x, 240), (x, 320))
+page.insert_htmlbox(pymupdf.Rect(45, 245, 265, 278), '<div style="font-size:11px">Materia<sup>21</sup></div>')
+page.insert_htmlbox(pymupdf.Rect(275, 245, 495, 278), '<div style="font-size:11px">Horas</div>')
+page.insert_htmlbox(pymupdf.Rect(45, 285, 265, 318), '<div style="font-size:11px">Lengua</div>')
+page.insert_htmlbox(pymupdf.Rect(275, 285, 495, 318), '<div style="font-size:11px">4</div>')
+# Y al pie, en cuerpo menor, las dos notas. La del exponente no existe: por eso
+# «m2» tiene que seguir siendo un exponente y no convertirse en llamada.
+page.insert_text((40, 700), '20 Medida tomada en el curso anterior.', fontsize=6)
+page.insert_text((40, 715), '21 Agrupacion de materias que se imparten juntas.', fontsize=6)
+page.insert_text((40, 730), '22 La marca que va en el titulo de la pagina.', fontsize=6)
+
+
 path=Path(__file__).resolve().parents[1]/'fixtures'/'pdf-import.pdf'
-doc.save(path,deflate=True)
+# insert_htmlbox incrusta la fuente entera: sin quedarse con los glifos que se
+# usan, las tres líneas de las notas al pie multiplicaban el fixture por seis.
+doc.subset_fonts()
+doc.save(path, deflate=True, garbage=4)
 
 # Doscientas diez páginas mínimas: el conversor ya no tiene tope y esto lo
 # comprueba sin pedir un archivo pesado.
