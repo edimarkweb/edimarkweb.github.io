@@ -22,10 +22,20 @@ SCAN_IMAGE_RATIO = .5
 # amortizing it over a batch is what keeps the cost per page flat.
 BATCH_PAGES = 10
 
+# A grid bled off the paper and drawn under the words: page decoration, never
+# a table. Fewer parallel rules than this is the filet of a letterhead, and a
+# smaller share of crossed text is a table whose contents overflow a cell.
+BACKGROUND_GRID_RULES = 4
+BACKGROUND_GRID_PITCH = 2
+BACKGROUND_GRID_TEXT = .5
+
 # What the converter writes when it embeds a picture, and the extensions the
 # application uses for the files it keeps beside a document.
 EMBEDDED_IMAGE = re.compile(r'!\[([^\]]*)\]\(\s*data:image/([A-Za-z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+?)\s*\)')
 IMAGE_EXTENSIONS = {'jpeg': 'jpg', 'svg+xml': 'svg'}
+
+# What the converter marks as struck out or underlined.
+RULE_EMPHASIS = re.compile(r'~~|</?u>')
 
 
 def selected_pages(value, count):
@@ -87,6 +97,63 @@ def remove_running_text(doc, keep, progress=None):
         # that the worker is alive without restarting the visible page count.
         if progress is not None:
             progress('heartbeat', done, len(kept))
+
+
+def regular_pitch(offsets):
+    """Several parallel rules, all the same distance apart."""
+    if len(offsets) < BACKGROUND_GRID_RULES:
+        return False
+    gaps = [second - first for first, second in zip(offsets, offsets[1:])]
+    return max(gaps) - min(gaps) <= BACKGROUND_GRID_PITCH
+
+
+def crosses(span, rule):
+    """A rule running through the middle of a word, not beside it."""
+    if rule.width <= 2:
+        return span.x0 + 1 < rule.x0 < span.x1 - 1 and rule.y0 < span.y1 and rule.y1 > span.y0
+    return span.y0 + 1 < rule.y0 < span.y1 - 1 and rule.x0 < span.x1 and rule.x1 > span.x0
+
+
+def background_grid(page):
+    """Rules bled off the paper that the text runs over: decoration.
+
+    A table lives inside the margins and its text sits between the rules.
+    Decoration is the opposite: evenly spaced rules reaching the edge of the
+    sheet and passing under the words. PyMuPDF reads such a grid as one table
+    covering the page, so every line arrives chopped into cells, and MuPDF
+    flags the text those rules cross as struck out. Both conditions are
+    required together: a full-bleed table exists, and so does a cell whose
+    text overflows a rule, but not the two at once.
+    """
+    width, height = page.rect.width, page.rect.height
+    rules, verticals, horizontals = [], set(), set()
+    for path in page.get_drawings():
+        rect = path['rect']
+        if rect.width <= 2 and rect.y0 <= 1 and rect.y1 >= height - 1:
+            rules.append(rect)
+            verticals.add(round(rect.x0, 1))
+        elif rect.height <= 2 and rect.x0 <= 1 and rect.x1 >= width - 1:
+            rules.append(rect)
+            horizontals.add(round(rect.y0, 1))
+    if not regular_pitch(sorted(verticals)) and not regular_pitch(sorted(horizontals)):
+        return False
+    spans = [pymupdf.Rect(span['bbox'])
+             for block in page.get_text('dict')['blocks']
+             for line in block.get('lines', []) for span in line['spans']]
+    if not spans:
+        return False
+    crossed = sum(1 for span in spans if any(crosses(span, rule) for rule in rules))
+    return crossed >= len(spans) * BACKGROUND_GRID_TEXT
+
+
+def drop_rule_emphasis(markdown):
+    """Strikeout and underline the decoration painted, not the author.
+
+    On a page whose grid crosses every line, each of these marks comes from a
+    rule. Nothing else can tell them apart: the flag MuPDF sets is the same
+    one a real strikeout sets.
+    """
+    return RULE_EMPHASIS.sub('', markdown)
 
 
 def table_bands(page):
@@ -235,7 +302,7 @@ def preserve_math(page):
     return len(images)
 
 
-def page_batches(scanned, formats, size=BATCH_PAGES):
+def page_batches(scanned, formats, decorated, size=BATCH_PAGES):
     """Group consecutive pages that can be converted in a single call.
 
     Converting page by page costs proportionally to the whole document on
@@ -245,12 +312,14 @@ def page_batches(scanned, formats, size=BATCH_PAGES):
     A batch pays that once.
 
     The cuts are what the batch cannot share: pictures are embedded in one
-    format per call, and a scanned page needs its own text, since it may be
-    replaced by what OCR reads there.
+    format per call, a scanned page needs its own text, since it may be
+    replaced by what OCR reads there, and a page whose decoration imitates a
+    grid is converted without looking for tables at all.
     """
     batch = []
-    for number, (is_scan, image_format) in enumerate(zip(scanned, formats)):
-        breaks = is_scan or (batch and (scanned[batch[0]] or formats[batch[0]] != image_format))
+    for number, (is_scan, image_format, grid) in enumerate(zip(scanned, formats, decorated)):
+        breaks = is_scan or (batch and (
+            scanned[batch[0]] or formats[batch[0]] != image_format or decorated[batch[0]] != grid))
         if batch and (breaks or len(batch) >= size):
             yield batch
             batch = []
@@ -329,16 +398,26 @@ def image_coverage(page):
     return min(sum(abs(rect) for rect in parts), abs(bounds)) / area
 
 
-def batch_markdown(source, batch, keep_images, image_format):
-    """Convert some pages of a document without the rest weighing on them."""
+def batch_markdown(source, batch, keep_images, image_format, tables=True):
+    """Convert some pages of a document without the rest weighing on them.
+
+    A page ruled by its own decoration is converted without looking at the
+    drawings at all. Not only for the tables they invent: the converter also
+    sets aside the text it finds inside a cluster of vector graphics, and on a
+    designed page that is every coloured box, which is where the body text of
+    this kind of document lives — two fifths of one such guide never reached
+    the result.
+    """
     chunk = pymupdf.open()
     try:
         chunk.insert_pdf(source, from_page=batch[0], to_page=batch[-1])
-        return pymupdf4llm.to_markdown(
+        markdown = pymupdf4llm.to_markdown(
             chunk, embed_images=keep_images, image_size_limit=0,
             ignore_images=not keep_images, show_progress=False,
-            image_format=image_format,
+            image_format=image_format, table_strategy='lines_strict' if tables else None,
+            ignore_graphics=not tables,
         )
+        return markdown if tables else drop_rule_emphasis(markdown)
     finally:
         chunk.close()
 
@@ -378,9 +457,13 @@ def convert_pdf(data, options, progress=None, emit_image=None):
         ]
         math_regions = 0
         keep_images = options.get('keepImages', True)
+        decorated = []
         for number, page in enumerate(source, 1):
             # Before any table lookup, math detection included.
-            restore_table_grid(page)
+            grid = background_grid(page)
+            decorated.append(grid)
+            if not grid:
+                restore_table_grid(page)
             if keep_images:
                 math_regions += preserve_math(page)
             report('analysing', number, total)
@@ -393,8 +476,9 @@ def convert_pdf(data, options, progress=None, emit_image=None):
         detach = bool(folder) and emit_image is not None
         image_number = 1
         done = 0
-        for batch in page_batches(scanned, formats):
-            page_markdown = batch_markdown(source, batch, keep_images, formats[batch[0]])
+        for batch in page_batches(scanned, formats, decorated):
+            page_markdown = batch_markdown(
+                source, batch, keep_images, formats[batch[0]], not decorated[batch[0]])
             done += len(batch)
             number = batch[0]
             if scanned[number]:

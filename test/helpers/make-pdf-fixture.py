@@ -61,6 +61,46 @@ for i in range(13):
     page.insert_image(pymupdf.Rect(x, y, x + 120, y + 90), stream=lienzo.get_pixmap(dpi=96).tobytes('jpg'))
     tarjeta.close()
 
+# Octava página, tras la galería: la rejilla decorativa que un programa de diseño sangra hasta
+# el borde del papel y pinta por debajo del texto. No es una tabla, pero
+# PyMuPDF la lee como una que ocupa la hoja entera, y MuPDF marca como tachado
+# todo lo que sus reglas cruzan.
+page = doc.new_page(width=595, height=842)
+for x in range(0, 596, 42): page.draw_line((x, 0), (x, 842), color=(.2, .25, .4), width=.5)
+for y in range(0, 843, 42): page.draw_line((0, y), (595, y), color=(.2, .25, .4), width=.5)
+page.insert_text((60, 126), 'REJILLA DECORATIVA', fontsize=24)
+page.insert_text((60, 210), 'Este parrafo cruza las reglas de la rejilla y debe', fontsize=14)
+page.insert_text((60, 252), 'llegar entero, sin celdas y sin tachados.', fontsize=14)
+# Y una caja de color con texto dentro, como las de cualquier guía maquetada:
+# el conversor aparta el texto que cae dentro de un grupo de vectores, y en
+# una página así es donde vive el cuerpo del documento.
+page.draw_rect(pymupdf.Rect(50, 320, 545, 470), color=(.1, .6, .9), fill=(.93, .97, 1), width=2)
+page.insert_text((70, 360), 'TRUCO', fontsize=16)
+page.insert_text((70, 404), 'El texto de esta caja de color tambien tiene que', fontsize=13)
+page.insert_text((70, 436), 'llegar al resultado.', fontsize=13)
+
+# Novena página: un horario semanal, la tabla real que más se parece a una
+# rejilla —paso uniforme en los dos ejes— pero dentro de los márgenes y con el
+# texto entre las reglas, no encima. Tiene que seguir siendo una tabla.
+page = doc.new_page(width=595, height=842)
+for y in range(120, 521, 100): page.draw_line((40, y), (520, y))
+for x in range(40, 521, 120): page.draw_line((x, 120), (x, 520))
+for fila, textos in enumerate([['Hora', 'Lunes', 'Martes', 'Miercoles'],
+                               ['09:00', 'Lengua', 'Fisica', 'Quimica'],
+                               ['11:00', 'Historia', 'Dibujo', 'Musica'],
+                               ['13:00', 'Ingles', 'Latin', 'Biologia']]):
+    for columna, texto in enumerate(textos):
+        page.insert_text((50 + columna * 120, 170 + fila * 100), texto)
+
+# Décima página: una tabla ancha que casi cubre la hoja. Descartar una tabla
+# por su tamaño era la regla que sí daba falsos positivos.
+page = doc.new_page(width=595, height=842)
+for y in range(100, 701, 75): page.draw_line((30, y), (565, y))
+for x in range(30, 566, 89): page.draw_line((x, 100), (x, 700))
+for fila in range(8):
+    for columna in range(6):
+        page.insert_text((36 + columna * 89, 140 + fila * 75), f'C{columna}F{fila}', fontsize=9)
+
 path=Path(__file__).resolve().parents[1]/'fixtures'/'pdf-import.pdf'
 doc.save(path,deflate=True)
 
