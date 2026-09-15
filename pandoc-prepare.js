@@ -26,6 +26,10 @@ export const MARKDOWN_READER = [
   '+tex_math_single_backslash',
   '+tex_math_double_backslash',
   '+raw_tex',
+  '+autolink_bare_uris',
+  '+task_lists',
+  // La hoja conserva la puntuación literal; la exportación debe hacer lo mismo.
+  '-smart',
 ].join('');
 
 export const MARKDOWN_READER_NO_AUTO_IDS = `${MARKDOWN_READER}-auto_identifiers`;
@@ -39,7 +43,7 @@ export const MARKDOWN_READER_NO_AUTO_IDS = `${MARKDOWN_READER}-auto_identifiers`
   document that came in with rayas, comillas tipográficas and puntos
   suspensivos returned full of `---`, `"` and `...`. The characters are what
   the author wrote and what every one of these formats stores, so they travel
-  as themselves. Reading is untouched: `-t` is the only direction affected.
+  as themselves. The reader also preserves literal typography, matching the preview.
 */
 export const MARKDOWN_WRITER = [
   MARKDOWN_READER_NO_AUTO_IDS,
@@ -822,6 +826,17 @@ export function mapOutsideCode(markdown, transform) {
   return splitCodeSegments(markdown)
     .map(segment => (segment.code ? segment.text : transform(segment.text)))
     .join('');
+}
+
+// Solo para la salida Markdown generada por Pandoc al importar: una cita sin
+// biblioteca llega de Word/ODT como texto, con corchetes escapados. Esos escapes
+// coinciden con los delimitadores matemáticos de la hoja. Recuperar la cita
+// antes de componerla; el código y las fórmulas ($$ en el escritor) quedan igual.
+export function restoreImportedCitations(markdown) {
+  return mapOutsideCode(markdown, text => text.replace(
+    /(?<!\\)(\$\$[\s\S]*?\$\$|\$(?:\\.|[^$\\\n])+\$)|(?<!\\)\\\[([ \t]*-?\\?@[A-Za-z0-9_](?:\\.|[^\]\\\n])*?)\\\]|(?<![\\\w])\\@(?=[A-Za-z0-9_])/g,
+    (match, math, citation) => math ? match : citation ? `[${citation.replace(/\\@/g, '@')}]` : '@',
+  ));
 }
 
 function collectImageSources(markdown) {

@@ -24,6 +24,7 @@ import {
   stripEpubAnchorPrefixes,
   collapseThematicBreaks,
   expandDisplayMath,
+  restoreImportedCitations,
   dropDuplicateEpubTitle,
   stripUnsafeMarkup,
   collectArchiveImagePaths,
@@ -39,6 +40,17 @@ import { createZip } from '../zip-writer.js';
 import { normalizeFormulaHrefs } from '../odt-formulas.js';
 import { extractOdtTableHeaders, restoreTableHeaders } from '../odt-tables.js';
 import { makeZip } from './helpers/make-zip.mjs';
+
+test('las citas importadas recuperan sus corchetes sin tocar código ni fórmulas', () => {
+  const source = String.raw`Citas: \[@ejemplo2026\], \[-@ejemplo2026\] y \[@ejemplo2026; \@segunda2025\].`;
+  assert.equal(restoreImportedCitations(source), 'Citas: [@ejemplo2026], [-@ejemplo2026] y [@ejemplo2026; @segunda2025].');
+  const code = '`' + String.raw`\[@ejemplo2026\]` + '`\n\n```text\n' + String.raw`\[@ejemplo2026\]` + '\n```';
+  assert.equal(restoreImportedCitations(code), code);
+  assert.equal(restoreImportedCitations('$$@x$$ y $a^2$'), '$$@x$$ y $a^2$');
+  const formulas = String.raw`$$\@x + \[@y\]$$ y $\@z$.`;
+  assert.equal(restoreImportedCitations(formulas), formulas);
+  assert.equal(restoreImportedCitations(String.raw`Según \@ejemplo2026.`), 'Según @ejemplo2026.');
+});
 
 test('hasYamlFrontMatter distingue metadatos de una línea horizontal', () => {
   assert.equal(hasYamlFrontMatter('---\ntitle: X\n---\n\nTexto\n'), true);

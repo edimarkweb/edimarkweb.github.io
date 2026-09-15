@@ -120,11 +120,4 @@ export function readZipEntries(bytes) {
   return entries;
 }
 
-export const MARKDOWN_READER = [
-  'markdown',
-  '+tex_math_dollars',
-  '+tex_math_single_backslash',
-  '+tex_math_double_backslash',
-  '+raw_tex',
-  '-auto_identifiers',
-].join('');
+export { MARKDOWN_READER_NO_AUTO_IDS as MARKDOWN_READER } from '../../pandoc-prepare.js';

@@ -40,7 +40,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/split.js@1.6.5/dist/split.min.js" integrity="sha384-q2ksSc8z6Q4ZUnxlfZj9AXZLpSdWmD3q/YrId1twTeNHh56fNh98YbJSpppzGUvL" crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" href="style.css?v=3.0.5">
+    <link rel="stylesheet" href="style.css?v=3.1.0">
 </head>
 <body class="p-4 sm:p-6 md:p-8">
 <!--
@@ -486,7 +486,7 @@
     <section id="desktop-release-banner" class="desktop-release-banner" role="status" hidden>
         <i data-lucide="monitor-down" class="desktop-release-banner-icon" aria-hidden="true"></i>
         <div class="desktop-release-banner-content">
-            <p data-i18n-key="desktop_banner_message">EdiMarkdown Desktop v3.0.5 está disponible para Linux, Windows y macOS.</p>
+            <p data-i18n-key="desktop_banner_message">EdiMarkdown Desktop v3.1.0 está disponible para Linux, Windows y macOS.</p>
             <a id="desktop-banner-download-link" href="https://github.com/edimarkweb/edimarkweb.github.io/releases/latest" target="_blank" rel="noreferrer noopener" data-i18n-key="desktop_banner_download">Ver descargas</a>
             <label class="desktop-release-banner-never">
                 <input id="desktop-banner-never-show" type="checkbox">
@@ -572,13 +572,22 @@
             <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
             <div class="flex items-center gap-1">
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="quote" data-i18n-key="quote_btn_title" title="Cita (Ctrl+Shift+Q)"><i data-lucide="quote"></i></button>
-                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="list-ul" data-i18n-key="ul_list_btn_title" title="Lista (Ctrl+Shift+L)"><i data-lucide="list"></i></button>
-                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="list-ol" data-i18n-key="ol_list_btn_title" title="Lista numerada (Ctrl+Shift+O)"><i data-lucide="list-ordered"></i></button>
+                <div id="list-dropdown-container" class="relative list-split-button">
+                    <button id="list-apply-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="ul_list_btn_title" title="Lista (Ctrl+Shift+L)"><i data-lucide="list"></i></button>
+                    <button id="list-menu-btn" class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-i18n-key="list_menu_title" title="Elegir tipo de lista" aria-haspopup="menu" aria-expanded="false" aria-controls="list-options"><i data-lucide="chevron-down"></i></button>
+                    <div id="list-options" class="hidden" role="menu" data-i18n-key="list_menu_title" aria-label="Elegir tipo de lista">
+                        <button role="menuitemradio" aria-checked="true" tabindex="-1" data-format="list-ul"><i data-lucide="list"></i><span data-i18n-key="list_bullets_label">Viñetas</span></button>
+                        <button role="menuitemradio" aria-checked="false" tabindex="-1" data-format="list-ol"><i data-lucide="list-ordered"></i><span data-i18n-key="list_numbered_label">Numeración</span></button>
+                        <button role="menuitemradio" aria-checked="false" tabindex="-1" data-format="list-task"><i data-lucide="list-checks"></i><span data-i18n-key="list_tasks_label">Tareas</span></button>
+                    </div>
+                </div>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="horizontal-rule" data-i18n-key="horizontal_rule_btn_title" title="Línea horizontal"><i data-lucide="minus"></i></button>
             </div>
             <div class="border-l h-6 border-slate-300 dark:border-slate-600"></div>
             <div class="flex items-center gap-1">
-                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="code" data-i18n-key="code_btn_title" title="Código (Ctrl+`)"><i data-lucide="code-2"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="code" data-i18n-key="code_btn_title" title="Código en línea (Ctrl+`)"><i data-lucide="code-2"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="code-block" data-i18n-key="code_block_btn_title" title="Bloque de código"><i data-lucide="square-code"></i></button>
+                <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="line-break" data-i18n-key="line_break_btn_title" title="Salto de línea"><i data-lucide="corner-down-left"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="link" data-i18n-key="link_btn_title" title="Enlace (Ctrl+K)"><i data-lucide="link"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="image" data-i18n-key="image_btn_title" title="Imagen (Ctrl+Shift+I)"><i data-lucide="image"></i></button>
                 <button class="toolbar-btn focus-visible:ring-2 focus-visible:ring-blue-500" data-format="table" data-i18n-key="table_btn_title" title="Tabla (Ctrl+Shift+T)"><i data-lucide="table"></i></button>
@@ -1481,7 +1490,7 @@
     </div>
 
     <div id="table-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="table-modal-title">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm dark:bg-slate-800">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm dark:bg-slate-800" style="max-height:90vh;overflow-y:auto">
             <h3 id="table-modal-title" class="text-lg font-bold mb-4 text-slate-800 dark:text-slate-100" data-i18n-key="create_table_modal_title">Crear tabla</h3>
             <div class="space-y-4">
                 <div>
@@ -1492,10 +1501,27 @@
                     <label for="table-rows" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="rows_label">Filas (de datos)</label>
                     <input type="number" id="table-rows" value="2" min="1" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
                 </div>
+                <fieldset>
+                    <legend class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="table_alignment_label">Alineación de las columnas</legend>
+                    <div id="table-alignments" class="space-y-2 mt-2"></div>
+                </fieldset>
             </div>
             <div class="mt-6 flex justify-end gap-3">
                 <button id="cancel-table-btn" class="px-4 py-2 bg-slate-100 text-slate-800 rounded-md hover:bg-slate-200 focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" data-i18n-key="cancel_btn">Cancelar</button>
                 <button id="create-table-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="create_btn">Crear</button>
+            </div>
+        </div>
+    </div>
+    <div id="code-modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="code-modal-title">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg text-slate-800 dark:bg-slate-800 dark:text-slate-100" style="max-height:90vh;overflow-y:auto">
+            <h3 id="code-modal-title" class="text-lg font-bold mb-4" data-i18n-key="code_block_btn_title">Bloque de código</h3>
+            <label for="code-language" class="block text-sm" data-i18n-key="code_language_label">Lenguaje (opcional)</label>
+            <input id="code-language" type="text" maxlength="40" placeholder="python, javascript, html…" class="mt-1 mb-3 block w-full rounded-md border border-slate-300 dark:bg-slate-700">
+            <label for="code-content" class="block text-sm" data-i18n-key="code_content_label">Código</label>
+            <textarea id="code-content" rows="8" spellcheck="false" class="mt-1 block w-full rounded-md border border-slate-300 p-3 font-mono dark:bg-slate-700"></textarea>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="cancel-code-btn" class="px-4 py-2 rounded-md bg-slate-100 dark:bg-slate-700" data-i18n-key="cancel_btn">Cancelar</button>
+                <button id="insert-code-btn" class="px-4 py-2 rounded-md bg-blue-600 text-white" data-i18n-key="insert_btn">Insertar</button>
             </div>
         </div>
     </div>
@@ -1564,6 +1590,10 @@
                 <div>
                     <label for="link-url" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="link_url_label">URL</label>
                     <input id="link-url" type="url" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
+                </div>
+                <div>
+                    <label for="link-title" class="block text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n-key="link_title_label">Título al pasar el puntero (opcional)</label>
+                    <input id="link-title" type="text" class="mt-1 block w-full rounded-md border border-slate-300 dark:bg-slate-700">
                 </div>
             </div>
             <div class="mt-6 flex justify-end gap-3">
@@ -1672,13 +1702,13 @@
         </div>
     </div>
 
-    <script src="asset-paths.js?v=3.0.5"></script>
-    <script src="bibliography.js?v=3.0.5"></script>
-    <script src="document-format.js?v=3.0.5"></script>
-    <script src="format-profiles.js?v=3.0.5"></script>
-    <script src="platform-api.js?v=3.0.5"></script>
-    <script src="desktop-updater.js?v=3.0.5"></script>
-    <script type="module" src="pandoc-exporter.js?v=3.0.5"></script>
+    <script src="asset-paths.js?v=3.1.0"></script>
+    <script src="bibliography.js?v=3.1.0"></script>
+    <script src="document-format.js?v=3.1.0"></script>
+    <script src="format-profiles.js?v=3.1.0"></script>
+    <script src="platform-api.js?v=3.1.0"></script>
+    <script src="desktop-updater.js?v=3.1.0"></script>
+    <script type="module" src="pandoc-exporter.js?v=3.1.0"></script>
     <script>
     (function () {
       var ANALYTICS_FALLBACK_ENDPOINT = 'https://bilateria.org/app/estadistica/edimarkweb/track.php';
@@ -1858,8 +1888,8 @@
       });
     })();
     </script>
-    <script src="script.js?v=3.0.5" defer></script>
-    <script src="search.js?v=3.0.5" defer></script>
-    <script src="i18n.js?v=3.0.5" defer></script>
+    <script src="script.js?v=3.1.0" defer></script>
+    <script src="search.js?v=3.1.0" defer></script>
+    <script src="i18n.js?v=3.1.0" defer></script>
 </body>
 </html>

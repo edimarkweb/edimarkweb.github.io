@@ -4,6 +4,18 @@ Todos los cambios de EdiMarkdown (antes EdiMarkWeb), de la versión más recient
 
 El formato sigue la idea de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y la numeración, [versionado semántico](https://semver.org/lang/es/).
 
+## [3.1.0] - 2026-09-15
+
+- El código en línea se muestra sin las comillas invertidas decorativas que añadía el estilo de la hoja.
+- Las listas se agrupan en un botón dividido: el icono aplica el último tipo elegido y la flecha abre viñetas, numeración y tareas. La elección se recuerda al volver a abrir la aplicación; en móvil, las dos zonas tienen tamaño táctil y el menú se ajusta a la pantalla.
+- La barra permite crear tablas con alineación por columna y cambiar la de tablas existentes desde ambos paneles. Añade listas de tareas con casillas interactivas, botones separados para código en línea y bloques con lenguaje opcional, saltos de línea y un título opcional para los enlaces. Los cinco manuales y las pruebas de navegador cubren estos controles.
+- Las tablas muestran su alineación izquierda, centrada o derecha también al imprimir. Editarlas en la hoja conserva esa alineación y las barras verticales escritas dentro de una celda, que antes podían crear columnas falsas. El muestrario Markdown y sus pruebas cubren ahora cada función del perfil, con comprobaciones de contenido y estructura.
+- Importar recupera la sintaxis de las citas bibliográficas sin biblioteca que Pandoc devuelve escapadas, evitando que sus corchetes se interpreten como fórmulas. Se respetan los ejemplos escritos como código y las fórmulas reales.
+- El manual se ha reescrito en los cinco idiomas para que sea más breve y claro: empieza por lo imprescindible y deja para el final el Markdown admitido (sintaxis compatible con GFM y funciones académicas de Pandoc, con sus límites).
+- Al abrir un cuadro de diálogo, lo que se escribe en otro de sus campos nada más abrirlo ya no se pierde, porque el cursor ya no salta de vuelta al primer campo.
+- Exportar conserva las comillas rectas, los puntos suspensivos escritos como tres puntos y los guiones, tal como se ven en la hoja; las URL HTTP(S) sueltas también se convierten en enlaces.
+- Editar la hoja conserva las citas bibliográficas entre corchetes aunque todavía no se haya cargado su biblioteca: antes podían convertirse en fórmulas al volver a mostrar el documento.
+
 ## [3.0.5] - 2026-09-13
 
 - El agradecimiento de «Acerca de» pasa a decir «Agradecimientos: Enrique Brito, por su colaboración en el desarrollo y mejora de EdiMarkdown.», en los cinco idiomas.

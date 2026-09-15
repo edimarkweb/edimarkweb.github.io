@@ -35,6 +35,7 @@ import {
   dropDuplicateEpubTitle,
   collapseThematicBreaks,
   expandDisplayMath,
+  restoreImportedCitations,
   mergeFrontMatter,
   inlineArchiveImages,
   restoreOdtTableHeaders,
@@ -74,6 +75,7 @@ const CON_RAYAS = `# Catálogo\n\nIntroducción con *cursiva* y **negrita**.\n\n
   ).join('\n')}`;
 
 const DOCUMENTS = {
+  'perfil Markdown completo': await readFile(new URL('./fixtures/markdown-profile.md', import.meta.url), 'utf8'),
   'texto simple': '# Título\n\nUn párrafo normal.\n',
   'acentos y emoji': '# Año 2026 — ñandú 🎓\n\nCafé, camión, ¿qué tal?\n',
   'matemáticas': '# Mates\n\nEn línea $a^2+b^2=c^2$.\n\n$$\\int_0^1 x^2\\,dx = \\frac{1}{3}$$\n',
@@ -92,6 +94,136 @@ const DOCUMENTS = {
   'rayas --- entre secciones': CON_RAYAS,
   'front matter propio': '---\ntitle: "Título propio"\nlang: gl\n---\n\n# Cuerpo\n\nTexto.\n',
 };
+
+function profileNodes(value, type) {
+  if (!value || typeof value !== 'object') return [];
+  return [...(value.t === type ? [value] : []), ...Object.values(value).flatMap(child => profileNodes(child, type))];
+}
+
+function profileText(value) {
+  if (!value || typeof value !== 'object') return '';
+  if (value.t === 'Str') return value.c;
+  if (['Space', 'SoftBreak', 'LineBreak'].includes(value.t)) return ' ';
+  if (['Code', 'Math'].includes(value.t)) return value.c[1];
+  return (Array.isArray(value) ? value : [value.c]).map(profileText).join('');
+}
+
+function assertProfileTables(ast, format) {
+  const tables = profileNodes(ast.blocks, 'Table');
+  const rows = tables.map(({c}) => [
+    ...c[3][1], ...c[4].flatMap(body => [...body[2], ...body[3]]), ...c[5][1],
+  ].map(row => row[1].map(cell => profileText(cell[4]))));
+  assert.deepEqual(rows, [
+    [['Sustancia', 'Área'], ['H2O', 'm2']],
+    [['Izquierda', 'Centro', 'Derecha'], ['Negrita en celda', 'Cursiva en celda', '123'],
+      ['A | B', 'Enlace en celda', '45'], ['Vacía a la derecha', 'H2O', ''], ['Código en celda', 'a + b', '7']],
+  ], `${format}: posición y contenido de cada celda`);
+}
+
+test('perfil Markdown: puntuación, enlaces y estructura llegan a Pandoc', async () => {
+  const source = DOCUMENTS['perfil Markdown completo'];
+  const result = await runPandoc(`-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --mathjax`, normalizeThematicBreaks(source));
+  assert.ok(result.bytes.length, result.stderr.join('\n'));
+  const html = new TextDecoder().decode(result.bytes);
+  assert.ok(html.includes('"Texto" ... -- --- y «comillas»…'), html);
+  assert.match(html, /href="https:\/\/example.org\/bare"/);
+  for (const tag of ['h1', 'strong', 'em', 'del', 'sub', 'sup', 'table', 'blockquote', 'pre', 'img']) {
+    assert.match(html, new RegExp(`<${tag}[\\s>]`), tag);
+  }
+  assert.equal((html.match(/type="checkbox"/g) || []).length, 2);
+  assert.equal((html.match(/class="math /g) || []).length, 4);
+  assert.match(html, /Explicación con/);
+  assert.match(html, /data-cites="ejemplo2026"/);
+  assert.equal((html.match(/data-cites=/g) || []).length, 5, 'las cinco formas de cita');
+  const citationFiles = {
+    'markdown-profile.bib': new Uint8Array(await readFile(new URL('./fixtures/markdown-profile.bib', import.meta.url))),
+    'style.csl': new Uint8Array(await readFile(new URL('../csl/apa.csl', import.meta.url))),
+  };
+  for (const format of ['docx', 'odt', 'epub3']) {
+    const exported = await runPandoc(buildExportArgs(format, { mathml: format === 'epub3' })
+      + ' --citeproc --bibliography=/markdown-profile.bib --csl=/style.csl', normalizeThematicBreaks(source), citationFiles);
+    assert.ok(exported.bytes.length, `${format}: ${exported.stderr.join('\n')}`);
+    const files = readZipEntries(exported.bytes);
+    const xml = format === 'epub3'
+      ? [...files].filter(([name]) => /\.xhtml$/.test(name)).map(([, bytes]) => bytes.toString('utf8')).join('\n')
+      : files.get(format === 'docx' ? 'word/document.xml' : 'content.xml')?.toString('utf8');
+    assert.ok(xml?.includes('Final del documento.'), `${format}: falta el final`);
+    assert.ok(xml.includes('... -- ---'), `${format}: puntuación modificada`);
+    // Leer el archivo producido permite comprobar las celdas, no solo el ZIP.
+    let reread;
+    if (format === 'odt') {
+      // La ruta real de la aplicación repara las fórmulas y recupera las
+      // cabeceras que el lector ODT de Pandoc omite (odt-tables.js).
+      const imported = await runPandoc(buildImportArgs('odt'), await prepareOdtForImport(exported.bytes));
+      assert.ok(imported.bytes.length, imported.stderr.join('\n'));
+      const markdown = await restoreOdtTableHeaders(new TextDecoder().decode(imported.bytes), exported.bytes);
+      reread = await runPandoc(`-f ${MARKDOWN_READER_NO_AUTO_IDS} -t json`, markdown);
+    } else {
+      reread = await runPandoc(`-f ${format === 'epub3' ? 'epub' : format} -t json`, exported.bytes);
+    }
+    assert.ok(reread.bytes.length, `${format}: ${reread.stderr.join('\n')}`);
+    const ast = JSON.parse(new TextDecoder().decode(reread.bytes));
+    assertProfileTables(ast, format);
+    // Office vuelve a escribir a^2 como a^{2}: son la misma fórmula.
+    const formulas = profileNodes(ast.blocks, 'Math');
+    assert.deepEqual(formulas.map(n => n.c[1].trim().replace(/\^\{(\d+)\}/g, '^$1')),
+      ['a^2', 'b^2', 'c^2', 'd^2'], `${format}: contenido de las cuatro fórmulas editables`);
+    // El lector ODT de Pandoc devuelve todas sus ecuaciones como DisplayMath;
+    // no sirve para comprobar el modo original. Se documenta esta limitación.
+    if (format === 'odt') {
+      const frames = [...xml.matchAll(/<draw:frame\b([^>]*)>([\s\S]*?)<\/draw:frame>/g)]
+        .map(frame => [frame[0], frame[1], frame[2].match(/<draw:object\b[^>]*xlink:href="(Formula-[^"]+)"/)?.[1]])
+        .filter(frame => frame[2]);
+      assert.deepEqual(frames.map(frame => frame[1].match(/text:anchor-type="([^"]+)"/)?.[1]),
+        ['as-char', 'as-char', 'paragraph', 'paragraph'], 'ODT: dos fórmulas en línea y dos de bloque en el archivo');
+      assert.deepEqual(frames.map(frame => files.get(`${frame[2]}content.xml`)?.toString('utf8').match(/display="([^"]+)"/)?.[1]),
+        ['inline', 'inline', 'block', 'block'], 'ODT: el MathML también conserva el modo');
+    } else assert.deepEqual(formulas.map(n => n.c[0].t),
+      ['InlineMath', 'InlineMath', 'DisplayMath', 'DisplayMath'], `${format}: modo de las fórmulas`);
+    assert.equal(profileNodes(ast.blocks, 'Image').length, 1, `${format}: imagen conservada`);
+    assert.equal(profileNodes(ast.blocks, 'Note').length, 3, `${format}: llamadas a notas`);
+  }
+});
+
+test('perfil Markdown: reimportar ODT sin biblioteca no convierte sus citas en fórmulas', async () => {
+  const source = normalizeThematicBreaks(DOCUMENTS['perfil Markdown completo']);
+  const exported = await runPandoc(buildExportArgs('odt'), source);
+  assert.ok(exported.bytes.length, exported.stderr.join('\n'));
+  const imported = await runPandoc(buildImportArgs('odt'), await prepareOdtForImport(exported.bytes));
+  assert.ok(imported.bytes.length, imported.stderr.join('\n'));
+  const markdown = restoreImportedCitations(new TextDecoder().decode(imported.bytes));
+  const parsed = await runPandoc(`-f ${MARKDOWN_READER_NO_AUTO_IDS} -t json`, markdown);
+  assert.ok(parsed.bytes.length, parsed.stderr.join('\n'));
+  const ast = JSON.parse(new TextDecoder().decode(parsed.bytes));
+  assert.equal(profileNodes(ast.blocks, 'Math').length, 4, 'solo las cuatro fórmulas reales');
+  assert.equal(profileNodes(ast.blocks, 'Cite').length, 5, 'las cinco formas de cita vuelven como citas');
+});
+
+test('perfil Markdown: las cinco formas de cita conservan modo, claves y página', async () => {
+  const source = normalizeThematicBreaks(DOCUMENTS['perfil Markdown completo']);
+  const parsed = await runPandoc(`-f ${MARKDOWN_READER_NO_AUTO_IDS} -t json`, source);
+  assert.ok(parsed.bytes.length, parsed.stderr.join('\n'));
+  const ast = JSON.parse(new TextDecoder().decode(parsed.bytes));
+  assertProfileTables(ast, 'Markdown');
+  assert.deepEqual(profileNodes(ast.blocks, 'Cite').map(n => n.c[0].map(c => [c.citationId, c.citationMode.t, profileText(c.citationSuffix)])), [
+    [['ejemplo2026', 'NormalCitation', '']], [['ejemplo2026', 'AuthorInText', '']],
+    [['ejemplo2026', 'SuppressAuthor', '']],
+    [['ejemplo2026', 'NormalCitation', ''], ['segunda2025', 'NormalCitation', '']],
+    [['ejemplo2026', 'NormalCitation', ', p. 12']],
+  ]);
+  const result = await runPandoc(`-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --citeproc --bibliography=/markdown-profile.bib --csl=/style.csl`, source, {
+    'markdown-profile.bib': new Uint8Array(await readFile(new URL('./fixtures/markdown-profile.bib', import.meta.url))),
+    'style.csl': new Uint8Array(await readFile(new URL('../csl/apa.csl', import.meta.url))),
+  });
+  assert.ok(result.bytes.length, result.stderr.join('\n'));
+  const html = new TextDecoder().decode(result.bytes);
+  assert.match(html, /Ejemplo \(2026\)/);
+  assert.match(html, /\(2026\)/);
+  assert.match(html, /Ejemplo, 2026, p\. 12/);
+  assert.match(html, /Manual de prueba del perfil/);
+  assert.match(html, /Segunda fuente de prueba/);
+  assert.equal((html.match(/class="csl-entry"/g) || []).length, 2, 'dos referencias, sin duplicarlas por cada cita');
+});
 
 for (const [label, markdown] of Object.entries(DOCUMENTS)) {
   test(`exporta EPUB no vacío: ${label}`, { timeout: 180000 }, async () => {

@@ -48,6 +48,8 @@ Pushing a `v*` tag triggers `.github/workflows/desktop.yml`: installers are buil
 
 ## Testing notes
 
+- The supported Markdown contract and its limits are in `MARKDOWN-PROFILE.md`; the shared browser/export sample is `test/fixtures/markdown-profile.md`. Extend both when adding syntax. Preview and export preserve literal punctuation (`-smart`); unresolved bracketed citations must survive visual editing without becoming escaped math delimiters.
+
 - Runner is built-in `node:test`; no test framework dependency. Export e2e goes through `test/helpers/pandoc-runner.mjs` with the same WASI shim and argument string as the browser.
 - Pandoc reports internal failure by leaving its output file empty, not by throwing: an export can "succeed" while producing 0 bytes. Assert on actual output bytes, never on absence of an exception.
 - Any change to an export path: run `npm run test:all`. Adding an export format or changing how Markdown reaches Pandoc: add a sample document to the e2e suite.

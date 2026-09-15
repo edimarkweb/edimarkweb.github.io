@@ -14,6 +14,7 @@ import {
   dropDuplicateEpubTitle,
   collapseThematicBreaks,
   expandDisplayMath,
+  restoreImportedCitations,
   stripUnsafeMarkup,
   normalizeNewlines,
   normalizeThematicBreaks,
@@ -1120,7 +1121,7 @@ async function convertLatexToMarkdown({
     markdownResult = ensureMarkdownTitle(markdownResult, metadata);
     markdownResult = stripPandocHeadingIds(markdownResult);
     triggerStatus(onStatus, 'latex_import_done', 'Conversión a Markdown completada.');
-    return trimInlineMath(normalizeNewlines(markdownResult));
+    return restoreImportedCitations(trimInlineMath(normalizeNewlines(markdownResult)));
   } catch (error) {
     triggerStatus(onStatus, 'latex_import_error', 'No se pudo convertir el LaTeX.');
     throw error;
@@ -1235,7 +1236,7 @@ async function importToMarkdown({
       línea, que es lo que estas dos dan por hecho.
     */
     const normalized = trimInlineMath(normalizeNewlines(markdownResult));
-    return collapseThematicBreaks(expandDisplayMath(normalized));
+    return restoreImportedCitations(collapseThematicBreaks(expandDisplayMath(normalized)));
   } catch (error) {
     triggerStatus(onStatus, 'import_file_error', 'No se pudo importar el archivo.');
     throw error;

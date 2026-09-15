@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '3.0.5';
+const APP_VERSION = '3.1.0';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -524,7 +524,11 @@ function cleanWordTables(container) {
         table.querySelectorAll('colgroup, col').forEach((col) => col.remove());
         table.querySelectorAll('thead').forEach((section) => unwrapElement(section));
         table.querySelectorAll('tr, td, th').forEach((cell) => {
+            const alignment = (cell.style.textAlign || cell.getAttribute('align') || '').toLowerCase();
             removeAttributes(cell, TABLE_SANITIZE_ATTRS);
+            // Un pegado puede traer text-align y Marked usa align; Turndown
+            // lee este último. Conservar solo los tres valores de Markdown.
+            if (/^(left|center|right)$/.test(alignment)) cell.setAttribute('align', alignment);
             cell.querySelectorAll('p').forEach((p) => unwrapElement(p));
             cell.querySelectorAll('br').forEach((br) => {
                 const className = (br.getAttribute('class') || '').toLowerCase();
@@ -554,6 +558,7 @@ function cleanWordTables(container) {
                 // Del mismo documento que la celda: el contenedor puede ser inerte.
                 const th = (cell.ownerDocument || document).createElement('th');
                 removeAttributes(th, TABLE_SANITIZE_ATTRS);
+                if (cell.hasAttribute('align')) th.setAttribute('align', cell.getAttribute('align'));
                 th.innerHTML = cell.innerHTML;
                 cell.replaceWith(th);
             });
@@ -5410,7 +5415,6 @@ function previewCitationLabel(source, entries = previewCitationEntries()) {
 function renderPreviewCitations(container) {
     if (!container || typeof document.createTreeWalker !== 'function') return;
     const entries = previewCitationEntries();
-    if (!entries.length) return;
     const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
     const textNodes = [];
     while (walker.nextNode()) textNodes.push(walker.currentNode);
@@ -5426,7 +5430,10 @@ function renderPreviewCitations(container) {
         let changed = false;
         const fragment = document.createDocumentFragment();
         while ((match = citationPattern.exec(text))) {
-            const label = previewCitationLabel(match[0], entries);
+            // Una cita aún sin biblioteca también debe conservar su sintaxis:
+            // Turndown escapa sus corchetes y \[...\] se convertiría en fórmula.
+            const label = previewCitationLabel(match[0], entries)
+                || (/^\[\s*-?@[A-Za-z0-9_]/.test(match[0]) ? match[0] : '');
             if (!label) continue;
             fragment.append(document.createTextNode(text.slice(cursor, match.index)));
             const citation = document.createElement('span');
@@ -5674,6 +5681,9 @@ function updateHtml() {
         const parsedHtml = marked.parse(footnotes.markdown) + renderPreviewFootnotes(footnotes.notes);
         const restoredHtml = restoreMathSegments(parsedHtml, mathSegments);
         htmlOutput.replaceChildren(previewFragmentFromHtml(restoredHtml));
+        htmlOutput.querySelectorAll('li input[type="checkbox"]').forEach(input => {
+            if (!input.closest('[data-edimark-footnotes]')) input.disabled = false;
+        });
         fitWidePreformattedBlocks(htmlOutput);
 
         // Las rutas relativas se resuelven sobre el DOM ya montado; el HTML
@@ -6053,7 +6063,7 @@ function applyInlineCodeToPreview() {
     const selection = window.getSelection();
     if (!selection || !selection.rangeCount) return false;
     if (selection.isCollapsed) {
-        return insertMarkdownIntoPreview('```\n\n```', { repaint: true });
+        return insertMarkdownIntoPreview(inlineCodeMarkdown(getTranslation('code_content_label', 'Código')), { inline: true });
     }
     const range = selection.getRangeAt(0);
     let node = range.startContainer;
@@ -6195,6 +6205,32 @@ function applyFormatToPreview(format) {
         try { return document.execCommand(command, false, value); } catch (_) { return false; }
     };
     switch (format) {
+        case 'line-break': run('insertLineBreak'); break;
+        case 'code-block': toggleCodeModal(true, selectionTextForCode()); return true;
+        case 'list-task': {
+            let block = previewBlockOfSelection();
+            if (!block?.closest('li')) run('insertUnorderedList');
+            block = previewBlockOfSelection();
+            const item = block?.closest('li');
+            if (!item) return false;
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
+            const items = selection.isCollapsed ? [item]
+                : [...item.parentElement.children].filter(li => range.intersectsNode(li));
+            const checkboxOf = li => [...li.querySelectorAll('input[type="checkbox"]')].find(input => input.closest('li') === li);
+            const remove = items.every(li => checkboxOf(li));
+            items.forEach(li => {
+                const existing = checkboxOf(li);
+                if (remove) existing.remove();
+                else if (!existing) {
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.disabled = false;
+                    (li.firstElementChild?.tagName === 'P' ? li.firstElementChild : li).prepend(checkbox, document.createTextNode(' '));
+                }
+            });
+            break;
+        }
         case 'bold': run('bold'); break;
         case 'italic': run('italic'); break;
         case 'strikethrough': run('strikeThrough'); break;
@@ -6326,12 +6362,24 @@ function applyFormat(format) {
           markdownEditor.replaceSelection('\n\n---\n\n');
           break;
         case 'code':
-          if (hadSelection) markdownEditor.replaceSelection(`\`\`\`\n${selectedText}\n\`\`\`` , 'around');
-          else {
-            markdownEditor.replaceSelection('\`\`\`\n\n\`\`\`');
-            markdownEditor.setCursor({ line: cursor.line + 1, ch: 0 });
-          }
+          markdownEditor.replaceSelection(inlineCodeMarkdown(selectedText || getTranslation('code_content_label', 'Código')));
           break;
+        case 'code-block': toggleCodeModal(true, selectedText); return;
+        case 'line-break': markdownEditor.replaceSelection('  \n'); break;
+        case 'list-task': {
+            const lines = markdownEditor.getValue().split('\n');
+            const endLine = cursor.line + selectedText.split('\n').length - 1;
+            const chosen = lines.slice(cursor.line, endLine + 1);
+            const remove = chosen.some(line => line.trim())
+                && chosen.filter(line => line.trim()).every(line => /^[ \t]*- \[[ xX]\] /.test(line));
+            const replacement = chosen.map(line => {
+                if (!line.trim() && chosen.length > 1) return line;
+                if (remove) return line.replace(/^([ \t]*)- \[[ xX]\] /, '$1- ');
+                return line.replace(/^([ \t]*)(?:(?:[-+*]|\d+[.)])\s+)?(?:\[[ xX]\]\s+)?(.*)$/, '$1- [ ] $2');
+            }).join('\n');
+            markdownEditor.replaceRange(replacement, {line:cursor.line, ch:0}, {line:endLine, ch:lines[endLine].length});
+            break;
+        }
         case 'latex-inline':
         case 'latex-inline-dollar':
           if (hadSelection) markdownEditor.replaceSelection(`$${selectedText}$`, 'around');
@@ -6416,15 +6464,110 @@ function focusModalField(field, { select = false } = {}) {
     field.focus();
     if (select && typeof field.select === 'function') field.select();
     const reintentar = () => {
-        if (document.activeElement !== field) field.focus();
+        const active = document.activeElement;
+        if (active === field) return;
+        // Si ya se ha pasado a otro campo del mismo cuadro, lo escrito ahí se perdería.
+        const dialog = field.closest('[id$="modal-overlay"]');
+        if (dialog && active && active !== document.body && dialog.contains(active)) return;
+        field.focus();
     };
     if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(reintentar);
     else setTimeout(reintentar, 0);
 }
 
+let tableModalTarget = null;
+
+function selectedMarkdownTable() {
+    if (!window.marked) return null;
+    const line = markdownEditor.getCursor().line;
+    let offset = 0;
+    for (const token of marked.lexer(markdownEditor.getValue())) {
+        const count = countNewlines(token.raw || '');
+        if (token.type === 'table' && line >= offset && line < offset + token.raw.trimEnd().split('\n').length) {
+            return { kind:'markdown', line:offset + 1, separator:token.raw.split('\n')[1],
+                columns:token.header.map(cell => cell.text), align:token.align,
+                rows:token.rows.length, docId:currentId };
+        }
+        offset += count;
+    }
+    return null;
+}
+
+function renderTableAlignments() {
+    const container = document.getElementById('table-alignments');
+    const previous = [...container.querySelectorAll('select')].map(select => select.value);
+    const count = tableModalTarget ? tableModalTarget.columns.length
+        : Math.min(50, Math.max(1, Number(document.getElementById('table-cols').value) || 1));
+    container.replaceChildren();
+    for (let i = 0; i < count; i++) {
+        const label = document.createElement('label');
+        label.className = 'table-column-alignment';
+        const name = document.createElement('span');
+        name.textContent = formatTranslation('table_column_label', 'Columna {number}', {number:i + 1})
+            + (tableModalTarget?.columns[i] ? `: ${tableModalTarget.columns[i]}` : '');
+        const select = document.createElement('select');
+        select.id = `table-align-${i}`;
+        for (const [value, key, fallback] of [['', 'table_align_default', 'Predeterminada'],
+            ['left', 'table_align_left', 'Izquierda'], ['center', 'table_align_center', 'Centro'], ['right', 'table_align_right', 'Derecha']]) {
+            select.add(new Option(getTranslation(key, fallback), value));
+        }
+        select.value = previous[i] ?? tableModalTarget?.align[i] ?? '';
+        label.append(name, select);
+        container.append(label);
+    }
+}
+
 function toggleTableModal(show) {
     document.getElementById('table-modal-overlay').style.display = show ? 'flex' : 'none';
-    if (show) focusModalField(document.getElementById('table-cols'), { select: true });
+    if (!show) { tableModalTarget = null; return; }
+    tableModalTarget = null;
+    if (isPreviewFormatTarget() && restorePreviewSelection()) {
+        const table = previewBlockOfSelection()?.closest('table');
+        if (table?.rows.length) {
+            tableModalTarget = {kind:'preview', table, docId:currentId,
+                columns:[...table.rows[0].cells].map(cell => cell.textContent),
+                align:[...table.rows[0].cells].map(cell => cell.style.textAlign || cell.getAttribute('align') || ''),
+                rows:table.rows.length - 1};
+        }
+    } else tableModalTarget = selectedMarkdownTable();
+    const cols = document.getElementById('table-cols');
+    const rows = document.getElementById('table-rows');
+    cols.value = tableModalTarget?.columns.length || 3;
+    rows.value = tableModalTarget ? tableModalTarget.rows : 2;
+    cols.disabled = rows.disabled = !!tableModalTarget;
+    cols.max = 50;
+    rows.max = 1000;
+    const title = document.getElementById('table-modal-title');
+    title.dataset.i18nKey = tableModalTarget ? 'edit_table_modal_title' : 'create_table_modal_title';
+    title.textContent = getTranslation(title.dataset.i18nKey, tableModalTarget ? 'Alinear tabla' : 'Crear tabla');
+    const action = document.getElementById('create-table-btn');
+    action.dataset.i18nKey = tableModalTarget ? 'table_apply_btn' : 'create_btn';
+    action.textContent = getTranslation(action.dataset.i18nKey, tableModalTarget ? 'Aplicar' : 'Crear');
+    document.getElementById('table-alignments').replaceChildren();
+    renderTableAlignments();
+    focusModalField(tableModalTarget ? document.getElementById('table-align-0') : cols, {select:true});
+}
+
+function inlineCodeMarkdown(text) {
+    const value = text.replace(/\n/g, ' ');
+    const size = Math.max(0, ...(value.match(/`+/g) || []).map(run => run.length)) + 1;
+    const fence = '`'.repeat(size);
+    const pad = value.startsWith('`') || value.endsWith('`') ? ' ' : '';
+    return `${fence}${pad}${value}${pad}${fence}`;
+}
+
+function selectionTextForCode() {
+    return window.getSelection()?.toString() || '';
+}
+
+function toggleCodeModal(show, text = '') {
+    document.getElementById('code-modal-overlay').style.display = show ? 'flex' : 'none';
+    if (show) {
+        document.getElementById('code-language').value = '';
+        document.getElementById('code-language').setCustomValidity('');
+        document.getElementById('code-content').value = text;
+        focusModalField(document.getElementById('code-content'));
+    }
 }
 
 function toggleLinkModal(show, presetText = '') {
@@ -6432,6 +6575,7 @@ function toggleLinkModal(show, presetText = '') {
     if (show) {
         document.getElementById('link-text').value = presetText;
         document.getElementById('link-url').value  = '';
+        document.getElementById('link-title').value = '';
         focusModalField(document.getElementById(presetText ? 'link-url' : 'link-text'), { select: true });
     }
 }
@@ -7544,7 +7688,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
     if (format === 'pdf') {
         try {
-            const { importPdf } = await import('./pdf-import.js?v=3.0.5');
+            const { importPdf } = await import('./pdf-import.js?v=3.1.0');
             const name = getSafeDocumentName(file.name);
             // Crear el documento ocurre dentro del diálogo, que se queda a la
             // vista avisando: con un informe entero no es cosa de un instante.
@@ -10567,6 +10711,9 @@ window.onload = async () => {
     if (window.marked && typeof marked.use === 'function') {
         const scriptTokens = (lexer, text) => lexer.inlineTokens(text.replace(/\\ /g, ' '));
         marked.use({
+            gfm: true,
+            breaks: false,
+            pedantic: false,
             extensions: [{
                 name: 'subscript',
                 level: 'inline',
@@ -10688,6 +10835,13 @@ window.onload = async () => {
                     && typeof node.closest === 'function'
                     && !!node.closest('li'),
                 replacement: (content, node) => (node.checked ? '[x] ' : '[ ] '),
+            });
+            turndownService.addRule('edimarkTableCell', {
+                filter: ['th', 'td'],
+                replacement: (content, node) => {
+                    const prefix = node === node.parentNode.firstElementChild ? '| ' : ' ';
+                    return prefix + content.replace(/\|/g, '\\|') + ' |';
+                },
             });
         }
         // El complemento GFM devuelve una sola virgulilla; la barra escribe la
@@ -11152,9 +11306,67 @@ window.onload = async () => {
     });
 
     // --- Eventos de la barra de herramientas ---
+    const listContainer = document.getElementById('list-dropdown-container');
+    const listMenu = document.getElementById('list-options');
+    const listToggle = document.getElementById('list-menu-btn');
+    const listApply = document.getElementById('list-apply-btn');
+    const listTypes = {
+        'list-ul': ['list', 'ul_list_btn_title'],
+        'list-ol': ['list-ordered', 'ol_list_btn_title'],
+        'list-task': ['list-checks', 'task_list_btn_title']
+    };
+    let lastListType = 'list-ul';
+    const rememberListType = (type, persist = true) => {
+        if (!Object.hasOwn(listTypes, type)) return;
+        lastListType = type;
+        const [icon, key] = listTypes[type];
+        listApply.dataset.i18nKey = key;
+        listApply.title = getTranslation(key, type);
+        listApply.replaceChildren(document.createElement('i'));
+        listApply.firstChild.setAttribute('data-lucide', icon);
+        lucide.createIcons();
+        listMenu.querySelectorAll('[data-format]').forEach(button => {
+            button.setAttribute('aria-checked', String(button.dataset.format === type));
+        });
+        if (persist) try { localStorage.setItem('edimarkweb-list-type', type); } catch (_) { /* optional preference */ }
+    };
+    try { rememberListType(localStorage.getItem('edimarkweb-list-type') || 'list-ul', false); } catch (_) { /* storage unavailable */ }
+    const closeListMenu = () => {
+        listMenu.classList.add('hidden');
+        listToggle.setAttribute('aria-expanded', 'false');
+    };
+    const openListMenu = (focus = false) => {
+        listMenu.classList.remove('hidden');
+        listToggle.setAttribute('aria-expanded', 'true');
+        fitMenuInViewport(listMenu);
+        if (focus) listMenu.querySelector('[aria-checked="true"]').focus();
+    };
+    listApply.addEventListener('click', () => { closeListMenu(); applyFormat(lastListType); });
+    listToggle.addEventListener('click', () => {
+        if (listMenu.classList.contains('hidden')) openListMenu(true);
+        else closeListMenu();
+    });
+    listContainer.addEventListener('keydown', event => {
+        const buttons = [...listMenu.querySelectorAll('button')];
+        const index = buttons.indexOf(document.activeElement);
+        if (event.key === 'Escape') { closeListMenu(); listToggle.focus(); }
+        else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+            openListMenu();
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1
+                : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
+            buttons[next].focus();
+        } else if (event.key === 'Tab') { closeListMenu(); return; }
+        else return;
+        event.preventDefault();
+    });
+    document.addEventListener('click', event => { if (!listContainer.contains(event.target)) closeListMenu(); });
     toolbar.addEventListener('click', (e) => {
         const button = e.target.closest('button');
         if (button && button.dataset.format) {
+            if (Object.hasOwn(listTypes, button.dataset.format)) {
+                rememberListType(button.dataset.format);
+                closeListMenu();
+            }
             applyFormat(button.dataset.format);
             if (button.dataset.format.startsWith('heading-')) {
                 headingOptions.classList.add('hidden');
@@ -11485,6 +11697,13 @@ window.onload = async () => {
     }
     printBtn.addEventListener('click', printPreview);
     if (htmlOutput) {
+        htmlOutput.addEventListener('change', event => {
+            const input = event.target;
+            if (!input.matches('li input[type="checkbox"]') || input.closest('[data-edimark-footnotes]')) return;
+            input.toggleAttribute('checked', input.checked);
+            forceMarkdownUpdate = true;
+            updateMarkdown();
+        });
         htmlOutput.addEventListener('focusin', () => setFormatTarget('preview'));
         /*
           La selección de la hoja se guarda mientras se tiene: al pulsar un
@@ -14297,6 +14516,30 @@ window.onload = async () => {
     }
 
     createTableBtn.addEventListener('click', () => {
+        const align = [...document.querySelectorAll('#table-alignments select')].map(select => select.value);
+        const separators = { '':'---', left:':---', center:':---:', right:'---:' };
+        if (tableModalTarget) {
+            if (tableModalTarget.docId !== currentId) { toggleTableModal(false); return; }
+            if (tableModalTarget.kind === 'preview') {
+                if (!tableModalTarget.table.isConnected) { toggleTableModal(false); return; }
+                for (const row of tableModalTarget.table.rows) [...row.cells].forEach((cell, i) => {
+                    cell.style.removeProperty('text-align');
+                    if (align[i]) cell.setAttribute('align', align[i]);
+                    else cell.removeAttribute('align');
+                });
+                notifyPreviewEdited({repaint:true});
+            } else {
+                const {line, separator} = tableModalTarget;
+                if (markdownEditor.getValue().split('\n')[line] !== separator) { toggleTableModal(false); return; }
+                const indentation = separator.match(/^[ \t]*/)[0];
+                markdownEditor.replaceRange(`${indentation}| ${align.map(value => separators[value]).join(' | ')} |`,
+                    {line, ch:0}, {line, ch:separator.length});
+                markdownEditor.focus();
+            }
+            toggleTableModal(false);
+            return;
+        }
+        if (!document.getElementById('table-cols').reportValidity() || !document.getElementById('table-rows').reportValidity()) return;
         const cols = parseInt(document.getElementById('table-cols').value, 10) || 2;
         const rows = parseInt(document.getElementById('table-rows').value, 10) || 1;
         const headerLabel = getTranslation('table_header_placeholder', 'Cabecera');
@@ -14304,7 +14547,7 @@ window.onload = async () => {
         let tableMd = '\n|';
         for (let i = 1; i <= cols; i++) tableMd += ` ${headerLabel} ${i} |`;
         tableMd += '\n|';
-        for (let i = 0; i < cols; i++) tableMd += '------------|';
+        for (let i = 0; i < cols; i++) tableMd += ` ${separators[align[i] || '']} |`;
         tableMd += '\n';
         for (let r = 0; r < rows; r++) {
             tableMd += '|';
@@ -14316,6 +14559,27 @@ window.onload = async () => {
     });
     cancelTableBtn.addEventListener('click', () => toggleTableModal(false));
     tableModalOverlay.addEventListener('click', (e) => { if (e.target === tableModalOverlay) toggleTableModal(false); });
+    document.getElementById('table-cols').addEventListener('input', renderTableAlignments);
+    document.getElementById('cancel-code-btn').addEventListener('click', () => toggleCodeModal(false));
+    document.getElementById('code-modal-overlay').addEventListener('click', event => {
+        if (event.target.id === 'code-modal-overlay') toggleCodeModal(false);
+    });
+    document.getElementById('insert-code-btn').addEventListener('click', () => {
+        const language = document.getElementById('code-language');
+        language.setCustomValidity(/^[A-Za-z0-9_+.-]*$/.test(language.value.trim()) ? ''
+            : getTranslation('code_language_invalid', 'Usa un nombre de lenguaje sin espacios, por ejemplo python.'));
+        if (!language.reportValidity()) return;
+        const code = document.getElementById('code-content').value;
+        const size = Math.max(2, ...(code.match(/`+/g) || []).map(run => run.length)) + 1;
+        const fence = '`'.repeat(size);
+        insertMarkdownContent(`\n\n${fence}${language.value.trim()}\n${code}\n${fence}\n\n`);
+        toggleCodeModal(false);
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        if (tableModalOverlay.style.display === 'flex') toggleTableModal(false);
+        if (document.getElementById('code-modal-overlay').style.display === 'flex') toggleCodeModal(false);
+    });
     
     [saveBtn, saveMenuBtn].filter(Boolean).forEach((button) => {
         button.addEventListener('click', async () => {
@@ -14335,7 +14599,8 @@ window.onload = async () => {
     insertLinkBtn.addEventListener('click', () => {
       const text = document.getElementById('link-text').value.trim() || 'enlace';
       const url  = document.getElementById('link-url').value.trim()  || '#';
-      insertMarkdownContent(`[${text}](${url})`, { inline: true });
+      const title = document.getElementById('link-title').value.trim().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      insertMarkdownContent(`[${text}](${url}${title ? ` "${title}"` : ''})`, { inline: true });
       toggleLinkModal(false);
     });
     cancelLinkBtn.addEventListener('click', () => toggleLinkModal(false));

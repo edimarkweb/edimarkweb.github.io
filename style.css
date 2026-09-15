@@ -1205,6 +1205,17 @@ body.desktop-mode .markdown-textarea {
   propia caja, y la página se queda quieta. Los bloques de código ya lo hacían
   por su cuenta.
 */
+/* Marked expresa la alineación con el atributo align. La tipografía de
+   Tailwind lo sobreescribe con text-align: start si no se declara aquí. */
+.preview-sheet :is(th, td)[align="left"] { text-align: left; }
+.preview-sheet :is(th, td)[align="center"] { text-align: center; }
+.preview-sheet :is(th, td)[align="right"] { text-align: right; }
+
+.table-column-alignment { display: flex; align-items: center; gap: 0.75rem; }
+.table-column-alignment span { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 0.875rem; }
+.table-column-alignment select { max-width: 55%; border: 1px solid #94a3b8; border-radius: 0.375rem; padding: 0.375rem; background: transparent; color: inherit; }
+.dark .table-column-alignment select { background: #334155; }
+
 .preview-sheet table {
     display: block;
     max-width: 100%;
@@ -2079,6 +2090,23 @@ body.desktop-mode .markdown-textarea {
     padding: 0.5rem; border-radius: 0.375rem; color: #475569;
     transition: background-color 0.2s, color 0.2s;
 }
+.list-split-button { display: flex; align-items: center; }
+#list-menu-btn { padding-inline: 4px; }
+#list-menu-btn svg { width: 14px; }
+#list-options { position: absolute; top: 100%; left: 0; z-index: 40; width: 190px; max-width: calc(100vw - 24px); padding: 4px; border: 1px solid #94a3b8; border-radius: 8px; background: white; color: #334155; box-shadow: 0 6px 18px #0003; }
+#list-options button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 12px; text-align: left; border-radius: 4px; }
+#list-options svg { width: 20px; height: 20px; }
+#list-options button:hover, #list-options button:focus-visible { background: #e2e8f0; }
+#list-options [aria-checked="true"] { font-weight: 700; background: #dbeafe; }
+.dark #list-options { background: #1e293b; color: #e2e8f0; }
+.dark #list-options button:hover, .dark #list-options button:focus-visible, .dark #list-options [aria-checked="true"] { background: #334155; }
+@media (max-width: 768px), (pointer: coarse) {
+    #list-dropdown-container { grid-column: span 2; }
+    #list-dropdown-container .toolbar-btn { min-width: 44px; min-height: 44px; }
+}
+@media (max-width: 359px) {
+    #list-dropdown-container { grid-column: span 3; }
+}
 .toolbar-btn:hover, .copy-btn:hover { background-color: #e2e8f0; color: #1e293b; }
 .dark .toolbar-btn, .dark .copy-btn { color: #94a3b8; }
 .dark .toolbar-btn:hover, .dark .copy-btn:hover { background-color: #334155; color: #e2e8f0; }
@@ -2685,6 +2713,12 @@ html.is-tab-dragging * {
 .dark [id$="-modal-overlay"] input[type="number"]::placeholder,
 .dark [id$="-modal-overlay"] textarea::placeholder {
   color: #94a3b8; /* slate-300/400, legible en oscuro */
+}
+
+/* Typography añade comillas decorativas; la hoja muestra el código compuesto. */
+.prose code::before,
+.prose code::after {
+  content: none;
 }
 
 code {

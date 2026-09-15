@@ -2,283 +2,150 @@
 
 # Manual d'EdiMarkdown
 
-EdiMarkdown és un **editor de textos en Markdown** pensat per a docents i creadors de contingut: s'escriu de pressa, s'exporta a Word, LibreOffice, EPUB, HTML, LaTeX i PDF, i admet fórmules matemàtiques. Funciona **al navegador**, sense instal·lar res, i també com a **aplicació d'escriptori** per a Linux, Windows i macOS. En tots dos casos la feina passa al teu equip: ni els documents ni les imatges en surten.
+EdiMarkdown és un editor de textos en Markdown per a docents i creadors de contingut. S'escriu de pressa, importa documents de Word, LibreOffice, EPUB, HTML, LaTeX o PDF, i exporta a aquests mateixos formats, amb fórmules matemàtiques incloses. Funciona al navegador, sense instal·lar res, i també com a aplicació d'escriptori per a Linux, Windows i macOS. En els dos casos la feina queda al teu equip: ni els documents ni les imatges en surten.
 
 ## Per començar
 
-Escriu al plafó de l'esquerra i veuràs el document composant-se a la dreta. No cal saber Markdown: els botons de la barra d'eines posen negretes, títols, llistes, taules, enllaços, imatges i fórmules, i funcionen **als dos plafons**.
+No cal saber Markdown. Escriu al panell de l'esquerra i veuràs el document compost a la dreta; els botons de la barra d'eines posen negretes, títols, llistes, taules, enllaços, imatges i fórmules, i funcionen als dos panells.
 
-Quan acabis, tens dos camins: **Desar** (`Ctrl+S`) deixa un fitxer `.md`, que és text corrent i s'obre a qualsevol lloc, i **Exportar** genera el DOCX, el PDF o el format que hagis de lliurar.
+Quan acabis: **Desar** (`Ctrl+S`) deixa un arxiu `.md` de text corrent, que s'obre a qualsevol lloc, i **Exportar** genera el Word, el PDF o el format que necessitis lliurar.
 
-La primera vegada, l'aplicació obre aquest manual en una pestanya. Quan el tanquis no es tornarà a obrir tot sol: des d'aleshores una sessió buida comença amb un document en blanc, i el manual continua a mà a **Ajuda** o amb `F1`. En aquest mateix menú hi ha l'[article del blog](https://educacion.bilateria.org/edimarkweb-escribir-en-markdown-y-entregar-en-cualquier-formato), que explica per a què serveix tot això a classe, amb exemples i captures; aquest manual explica com es fa cada cosa.
-
-En obrir-se, mentre munta els documents de l'última sessió, es veu una pantalla amb una barra en marxa. Si l'espera passa de tres segons apareix **Cancel·lar i obrir buida**: arrenca una sessió neta i descarta els documents desats de l'anterior —la sortida quan un document penja l'arrencada una vegada i una altra—. Pregunta abans, perquè això es perd; els arxius del disc no es toquen. La pàgina d'un document llarg no es compon en obrir: l'editor apareix de seguida amb el text i la vista prèvia espera que premis **Mostra la vista prèvia**, perquè compondre-la deixa la finestra sense respondre uns segons. I quan sí que es compon, el botó de sortir es retira mentre dura, per no oferir una sortida que no et podria atendre.
+Aquest manual és sempre a **Ajuda** o amb `F1`. També hi ha un [article del blog](https://educacion.bilateria.org/edimarkweb-escribir-en-markdown-y-entregar-en-cualquier-formato) que explica per a què serveix EdiMarkdown a classe, amb exemples i captures.
 
 ---
 
 ## Els dos editors
 
-La zona de treball es divideix en dos plafons redimensionables. **Tots dos editen el mateix document**, sincronitzats en tot moment:
+La pantalla es divideix en dos panells que **editen el mateix document** alhora:
 
-* **Editor Markdown** (esquerra): el codi font, tal qual. Tot el que hi escriguis apareix a l'instant a l'altre plafó.
-* **Editor visual** (dreta): el document ja compost, com un full sobre una taula, i **s'hi escriu directament a sobre**. La barra de format també hi treballa: negreta, cursiva, títols, cites, llistes, enllaços, imatges, taules i fórmules s'apliquen sobre el que veus i el Markdown es reescriu tot sol. El mateix botó treu el que ha posat, i `Ctrl+Z` desfà encara que siguis al full, perquè l'historial és el del document. El botó amb la icona de codi alterna entre el document compost i l'HTML generat.
+* **Editor Markdown** (esquerra): el text en codi font, tal qual.
+* **Editor visual** (dreta): el document ja compost, com un full de paper. S'hi escriu directament i la barra de format també hi funciona.
 
-**Plafó actiu**: amb tots dos a la vista, un mana —el que reben els botons i la lupa—. Es reconeix pel cantó de color i pel rètol de la barra d'estat, que només anomena el plafó actiu.
+Arrossega la barra central per repartir l'espai, o fes servir els tres botons de disposició (`Ctrl+L`) per veure només un editor, o tots dos. La doble fletxa amaga les barres i deixa tota la pantalla per escriure.
 
-**Com repartir-los**: arrossega la barra central, o fes servir `Ctrl+L` i els tres botons de disposició —només l'editor Markdown, tots dos alhora, només l'editor visual—. La doble fletxa **maximitza l'àrea d'edició**, que amaga les barres i deixa la pantalla per al text.
+La lupa de la barra d'estat (o `Ctrl` + `+` / `Ctrl` + `-`) amplia o redueix el que veus, sense canviar el document: el paper sempre surt al 100 % en imprimir o exportar. L'interruptor amb la cadena, al costat de la lupa, manté la pàgina sencera visible encara que moguis el separador entre panells; es pot deixar anar si prefereixes controlar el zoom a mà.
 
-**La lupa** de la barra d'estat (`−`, el percentatge i `+`, o `Ctrl` + `+` / `Ctrl` + `-`) engrandeix o redueix el que veus al plafó actiu. Engrandeix el full sencer, amb les seves pàgines i els seus marges, així que la pàgina no es reordena. No canvia el document ni el que s'exporta o s'imprimeix —el paper surt sempre al 100 %—: la mida de la lletra és a *Format del text*.
-
-**El plafó lligat a la lupa** (l'interruptor amb la cadena, a l'esquerra de la lupa) manté la pàgina sempre sencera, i treballa en els dos sentits: si mous el separador, l'augment es recalcula perquè el full hi continuï cabent —el percentatge va llavors en blau i subratllat, perquè el posa ell i no tu—; si toques la lupa, és el separador el que s'aparta per deixar lloc al full. Així no apareix la barra de desplaçament horitzontal, i el repartiment en pàgines es conserva sempre.
-
-Ve posat. S'atura on l'editor Markdown es quedaria sense la seva amplada mínima: en arribar-hi el `+` s'apaga i ho diu en passar-hi el ratolí. Per ampliar més enllà, deslliga l'interruptor —la cadena s'obre i es torna ambre— o deixa l'editor visual sol (`Ctrl` + `L`), que li dona tota l'amplada.
-
-El full omple el plafó, no només hi cap: si fas lloc a l'editor visual, la pàgina es veu més gran i l'augment passa del 100 % —fins al 200 %, que és on arriba la lupa—. El 100 % és la mida real del paper, la que sortirà impresa, i el tens a un clic al percentatge del centre; perquè es quedi fix, deslliga l'interruptor.
-
-Tot això és cosa dels dos plafons alhora, que és on l'amplada d'un se la pren de l'altre. Amb un sol plafó a la vista, o en una pantalla estreta on van l'un damunt de l'altre, l'interruptor es retira i la lupa és lliure.
-
-**Les pàgines**: el full amida el que amida el paper —A4 o Carta, el que digui el document— i l'editor visual reparteix el text en pàgines, amb el seu buit entre una i l'altra. El tall cau sempre entre dos blocs, mai a mitja línia: el que no cap al final d'una pàgina passa sencer a la següent, com en un processador de textos. És fidel al PDF i a la impressió, que surten d'aquest mateix full i tallen per on talla ell; per al Word o el LaTeX és orientatiu, perquè cadascun reparteix les línies a la seva manera. Amb el plafó lligat a la lupa el repartiment es conserva sempre; només es retira si deslligues l'interruptor i poses un augment amb què el full no càpiga al plafó.
-
-### Enganxar qualsevol cosa
-
-Amb `Ctrl+V` o el botó **Enganxar**, EdiMarkdown col·loca al plafó adequat el que hi hagi al porta-retalls: el text pla i el Markdown van a l'editor Markdown, a la posició del cursor; el contingut amb format (Word, LibreOffice, una pàgina web, una fórmula d'un chatbot) i fins i tot les imatges es recomponen a l'editor visual i generen el seu Markdown. No calen passos intermedis: copia d'on sigui i enganxa.
-
-Amb `Ctrl` (o `Cmd`) premut, un clic a un enllaç de l'editor visual l'obre; a l'aplicació d'escriptori, al teu navegador habitual.
+**Enganxar qualsevol cosa**: amb `Ctrl+V`, EdiMarkdown col·loca al panell adequat allò que portis del porta-retalls. El text i el Markdown van a l'editor Markdown; el contingut amb format —de Word, d'una web, d'un chatbot— i les imatges es recomponen a l'editor visual. No calen passos intermedis: copia d'on sigui i enganxa.
 
 ---
 
-## Pestanyes
+## Pestanyes i menús
 
-Cada document viu a la seva pestanya. `Ctrl+T` en crea una; `Ctrl+Tab` passa d'una a l'altra i cadascuna recorda on la vas deixar. Doble clic sobre el títol per reanomenar-la, la `X` per tancar-la, i un punt vermell (`●`) avisa de canvis sense desar. Amb el botó dret sobre una pestanya s'obre el seu menú: **Reanomena**, **Tanca**, **Tanca les altres** i **Tanca-les totes**. A sota, a **Torna a obrir**, hi ha les últimes deu pestanyes tancades, amb el seu nom, per recuperar-ne qualsevol amb el text i les imatges intactes; aquest registre dura mentre l'aplicació estigui oberta.
+Cada document viu a la seva pestanya. `Ctrl+T` en crea una, `Ctrl+Tab` passa d'una a l'altra, i un punt vermell (`●`) avisa de canvis sense desar. El botó dret sobre una pestanya obre **Reanomena**, **Tanca** i, a **Torna a obrir**, les últimes deu pestanyes tancades.
 
-A l'aplicació d'escriptori, a la dreta d'aquesta mateixa fila hi ha un botó per **tornar a llegir el document del disc**: serveix quan l'arxiu ha canviat per fora (un altre editor, una sincronització) i abans calia tancar la pestanya i tornar-la a obrir. Si l'arxiu continua igual no toca res i ho diu; si a la pantalla hi ha canvis sense desar, pregunta abans, perquè tornar-lo a llegir els descarta. Està apagat a les pestanyes que no vénen de cap arxiu.
+Tot es desa sol a l'equip: si recarregues la pàgina o tornes a obrir el programa, el contingut hi torna a ser. És una xarxa de seguretat, no un substitut de desar l'arxiu.
 
-Totes es **desen soles** a l'equip: si recarregues la pàgina o tornes a obrir el programa, el contingut hi torna a ser. És una xarxa de seguretat, no un substitut de desar el fitxer.
+Al costat del logotip hi ha els menús:
 
----
+* **Fitxer**: obrir, importar, enganxar LaTeX, desar i desar com a.
+* **Exportar** (`Ctrl+Alt+E`): els sis formats de sortida.
+* **Configuració** (`Ctrl+,`): idioma de la interfície, tema, corrector ortogràfic i les opcions generals dels documents.
+* **Ajuda**: aquest manual (`F1`) i, a l'escriptori, cercar actualitzacions.
 
-## Menús i barra d'eines
-
-Al costat del logotip hi ha els menús **Fitxer**, **Exportar** i **Configuració**. A la dreta, les accions de cada dia en una sola icona: **Desar**, **Exportar**, **Copiar**, **Imprimir**, **Cercar** i **Ajuda**.
-
-* **Fitxer**: `Obrir (Ctrl+O)`, `Importar (Ctrl+Alt+O)` i `Enganxar LaTeX (Ctrl+Maj+V)` porten contingut; `Desar (Ctrl+S)` i `Desar com a… (Ctrl+Maj+S)` el treuen. A l'aplicació d'escriptori acaba amb **Sortir**, que desa abans de tancar.
-* **Exportar (Ctrl+Alt+E)**: els sis formats, cadascun amb una línia que diu per a què serveix.
-* **Configuració (Ctrl+,)**: **Idioma** de la interfície; **Tema** (Sistema, Clar o Fosc, es recorda); **Finestra independent**, que obre EdiMarkdown sense pestanyes ni barra d'adreces (només a la versió web); **Corrector ortogràfic**, que subratlla les faltes amb els diccionaris de l'equip i segueix l'idioma del document; i **Opcions generals…**.
-* **Imprimir (Ctrl+P)**: una vista preparada per a paper o PDF.
-* **Ajuda**: el **Manual (F1)**, **Quant a EdiMarkdown** —versió, autor i llicències— i, a l'escriptori, **Cercar actualitzacions…**.
-
-La barra d'eines, sota l'anterior, reuneix desfer i refer, negreta, cursiva, ratllat, superíndex i subíndex, encapçalaments (H1…H6), llistes, cites, codi, enllaços, imatges, taules, **citacions bibliogràfiques**, **Enganxar** i les fórmules. Cada botó diu, en passar-hi el ratolí, què fa i amb quina drecera. A les pantalles petites es plega en dos botons, **Accions** i **Format**. El superíndex i el subíndex s'escriuen com a Pandoc, `m^2^` i `H~2~O`; el ratllat necessita dues titlles, `~~així~~`.
+La barra d'eines reuneix negreta, cursiva, encapçalaments, llistes, cites, codi, enllaços, imatges, taules, citacions bibliogràfiques i fórmules. Cada botó diu, en passar-hi el ratolí, què fa i amb quina drecera.
 
 ---
 
 ## Obrir, importar i arrossegar
 
-* **Obrir (`Ctrl+O`)**: fitxers `.md` i `.markdown`.
-* **Importar (`Ctrl+Alt+O`)**: converteix a Markdown amb Pandoc documents `.docx`, `.odt`, `.epub`, `.html` i `.tex`, amb els seus encapçalaments, llistes, taules, enllaços i imatges. D'un `.epub` en torna també l'idioma del llibre.
-* **Arrossegar i deixar anar**: deixa sobre l'aplicació un o més fitxers d'aquests mateixos tipus i cadascun s'obre a la seva pestanya. També carpetes senceres: se'n recorren les subcarpetes en ordre alfabètic i el que no sigui compatible s'ignora. Si el document ja era obert, no es duplica: l'aplicació torna a la seva pestanya.
+* **Obrir** (`Ctrl+O`): arxius `.md` i `.markdown`.
+* **Importar** (`Ctrl+Alt+O`): converteix a Markdown documents `.docx`, `.odt`, `.epub`, `.html`, `.tex` i també **PDF**.
+* **Arrossegar i deixar anar**: deixa anar un o més arxius, o carpetes senceres, sobre l'aplicació; cadascun s'obre a la seva pestanya.
 
-A l'aplicació d'escriptori, `Ctrl+S` escriu sobre el fitxer que has obert; al navegador es descarrega. La carpeta que facis servir es recorda mentre l'aplicació és oberta, així que els següents quadres d'obrir, desar o exportar surten on eres.
+A l'aplicació d'escriptori, `Ctrl+S` escriu sobre l'arxiu que has obert; al navegador es descarrega.
+
+### Importar PDF
+
+Tria un PDF a **Importar** (o arrossega'l). La conversió passa al teu equip. Pots treure encapçalaments i peus repetits, conservar imatges, aplicar OCR a les pàgines escanejades i triar quines pàgines importar. Prem **Convertir a Markdown**, revisa el resultat a la vista prèvia i després **Importar en una pestanya nova**.
+
+La detecció de taules i fórmules no és infal·lible, i l'OCR pot fallar amb fotografies o baixa resolució. Si desapareix text útil, desactiva l'eliminació d'encapçalaments i peus. S'admeten arxius de fins a 50 MB.
 
 ---
 
 ## Imatges
 
-El botó **Imatge** admet un fitxer del disc o una URL, i pregunta com inserir-lo:
+El botó **Imatge** admet un arxiu del disc o una URL, i pregunta com inserir-la:
 
-* **Amb ruta relativa** (el recomanat): el document només anomena la imatge —`![Gràfic](imatges/01.png)`—, que es queda a la seva carpeta. És el que fa qualsevol editor de Markdown i manté el `.md` lleuger; a canvi, el document i la seva carpeta d'imatges viatgen junts.
-* **Dins del document**: la imatge s'incrusta al fitxer, que es torna autònom però molt més pesat. Útil per enviar un `.md` solt per correu.
+* **Amb ruta relativa** (el recomanat): el document només anomena la imatge, que es queda a la seva pròpia carpeta. Manté el `.md` lleuger, però el document i les seves imatges viatgen junts.
+* **Dins del document**: la imatge s'incrusta a l'arxiu, que es torna autònom però més pesant. Útil per enviar un `.md` solt per correu.
 
-**Rutes relatives.** A l'aplicació d'escriptori les imatges es busquen soles a la carpeta del document. Al navegador cap pàgina no pot llegir una carpeta sense permís: si falten imatges, apareix un avís amb el botó **Cercar la seva carpeta…** i, en triar-la, es veuen totes. N'hi ha prou de fer-ho una vegada. En desar, aquestes imatges es copien al costat del `.md` conservant les rutes (o dins d'un ZIP, si el navegador no deixa escriure carpetes). El Markdown no canvia mai: el que deses, copies o exportes duu la ruta que vas escriure.
-
-**Gestor d'imatges.** Sota l'editor Markdown, una llista reuneix les imatges del document. Totes es poden **veure**, **reemplaçar** per una altra enganxada des del porta-retalls, triada del disc o indicada mitjançant un URL, i **eliminar del document**. Les enllaçades mostren la ruta o l'URL i també es poden **incrustar** en Base64; eliminar la referència no esborra el fitxer original ni la imatge remota. En les imatges en línia, la conversió depèn que el servidor permeti descarregar-les; si la bloqueja, el document no canvia. Les que ja estan incrustades mostren el format i la mida i permeten veure'n o copiar-ne el codi.
-
-El codi Base64 ocupa milers de caràcters, per això EdiMarkdown el plega i deixa a l'editor una marca curta com ara `__EDIMARK_B64_1__`; el contingut real es conserva intacte en desar, copiar i exportar. El botó **Passar les incrustades a la carpeta** fa el camí de tornada: cada imatge es converteix en un fitxer dins de la subcarpeta de recursos del document (`el-meu-fitxer.md` → `el-meu-fitxer/images/`) i al Markdown hi queda la seva ruta. Els fitxers s'escriuen en desar, i `Ctrl+Z` desfà el canvi.
-
-Les dues conversions també tenen el seu botó per a tot el document, sobre la llista: **Passar les incrustades a la carpeta** i **Incrusta totes les enllaçades**. Cadascun apareix només mentre queda alguna cosa per convertir en el seu sentit, de manera que un document amb totes les imatges de la mateixa classe en mostra un de sol, o cap.
-
-Cada imatge porta a més **Vés al text**, que porta el cursor fins on és escrita al Markdown i la deixa seleccionada. És la manera de saber a quin paràgraf pertany una imatge de la llista sense buscar-la a mà. Quan el plafó és estret els botons es queden amb la seva icona, i només cal passar-hi el ratolí per sobre per llegir què fa cadascun.
+Sota l'editor Markdown, el **gestor d'imatges** llista les del document: pots veure-les, reemplaçar-les, eliminar-les, incrustar-les o passar-les a la carpeta, i **Anar al text** et porta fins on estan escrites.
 
 ---
 
 ## Fórmules matemàtiques
 
-Les fórmules s'escriuen en LaTeX i es componen a l'instant amb KaTeX. Hi ha tres maneres de posar-les:
+Les fórmules s'escriuen en LaTeX i es veuen a l'instant. Tres maneres de posar-les:
 
-* **Menú de fórmules** (a l'editor Markdown): `Ctrl+M` obre l'espera —la barra d'estat recorda les tecles— i després `1`, `2`, `3` o `4` tria el delimitador (`\(...\)`, `\[...\]`, `$...$` o `$$...$$`); `Retorn` insereix `\(...\)`, que és el recomanat, i `Esc` cancel·la.
-* **Finestra de fórmula** (a l'editor visual): el botó `{}` —o `Ctrl+M`, que aquí no pregunta pels delimitadors— obre una finestra amb el codi LaTeX i el resultat a la vista mentre escrius, amb l'avís de l'error si n'hi ha. Allà tries si va en línia o en bloc i amb quins delimitadors. Es fa així perquè sobre el full no hi ha on escriure dins d'un `$…$` buit: KaTeX el converteix en fórmula tan bon punt es repinta.
-* **EdiCuaTeX (`Ctrl+Alt+M`)**: l'editor visual de fórmules integrat, per construir-les amb el ratolí. En acceptar, la fórmula torna inserida.
+* **Menú de fórmules** (editor Markdown): `Ctrl+M` i després un número tria el delimitador; `Retorn` insereix el recomanat, `\(...\)`.
+* **Finestra de fórmula** (editor visual): el botó `{}` obre un quadre amb el codi i el resultat a la vista mentre escrius.
+* **EdiCuaTeX** (`Ctrl+Alt+M`): editor visual de fórmules per construir-les a cop de ratolí.
 
-### Exemples de fórmules amb LaTeX
-
-#### Fórmula de segon grau
-
-Per resoldre una equació de segon grau com $ax^2 + bx + c = 0$, s'utilitza:
+Exemples: $ax^2 + bx + c = 0$ en línia, o en bloc:
 
 $$
 x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}
 $$
 
-#### Matriu 2x2
-
-$$
-A = \begin{pmatrix}
- a_{11} & a_{12} \\
- a_{21} & a_{22}
-\end{pmatrix}
-$$
-
-#### Altres delimitadors
-
-A més de `$...$` i `$$...$$`, pots fer servir els delimitadors propis de LaTeX: \(E = mc^2\) en línia, i en bloc:
-
-\[
-\nabla \cdot \vec{E} = \frac{\rho}{\varepsilon_0}
-\]
-
-#### Sumatoris, límits i integrals
-
-La suma dels $n$ primers naturals és $\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$ i la integral $\int_0^1 x^2\,dx = \frac{1}{3}$. El nombre $e$ es defineix com un límit:
-
-$$
-e = \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^n
-$$
-
-#### Sistemes d'equacions
-
-$$
-\begin{cases}
-2x + y = 5 \\
-x - y = 1
-\end{cases}
-$$
-
-#### Símbols solts
-
-Lletres gregues ($\alpha$, $\beta$, $\Omega$), subíndexs ($H_2O$), comparacions ($a \neq b$, $x \leq y$) i conjunts ($\mathbb{R}$, $A \subseteq B$).
+Lletres gregues ($\alpha$, $\Omega$), subíndexs ($H_2O$) i símbols de conjunts ($\mathbb{R}$, $A \subseteq B$) s'escriuen igual que en qualsevol fórmula LaTeX.
 
 ---
 
-## Citacions i bibliografia
+## Cites i bibliografia
 
-A **Configuració → Opcions generals… → Citacions** pots carregar una biblioteca **BibTeX** (`.bib`) o **CSL JSON** (`.json`). **Carrega una bibliografia d'exemple** prepara set referències completes; si ja tenies bibliografia, s'hi sumen sense substituir-la. Amb **Afegeix una referència…** pots ampliar la biblioteca carregada —inclosa la d'exemple— o crear-ne una de nova. La clau de citació és opcional: si la deixes buida, el programa en compon una amb el cognom, l'any i una paraula del títol, i s'assegura que no coincideixi amb cap altra. Admet articles, llibres, capítols, informes, pàgines web, tesis i comunicacions, amb els camps específics necessaris per compondre correctament les referències finals. **APA 7** és l'estil inicial; també pots triar Chicago autor-data, MLA 9, IEEE o un fitxer **CSL** propi. També es poden canviar el títol de la bibliografia i el nivell H1–H6. Els fitxers no s'envien a cap servei.
+A **Configuració → Opcions generals… → Cites** pots carregar una biblioteca **BibTeX** (`.bib`) o **CSL JSON** (`.json`), o provar amb **Carregar bibliografia d'exemple**. El botó del llibre (`Ctrl+Alt+B`) obre un cercador per autor, títol o any, amb **Afegir referència manualment** sempre a mà.
 
-El botó del llibre —o `Ctrl+Alt+B`— obre un cercador per autor, títol, any o clau, amb **Afegeix una referència manualment** sempre a mà per escriure'n una de nova sense sortir del quadre. Al peu del quadre es llegeix amb quin estil es compondran les citacions —APA, Chicago, MLA, IEEE o el CSL que hagis carregat— i un enllaç duu a les opcions de la bibliografia per canviar-lo. La forma **parentètica** produeix `[@garcia2024]`; la **narrativa**, `@garcia2024`; i **només l'any**, `[-@garcia2024]`, quan el nom ja és a la frase. Amb una sola referència pots afegir pàgines o un altre localitzador, com `[@garcia2024, p. 5]` o `@garcia2024 [pp. 5–7]`. Les citacions múltiples usen la forma parentètica. Si el cursor és dins d'una citació, el mateix botó permet editar-ne tots els detalls. La bibliografia final apareix a la vista prèvia i a totes les exportacions.
-
-En desar `el-meu-fitxer.md`, EdiMarkdown copia la biblioteca a `el-meu-fitxer/references.bib` —o `references.json`— i declara aquesta ruta a les metadades YAML. Les imatges pròpies s'agrupen a `el-meu-fitxer/images/`. Per traslladar el treball n'hi ha prou de conservar junts el Markdown i la carpeta `el-meu-fitxer`. Si fas servir un fitxer CSL propi, es copia al costat, a `el-meu-fitxer/style.csl`, i també queda declarat: així les citacions es veuen igual en qualsevol equip. L'aplicació d'escriptori recupera la biblioteca i l'estil automàticament; a la versió web, per seguretat, cal vincular la carpeta del document —l'avís **Cerca la seva carpeta…** que apareix sobre la vista prèvia— en obrir-lo en un altre navegador o ordinador.
+**APA 7** és l'estil inicial; també hi ha Chicago, MLA, IEEE o un CSL propi. La bibliografia final es mostra al peu de la vista prèvia i es reprodueix en exportar. En desar, la biblioteca es copia al costat del document, així que n'hi ha prou de conservar-los junts per portar la feina a un altre equip.
 
 ---
 
 ## Cercar i reemplaçar
 
-La lupa (o `Ctrl+F`) obre el cercador, que treballa al plafó on siguis:
-
-* Ressalta totes les coincidències encara que escriguis sense accents o en minúscules. `Retorn` salta a la següent i `Maj+Retorn` recula; el comptador `actual / total` diu per on vas.
-* La fletxa lateral desplega el reemplaçament, una a una o totes de cop (amb confirmació).
-* El botó **Regex** interpreta la cerca com una expressió regular: allà els accents sí que compten i pots fer servir grups com `(\d+)`, que en el reemplaçament es recuperen amb el signe de dòlar i el número de grup.
-* `Esc` el tanca i torna el focus a l'editor. Mentre és obert, les dreceres de format queden en pausa.
+La lupa (o `Ctrl+F`) obre el cercador. Ressalta totes les coincidències, `Enter` salta a la següent, i la fletxa lateral desplega el reemplaçament, un per un o tots de cop. El botó **Regex** interpreta la cerca com una expressió regular.
 
 ---
 
-## Els ajustos de cada document
+## El format del document
 
-Al costat del comptador de caràcters, a la barra d'estat, hi ha un botó curt, sempre a la vista, amb l'idioma amb què sortirà el document (`CA`, `ES`, `FR`…). Si es veu atenuat, aquest document no té idioma propi i segueix el general. En prémer-lo s'obre el quadre **Aquest document**, amb dues pestanyes:
+Al costat del comptador de caràcters hi ha un botó amb l'idioma del document (`ES`, `CA`...). En prémer-lo s'obre **Aquest document**, amb dues pestanyes:
 
-* **Document**: idioma, autor, índex automàtic i numeració d'apartats. L'**idioma** és important: viatja dins del fitxer i és el que fa que Word i LibreOffice deixin de corregir en anglès un text en català. Amb *Un altre…* pots escriure el codi de qualsevol llengua (`fr`, `de`, `pt-BR`) i amb *Heretat* es torna al general. Amb l'índex posat, l'editor visual el mostra al principi del full —els apartats amb el seu número de pàgina, trets del repartiment que estàs veient—, sense que formi part del text: no s'hi pot escriure i no arriba ni al Markdown ni al que copiïs. El de debò el genera cada format en exportar.
-* **Format**: alineació, tipus i mida de lletra, interlineat, mida del paper, marges, sagnat de primera línia i partició de mots amb guionet. En triar *Una altra…* al tipus de lletra apareix una llista amb les tipografies que l'aplicació reconeix instal·lades; pots escriure qualsevol nom encara que aquí no hi sigui —s'avisa en ambre i se'n fa servir una de reserva—, perquè el fitxer pot acabar en un equip que sí que la tingui. Sota cada camp es llegeix el que hereta ara mateix, i el que no hereta res també ho diu: allà mana el programa que obri el fitxer.
+* **Document**: idioma, autor, índex automàtic i numeració d'apartats.
+* **Format**: alineació, tipus i mida de lletra, interlineat, mida de paper, marges i sagnia.
 
-Els enllaços segueixen el tipus de lletra del document. En triar **Sense serifa**, les lletres llatines i les xifres de les fórmules també es mostren sense serifa a la vista prèvia, al PDF i a les exportacions. Els símbols especials i els alfabets indicats expressament a la fórmula conserven la seva tipografia matemàtica. El codi Markdown original no canvia.
+Tot el que fixis es desa dins del mateix `.md`, en unes línies de metadades al principi de l'arxiu, així que viatja amb el document a qualsevol equip. Si repeteixes els mateixos ajustos en diversos treballs, desa'ls com a **perfil** (a dalt del quadre) per aplicar-los d'un clic a un altre document.
 
-Una pastilla a la barra d'estat resumeix com sortirà el document: la mida de lletra, el tipus i l'interlineat, tots tres sempre. Si algun cop en buides un a les opcions generals, un guionet (`—`) avisa que allà mana el programa que obri el fitxer. La resta —alineació, sagnat, partició i marges— es llegeix en passar-hi el ratolí, i en prémer-la s'obre aquest mateix quadre per la pestanya **Format**.
-
-Tot el que fixis es desa **dins del mateix `.md`**, en unes línies entre ratlles al principi del fitxer:
-
-```
----
-lang: "ca"
-toc: true
-align: "justify"
-fontsize: "12pt"
----
-```
-
-És la manera estàndard de desar dades sobre un document i molts programes l'entenen. Apareix a l'editor Markdown, que és el codi font, però no a l'editor visual, perquè no és contingut. El que deixis en *Heretat* segueix **Configuració → Opcions generals…**, i el mateix quadre duu un enllaç, *Editar les opcions generals…*, que obre aquestes opcions per la mateixa pestanya. *Treure-ho tot del document* el deixa sense res propi.
-
-**Perfils de format.** Si repeteixes els mateixos ajustos en diversos treballs, desa'ls una vegada: a la part de dalt del quadre, *Desa com a perfil…* demana un nom —«TFG», «apunts»— i recorda el text, la pàgina i l'índex tal com estiguin en aquell moment. En un altre document només cal triar-lo i prémer *Aplica el perfil*: omple els camps que el perfil fixa i deixa els altres com estan, així que encara pots retocar abans de confirmar. Res no arriba al document fins que prems *Aplica*, i *Cancel·la* ho descarta com sempre. Desar amb el nom d'un perfil que ja existeix l'actualitza. Els perfils es queden en aquest equip, no viatgen dins del `.md`.
-
-El format s'aplica a l'editor visual i als cinc formats d'exportació, amb tres excepcions: a l'**EPUB** els marges són un suggeriment, perquè mana el lector de llibres; en **TEX**, si el teu preàmbul ja carrega `geometry`, manen els teus marges i l'aplicació ho avisa; i la **partició de mots** fa servir els diccionaris de guionets del sistema (a Linux, el LibreOffice necessita el paquet de l'idioma, per exemple `hyphen-ca`).
+**Configuració → Opcions generals…** desa els valors de partida per als documents nous: idioma, autor, text i pàgina, portada de l'EPUB, bibliografia i opcions de LaTeX.
 
 ---
 
 ## Exportar
 
-**Exportar (Ctrl+Alt+E)** genera el document llest per lliurar o publicar:
+**Exportar** (`Ctrl+Alt+E`) genera el document a punt per lliurar:
 
-* **DOCX (Word)**: per compartir amb qui fa servir Word; també l'obre Google Docs.
+* **DOCX (Word)**: per compartir amb qui fa servir Word, o obrir a Google Docs.
 * **ODT (LibreOffice)**: per a suites lliures com LibreOffice o OnlyOffice.
-* **EPUB (llibre digital)**: compatible amb lectors d'EPUB 3. El títol surt del primer encapçalament de nivell 1 (o del nom del document) i l'autor, la portada i l'idioma, dels ajustos.
-* **HTML (pàgina web)**: un fitxer autònom amb els estils i les fórmules a dins, llest per pujar a la web.
-* **TEX (LaTeX)**: un `.tex` complet amb la capçalera preparada per compilar.
-* **PDF**: obre el diàleg d'impressió, on tries «Desar com a PDF». Surt exactament el que veus, amb les fórmules compostes i el text seleccionable. Els marges són els del document; si no en duu cap, 18 mm.
+* **EPUB**: llibre digital compatible amb lectors EPUB 3.
+* **HTML**: pàgina web autònoma, amb els estils i les fórmules dins.
+* **TEX (LaTeX)**: un `.tex` complet, a punt per compilar.
+* **PDF**: obre el diàleg d'impressió («Desar com a PDF»); en surt exactament el que veus en pantalla.
 
-A la barra hi ha també un botó d'exportar amb la seva fletxa, al costat del de copiar: el botó repeteix d'un clic l'últim format que vas fer servir —ho diu en un rètol petit, i de partida és DOCX— i la fletxa obre aquesta mateixa llista.
-
-Si has carregat una bibliografia, tots els formats resolen les citacions `[@clau]` i afegeixen la llista de referències amb l'estil CSL triat.
-
-### Opcions generals dels documents
-
-**Configuració → Opcions generals…** desa els valors de partida per a tots els documents, i es recorden d'una sessió a l'altra. Té cinc pestanyes:
-
-* **Dades i índex**: **idioma** (per omissió, el mateix de la interfície), **autor** —que apareix a les propietats del fitxer i a la portada de l'EPUB i del LaTeX; deixa'l buit si no vols que el Pandoc escrigui la línia del nom en DOCX i ODT—, **índex automàtic** i **numerar els apartats** (1, 1.1, 1.2…; l'ODT no admet aquesta numeració).
-* **Text i pàgina**: els mateixos ajustos de text i pàgina de l'apartat anterior, com a valors de partida. Quatre ja vénen posats —**12 pt**, **amb serifa**, interlineat **1,5** i paper **A4**—, perquè són els que l'editor visual necessita per ensenyar la veritat: declarats, el que es veu al full és el que surt en els cinc formats. La resta surten sense fixar.
-* **EPUB**: la **portada**, que pot ser la que **genera** l'aplicació amb el títol i l'autor, **una imatge teva** (fins a 1 MB) o **cap**.
-* **Citacions**: la biblioteca BibTeX o CSL JSON i, opcionalment, l'estil CSL que s'aplicarà en exportar.
-* **LaTeX**: la **classe** (`article`, `report` o `book`), les seves **opcions** (`12pt, a4paper`) i un **preàmbul** propi, que s'insereix just abans de `\begin{document}`. Un preàmbul amb errors no avisa aquí: la fallada apareix en compilar.
-
-> **Sobre l'índex**: en DOCX i ODT és un camp que calcula el processador de textos, així que el document s'obre amb la llista d'apartats però sense números de pàgina. Perquè surtin, actualitza'l: al Word, clic dret sobre l'índex → *Actualitzar camps*; al LibreOffice, *Eines → Actualitza → Índexs*.
-
-La profunditat permet limitar-lo a H1, H1–H2 o H1–H3. A **Text i pàgina** també pots triar orientació vertical o horitzontal i fer que cada H1, tret del primer, comenci en una pàgina nova; la vista prèvia i les exportacions respecten els tres ajustos.
-
-Si el document comença amb les seves pròpies metadades YAML, manen elles.
-
----
-
-## Emmagatzematge
-
-A **Configuració → Emmagatzematge…** es veu què desa EdiMarkdown en aquest navegador: quants documents tens oberts, què ocupa el seu text desat automàticament i quantes imatges hi ha, amb la seva mida. Res d'això surt del teu equip.
-
-A part es compten les **imatges sense document**, que són les de pestanyes tancades fa temps o de sessions anteriors. S'esborren soles en obrir l'aplicació, i el botó **Esborra les imatges sense document** ho fa a l'instant; va bé després d'importar uns quants PDF, que són els que més ocupen. **Oblida la sessió desada…** tanca les pestanyes i descarta el text desat amb les seves imatges, després de preguntar. Cap de les dues coses esborra fitxers del teu disc.
-
----
-
-## Copiar sense descarregar
-
-El botó de copiar, al costat d'**Exportar**, fa el mateix però al porta-retalls, en quatre formats:
-
-* *Markdown* (`Ctrl+Alt+C` i després `1`): el text font tal qual.
-* *HTML* (`Ctrl+Alt+C 2`): el document compost. És l'opció per portar el text **amb el seu format** al Word, al LibreOffice, a Google Docs o al correu, sense passar per cap fitxer. Dos avisos: les fórmules s'enganxen com a text —per a equacions de debò, exporta a DOCX o ODT— i les imatges només viatgen si estan incrustades.
-* *LaTeX* (`Ctrl+Alt+C 3`): només el fragment actual.
-* *LaTeX complet* (`Ctrl+Alt+C 4`): amb capçalera i entorn llestos per compilar.
-
-El botó recorda l'últim format i ho diu en un rètol al seu costat, així que repetir és un clic; la fletxa obre la llista per canviar-lo.
+El botó de copiar, al costat d'Exportar, porta el contingut al porta-retalls en Markdown, HTML o LaTeX, sense generar cap arxiu.
 
 ---
 
 ## L'aplicació d'escriptori
 
-És la mateixa aplicació —els mateixos menús, dreceres i formats— instal·lada a **Linux, Windows i macOS**. Els instal·ladors són a la [pàgina de descàrregues](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest): `.deb` i `.AppImage` per a Linux, `.exe` i `.msi` per a Windows, i `.dmg` per a Mac amb processador Apple o Intel.
+És la mateixa aplicació instal·lada a Linux, Windows i macOS. Els instal·ladors són a la [pàgina de descàrregues](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest).
 
-**La primera vegada a macOS.** El `.dmg` no està signat amb un compte de desenvolupador d'Apple, de manera que en obrir-lo macOS avisa que l'aplicació «està malmesa i s'hauria de moure a la paperera». No ho està: és el que diu el sistema davant de qualsevol aplicació sense signar baixada d'internet. Arrossega EdiMarkdown a **Aplicacions**, obre el **Terminal** i executa `xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app`. Amb això s'obre amb normalitat i no cal repetir-ho: aquesta ordre només treu la marca de «baixat d'internet» a aquella aplicació, sense canviar cap paràmetre de seguretat del sistema.
+Davant del navegador afegeix: doble clic per obrir arxius `.md`, desament directe sense passar per la carpeta de descàrregues, corrector ortogràfic del sistema i funcionament sense connexió (Pandoc i EdiCuaTeX hi van inclosos). En arrencar comprova si hi ha una versió nova i ho avisa amb **Descarregar i instal·lar**.
 
-Respecte al navegador hi afegeix:
+**A macOS**, si el sistema avisa que l'aplicació «està malmesa», arrossega EdiMarkdown a Aplicacions i executa al Terminal:
 
-* **Doble clic per obrir**: els fitxers `.md` i `.markdown` queden associats, mostren la icona d'EdiMarkdown al gestor de fitxers i s'obren a l'aplicació; si ja és oberta, el document arriba a aquesta mateixa finestra, que es posa al davant. I si aquell fitxer ja era obert, torna a la seva pestanya en comptes de duplicar-se. (La icona la instal·len el paquet `.deb` i els instal·ladors de Windows; l'AppImage no toca el sistema.)
-* **Desar escriu al fitxer de veritat**, sense passar per la carpeta de descàrregues.
-* **Corrector ortogràfic del sistema**, amb els diccionaris de l'equip (a Linux pot caldre instal·lar-los, per exemple `hunspell-ca`).
-* **Funciona sense connexió**: duu a dins el Pandoc i l'EdiCuaTeX. Només cal internet per comprovar si hi ha versions noves.
+```
+xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app
+```
 
-**Actualitzacions**: en arrencar comprova un cop al dia si hi ha versió nova i, si n'hi ha, apareix un avís amb **Descarregar i instal·lar**, que baixa l'instal·lador i el llança. Com que cap instal·lador no pot substituir els fitxers d'una aplicació oberta, el mateix avís duu **Tancar EdiMarkdown**, que desa i tanca. Amb una AppImage, l'aplicació descarrega la nova i obre la seva carpeta perquè substitueixis l'anterior. Pots demanar la comprovació quan vulguis des d'**Ajuda → Cercar actualitzacions…**, o desactivar-la amb la casella **Comprovar en iniciar**.
-
-Els documents són els mateixos fitxers Markdown a les dues versions i passen d'una a l'altra sense conversions; el que no es comparteix és el desament automàtic, perquè cada versió en guarda la còpia de treball al seu propi espai.
+És només l'avís habitual de macOS davant de programari sense signar; amb aquesta ordre s'obre amb normalitat.
 
 ---
 
@@ -299,10 +166,10 @@ Els documents són els mateixos fitxers Markdown a les dues versions i passen d'
 | Enllaç | `Ctrl` + `K` | `Cmd` + `K` |
 | Imatge | `Ctrl` + `Maj` + `I` | `Cmd` + `Maj` + `I` |
 | Taula | `Ctrl` + `Maj` + `T` | `Cmd` + `Maj` + `T` |
-| Fórmula `$...$` (en línia) | `Ctrl` + `M` després `1` | `Cmd` + `M` després `1` |
-| Fórmula `$$...$$` (en bloc) | `Ctrl` + `M` després `2` | `Cmd` + `M` després `2` |
-| Fórmula `\(...\)` (en línia) | `Ctrl` + `M` després `3` | `Cmd` + `M` després `3` |
-| Fórmula `\[...\]` (en bloc) | `Ctrl` + `M` després `4` | `Cmd` + `M` després `4` |
+| Fórmula `$...$` (en línia) | `Ctrl` + `M` i després `1` | `Cmd` + `M` i després `1` |
+| Fórmula `$$...$$` (en bloc) | `Ctrl` + `M` i després `2` | `Cmd` + `M` i després `2` |
+| Fórmula `\(...\)` (en línia) | `Ctrl` + `M` i després `3` | `Cmd` + `M` i després `3` |
+| Fórmula `\[...\]` (en bloc) | `Ctrl` + `M` i després `4` | `Cmd` + `M` i després `4` |
 | Desfer / Refer | `Ctrl` + `Z` / `Ctrl` + `Maj` + `Z` | `Cmd` + `Z` / `Cmd` + `Maj` + `Z` |
 | **Gestió de documents** | | |
 | Pestanya nova | `Ctrl` + `T` | `Cmd` + `T` |
@@ -310,38 +177,35 @@ Els documents són els mateixos fitxers Markdown a les dues versions i passen d'
 | Pestanya següent / anterior | `Ctrl` + `Tab` / `Ctrl` + `Maj` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Maj` + `Tab` |
 | Desar | `Ctrl` + `S` | `Cmd` + `S` |
 | Desar com a… | `Ctrl` + `Maj` + `S` | `Cmd` + `Maj` + `S` |
-| Obrir fitxer | `Ctrl` + `O` | `Cmd` + `O` |
+| Obrir arxiu | `Ctrl` + `O` | `Cmd` + `O` |
 | Importar document | `Ctrl` + `Alt` + `O` | `Cmd` + `Alt` + `O` |
-| Enganxar LaTeX (obrir diàleg) | `Ctrl` + `Maj` + `V` | `Cmd` + `Maj` + `V` |
+| Enganxar LaTeX (obrir modal) | `Ctrl` + `Maj` + `V` | `Cmd` + `Maj` + `V` |
 | **Interfície** | | |
 | Obrir EdiCuaTeX | `Ctrl` + `Alt` + `M` | `Cmd` + `Alt` + `M` |
 | Enganxar des del porta-retalls | `Ctrl` + `Alt` + `V` | `Cmd` + `Alt` + `V` |
 | Obrir Exportar | `Ctrl` + `Alt` + `E` | `Cmd` + `Alt` + `E` |
-| Copiar (`1` Markdown · `2` HTML · `3` LaTeX · `4` LaTeX complet) | `Ctrl` + `Alt` + `C` després `1`–`4` | `Cmd` + `Alt` + `C` després `1`–`4` |
+| Copiar (`1` Markdown · `2` HTML · `3` LaTeX · `4` LaTeX complet) | `Ctrl` + `Alt` + `C` i després `1`–`4` | `Cmd` + `Alt` + `C` i després `1`–`4` |
 | Obrir Configuració | `Ctrl` + `,` | `Cmd` + `,` |
 | Maximitzar l'àrea d'edició | `Ctrl` + `Maj` + `F` | `Cmd` + `Maj` + `F` |
 | Canviar disposició | `Ctrl` + `L` | `Cmd` + `L` |
 | Cercar | `Ctrl` + `F` | `Cmd` + `F` |
-| Ampliar / reduir el plafó on ets | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
+| Ampliar / reduir el panell en què ets | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Manual d'ús | `Ctrl` + `H` o `F1` | `Cmd` + `H` o `F1` |
 | Recarregar el manual | `Ctrl` + `Maj` + `H` | `Cmd` + `Maj` + `H` |
 | Imprimir | `Ctrl` + `P` | `Cmd` + `P` |
 
-Les dreceres d'una sola lletra actuen sobre el document, així que queden en pausa mentre el cercador és obert.
+---
+
+## Markdown admès
+
+EdiMarkdown utilitza una base compatible amb GitHub Flavored Markdown (GFM), ampliada amb funcions de Pandoc: encapçalaments, negreta i cursiva, llistes i cites en bloc, enllaços i imatges, codi, taules, tasques (`- [ ]`) i ratllat (`~~text~~`).
+
+Les ampliacions són les fórmules LaTeX, les notes al peu `[^nota]`, les cites bibliogràfiques `[@clau]`, les metadades YAML, els subíndexs `H~2~O` i els superíndexs `m^2^`.
+
+**Límits**: no totes les extensions de Pandoc es veuen al full visual. Les llistes de definicions, les taules de graella o els blocs `:::` queden fora del perfil comú, encara que els pots escriure igualment a l'editor Markdown i arribaran a l'exportació.
 
 ---
 
 ## Llicència i contribucions
 
-EdiMarkdown és programari lliure sota la [GNU Affero General Public License v3.0](LICENSE): pots fer-lo servir a l'aula, adaptar-lo i desplegar-lo en servidors propis, sempre que comparteixis qualsevol millora sota la mateixa llicència i ofereixis el codi a qui faci servir la teva versió. Si detectes un problema o vols proposar canvis, obre una incidència a [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) o envia un pull request.
-
-
-## Importar PDF
-
-Tria un PDF a **Importar**, o arrossega’l a l’editor. La conversió es fa al teu equip, sense enviar el document a un servidor. En obrir el quadre, el convertidor llegeix el PDF i mostra quantes pàgines conté abans de permetre generar la vista prèvia.
-
-Pots eliminar capçaleres i peus repetits, conservar imatges i fórmules detectades com a imatges, aplicar OCR a les pàgines escanejades i triar-ne l’idioma, i indicar pàgines com `1-3, 5` (buit significa totes). L’opció de l’OCR només apareix si el document té pàgines escanejades, i l’avís diu quantes són i en quines pàgines són, agrupades en intervals; el seu idioma, només si la marques. Les dues primeres estan activades inicialment; l’OCR està desactivat, perquè descarrega un motor de reconeixement i alenteix la conversió. L’idioma inicial de l’OCR coincideix amb el de la interfície. Prem **Convertir a Markdown**, revisa el resultat i després **Importar en una pestanya nova**. La vista prèvia mostra el començament del document i les seves dotze primeres imatges, i només anomena la resta; el document s’importa sencer. Canviar les opcions requereix tornar a convertir. Cancel·lar no altera els documents oberts. Una barra mostra el progrés en obrir el convertidor, pàgina a pàgina, durant el reconeixement, en preparar la vista prèvia i en desar les imatges del document i en muntar-lo a la seva pestanya —primer el text i després la fulla, uns quants segons cadascun en un informe llarg—.
-
-La detecció de taules, columnes i fórmules pot dividir cel·les o perdre estructura. L’OCR produeix text editable, però les fotografies, línies, baixa resolució i marques d’aigua poden causar errors; només s’aplica a les pàgines escanejades: les que no tenen text extraïble i les que només conserven una referència o un número sobre una imatge que ocupa gairebé tot el full. Quan el reconeixement no aporta més del que la pàgina ja tenia, com en una làmina o en una portada amb una imatge gran, es conserva la conversió normal amb la seva imatge i el seu text en lloc d’una pàgina buida. Quan sí que aporta més, la pàgina passa a ser aquell text i la seva imatge no s’importa. Les fórmules detectades són imatges, no equacions editables. Desactiva l’eliminació de capçaleres i peus si desapareix text útil. La versió web descarrega i desa en memòria cau el motor i l’idioma en el primer ús; l’aplicació d’escriptori els inclou per treballar sense connexió. Límit: 50 MB per fitxer, sense límit de pàgines; a partir d’un centenar el diàleg avisa que pot trigar minuts, i el missatge d’avanç diu quants en queden segons el ritme real. Cal desbloquejar abans els PDF amb contrasenya. La conversió només s’interromp si passen tres minuts sense cap progrés.
-
-Les imatges del PDF es desen automàticament com a recursos separats, per no omplir l’autodesament del navegador amb dades Base64. Es recuperen en tornar a obrir l’aplicació i s’inclouen en desar el Markdown amb els recursos o en exportar.
+EdiMarkdown és programari lliure sota la [GNU Affero General Public License v3.0](LICENSE): pots fer-lo servir a la teva aula, adaptar-lo i desplegar-lo en servidors propis, sempre que comparteixis qualsevol millora sota la mateixa llicència. Si detectes un problema o vols proposar canvis, obre una incidència a [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) o envia un pull request.

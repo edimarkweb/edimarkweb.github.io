@@ -7,6 +7,9 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, firefox } from '@playwright/test';
+import { runPandoc } from './helpers/pandoc-runner.mjs';
+import { inspectProfile, assertProfile } from './helpers/markdown-profile.mjs';
+import { MARKDOWN_READER_NO_AUTO_IDS, normalizeThematicBreaks } from '../pandoc-prepare.js';
 
 const defaultRepoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = process.env.EDIMARK_STATIC_ROOT
@@ -913,6 +916,275 @@ test('avisa cuando el navegador bloquea la ventana independiente', async (t) => 
   así que necesitan su propia comprobación: que se rendericen sin errores y que
   la vuelta a Markdown conserve el delimitador con el que se escribieron.
 */
+test('listas desplegables: recuerdan el tipo, teclado y menú móvil sin desbordamiento', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(() => { markdownEditor.setValue('Primera'); markdownEditor.focus(); document.getElementById('markdown-input').select(); });
+  await page.locator('#list-menu-btn').click();
+  await page.locator('#list-options [data-format="list-ol"]').click();
+  assert.match(await page.locator('#markdown-input').inputValue(), /^1\. Primera/);
+  assert.equal(await page.locator('#list-options [data-format="list-ol"]').getAttribute('aria-checked'), 'true');
+  await page.reload();
+  await page.locator('#list-apply-btn').waitFor();
+  await page.waitForFunction(() => window.__edimarkReady === true);
+  assert.equal(await page.locator('#list-options [data-format="list-ol"]').getAttribute('aria-checked'), 'true');
+  await page.evaluate(() => { markdownEditor.setValue('Segunda'); markdownEditor.focus(); document.getElementById('markdown-input').select(); });
+  await page.locator('#list-apply-btn').click();
+  assert.match(await page.locator('#markdown-input').inputValue(), /^1\. Segunda/);
+  await page.locator('#list-menu-btn').focus();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('End');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#list-menu-btn').getAttribute('aria-expanded'), 'false');
+  assert.equal(await page.locator('#list-menu-btn').evaluate(n => n === document.activeElement), true);
+  await page.setViewportSize({width:360,height:740});
+  await page.locator('#mobile-format-toggle').click();
+  await page.locator('#list-menu-btn').click();
+  for (const id of ['list-apply-btn','list-menu-btn']) {
+    const box = await page.locator(`#${id}`).boundingBox();
+    assert.ok(box.width >= 44 && box.height >= 44, `${id}: superficie táctil`);
+  }
+  const menu = await page.locator('#list-options').boundingBox();
+  assert.ok(menu.x >= 0 && menu.x + menu.width <= 360 && menu.y + menu.height <= 740);
+  if (process.env.EDIMARK_SCREENSHOTS) await page.screenshot({path:`/tmp/edimark-lists-mobile-${process.env.BROWSER || 'chromium'}.png`});
+  await page.locator('#list-options [data-format="list-task"]').click();
+  assert.match(await page.locator('#markdown-input').inputValue(), /^- \[ \] Segunda/);
+  await page.setViewportSize({width:320,height:640});
+  await page.locator('#list-menu-btn').click();
+  const narrowMenu = await page.locator('#list-options').boundingBox();
+  const group = await page.locator('#list-dropdown-container').boundingBox();
+  assert.ok(narrowMenu.x >= 0 && narrowMenu.x + narrowMenu.width <= 320 && narrowMenu.y + narrowMenu.height <= 640);
+  assert.ok(group.width >= 88 && group.x + group.width <= 320);
+});
+
+test('barra del perfil: crea tablas alineadas y cambia solo el separador desde Markdown', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.locator('#new-tab-btn').click();
+  await page.locator('#markdown-input').focus();
+  await page.locator('[data-format="table"]').click();
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+  await page.locator('#table-rows').fill('1');
+  for (const [i, alignment] of ['left','center','right'].entries()) await page.locator(`#table-align-${i}`).selectOption(alignment);
+  await page.locator('#create-table-btn').click();
+  const original = await page.locator('#markdown-input').inputValue();
+  assert.match(original, /\| :--- \| :---: \| ---: \|/);
+  await page.locator('#html-output th').first().waitFor();
+  assert.deepEqual(await page.locator('#html-output th').evaluateAll(nodes => nodes.map(n => getComputedStyle(n).textAlign)), ['left','center','right']);
+  const openExisting = async () => {
+    await page.evaluate(() => {
+      const input = document.getElementById('markdown-input');
+      input.focus();
+      input.setSelectionRange(input.value.indexOf('Celda'), input.value.indexOf('Celda'));
+    });
+    await page.locator('[data-format="table"]').click();
+    assert.equal(await page.locator('#table-modal-title').textContent(), 'Alinear tabla');
+    assert.equal(await page.locator('#table-cols').isDisabled(), true);
+  };
+  await openExisting();
+  if (process.env.EDIMARK_SCREENSHOTS) await page.screenshot({path:`/tmp/edimark-toolbar-${process.env.BROWSER || 'chromium'}.png`});
+  await page.locator('#table-align-0').selectOption('right');
+  await page.locator('#cancel-table-btn').click();
+  assert.equal(await page.locator('#markdown-input').inputValue(), original);
+  await openExisting();
+  await page.locator('#table-align-0').selectOption('right');
+  await page.locator('#create-table-btn').click();
+  assert.equal(await page.locator('#markdown-input').inputValue(), original.replace('| :--- | :---: | ---: |', '| ---: | :---: | ---: |'));
+  await page.locator('#markdown-input').focus();
+  await page.keyboard.press('Control+z');
+  assert.equal(await page.locator('#markdown-input').inputValue(), original);
+});
+
+test('barra del perfil: alinea una tabla existente desde la hoja sin duplicarla', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(() => markdownEditor.setValue('| A | B |\n|---|---|\n| **uno** | dos \\| tres |\n'));
+  await page.locator('#html-output td').first().click();
+  await page.locator('[data-format="table"]').click();
+  assert.equal(await page.locator('#table-modal-title').textContent(), 'Alinear tabla');
+  await page.locator('#table-align-0').selectOption('center');
+  await page.locator('#table-align-1').selectOption('right');
+  await page.locator('#create-table-btn').click();
+  await page.waitForFunction(() => document.querySelector('#html-output th')?.getAttribute('align') === 'center');
+  assert.equal(await page.locator('#html-output table').count(), 1);
+  assert.deepEqual(await page.locator('#html-output td').allTextContents(), ['uno','dos | tres']);
+  assert.equal(await page.locator('#html-output td strong').textContent(), 'uno');
+  const md = await page.locator('#markdown-input').inputValue();
+  assert.match(md, /\|\s*:-+:\s*\|\s*-+:\s*\|/);
+  assert.ok(md.includes('dos \\| tres'));
+});
+
+test('barra del perfil: crea tareas en ambos paneles y permite marcarlas en la hoja', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(() => {
+    markdownEditor.setValue('Primera\nSegunda');
+    markdownEditor.focus();
+    document.getElementById('markdown-input').select();
+  });
+  await page.locator('#list-menu-btn').click();
+  await page.locator('[data-format="list-task"]').click();
+  assert.equal(await page.locator('#markdown-input').inputValue(), '- [ ] Primera\n- [ ] Segunda');
+  await page.locator('#html-output input[type="checkbox"]').first().check();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('- [x] Primera'));
+  await page.evaluate(() => { markdownEditor.focus(); markdownEditor.setValue('Tarea visual'); });
+  await page.locator('#html-output p').click();
+  await page.locator('#list-apply-btn').click();
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('- [ ] Tarea visual'));
+  await page.locator('#html-output li').click({position:{x:80,y:10}});
+  await page.locator('#list-apply-btn').click();
+  await page.waitForFunction(() => !document.getElementById('markdown-input').value.includes('[ ]'));
+  assert.match(await page.locator('#markdown-input').inputValue(), /- Tarea visual/);
+});
+
+test('barra del perfil: código en línea, bloque con lenguaje y cercas seguras', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(() => {
+    markdownEditor.setValue('x < y'); markdownEditor.focus();
+    document.getElementById('markdown-input').select();
+  });
+  await page.locator('[data-format="code"]').click();
+  assert.equal(await page.locator('#markdown-input').inputValue(), '`x < y`');
+  assert.equal(await page.locator('#html-output p code').textContent(), 'x < y');
+  await page.locator('#html-output p').click();
+  await page.locator('[data-format="code-block"]').click();
+  await page.locator('#code-language').fill('markdown');
+  const code = '```python\nprint("hola")\n```';
+  await page.locator('#code-content').fill(code);
+  await page.locator('#insert-code-btn').click();
+  assert.equal((await page.locator('#html-output pre code').textContent()).trimEnd(), code);
+  await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('````markdown'));
+  assert.ok((await page.locator('#markdown-input').inputValue()).includes('````markdown'));
+});
+
+test('barra del perfil: salto visible y título opcional del enlace', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.locator('#new-tab-btn').click();
+  for (const panel of ['markdown','preview']) {
+    await page.evaluate(() => markdownEditor.setValue('UnoDos'));
+    await page.waitForFunction(() => {
+      const p = document.querySelector('#html-output p');
+      return p?.textContent === 'UnoDos' && !p.querySelector('br');
+    });
+    await page.evaluate(target => {
+      if (target === 'markdown') { markdownEditor.focus(); markdownEditor.setCursor({line:0,ch:3}); }
+      else {
+        const root = document.getElementById('html-output'); root.focus();
+        const range = document.createRange(); range.setStart(root.querySelector('p').firstChild,3); range.collapse(true);
+        window.getSelection().removeAllRanges(); window.getSelection().addRange(range); capturePreviewSelection();
+      }
+    }, panel);
+    await page.locator('[data-format="line-break"]').click();
+    await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('Uno  \nDos'));
+    await page.locator('#html-output br').waitFor({state:'attached'});
+    assert.equal(await page.locator('#html-output br').count(), 1);
+  }
+  await page.locator('#markdown-input').focus();
+  await page.locator('[data-format="link"]').click();
+  await page.locator('#link-text').fill('Sitio');
+  await page.locator('#link-url').fill('https://example.org');
+  await page.locator('#link-title').fill('Un "título"');
+  await page.locator('#insert-link-btn').click();
+  await page.locator('#html-output a').waitFor();
+  assert.equal(await page.locator('#html-output a').getAttribute('title'), 'Un "título"');
+});
+
+test('perfil Markdown: la hoja y su edición conservan la estructura y el texto', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  const source = await readFile(new URL('./fixtures/markdown-profile.md', import.meta.url), 'utf8');
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(md => markdownEditor.setValue(md), source);
+  await page.locator('#html-output .katex').first().waitFor();
+  const inspect = () => page.evaluate(() => {
+    const sheet = document.getElementById('html-output');
+    return {
+      heading: sheet.querySelector('h1')?.textContent,
+      table: sheet.querySelectorAll('table').length,
+      sub: [...sheet.querySelectorAll('sub')].map(n => n.textContent),
+      strike: sheet.querySelector('del')?.textContent,
+      tasks: [...sheet.querySelectorAll('input[type="checkbox"]')].map(n => n.checked),
+      math: sheet.querySelectorAll('.katex').length,
+      mathErrors: sheet.querySelectorAll('.katex-error').length,
+      notes: sheet.querySelectorAll('.footnote-reference').length,
+      bare: sheet.querySelector('a[href="https://example.org/bare"]')?.textContent,
+      literal: sheet.textContent.includes('"Texto" ... -- --- y «comillas»…'),
+      code: sheet.querySelector('pre code')?.textContent,
+      image: sheet.querySelector('img')?.getAttribute('alt'),
+      quote: sheet.querySelector('blockquote')?.textContent.trim(),
+      nested: sheet.querySelector('ul ul li')?.textContent,
+    };
+  });
+  const before = await inspect();
+  assert.equal(before.heading, 'Perfil Markdown');
+  assert.equal(before.table, 2);
+  assert.deepEqual(before.sub, ['2', '2', '2']);
+  assert.equal(before.strike, 'tachado');
+  assert.deepEqual(before.tasks, [false, true]);
+  assert.equal(before.math, 4);
+  assert.equal(before.mathErrors, 0);
+  assert.equal(before.notes, 3);
+  assert.equal(before.bare, 'https://example.org/bare');
+  assert.equal(before.literal, true);
+  assert.equal(before.image, 'Píxel');
+  assert.equal(before.quote, 'Una cita en bloque.');
+  assert.equal(before.nested, 'Anidado');
+  assert.ok(before.code.includes('H~2~O y $a^2$'));
+  assertProfile(await page.evaluate(inspectProfile));
+  await page.emulateMedia({ media: 'print' });
+  assertProfile(await page.evaluate(inspectProfile));
+  await page.emulateMedia({ media: 'screen' });
+  await page.locator('#html-output p').filter({ hasText: /^Final del documento\.$/ }).click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' Edición comprobada.');
+  const edited = await page.evaluate(() => {
+    document.getElementById('html-output').focus();
+    forceMarkdownUpdate = true;
+    updateMarkdown();
+    return markdownEditor.getValue();
+  });
+  for (const fragment of ['lang: es', 'author: Ejemplo', '[@ejemplo2026]', '[^nota]:', '# Perfil Markdown', '- [ ] Pendiente', '- [x] Hecho']) {
+    assert.ok(edited.includes(fragment), `${fragment} perdido:\n${edited}`);
+  }
+  assert.ok(edited.includes('Una referencia bibliográfica [@ejemplo2026].'), 'la cita se escapó o perdió');
+  for (const fragment of ['Cita narrativa: @ejemplo2026.', 'Solo año: [-@ejemplo2026].',
+    'Cita múltiple: [@ejemplo2026; @segunda2025].', 'Con página: [@ejemplo2026, p. 12].',
+    '$a^2$', '\\(b^2\\)', '$$\nc^2\n$$', '\\[\nd^2\n\\]']) {
+    assert.ok(edited.includes(fragment), `se alteró la sintaxis de ${fragment}`);
+  }
+  assert.ok(edited.includes('Final del documento. Edición comprobada.'), 'la edición real no llegó al Markdown');
+  await page.evaluate(md => { markdownEditor.setValue(md); updateHtml(); }, edited);
+  await page.locator('#html-output .katex').first().waitFor();
+  assert.deepEqual(await inspect(), before, `cambió el significado al editar la hoja:\n${edited}`);
+  assertProfile(await page.evaluate(inspectProfile));
+  // Exportar lo que volvió del editor detecta pérdidas que la hoja podría ocultar.
+  const exported = await runPandoc(`-f ${MARKDOWN_READER_NO_AUTO_IDS} -t html --mathjax`, normalizeThematicBreaks(edited));
+  assert.ok(exported.bytes.length, exported.stderr.join('\n'));
+  assert.ok(new TextDecoder().decode(exported.bytes).includes('Edición comprobada.'), 'la edición no llegó a la exportación');
+  const converted = await page.evaluate(html => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return {
+      math: doc.querySelectorAll('.math').length,
+      citations: doc.querySelectorAll('[data-cites]').length,
+      notes: doc.querySelectorAll('.footnote-ref').length,
+      sub: [...doc.querySelectorAll('sub')].map(n => n.textContent),
+      tasks: [...doc.querySelectorAll('input[type="checkbox"]')].map(n => n.checked),
+      literal: doc.body.textContent.includes('"Texto" ... -- --- y «comillas»…'),
+    };
+  }, new TextDecoder().decode(exported.bytes));
+  assert.deepEqual(converted, {
+    math: before.math, citations: 5, notes: before.notes,
+    sub: before.sub, tasks: before.tasks, literal: before.literal,
+  }, 'la exportación interpreta de otra forma el Markdown de la hoja');
+  assertProfile(await page.evaluate(inspectProfile, new TextDecoder().decode(exported.bytes)));
+});
+
 test('el manual renderiza sus fórmulas con KaTeX', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
@@ -934,8 +1206,8 @@ test('el manual renderiza sus fórmulas con KaTeX', async (t) => {
     };
   });
   assert.equal(render.errores, 0, 'KaTeX marcó alguna fórmula como errónea');
-  assert.ok(render.linea >= 8, `faltan fórmulas en línea: ${JSON.stringify(render)}`);
-  assert.ok(render.bloque >= 5, `faltan fórmulas de bloque: ${JSON.stringify(render)}`);
+  assert.equal(render.linea, 6, `ejemplos en línea: ${JSON.stringify(render)}`);
+  assert.equal(render.bloque, 1, `ejemplo en bloque: ${JSON.stringify(render)}`);
   assert.equal(render.dolaresSueltos, false, 'quedó texto $...$ sin renderizar');
   // Los delimitadores con barra no deben quedarse como texto plano.
   assert.equal(render.barrasSueltas, false, 'quedó texto \\(...\\) sin renderizar');
@@ -1183,13 +1455,19 @@ for (const [locale, lang] of [['es-ES', 'es'], ['en-US', 'en'], ['ca-ES', 'ca'],
         linea: [...document.querySelectorAll('#html-output span.katex')]
           .filter(node => !node.closest('.katex-display')).length,
         errores: document.querySelectorAll('#html-output .katex-error').length,
+        formulas: [...document.querySelectorAll('#html-output .katex annotation')]
+          .map(node => node.textContent.trim()),
         sinRenderizar: /\$[^$\n]+\$/.test(texto) || /\\[([][^)\]]*\\[)\]]/.test(texto),
       };
     });
     assert.equal(render.errores, 0, `${lang}: KaTeX marcó alguna fórmula como errónea`);
     assert.equal(render.sinRenderizar, false, `${lang}: quedó una fórmula sin renderizar`);
-    assert.ok(render.linea >= 8, `${lang}: faltan fórmulas en línea (${render.linea})`);
-    assert.ok(render.bloque >= 5, `${lang}: faltan fórmulas de bloque (${render.bloque})`);
+    assert.equal(render.linea, 6, `${lang}: ejemplos en línea del manual`);
+    assert.equal(render.bloque, 1, `${lang}: ejemplo en bloque del manual`);
+    assert.deepEqual(render.formulas, [
+      'ax^2 + bx + c = 0', String.raw`x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}`,
+      String.raw`\alpha`, String.raw`\Omega`, 'H_2O', String.raw`\mathbb{R}`, String.raw`A \subseteq B`,
+    ], `${lang}: contenido de los siete ejemplos`);
   });
 }
 
@@ -5161,6 +5439,7 @@ test('el formato de la barra se aplica también sobre la vista previa', async (t
   ]) {
     await documentoDePrueba(page, palabra);
     await seleccionarEnLaHoja(page, palabra);
+    if (formato.startsWith('list-')) await page.locator('#list-menu-btn').click();
     await page.locator(`[data-format="${formato}"]`).click();
     await page.waitForFunction(
       (texto) => document.getElementById('markdown-input').value.trim() === texto,
