@@ -4,6 +4,12 @@ Todos los cambios de EdiMarkdown (antes EdiMarkWeb), de la versión más recient
 
 El formato sigue la idea de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y la numeración, [versionado semántico](https://semver.org/lang/es/).
 
+## [3.1.1] - 2026-09-15
+
+- Figuras con pie: una imagen sola en su párrafo y con texto se muestra en la hoja centrada y con ese texto como pie, igual que ya salía en Word, LibreOffice, LaTeX y HTML. El pie se corrige directamente sobre la hoja, y la figura va centrada en todos los formatos, aunque el texto esté justificado o sangrado.
+- El cuadro de Imagen pide un «Pie de figura» opcional. Si se escribe, la imagen se inserta en su propio párrafo; si no, ya no se inventa un texto con el nombre del archivo, que acababa como pie en el Word. Las imágenes pegadas tampoco lo llevan.
+- En pantallas pequeñas, un menú de la barra que no cabe debajo de su botón se abre hacia arriba, en lugar de salirse de la pantalla y hacer saltar la página.
+
 ## [3.1.0] - 2026-09-15
 
 - El código en línea se muestra sin las comillas invertidas decorativas que añadía el estilo de la hoja.
