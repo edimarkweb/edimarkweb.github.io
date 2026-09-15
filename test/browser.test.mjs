@@ -956,6 +956,18 @@ test('listas desplegables: recuerdan el tipo, teclado y menú móvil sin desbord
   const group = await page.locator('#list-dropdown-container').boundingBox();
   assert.ok(narrowMenu.x >= 0 && narrowMenu.x + narrowMenu.width <= 320 && narrowMenu.y + narrowMenu.height <= 640);
   assert.ok(group.width >= 88 && group.x + group.width <= 320);
+  await page.keyboard.press('Escape');
+  const sinSitio = Math.ceil(group.y + group.height + 60);
+  await page.setViewportSize({width:320,height:sinSitio});
+  // Sin desplazar la página, como quien toca un botón que ya ve abajo del todo.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.locator('#list-menu-btn').dispatchEvent('click');
+  assert.equal(await page.evaluate(() => window.scrollY), 0, 'la página salta al abrir el menú');
+  const arriba = await page.locator('#list-options').boundingBox();
+  const grupoArriba = await page.locator('#list-dropdown-container').boundingBox();
+  assert.ok(arriba.y >= 0 && arriba.y + arriba.height <= sinSitio, 'el menú sin sitio debajo se sale de la pantalla');
+  assert.ok(arriba.y + arriba.height <= grupoArriba.y + 1 || arriba.y >= grupoArriba.y + grupoArriba.height - 1,
+    'el menú tapa los botones de la lista');
 });
 
 test('barra del perfil: crea tablas alineadas y cambia solo el separador desde Markdown', async (t) => {

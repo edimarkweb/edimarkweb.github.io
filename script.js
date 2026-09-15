@@ -260,7 +260,25 @@ function fitMenuInViewport(menu) {
         menu.style.transform = `translateX(${Math.round(shift)}px)`;
         rect = menu.getBoundingClientRect();
     }
-    if (viewportWidth < MENU_NARROW_VIEWPORT && rect.bottom > viewportHeight - margin) {
+    /*
+      Un menú que cuelga de su botón y no cabe debajo se abre hacia arriba si
+      arriba hay más sitio: en un móvil la barra de formato puede quedar tan
+      abajo que el menú se salía de la pantalla.
+    */
+    const anchor = menu.parentElement?.getBoundingClientRect();
+    const hangsFromAnchor = anchor && Math.abs(rect.top - anchor.bottom) < 2;
+    if (hangsFromAnchor && rect.bottom > viewportHeight - margin
+        && anchor.top - margin > viewportHeight - anchor.bottom - margin) {
+        const room = anchor.top - margin;
+        if (rect.height > room) {
+            menu.style.maxHeight = `${Math.round(room)}px`;
+            menu.style.overflowY = 'auto';
+            rect = menu.getBoundingClientRect();
+        }
+        const lift = -(rect.height + anchor.height);
+        menu.style.transform = `translate(${Math.round(shift)}px, ${Math.round(lift)}px)`;
+        rect = menu.getBoundingClientRect();
+    } else if (viewportWidth < MENU_NARROW_VIEWPORT && rect.bottom > viewportHeight - margin) {
         const available = viewportHeight - rect.top - margin;
         if (available > 120) {
             menu.style.maxHeight = `${Math.round(available)}px`;
