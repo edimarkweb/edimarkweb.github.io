@@ -1507,6 +1507,20 @@ body.desktop-mode .markdown-textarea {
     color: #cbd5e1;
 }
 
+/* Figura con pie: centrada, como la escriben Word, LibreOffice y LaTeX. */
+#html-output figure.edimark-figure {
+    text-align: center;
+    text-indent: 0;
+}
+#html-output figure.edimark-figure img {
+    display: inline-block;
+    margin: 0 auto;
+}
+#html-output figure.edimark-figure figcaption {
+    text-align: center;
+    font-style: italic;
+}
+
 /* Subíndices y superíndices. El interlineado a cero es lo que impide que
    `H~2~O` separe de más las líneas del párrafo que lo lleva. */
 #html-output sub,

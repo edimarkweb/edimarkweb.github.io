@@ -19,6 +19,7 @@ esas rutas, no una conversión automática de los archivos del usuario.
 | Tabla | Tuberías, fila de cabecera y fila separadora; sin celdas combinadas |
 | Enlaces | `[texto](URL)`; se reconocen también URL HTTP(S) sueltas |
 | Imágenes | `![alternativo](ruta)`; conservar la carpeta de recursos al trasladar el archivo |
+| Figuras | Una imagen con texto, sola en su párrafo: `![Pie](ruta)`. Es figura con pie en la hoja y en Pandoc (`implicit_figures`); se centra en todos los formatos |
 | Separador | `---` en su propio bloque, separado con líneas en blanco |
 | Salto visible | Dos espacios al final de línea; un salto normal continúa el párrafo |
 | Índices | `H~2~O`, `m^2^`; los espacios interiores deben escaparse |

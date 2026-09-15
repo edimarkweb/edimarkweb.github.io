@@ -28,6 +28,8 @@ import {
   resolveOutlineOptions,
   outlineFrontMatterEntries,
   appendEpubStylesheet,
+  FIGURE_CSS,
+  markdownHasFigures,
   applyOfficeFormat,
   mergeFrontMatter,
   prepareLatexStandalone,
@@ -885,14 +887,17 @@ async function exportDocument({
       El formato del texto va después del índice: los dos reescriben el mismo
       archivo, y hacerlo al final evita rehacer el ZIP dos veces por nada.
     */
-    if (exportFormat && (normalizedFormat === 'docx' || normalizedFormat === 'odt')) {
+    if (normalizedFormat === 'docx' || normalizedFormat === 'odt') {
       const api = documentFormatApi();
-      if (api) {
-        finalBytes = await applyOfficeFormat(finalBytes, api.toOfficeStyles(exportFormat), normalizedFormat);
-      }
+      const officeStyles = exportFormat && api ? api.toOfficeStyles(exportFormat) : {};
+      finalBytes = await applyOfficeFormat(finalBytes, officeStyles, normalizedFormat);
     }
-    if (exportFormat && normalizedFormat === 'epub') {
-      finalBytes = await appendEpubStylesheet(finalBytes, documentFormatCss(normalized));
+    if (normalizedFormat === 'epub') {
+      const epubCss = [
+        exportFormat ? documentFormatCss(normalized) : '',
+        markdownHasFigures(normalized) ? FIGURE_CSS : '',
+      ].filter(Boolean).join('\n');
+      finalBytes = await appendEpubStylesheet(finalBytes, epubCss);
     }
 
     const blob = new Blob([finalBytes], { type: config.mime });
@@ -990,9 +995,11 @@ async function generateHtml({
       htmlResult = htmlResult.replaceAll(`src="${placeholder}"`, () => `src="${dataUri}"`);
     }
 
-    if (htmlFormatCss) {
+    const htmlCss = [htmlFormatCss, standalone && /<figure\b/.test(htmlResult) ? FIGURE_CSS : '']
+      .filter(Boolean).join('\n');
+    if (htmlCss) {
       // Al final de la cabecera para ganar a los estilos de la plantilla.
-      const styleBlock = `<style>\n${htmlFormatCss}\n</style>\n</head>`;
+      const styleBlock = `<style>\n${htmlCss}\n</style>\n</head>`;
       htmlResult = htmlResult.replace(/<\/head>/i, () => styleBlock);
     }
 

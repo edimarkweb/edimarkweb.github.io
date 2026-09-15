@@ -69,6 +69,8 @@ Taulen eta formulen detekzioa ez da hutsezina, eta OCRk huts egin dezake argazki
 * **Ibilbide erlatiboarekin** (gomendatua): dokumentuak irudia bakarrik izendatzen du, bere karpetan geratzen dena. `.md` fitxategia arina mantentzen du, baina dokumentua eta bere irudiak batera bidaiatzen dute.
 * **Dokumentuaren barruan**: irudia fitxategian txertatzen da, autonomo bihurtzen dena baina astunagoa. Erabilgarria `.md` bakarra postaz bidaltzeko.
 
+**Irudi-oina**: koadroan oin bat idazten baduzu, irudia bakarrik doa bere paragrafoan, erdiratuta eta oina azpian duela, orrian eta esportatzean. Markdown-en `![Irudiaren oina](irudiak/argazkia.png)` idazten da, paragrafo propioan, eta oina zuzenean orrian zuzen daiteke. Oinik gabe, irudiak testuaren lerrokatzea jarraitzen du. Irudiek ez dute testurik onartzen inguruan: beti beren lerroan doaz.
+
 Markdown editorearen azpian, **irudien kudeatzaileak** dokumentuko irudiak zerrendatzen ditu: ikusi, ordezkatu, ezabatu, txertatu edo karpetara pasa ditzakezu, eta **Testura joan** aukerak idatzita dauden tokira eramaten zaitu.
 
 ---

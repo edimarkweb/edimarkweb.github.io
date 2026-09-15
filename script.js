@@ -1855,8 +1855,8 @@ async function insertFilesIntoHtmlTarget(files, { mirrorToMarkdown = false, mark
     for (const file of files) {
         const dataUrl = await readFileAsDataUrl(file).catch(() => null);
         if (!dataUrl) continue;
-        const alt = file && file.name ? file.name : 'imagen';
-        const imgTag = `<img src="${dataUrl}" alt="${escapeAttributeValue(alt)}">`;
+        // Sin texto: el nombre del archivo acabaría como pie de figura.
+        const imgTag = `<img src="${dataUrl}" alt="">`;
         if (isHtmlPreviewVisible()) {
             insertHtmlIntoPreview({ html: imgTag }, { triggerSync: shouldTriggerSync });
         } else {
@@ -10768,6 +10768,24 @@ window.onload = async () => {
                     return `<sup>${this.parser.parseInline(token.tokens)}</sup>`;
                 },
             }],
+            /*
+              Una imagen sola en su párrafo y con texto es una figura, y ese
+              texto es su pie: así la lee Pandoc al exportar. Sin pintarla igual,
+              el Word salía con un pie que la hoja y el PDF no enseñaban.
+            */
+            renderer: {
+                paragraph({ tokens }) {
+                    const inline = (tokens || []).filter(token => !(token.type === 'text' && !token.raw.trim()));
+                    const [image] = inline;
+                    if (inline.length !== 1 || image.type !== 'image') return false;
+                    const caption = image.tokens
+                        ? this.parser.parseInline(image.tokens, this.parser.textRenderer)
+                        : image.text;
+                    if (!caption.trim()) return false;
+                    return `<figure class="edimark-figure">${this.parser.parseInline(inline)}`
+                        + `<figcaption>${escapeHtmlEntities(caption)}</figcaption></figure>\n`;
+                },
+            },
         });
     }
     if (window.TurndownService) {
@@ -10803,6 +10821,26 @@ window.onload = async () => {
             if (MEDIOS_CRUDOS.has(node.nodeName)) return true;
             return node.nodeName === 'FIGURE'
                 && Boolean(node.querySelector('audio, video, iframe, embed, object'));
+        });
+        /*
+          La figura vuelve a ser una imagen sola cuyo texto es el pie. Se lee el
+          pie y no el `alt`, porque es el pie lo que se edita en la hoja; sin
+          esta regla el pie se duplicaba como un párrafo suelto.
+        */
+        turndownService.addRule('edimarkFigure', {
+            filter: node => node.nodeName === 'FIGURE'
+                && node.querySelectorAll('img').length === 1
+                && !node.querySelector('a img, audio, video, iframe, embed, object'),
+            replacement: (content, node) => {
+                const img = node.querySelector('img');
+                const figcaption = node.querySelector('figcaption');
+                const caption = (figcaption ? figcaption.textContent : img.getAttribute('alt') || '')
+                    .replace(/\s+/g, ' ').trim();
+                const src = img.getAttribute('src') || '';
+                const title = img.getAttribute('title');
+                const titlePart = title ? ` "${title.replace(/"/g, '\\"')}"` : '';
+                return `\n\n![${caption}](${src}${titlePart})\n\n`;
+            },
         });
         turndownService.addRule('edimarkFootnoteReference', {
             filter: node => node.nodeName === 'SUP' && node.hasAttribute('data-edimark-footnote-ref'),
@@ -14903,11 +14941,11 @@ window.onload = async () => {
         return;
       }
 
-      const defaultAlt = pickedImage?.clipboard
-        ? getTranslation('image_clipboard_selected', 'Imagen pegada')
-        : (pickedImage?.name || getTranslation('base64_image_default_alt', 'imagen'));
-      const enteredAlt = document.getElementById('image-alt-text').value.trim();
-      const alt = imageModalReplacement ? enteredAlt : (enteredAlt || defaultAlt);
+      /*
+        Lo que se escribe es el pie de la figura, así que no se inventa: con el
+        nombre del archivo, Word ya ponía «captura.png» debajo de la imagen.
+      */
+      const alt = document.getElementById('image-alt-text').value.replace(/\s+/g, ' ').trim();
       const imageMarkdown = `![${alt}](${reference || '#'})`;
       if (imageModalReplacement) {
         if (!replaceImageSnippetInMarkdown(imageModalReplacement, imageMarkdown)) {
@@ -14916,7 +14954,8 @@ window.onload = async () => {
         }
         reportStatus(getTranslation('document_image_replace_done', 'Imagen reemplazada.'));
       } else {
-        insertMarkdownContent(imageMarkdown, { inline: true });
+        // Con pie es una figura, y una figura necesita su propio párrafo.
+        insertMarkdownContent(alt ? `\n\n${imageMarkdown}\n\n` : imageMarkdown, { inline: !alt });
       }
       if (imageFileInput) imageFileInput.value = '';
       resetImageSource();

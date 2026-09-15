@@ -1115,3 +1115,43 @@ Código: ${'`'}$sin tocar$${'`'}.
     }
   }
 });
+
+/*
+  La figura con pie sale centrada en Word y LibreOffice, igual que en la hoja,
+  aunque el documento no tenga formato propio; y un documento sin figuras sale
+  como salía, sin rehacer el archivo.
+*/
+test('figuras con pie: DOCX y ODT las centran sin sangría', async () => {
+  const png = await readFile(new URL('../logo_100px.png', import.meta.url));
+  const withFigure = 'Texto justificado.\n\n![Pie de figura](logo.png)\n\nMás texto.\n';
+  const withoutFigure = 'Texto con una imagen ![alt](logo.png) en línea.\n';
+  const decode = bytes => new TextDecoder().decode(bytes);
+  const styleOf = (xml, pattern) => xml.match(pattern)?.[0] || '';
+  for (const format of ['docx', 'odt']) {
+    const run = async markdown => {
+      const result = await runPandoc(`-f ${MARKDOWN_READER_NO_AUTO_IDS} -t ${format}`, markdown, { 'logo.png': png });
+      assert.ok(result.bytes.length > 0, result.stderr.join('\n'));
+      return result.bytes;
+    };
+    const plain = await run(withoutFigure);
+    assert.equal(await applyOfficeFormat(plain, {}, format), plain, `${format}: sin figuras no debe rehacerse`);
+
+    const exported = await applyOfficeFormat(await run(withFigure), { align: 'justify', indent: 'yes' }, format);
+    const entries = readZipEntries(exported);
+    if (format === 'docx') {
+      const styles = decode(entries.get('word/styles.xml'));
+      for (const id of ['Figure', 'ImageCaption']) {
+        const style = styleOf(styles, new RegExp(`<w:style\\b[^>]*w:styleId="${id}"[\\s\\S]*?</w:style>`));
+        assert.match(style, /<w:pPr><w:ind w:firstLine="0" \/><w:jc w:val="center" \/><\/w:pPr>/, `${id}: ${style}`);
+      }
+    } else {
+      const styles = decode(entries.get('styles.xml'));
+      for (const name of ['Figure', 'FigureCaption']) {
+        const style = styleOf(styles, new RegExp(`<style:style\\b[^>]*style:name="${name}"[^>]*?(?:/>|>[\\s\\S]*?</style:style>)`));
+        assert.match(style, /fo:text-align="center"/, `${name}: ${style}`);
+        assert.match(style, /fo:text-indent="0cm"/, `${name}: ${style}`);
+      }
+      assert.equal(entries.keys().next().value, 'mimetype');
+    }
+  }
+});

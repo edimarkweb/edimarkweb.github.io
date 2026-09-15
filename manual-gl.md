@@ -69,6 +69,8 @@ O botón **Imaxe** admite un ficheiro do disco ou unha URL, e pregunta como inse
 * **Con ruta relativa** (o recomendado): o documento só nomea a imaxe, que queda no seu propio cartafol. Mantén o `.md` lixeiro, pero o documento e as súas imaxes viaxan xuntos.
 * **Dentro do documento**: a imaxe incrústase no ficheiro, que se volve autónomo pero máis pesado. Útil para enviar un `.md` solto por correo.
 
+**Pé de figura**: se escribes un pé no cadro, a imaxe vai soa no seu parágrafo, centrada e co pé debaixo, na folla e ao exportar. En Markdown escríbese `![Pé da figura](imaxes/foto.png)`, nun parágrafo propio, e o pé pódese corrixir directamente sobre a folla. Sen pé, a imaxe segue o aliñamento do texto. As imaxes non admiten texto arredor: van sempre na súa propia liña.
+
 Baixo o editor Markdown, o **xestor de imaxes** lista as do documento: podes velas, substituílas, eliminalas, incrustalas ou pasalas ao cartafol, e **Ir ao texto** lévate ata onde están escritas.
 
 ---

@@ -69,6 +69,8 @@ El botón **Imagen** admite un archivo del disco o una URL, y pregunta cómo ins
 * **Con ruta relativa** (lo recomendado): el documento solo nombra la imagen, que se queda en su propia carpeta. Mantiene el `.md` ligero, pero el documento y sus imágenes viajan juntos.
 * **Dentro del documento**: la imagen se incrusta en el archivo, que se vuelve autónomo pero más pesado. Útil para enviar un `.md` suelto por correo.
 
+**Pie de figura**: si escribes un pie en el cuadro, la imagen va sola en su párrafo, centrada y con el pie debajo, en la hoja y al exportar. En Markdown se escribe `![Pie de la figura](imagenes/foto.png)`, en un párrafo propio, y el pie se puede corregir directamente sobre la hoja. Sin pie, la imagen sigue la alineación del texto. Las imágenes no admiten texto alrededor: van siempre en su propio renglón.
+
 Bajo el editor Markdown, el **gestor de imágenes** lista las del documento: puedes verlas, reemplazarlas, eliminarlas, incrustarlas o pasarlas a la carpeta, y **Ir al texto** te lleva hasta donde están escritas.
 
 ---

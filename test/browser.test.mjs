@@ -1995,6 +1995,57 @@ test('el selector de imagen incrusta el archivo cuando se elige dentro del docum
   assert.match(await page.locator('#markdown-input').inputValue(), /!\[Microscopio\]\(data:image\/png;base64,/);
 });
 
+/*
+  Pandoc hace figura de una imagen sola en su párrafo y con texto, y ese texto
+  es su pie. La hoja tiene que enseñar lo mismo, y el pie se edita en ella.
+*/
+test('figura con pie: la hoja la centra y el pie editado vuelve al Markdown', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(() => markdownEditor.setValue(
+    'Texto.\n\n![Pie inicial](logo_100px.png)\n\nEn línea ![alt](logo_100px.png) aquí.\n\n![](logo_100px.png)\n\nFinal.',
+  ));
+  await page.locator('#html-output figure.edimark-figure figcaption').waitFor();
+  assert.equal(await page.locator('#html-output figure').count(), 1, 'solo la imagen sola y con texto es figura');
+  assert.equal(await page.locator('#html-output figcaption').textContent(), 'Pie inicial');
+  assert.equal(await page.locator('#html-output figure').evaluate(n => getComputedStyle(n).textAlign), 'center');
+
+  await page.locator('#html-output figcaption').click();
+  await page.evaluate(() => {
+    const caption = document.querySelector('#html-output figcaption');
+    const range = document.createRange();
+    range.selectNodeContents(caption);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  });
+  await page.keyboard.type('Pie nuevo');
+  await page.waitForFunction(() => markdownEditor.getValue().includes('![Pie nuevo](logo_100px.png)'));
+  const markdown = await page.evaluate(() => markdownEditor.getValue());
+  assert.doesNotMatch(markdown, /^Pie nuevo$/m, 'el pie se ha duplicado como párrafo');
+  assert.match(markdown, /En línea !\[alt\]\(logo_100px\.png\) aquí\./);
+  assert.match(markdown, /^!\[\]\(logo_100px\.png\)$/m);
+});
+
+test('el cuadro de imagen: con pie inserta una figura, sin pie no inventa texto', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+  await page.locator('#new-tab-btn').click();
+  await page.evaluate(() => { markdownEditor.setValue('Antes de la imagen'); markdownEditor.focus(); markdownEditor.setCursor({ line: 0, ch: 5 }); });
+  for (const pie of ['', 'Un microscopio']) {
+    await page.locator('button[data-format="image"]').click();
+    await page.locator('input[name="image-insert-mode"][value="url"]').check();
+    await page.locator('#image-url').fill('https://example.org/microscopio.png');
+    await page.locator('#image-alt-text').fill(pie);
+    await page.locator('#insert-image-btn').click();
+    await page.locator('#image-modal-overlay').waitFor({ state: 'hidden' });
+  }
+  const markdown = await page.evaluate(() => markdownEditor.getValue());
+  assert.match(markdown, /!\[\]\(https:\/\/example\.org\/microscopio\.png\)/, 'sin pie no debe llevar texto');
+  assert.match(markdown, /(^|\n\n)!\[Un microscopio\]\(https:\/\/example\.org\/microscopio\.png\)\n\n/, 'con pie debe ir en su propio párrafo');
+  await page.locator('#html-output figcaption').getByText('Un microscopio').waitFor();
+});
+
 test('al imprimir en modo escritorio el documento no se recorta a una página', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
@@ -2339,7 +2390,8 @@ test('pegar detecta imágenes publicadas solo en clipboardData.items', async (t)
     document.getElementById('markdown-input').dispatchEvent(event);
   });
   await page.waitForFunction(() => document.getElementById('markdown-input').value.includes('data:image/png;base64,'));
-  assert.match(await page.locator('#markdown-input').inputValue(), /clipboard\.png/);
+  // Sin texto: el nombre del archivo acabaría como pie de figura.
+  assert.match(await page.locator('#markdown-input').inputValue(), /^!\[\]\(data:image\/png;base64,/);
 });
 
 test('Guardar como siempre pide una ruta nueva y la convierte en la ruta activa', async (t) => {

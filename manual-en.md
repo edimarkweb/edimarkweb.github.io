@@ -69,6 +69,8 @@ The **Image** button accepts a file from disk or a URL, and asks how to insert i
 * **With a relative path** (recommended): the document just names the image, which stays in its own folder. Keeps the `.md` file light, but the document and its images travel together.
 * **Inside the document**: the image is embedded in the file, which becomes self-contained but heavier. Useful for sending a single `.md` file by email.
 
+**Figure caption**: if you type a caption in the dialog, the image goes alone in its paragraph, centred with the caption underneath, both on the sheet and on export. In Markdown it is written `![Figure caption](images/photo.png)` in its own paragraph, and the caption can be corrected directly on the sheet. Without a caption, the image follows the text alignment. Text cannot wrap around images: they always sit on their own line.
+
 Below the Markdown editor, the **image manager** lists the document's images: you can view, replace, delete, embed or move them to the folder, and **Go to text** takes you to where each one is written.
 
 ---

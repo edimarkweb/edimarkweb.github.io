@@ -69,6 +69,8 @@ El botó **Imatge** admet un arxiu del disc o una URL, i pregunta com inserir-la
 * **Amb ruta relativa** (el recomanat): el document només anomena la imatge, que es queda a la seva pròpia carpeta. Manté el `.md` lleuger, però el document i les seves imatges viatgen junts.
 * **Dins del document**: la imatge s'incrusta a l'arxiu, que es torna autònom però més pesant. Útil per enviar un `.md` solt per correu.
 
+**Peu de figura**: si escrius un peu al quadre, la imatge va sola al seu paràgraf, centrada i amb el peu a sota, al full i en exportar. En Markdown s'escriu `![Peu de la figura](imatges/foto.png)`, en un paràgraf propi, i el peu es pot corregir directament sobre el full. Sense peu, la imatge segueix l'alineació del text. Les imatges no admeten text al voltant: van sempre a la seva pròpia línia.
+
 Sota l'editor Markdown, el **gestor d'imatges** llista les del document: pots veure-les, reemplaçar-les, eliminar-les, incrustar-les o passar-les a la carpeta, i **Anar al text** et porta fins on estan escrites.
 
 ---

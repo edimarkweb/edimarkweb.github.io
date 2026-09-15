@@ -1034,3 +1034,14 @@ test('Los textos con cantidad tienen su forma singular', () => {
     assert.ok(clave.replace(/_many$/, '_one') in es, `${clave} no tiene singular`);
   }
 });
+
+test('markdownHasFigures reconoce la imagen sola en su párrafo y con texto', async () => {
+  const { markdownHasFigures } = await import('../pandoc-prepare.js');
+  assert.equal(markdownHasFigures('![Pie](a.png)'), true);
+  assert.equal(markdownHasFigures('Texto.\n\n![Pie](a.png "Título")\n\nMás.'), true);
+  assert.equal(markdownHasFigures('![Pie](a.png){width=50%}\n'), true);
+  assert.equal(markdownHasFigures('![](a.png)'), false);
+  assert.equal(markdownHasFigures('![ ](a.png)'), false);
+  assert.equal(markdownHasFigures('Texto ![Pie](a.png) en línea.'), false);
+  assert.equal(markdownHasFigures('Texto pegado\n![Pie](a.png)'), false);
+});

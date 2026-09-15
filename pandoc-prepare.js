@@ -3,11 +3,13 @@ import { createZip } from './zip-writer.js';
 import { extractOdtTableHeaders, restoreTableHeaders } from './odt-tables.js';
 import { normalizeFormulaHrefs } from './odt-formulas.js';
 import {
+  applyDocxFigureAlignment,
   applyDocxHyphenation,
   applyDocxMargins,
   applyDocxPageSize,
   applyDocxStyles,
   applyDocxTheme,
+  applyOdtFigureAlignment,
   applyOdtMargins,
   applyOdtPageSize,
   applyOdtStyles,
@@ -1263,6 +1265,17 @@ export async function fillOdtTableOfContents(archiveBytes, depth = 3) {
   sustituiría: esa hoja trae el reset y los estilos del código, las citas y las
   notas, y el libro se quedaría sin ellos.
 */
+/*
+  Una imagen sola en su párrafo y con texto es una figura para Pandoc, y ese
+  texto es su pie. Se centran las dos cosas, como en la hoja.
+*/
+export const FIGURE_CSS = 'figure { text-align: center; }\nfigure img { margin-inline: auto; }\nfigcaption { text-align: center; font-style: italic; }';
+
+export function markdownHasFigures(markdown) {
+  return /(?:^|\n[ \t]*\n)[ \t]*!\[[^\]\n]*\S[^\]\n]*\]\([^)\n]+\)(?:\{[^}\n]*\})?[ \t]*(?=\n[ \t]*\n|\n?$)/
+    .test(String(markdown || ''));
+}
+
 export async function appendEpubStylesheet(archiveBytes, css) {
   if (!archiveBytes || archiveBytes.length === 0 || !String(css || '').trim()) return archiveBytes;
   try {
@@ -1296,12 +1309,8 @@ export async function appendEpubStylesheet(archiveBytes, css) {
   el formato que entregar un archivo que Word no quiera abrir.
 */
 export async function applyOfficeFormat(archiveBytes, styles, kind) {
-  if (!archiveBytes || archiveBytes.length === 0 || !styles) return archiveBytes;
-  const wanted = ['align', 'fontName', 'fontSizePt', 'lineHeight', 'indent', 'hyphenate', 'pageBreakBeforeH1']
-    .some(key => styles[key])
-    || Object.keys(styles.marginsCm || {}).length > 0
-    || Boolean(styles.paperCm);
-  if (!wanted) return archiveBytes;
+  if (!archiveBytes || archiveBytes.length === 0) return archiveBytes;
+  styles = styles || {};
 
   try {
     const entries = await readZipEntries(archiveBytes);
@@ -1317,8 +1326,15 @@ export async function applyOfficeFormat(archiveBytes, styles, kind) {
       if (result && result !== xml) updated.set(name, encoder.encode(result));
     };
 
+    // Las figuras se centran siempre, como en la hoja; solo si el documento tiene alguna.
+    const body = decoder.decode(entries.get(kind === 'docx' ? 'word/document.xml' : 'content.xml') || new Uint8Array());
+    const hasFigures = kind === 'docx' ? /w:val="CaptionedFigure"/.test(body) : /text:style-name="FigureWithCaption"/.test(body);
+
     if (kind === 'docx') {
-      rewrite('word/styles.xml', xml => applyDocxStyles(xml, styles));
+      rewrite('word/styles.xml', xml => {
+        const formatted = applyDocxStyles(xml, styles);
+        return hasFigures ? applyDocxFigureAlignment(formatted) : formatted;
+      });
       // El tamaño va antes que los márgenes: los dos escriben en la misma
       // sección y Word exige `w:pgSz` delante de `w:pgMar`.
       rewrite('word/document.xml', xml => applyDocxMargins(
@@ -1328,10 +1344,13 @@ export async function applyOfficeFormat(archiveBytes, styles, kind) {
       rewrite('word/settings.xml', xml => applyDocxHyphenation(xml, styles.hyphenate));
       rewrite('word/theme/theme1.xml', xml => applyDocxTheme(xml, styles.fontName));
     } else {
-      rewrite('styles.xml', xml => applyOdtMargins(
-        applyOdtPageSize(applyOdtStyles(xml, styles), styles.paperCm),
-        styles.marginsCm,
-      ));
+      rewrite('styles.xml', xml => {
+        const formatted = applyOdtMargins(
+          applyOdtPageSize(applyOdtStyles(xml, styles), styles.paperCm),
+          styles.marginsCm,
+        );
+        return hasFigures ? applyOdtFigureAlignment(formatted) : formatted;
+      });
     }
     if (!updated.size) return archiveBytes;
 

@@ -192,6 +192,28 @@ function docxCodeAlignment(xml, styles) {
   );
 }
 
+/*
+  Pandoc escribe cada figura en un párrafo `Figure` —`Captioned Figure` hereda
+  de él— y su pie en `Image Caption`. Se centran los dos, sin sangría, igual
+  que en la hoja; si el documento justifica o sangra, no les llega.
+*/
+export function applyDocxFigureAlignment(stylesXml) {
+  if (typeof stylesXml !== 'string' || !stylesXml) return stylesXml;
+  const propias = ['<w:ind w:firstLine="0" />', '<w:jc w:val="center" />'];
+  return stylesXml.replace(
+    /<w:style\b[^>]*w:styleId="(?:Figure|ImageCaption)"[\s\S]*?<\/w:style>/g,
+    (style) => {
+      const pPr = style.match(/<w:pPr>([\s\S]*?)<\/w:pPr>/);
+      const previas = ((pPr ? pPr[1] : '').match(/<[\w:]+[^>]*\/>|<([\w:]+)[^>]*>[\s\S]*?<\/\2>/g) || [])
+        .filter(element => !['w:jc', 'w:ind'].includes(docxElementName(element)));
+      const cuerpo = `<w:pPr>${sortDocxParagraphChildren([...previas, ...propias]).join('')}</w:pPr>`;
+      if (pPr) return style.replace(/<w:pPr>[\s\S]*?<\/w:pPr>/, cuerpo);
+      if (/<w:pPr\s*\/>/.test(style)) return style.replace(/<w:pPr\s*\/>/, cuerpo);
+      return style.replace(/(<w:rPr\b|<\/w:style>)/, `${cuerpo}$1`);
+    },
+  );
+}
+
 export function applyDocxStyles(stylesXml, styles) {
   if (typeof stylesXml !== 'string' || !stylesXml) return stylesXml;
   let updated = docxRunDefaults(stylesXml, styles);
@@ -361,6 +383,34 @@ function odtCodeAlignment(xml, styles) {
       }
       if (/<style:paragraph-properties\b[^>]*>/.test(style)) {
         return style.replace(/<style:paragraph-properties\b[^>]*>/, addAttributes);
+      }
+      return style.replace(/(<style:text-properties\b|<\/style:style>)/, `<style:paragraph-properties ${attributes.join(' ')} />$1`);
+    },
+  );
+}
+
+/*
+  En el ODT la figura va en `Figure` —`FigureWithCaption` hereda de él— y el
+  pie en `FigureCaption`. Se centran igual que en el DOCX.
+*/
+export function applyOdtFigureAlignment(stylesXml) {
+  if (typeof stylesXml !== 'string' || !stylesXml) return stylesXml;
+  const attributes = ['fo:text-align="center"', 'fo:text-indent="0cm"'];
+  const addAttributes = tag => attributes.reduce((updated, declaration) => {
+    const name = declaration.slice(0, declaration.indexOf('='));
+    const existing = new RegExp(`\\s${name.replace(':', '\\:')}="[^"]*"`);
+    if (existing.test(updated)) return updated.replace(existing, ` ${declaration}`);
+    return updated.replace(/\s*(\/?>)$/, ` ${declaration} $1`);
+  }, tag);
+  return stylesXml.replace(
+    /<style:style\b(?=[^>]*style:name="(?:Figure|FigureCaption)")[^>]*?(?:\/>|>[\s\S]*?<\/style:style>)/g,
+    (style) => {
+      if (/^<style:style\b[^>]*\/>$/.test(style)) {
+        const open = style.replace(/\s*\/>$/, '>');
+        return `${open}<style:paragraph-properties ${attributes.join(' ')} /></style:style>`;
+      }
+      if (/<style:paragraph-properties\b[^>]*\/?>/.test(style)) {
+        return style.replace(/<style:paragraph-properties\b[^>]*?\/?>/, addAttributes);
       }
       return style.replace(/(<style:text-properties\b|<\/style:style>)/, `<style:paragraph-properties ${attributes.join(' ')} />$1`);
     },
