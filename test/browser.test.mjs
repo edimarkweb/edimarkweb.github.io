@@ -818,6 +818,28 @@ test('un nombre de documento con marcado no se interpreta como HTML', async (t) 
   assert.equal(await page.evaluate(() => window.__injected === true), false);
 });
 
+test('renombrar una pestaña admite espacios y clics dentro del campo', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.evaluate(() => newDoc('otro.md', '', { activate: false }));
+  const first = page.locator('.tab').first();
+  const id = await first.getAttribute('data-id');
+  await first.locator('.tab-name').dblclick();
+  await page.keyboard.press('ControlOrMeta+a');
+  // La barra espaciadora pulsaba la pestaña, que es un botón, y el nombre se
+  // quedaba en la primera palabra.
+  await page.keyboard.type('Nombre con espacios');
+  await page.locator('#tab-bar input').click({ position: { x: 4, y: 4 } });
+  await page.keyboard.press('End');
+  await page.keyboard.type(' y más');
+  await page.keyboard.press('Enter');
+
+  assert.equal(await page.locator(`.tab[data-id="${id}"] .tab-name`).textContent(), 'Nombre con espacios y más');
+  assert.equal(await page.locator('#tab-bar input').count(), 0);
+  assert.equal(await page.locator(`.tab[data-id="${id}"]`).isVisible(), true);
+});
+
 test('una pestaña cruza varias posiciones en un solo arrastre y conserva el cursor', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());

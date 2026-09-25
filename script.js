@@ -3578,25 +3578,27 @@ function initializeTabDragAndDrop(tabBar) {
     tabBar.addEventListener('pointerdown', handlePointerDown);
 }
 
+/*
+  El campo va en la barra, en el sitio de la pestaña, y no dentro de ella: la
+  pestaña es un botón, y la barra espaciadora escrita en un campo que está
+  dentro lo pulsaba. El clic cambiaba de documento, el campo perdía el foco y
+  el nombre se quedaba en la primera palabra.
+*/
 function startRename(tab) {
     const tabNameSpan = tab.querySelector('.tab-name');
-    if (!tabNameSpan || tab.querySelector('input')) return;
+    if (!tabNameSpan || tab.style.display === 'none') return;
 
     const currentName = tabNameSpan.textContent;
     const docId = tab.dataset.id;
-    const closeBtn = tab.querySelector('.tab-close');
-    const dirtyIndicator = tab.querySelector('.tab-dirty');
 
     const input = document.createElement('input');
     input.type = 'text';
     input.value = currentName;
-    input.className = 'bg-white dark:bg-slate-800 border border-blue-500 rounded px-1 text-sm w-32';
+    input.className = 'self-center bg-white dark:bg-slate-800 border border-blue-500 rounded px-1 text-sm w-32';
     input.setAttribute('aria-label', getTranslation('rename_document_aria_label', 'Nuevo nombre del documento'));
 
-    tabNameSpan.style.display = 'none';
-    if (closeBtn) closeBtn.style.display = 'none';
-
-    tab.insertBefore(input, dirtyIndicator);
+    tab.parentNode.insertBefore(input, tab);
+    tab.style.display = 'none';
     input.focus();
     input.select();
 
@@ -3607,8 +3609,7 @@ function startRename(tab) {
         input.removeEventListener('keydown', handleKey);
         if (input.parentNode) input.remove();
 
-        tabNameSpan.style.display = '';
-        if (closeBtn) closeBtn.style.display = '';
+        tab.style.display = '';
 
         if (newName && newName !== currentName) {
             const doc = docs.find(d => d.id === docId);
