@@ -145,6 +145,20 @@ que evitan que una exportación rota llegue al usuario como una descarga de 0 by
 - **KaTeX** y **EdiCuaTeX** para matemáticas.
 - **Split.js** para la distribución de paneles y **Lucide Icons** para los iconos.
 
+## Lo que se carga de fuera
+
+La versión web descarga sus bibliotecas de dos CDN, con la versión fijada y comprobación de integridad (SRI). No envía los documentos a ningún servidor ni recoge estadísticas de uso.
+
+| Dirección | Qué se carga | Cuándo |
+| :--- | :--- | :--- |
+| `cdn.jsdelivr.net` | Marked, KaTeX y sus tipografías, Lucide, Split.js, Tesseract.js y el adaptador que ejecuta Pandoc en el navegador (browser_wasi_shim) | Al abrir |
+| `cdnjs.cloudflare.com` | CodeMirror y Turndown | Al abrir |
+| `cdn.jsdelivr.net` | Motor del OCR y datos del idioma elegido | Al aplicar OCR a un PDF |
+| `edicuatex.github.io` | EdiCuaTeX, el editor visual de fórmulas | Al pulsar su botón |
+| `www.youtube.com` e `i.ytimg.com` | Vídeos incrustados y sus miniaturas | Solo si el documento incluye alguno |
+
+Pandoc y el conversor de PDF (Pyodide y PyMuPDF) se sirven desde el propio sitio. Sin conexión la versión web no arranca, porque el editor llega de un CDN. La aplicación de escritorio lleva todo dentro, también EdiCuaTeX y el OCR en cinco idiomas, y funciona sin conexión; solo sale a internet para comprobar si hay una versión nueva (`api.github.com`) y para las miniaturas de los vídeos incrustados.
+
 ## Contribuir
 
 1. Crea un fork y una rama descriptiva.
