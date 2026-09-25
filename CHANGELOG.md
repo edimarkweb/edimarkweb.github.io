@@ -4,6 +4,12 @@ Todos los cambios de EdiMarkdown (antes EdiMarkWeb), de la versión más recient
 
 El formato sigue la idea de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y la numeración, [versionado semántico](https://semver.org/lang/es/).
 
+## [3.2.0] - 2026-09-25
+
+- La versión web deja de contar visitas: ya no avisa a ningún servidor de estadísticas al abrirse, y el aviso de privacidad lo dice. La versión de escritorio nunca lo hizo.
+- Los dos editores se pueden dejar con el teclado: `Esc` y después `Tab` (o `Mayús` + `Tab`) salen del editor Markdown y de una lista de la hoja, donde `Tab` sangra. Los editores y las casillas de las tareas tienen nombre para los lectores de pantalla, y los textos grises de los menús, las pestañas inactivas, el idioma del documento y los pies de figura en tema oscuro tienen el contraste mínimo.
+- «Acerca de» y el README indican cómo se usa la IA en el desarrollo de EdiMarkdown: nivel 4 del MIAE y lo que comprueba el autor.
+
 ## [3.1.2] - 2026-09-25
 
 - Al renombrar una pestaña con doble clic, el nombre admite espacios. Antes, en Chrome, Edge y la versión de escritorio para Windows, la edición se cortaba al pulsar la barra espaciadora y la pestaña se quedaba con la primera palabra. Pulsar dentro del campo para mover el cursor ya no arrastra la pestaña.
