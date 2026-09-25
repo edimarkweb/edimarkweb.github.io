@@ -191,12 +191,6 @@ for (const [remoteUrl, localUrl] of indexReplacements) {
 indexHtml = indexHtml
   .replace(/\s+integrity="[^"]*"/g, '')
   .replace(/\s+crossorigin="anonymous"/g, '');
-// En escritorio no hay visitas web que medir. Además, retirar este único
-// script en línea permite aplicar una CSP que bloquee manejadores HTML como
-// `onerror` dentro de documentos Markdown abiertos por el usuario.
-const analyticsBlock = /\s*<script>\s*\(function \(\) \{\s*var ANALYTICS_FALLBACK_ENDPOINT[\s\S]*?\}\)\(\);\s*<\/script>/;
-if (!analyticsBlock.test(indexHtml)) throw new Error('No se encontró el bloque de analítica');
-indexHtml = indexHtml.replace(analyticsBlock, '');
 // Los archivos propios llevan `?v=` con la versión para que el navegador no
 // sirva una copia vieja, así que la etiqueta no se puede buscar literal.
 const platformScript = /<script src="platform-api\.js(\?[^"]*)?"><\/script>/;

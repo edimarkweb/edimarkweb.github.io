@@ -375,7 +375,7 @@
   "footer_repo_link": "Projecte a GitHub",
   "footer_feedback_link": "Comentaris",
   "footer_privacy_link": "Privadesa",
-  "footer_privacy_notice": "Els fitxers es processen localment en aquest navegador. Només es recullen estadístiques d'ús agregades pròpies i no s'envien fitxers ni dades a tercers.",
+  "footer_privacy_notice": "Els fitxers es processen localment en aquest navegador. L'aplicació no recull estadístiques d'ús ni envia fitxers o dades a tercers.",
   "footer_privacy_notice_desktop": "Els fitxers es processen localment al teu equip. L'aplicació no recull estadístiques d'ús ni envia fitxers o dades a tercers.",
   "storage_unavailable": "No es pot utilitzar l'emmagatzematge local. Els canvis no es conservaran en tancar l'aplicació.",
   "storage_quota_exceeded": "L'emmagatzematge local és ple. Desa el document en un fitxer per no perdre els canvis.",

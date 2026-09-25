@@ -3,9 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="analytics-endpoint" content="https://bilateria.org/app/estadistica/edimarkweb/track.php">
-    <meta name="analytics-stats-url" content="https://bilateria.org/app/estadistica/edimarkweb/admin-stats.php">
-    <meta name="analytics-site-id" content="edimarkweb">
     <link rel="manifest" href="manifest.json">
     <meta name="color-scheme" content="light dark">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
@@ -968,7 +965,7 @@
             </nav>
             <details class="mt-4 text-sm text-slate-700 dark:text-slate-300">
                 <summary class="about-license-summary" data-i18n-key="footer_privacy_link">Privacidad</summary>
-                <p id="about-privacy-notice" class="mt-2" data-i18n-key="footer_privacy_notice">Los archivos se procesan localmente en este navegador. Solo se recogen estadísticas de uso agregadas propias y no se envían archivos ni datos a terceros.</p>
+                <p id="about-privacy-notice" class="mt-2" data-i18n-key="footer_privacy_notice">Los archivos se procesan localmente en este navegador. La aplicación no recoge estadísticas de uso ni envía archivos o datos a terceros.</p>
             </details>
             <div class="mt-6 flex justify-end">
                 <button id="about-close-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500" data-i18n-key="close_btn">Cerrar</button>
@@ -1710,185 +1707,6 @@
     <script src="platform-api.js?v=3.1.2"></script>
     <script src="desktop-updater.js?v=3.1.2"></script>
     <script type="module" src="pandoc-exporter.js?v=3.1.2"></script>
-    <script>
-    (function () {
-      var ANALYTICS_FALLBACK_ENDPOINT = 'https://bilateria.org/app/estadistica/edimarkweb/track.php';
-      var ANALYTICS_FALLBACK_STATS_URL = 'https://bilateria.org/app/estadistica/edimarkweb/admin-stats.php';
-      var ANALYTICS_VISIT_COOLDOWN_MS = 30 * 60 * 1000;
-      var ANALYTICS_CALLBACK_NAME = '__edimarkAnalytics';
-      var ANALYTICS_CHANNEL = 'edimarkweb-analytics';
-
-      function getMetaContent(name) {
-        var node = document.querySelector('meta[name="' + name + '"]');
-        if (!node) return '';
-        return String(node.getAttribute('content') || '').trim();
-      }
-
-      function getAnalyticsConfig() {
-        return {
-          endpoint: getMetaContent('analytics-endpoint') || ANALYTICS_FALLBACK_ENDPOINT,
-          statsUrl: getMetaContent('analytics-stats-url') || ANALYTICS_FALLBACK_STATS_URL,
-          siteId: getMetaContent('analytics-site-id') || 'edimarkweb'
-        };
-      }
-
-      function getAnalyticsVisitStorageKey(siteId) {
-        return 'analytics:last-visit:' + siteId;
-      }
-
-      function shouldCountAnalyticsVisit(siteId) {
-        try {
-          var rawValue = window.localStorage.getItem(getAnalyticsVisitStorageKey(siteId)) || '';
-          var lastVisit = parseInt(rawValue, 10);
-          if (!isNaN(lastVisit) && Date.now() - lastVisit < ANALYTICS_VISIT_COOLDOWN_MS) return false;
-        } catch (err) {
-          return true;
-        }
-        return true;
-      }
-
-      function rememberAnalyticsVisit(siteId) {
-        try {
-          window.localStorage.setItem(getAnalyticsVisitStorageKey(siteId), String(Date.now()));
-        } catch (err) {}
-      }
-
-      function shouldTrackAnalytics() {
-        /*
-          La aplicación de escritorio no cuenta visitas. Su ventana sirve la
-          misma página desde un origen local, que según el sistema puede
-          parecer un `http://` cualquiera, así que no basta con mirar el
-          protocolo: se descarta explícitamente el modo nativo para que el
-          aviso de privacidad que ve quien la usa siga siendo cierto.
-        */
-        if (window.EdiMarkPlatform && window.EdiMarkPlatform.isDesktop) return false;
-        var protocol = String(window.location.protocol || '');
-        var host = String(window.location.hostname || '').toLowerCase();
-        if (protocol !== 'http:' && protocol !== 'https:') return false;
-        if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return false;
-        if (/\.local$/.test(host)) return false;
-        return true;
-      }
-
-      /*
-        Documento del iframe aislado que hace la llamada JSONP.
-
-        La URL llega ya codificada en porcentajes por URLSearchParams, así que no
-        puede contener `<` ni comillas y es seguro incrustarla; aun así se pasa
-        por JSON.stringify y el llamador lo verifica antes.
-      */
-      function buildAnalyticsFrameDocument(url) {
-        return '<!doctype html><meta charset="utf-8"><script>'
-          + '(function(){'
-          + 'var done=false;'
-          + 'function send(ok){if(done)return;done=true;'
-          + 'parent.postMessage({channel:' + JSON.stringify(ANALYTICS_CHANNEL) + ',ok:!!ok},"*");}'
-          + 'window[' + JSON.stringify(ANALYTICS_CALLBACK_NAME) + ']=function(p){send(p&&p.ok);};'
-          + 'var s=document.createElement("script");'
-          + 's.src=' + JSON.stringify(url) + ';'
-          + 's.onerror=function(){send(false);};'
-          + 'document.head.appendChild(s);'
-          + 'setTimeout(function(){send(false);},3000);'
-          + '})();'
-          + '<\/script>';
-      }
-
-      /*
-        La analítica es JSONP: el servidor contesta con una llamada a una función,
-        de modo que su respuesta es código que se ejecuta. Cargado en la página,
-        ese código tendría acceso a todo lo que hay en ella, incluidos los
-        documentos del usuario en localStorage.
-
-        Por eso se carga dentro de un iframe con `sandbox` y sin
-        `allow-same-origin`: origen opaco, sin acceso al DOM de la página, sin
-        localStorage y sin cookies. Lo único que vuelve es un booleano por
-        postMessage, y el contrato con el servidor no cambia.
-      */
-      function loadAnalyticsSummary() {
-        if (!shouldTrackAnalytics()) return;
-        var cfg = getAnalyticsConfig();
-        if (!cfg.endpoint || !/^https?:\/\//i.test(cfg.endpoint)) return;
-
-        var pageParams = new URLSearchParams(window.location.search || '');
-        var query = new URLSearchParams();
-        var shouldCountVisit = shouldCountAnalyticsVisit(cfg.siteId);
-        var frame = document.createElement('iframe');
-        var settled = false;
-        var timeoutId = 0;
-
-        function cleanup() {
-          if (settled) return;
-          settled = true;
-          if (timeoutId) window.clearTimeout(timeoutId);
-          window.removeEventListener('message', onAnalyticsMessage);
-          if (frame && frame.parentNode) frame.parentNode.removeChild(frame);
-        }
-
-        // Del iframe solo se acepta un booleano, y solo si viene de él.
-        function onAnalyticsMessage(event) {
-          if (!frame || event.source !== frame.contentWindow) return;
-          var data = event.data;
-          if (!data || data.channel !== ANALYTICS_CHANNEL) return;
-          try {
-            if (shouldCountVisit && data.ok === true) rememberAnalyticsVisit(cfg.siteId);
-          } finally {
-            cleanup();
-          }
-        }
-
-        query.set('site', cfg.siteId);
-        query.set('callback', ANALYTICS_CALLBACK_NAME);
-        query.set('page_url', window.location.href);
-        query.set('referrer', document.referrer || '');
-        if (!shouldCountVisit) query.set('summary_only', '1');
-
-        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(function (key) {
-          var value = String(pageParams.get(key) || '').trim();
-          if (value) query.set(key, value);
-        });
-
-        var url = cfg.endpoint + (cfg.endpoint.indexOf('?') === -1 ? '?' : '&') + query.toString();
-        // Un endpoint con caracteres capaces de cerrar el <script> del srcdoc
-        // solo puede venir de una etiqueta <meta> mal puesta: no se carga.
-        if (/[<>"']/.test(url)) return;
-
-        window.addEventListener('message', onAnalyticsMessage);
-        frame.setAttribute('sandbox', 'allow-scripts');
-        frame.setAttribute('aria-hidden', 'true');
-        frame.setAttribute('tabindex', '-1');
-        frame.setAttribute('title', '');
-        frame.style.display = 'none';
-        frame.srcdoc = buildAnalyticsFrameDocument(url);
-        timeoutId = window.setTimeout(cleanup, 4000);
-        document.body.appendChild(frame);
-      }
-
-      function scheduleAnalyticsLoad() {
-        if (!shouldTrackAnalytics()) return;
-        var run = function () { window.setTimeout(loadAnalyticsSummary, 0); };
-        // Un <script async> inyectado antes de que se dispare «load» retrasa ese
-        // evento hasta que la peticion termina. Si el servidor de estadisticas se
-        // cuelga, «load» no llegaria a dispararse nunca. Por eso se espera siempre
-        // a «load» antes de programar nada.
-        var programar = function () {
-          if (typeof window.requestIdleCallback === 'function') {
-            window.requestIdleCallback(run, { timeout: 2500 });
-          } else {
-            window.setTimeout(run, 0);
-          }
-        };
-        if (document.readyState === 'complete') {
-          programar();
-          return;
-        }
-        window.addEventListener('load', programar, { once: true });
-      }
-
-      document.addEventListener('DOMContentLoaded', function () {
-        scheduleAnalyticsLoad();
-      });
-    })();
-    </script>
     <script src="script.js?v=3.1.2" defer></script>
     <script src="search.js?v=3.1.2" defer></script>
     <script src="i18n.js?v=3.1.2" defer></script>

@@ -354,6 +354,9 @@ function purgeOldReleaseBannerKeys() {
     storedKeys
         .filter(key => key.startsWith(DESKTOP_RELEASE_BANNER_PREFIX) && key !== DESKTOP_RELEASE_BANNER_KEY)
         .forEach(key => safeLocalStorageRemove(key));
+    // El contador de visitas de la web se retiró en la 3.2.0; su marca de
+    // última visita ya no sirve a nadie.
+    safeLocalStorageRemove('analytics:last-visit:edimarkweb');
 }
 
 function safeLocalStorageGet(key, fallback = null) {

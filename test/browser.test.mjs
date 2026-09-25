@@ -724,14 +724,12 @@ test('escribir sin pausas mantiene los dos paneles al día', async (t) => {
 });
 
 /*
-  La analítica es JSONP: la respuesta del servidor es código que se ejecuta. Se
-  carga dentro de un iframe con sandbox y sin allow-same-origin para que ese
-  código no alcance la página ni, con ella, los documentos del usuario.
-
-  La analítica está desactivada en localhost, así que la prueba sirve la
-  aplicación desde un host inventado; todo se resuelve contra el servidor local.
+  El aviso de privacidad dice que la web no recoge estadísticas ni envía nada a
+  terceros. Al abrirla solo puede pedir sus propios archivos y las bibliotecas
+  de los CDN. Se sirve desde un host inventado porque en localhost la antigua
+  analítica tampoco se cargaba, y así la prueba lo vería si volviera.
 */
-test('el JSONP de analítica no alcanza la página que lo carga', {
+test('la web solo pide sus archivos y las bibliotecas al abrirse', {
   skip: Boolean(process.env.EDIMARK_STATIC_ROOT),
 }, async (t) => {
   const context = await browser.newContext();
@@ -743,36 +741,21 @@ test('el JSONP de analítica no alcanza la página que lo carga', {
     const respuesta = await route.fetch({ url: `${appUrl.replace('/index.html', '')}${ruta}` });
     await route.fulfill({ response: respuesta });
   });
-  await context.route(/pandoc\.b64(?:\.gz)?(?:\?.*)?$/, route => (
-    route.fulfill({ status: 200, contentType: 'text/plain', body: '' })
-  ));
-  await context.route(/\/imagenes\//, route => route.abort());
-
-  // El JSONP intenta escribir en el almacenamiento de la página antes de
-  // contestar: si el aislamiento funciona, lanza y no llega a hacerlo.
-  await context.route(/track\.php/, route => route.fulfill({
-    status: 200,
-    contentType: 'application/javascript',
-    body: 'try{parent.localStorage.setItem("colado","1");}catch(e){}'
-      + 'window.__edimarkAnalytics({"ok":true});',
-  }));
+  // Pandoc se sirve entero: vacío, la aplicación iría a buscar su copia de
+  // reserva fuera y la prueba lo contaría.
+  const permitidos = new Set(['edimarkweb.test', 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com']);
+  const ajenos = [];
+  context.on('request', (request) => {
+    const url = new URL(request.url());
+    if (/^https?:$/.test(url.protocol) && !permitidos.has(url.hostname)) ajenos.push(request.url());
+  });
 
   const page = await context.newPage();
-  await page.goto(`${host}/index.html`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${host}/index.html`, { waitUntil: 'load' });
   await page.locator('.tab-name').first().waitFor();
+  await page.waitForTimeout(3000);
 
-  // La visita se apunta desde la página, con lo que devuelve el iframe.
-  await page.waitForFunction(
-    () => localStorage.getItem('analytics:last-visit:edimarkweb') !== null,
-    null,
-    { timeout: 15000 },
-  );
-
-  assert.equal(
-    await page.evaluate(() => localStorage.getItem('colado')),
-    null,
-    'el código de la analítica llegó al almacenamiento de la página',
-  );
+  assert.deepEqual(ajenos, []);
 });
 
 test('los controles de imágenes y de pegado se traducen', async (t) => {
