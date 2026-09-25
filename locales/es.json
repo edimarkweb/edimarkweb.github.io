@@ -378,6 +378,7 @@
   "footer_repo_link": "Proyecto en GitHub",
   "footer_feedback_link": "Comentarios",
   "task_checkbox_label": "Tarea hecha",
+  "tab_location_unsaved": "Sin guardar en ningún archivo: solo en la copia automática de EdiMarkdown.",
   "footer_privacy_link": "Privacidad",
   "footer_privacy_notice": "Los archivos se procesan localmente en este navegador. La aplicación no recoge estadísticas de uso ni envía archivos o datos a terceros.",
   "footer_privacy_notice_desktop": "Los archivos se procesan localmente en tu equipo. La aplicación no recoge estadísticas de uso ni envía archivos o datos a terceros.",

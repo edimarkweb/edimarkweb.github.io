@@ -139,7 +139,7 @@ El botó de copiar, al costat d'Exportar, porta el contingut al porta-retalls en
 
 És la mateixa aplicació instal·lada a Linux, Windows i macOS. Els instal·ladors són a la [pàgina de descàrregues](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest).
 
-Davant del navegador afegeix: doble clic per obrir arxius `.md`, desament directe sense passar per la carpeta de descàrregues, corrector ortogràfic del sistema i funcionament sense connexió (Pandoc i EdiCuaTeX hi van inclosos). En arrencar comprova si hi ha una versió nova i ho avisa amb **Descarregar i instal·lar**.
+Davant del navegador afegeix: doble clic per obrir arxius `.md`, desament directe sense passar per la carpeta de descàrregues, la ubicació de l'arxiu de cada pestanya en passar-hi el ratolí per sobre o al seu menú del botó dret, corrector ortogràfic del sistema i funcionament sense connexió (Pandoc i EdiCuaTeX hi van inclosos). En arrencar comprova si hi ha una versió nova i ho avisa amb **Descarregar i instal·lar**.
 
 **A macOS**, si el sistema avisa que l'aplicació «està malmesa», arrossega EdiMarkdown a Aplicacions i executa al Terminal:
 

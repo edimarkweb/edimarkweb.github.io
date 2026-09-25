@@ -135,6 +135,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.__refreshBibliographyPreview === 'function') {
       window.__refreshBibliographyPreview();
     }
+    if (typeof window.__refreshTabLocations === 'function') {
+      window.__refreshTabLocations();
+    }
   };
 
   /*

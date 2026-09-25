@@ -139,7 +139,7 @@ Kopiatzeko botoiak, Esportatu-ren ondoan, edukia arbelera bidaltzen du Markdown,
 
 Aplikazio bera da, Linux, Windows eta macOSen instalatuta. Instalatzaileak [deskarga-orrian](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest) daude.
 
-Nabigatzailearen aurrean hau gehitzen du: klik bikoitza `.md` fitxategiak irekitzeko, zuzeneko gordetzea deskargen karpetatik pasatu gabe, sistemaren zuzentzaile ortografikoa eta konexiorik gabe funtzionatzea (Pandoc eta EdiCuaTeX barne datoz). Abiaraztean bertsio berririk dagoen egiaztatzen du eta **Deskargatu eta instalatu** eskaintzen du.
+Nabigatzailearen aurrean hau gehitzen du: klik bikoitza `.md` fitxategiak irekitzeko, zuzeneko gordetzea deskargen karpetatik pasatu gabe, fitxa bakoitzaren fitxategia non dagoen, sagua gainetik pasatzean edo eskuineko botoiaren menuan, sistemaren zuzentzaile ortografikoa eta konexiorik gabe funtzionatzea (Pandoc eta EdiCuaTeX barne datoz). Abiaraztean bertsio berririk dagoen egiaztatzen du eta **Deskargatu eta instalatu** eskaintzen du.
 
 **macOSen**, sistemak aplikazioa «hondatuta» dagoela abisatzen badu, arrastatu EdiMarkdown Aplikazioetara eta exekutatu Terminalean:
 

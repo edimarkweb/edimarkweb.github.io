@@ -3693,6 +3693,7 @@ function addTabElement({ id, name }) {
     tab.append(nameEl, dirtyEl, closeEl);
     tabBar.appendChild(tab);
     tab.addEventListener('dblclick', () => startRename(tab));
+    updateTabLocation(id);
     if(window.lucide) lucide.createIcons();
 }
 
@@ -4039,11 +4040,42 @@ async function closeDoc(id) {
     }
 }
 
+/*
+  En el escritorio cada pestaña dice dónde está su archivo: la ruta completa,
+  o que no está en ninguno y solo existe en la copia automática. Se ve al
+  pasar el ratón y, para el táctil y el teclado, al principio del menú de la
+  pestaña. En el navegador no se muestra: ninguno deja saber a una página en
+  qué carpeta está un archivo, y solo se podría dar el nombre.
+*/
+function tabLocationText(doc) {
+    if (!doc || !window.EdiMarkPlatform?.isDesktop) return '';
+    return doc.filePath || getTranslation(
+        'tab_location_unsaved',
+        'Sin guardar en ningún archivo: solo en la copia automática de EdiMarkdown.'
+    );
+}
+
+function updateTabLocation(id) {
+    const doc = docs.find(d => d.id === id);
+    const tab = document.querySelector(`.tab[data-id="${id}"]`);
+    const text = tabLocationText(doc);
+    if (!tab || !text) return;
+    const dirty = tab.querySelector('.tab-dirty');
+    tab.title = dirty && !dirty.classList.contains('hidden')
+        ? `${text}\n${getTranslation('unsaved_changes_title', 'Cambios sin guardar')}`
+        : text;
+}
+
+window.__refreshTabLocations = () => docs.forEach(doc => updateTabLocation(doc.id));
+
 function updateDirtyIndicator(id, isDirty) {
     const tab = document.querySelector(`.tab[data-id="${id}"] .tab-dirty`);
     if (tab) {
         tab.classList.toggle('hidden', !isDirty);
     }
+    // Aquí pasa también todo lo que cambia su archivo: guardar, «Guardar
+    // como», abrir.
+    updateTabLocation(id);
     // Guardar vive ahora en la barra, donde no hay nombre de documento que
     // marcar: el punto del botón dice si al documento abierto le falta guardar.
     if (id === currentId) {
@@ -11538,6 +11570,13 @@ window.onload = async () => {
         if (!tabMenu) return;
         tabMenuDocId = tab.dataset.id;
         updateTabMenuReopenList();
+        const location = document.getElementById('tab-menu-location');
+        if (location) {
+            const text = tabLocationText(docs.find(d => d.id === tabMenuDocId));
+            // Una ruta larga se parte detrás de cada barra, no a media palabra.
+            location.replaceChildren(...text.split(/(?<=[/\\])/).flatMap(part => [part, document.createElement('wbr')]));
+            location.classList.toggle('hidden', !text);
+        }
         // Cerrar las demás no tiene sentido con una sola pestaña abierta.
         const others = tabMenu.querySelector('[data-tab-action="close-others"]');
         if (others) others.disabled = docs.length < 2;

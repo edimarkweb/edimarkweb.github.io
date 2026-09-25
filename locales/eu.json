@@ -378,6 +378,7 @@
   "footer_repo_link": "Proiektua GitHub-en",
   "footer_feedback_link": "Iruzkinak",
   "task_checkbox_label": "Zeregina eginda",
+  "tab_location_unsaved": "Ez dago inolako fitxategitan gordeta: EdiMarkdown-en kopia automatikoan bakarrik dago.",
   "footer_privacy_link": "Pribatutasuna",
   "footer_privacy_notice": "Fitxategiak lokalean prozesatzen dira nabigatzaile honetan. Aplikazioak ez du erabilera-estatistikarik jasotzen, eta ez die fitxategirik edo daturik hirugarrenei bidaltzen.",
   "footer_privacy_notice_desktop": "Fitxategiak zure ekipoan bertan prozesatzen dira. Aplikazioak ez du erabilera-estatistikarik jasotzen, eta ez die fitxategirik edo daturik hirugarrenei bidaltzen.",

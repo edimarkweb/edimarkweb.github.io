@@ -503,6 +503,39 @@ test('un documento del sistema abierto dos veces vuelve a su pestaña', async (t
   assert.equal(await activa(), 'otro.md');
 });
 
+test('en el escritorio cada pestaña dice dónde está su archivo', async (t) => {
+  const { context, page } = await openApp({ initStorage: escritorioConDisco });
+  t.after(() => context.close());
+
+  const tema = page.locator('.tab', { hasText: 'tema.md' });
+  await tema.waitFor();
+  await page.waitForFunction(() => document.querySelector('.tab[aria-selected="true"]')?.title === '/docs/tema.md');
+
+  // Con cambios pendientes lo dice también.
+  await page.locator('#markdown-input').focus();
+  await page.keyboard.type(' más');
+  await page.waitForFunction(() => document.querySelector('.tab[aria-selected="true"]')?.title === '/docs/tema.md\nCambios sin guardar');
+
+  // Un documento nuevo no está en ningún archivo.
+  await page.evaluate(() => newDoc('nuevo.md', 'x'));
+  assert.match(await page.locator('.tab', { hasText: 'nuevo.md' }).getAttribute('title'), /^Sin guardar en ningún archivo/);
+
+  // El menú de la pestaña empieza por lo mismo, para el táctil y el teclado.
+  await tema.click({ button: 'right' });
+  assert.equal(await page.locator('#tab-menu-location').textContent(), '/docs/tema.md');
+  assert.equal(await page.locator('#tab-menu-location').isVisible(), true);
+});
+
+test('en el navegador las pestañas no muestran ubicación', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.evaluate(() => newDoc('nuevo.md', 'x'));
+  assert.equal(await page.locator('.tab', { hasText: 'nuevo.md' }).getAttribute('title'), null);
+  await page.locator('.tab', { hasText: 'nuevo.md' }).click({ button: 'right' });
+  assert.equal(await page.locator('#tab-menu-location').isVisible(), false);
+});
+
 /*
   El manual se pide por red y tarda. Si mientras tanto llega un documento del
   sistema, el manual no puede ponerse delante: el archivo que el usuario acaba

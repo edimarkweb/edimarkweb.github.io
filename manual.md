@@ -139,7 +139,7 @@ El botón de copiar, junto a Exportar, lleva el contenido al portapapeles en Mar
 
 Es la misma aplicación instalada en Linux, Windows y macOS. Los instaladores están en la [página de descargas](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest).
 
-Frente al navegador añade: doble clic para abrir archivos `.md`, guardado directo sin pasar por la carpeta de descargas, corrector ortográfico del sistema y funcionamiento sin conexión (Pandoc y EdiCuaTeX van incluidos). Al arrancar comprueba si hay una versión nueva y avisa con **Descargar e instalar**.
+Frente al navegador añade: doble clic para abrir archivos `.md`, guardado directo sin pasar por la carpeta de descargas, la ubicación del archivo de cada pestaña al pasar el ratón por encima o en su menú del botón derecho, corrector ortográfico del sistema y funcionamiento sin conexión (Pandoc y EdiCuaTeX van incluidos). Al arrancar comprueba si hay una versión nueva y avisa con **Descargar e instalar**.
 
 **En macOS**, si el sistema avisa de que la aplicación «está dañada», arrastra EdiMarkdown a Aplicaciones y ejecuta en el Terminal:
 

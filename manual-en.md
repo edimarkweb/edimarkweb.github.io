@@ -139,7 +139,7 @@ The copy button, next to Export, sends the content to the clipboard as Markdown,
 
 It's the same app, installed on Linux, Windows and macOS. Installers are on the [downloads page](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest).
 
-Compared with the browser, it adds: double-click to open `.md` files, direct saving without going through the downloads folder, the system's spell checker, and offline use (Pandoc and EdiCuaTeX are bundled in). On launch it checks for a new version and offers **Download and install**.
+Compared with the browser, it adds: double-click to open `.md` files, direct saving without going through the downloads folder, the location of each tab's file when hovering over it or in its right-click menu, the system's spell checker, and offline use (Pandoc and EdiCuaTeX are bundled in). On launch it checks for a new version and offers **Download and install**.
 
 **On macOS**, if the system warns that the app "is damaged", drag EdiMarkdown to Applications and run in Terminal:
 

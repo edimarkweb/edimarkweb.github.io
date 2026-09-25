@@ -139,7 +139,7 @@ O botón de copiar, xunto a Exportar, leva o contido ao portapapeis en Markdown,
 
 É a mesma aplicación instalada en Linux, Windows e macOS. Os instaladores están na [páxina de descargas](https://github.com/edimarkweb/edimarkweb.github.io/releases/latest).
 
-Fronte ao navegador engade: dobre clic para abrir ficheiros `.md`, gardado directo sen pasar pola carpeta de descargas, corrector ortográfico do sistema e funcionamento sen conexión (Pandoc e EdiCuaTeX van incluídos). Ao arrincar comproba se hai unha versión nova e avisa con **Descargar e instalar**.
+Fronte ao navegador engade: dobre clic para abrir ficheiros `.md`, gardado directo sen pasar pola carpeta de descargas, a localización do ficheiro de cada lapela ao pasar o rato por riba ou no seu menú do botón dereito, corrector ortográfico do sistema e funcionamento sen conexión (Pandoc e EdiCuaTeX van incluídos). Ao arrincar comproba se hai unha versión nova e avisa con **Descargar e instalar**.
 
 **En macOS**, se o sistema avisa de que a aplicación «está danada», arrastra EdiMarkdown a Aplicacións e executa no Terminal:
 
