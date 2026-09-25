@@ -190,6 +190,7 @@ Es solo el aviso habitual de macOS ante software sin firmar; con ese comando se 
 | Abrir Configuración | `Ctrl` + `,` | `Cmd` + `,` |
 | Maximizar área de edición | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Cambiar diseño | `Ctrl` + `L` | `Cmd` + `L` |
+| Salir del editor con el teclado | `Esc` y luego `Tab` | `Esc` y luego `Tab` |
 | Buscar | `Ctrl` + `F` | `Cmd` + `F` |
 | Ampliar / reducir el panel en el que estás | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Manual de uso | `Ctrl` + `H` o `F1` | `Cmd` + `H` o `F1` |

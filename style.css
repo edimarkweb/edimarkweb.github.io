@@ -1520,6 +1520,10 @@ body.desktop-mode .markdown-textarea {
     text-align: center;
     font-style: italic;
 }
+/* El gris del pie que trae la tipografía se pierde sobre la hoja oscura. */
+.dark #html-output figcaption {
+    color: #94a3b8;
+}
 
 /* Subíndices y superíndices. El interlineado a cero es lo que impide que
    `H~2~O` separe de más las líneas del párrafo que lo lleva. */
@@ -2017,7 +2021,8 @@ body.desktop-mode .markdown-textarea {
     letter-spacing: 0.04em;
 }
 .doc-language-status.is-inherited {
-    opacity: 0.6;
+    /* Atenuado, pero legible: con 0,6 no llegaba al contraste mínimo. */
+    opacity: 0.85;
     font-weight: 400;
 }
 .dark select.action-btn { background-color: #0f172a; }
@@ -2246,7 +2251,7 @@ body.desktop-mode .markdown-textarea {
     border: 1px solid transparent;
     border-bottom: 1px solid #e2e8f0;
     background-color: #e2e8f0;
-    color: #64748b;
+    color: #475569;
     cursor: grab;
     user-select: none;
     touch-action: pan-y;

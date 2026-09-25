@@ -190,6 +190,7 @@ macOSek sinatu gabeko softwarearen aurrean ematen duen ohiko abisua besterik ez 
 | Ezarpenak ireki | `Ctrl` + `,` | `Cmd` + `,` |
 | Edizio-area maximizatu | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Diseinua aldatu | `Ctrl` + `L` | `Cmd` + `L` |
+| Editoretik teklatuarekin irten | `Esc` eta gero `Tab` | `Esc` eta gero `Tab` |
 | Bilatu | `Ctrl` + `F` | `Cmd` + `F` |
 | Zauden panela handitu / txikitu | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Erabilera-eskuliburua | `Ctrl` + `H` edo `F1` | `Cmd` + `H` edo `F1` |

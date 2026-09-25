@@ -2234,6 +2234,8 @@ function applySpellChecking(lang) {
 */
 const MEASURABLE_LINES = 5000;
 
+const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'AltGraph']);
+
 function createTextareaEditor(textarea) {
     textarea.value = normalizeNewlines(textarea.value || '');
     textarea.classList.add('markdown-textarea');
@@ -2829,7 +2831,24 @@ function createTextareaEditor(textarea) {
         return false;
     }
 
+    /*
+      Tab sangra, así que sin una salida el foco quedaba preso en el editor y
+      quien usa solo el teclado no llegaba a nada más. Escape y después Tab (o
+      Mayús+Tab) sale, como en CodeMirror o VS Code.
+    */
+    let tabLeavesEditor = false;
+
     textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            tabLeavesEditor = true;
+            return;
+        }
+        // Mayús llega sola antes que el Tab de Mayús+Tab.
+        if (MODIFIER_KEYS.has(e.key)) return;
+        if (tabLeavesEditor) {
+            tabLeavesEditor = false;
+            if (e.key === 'Tab') return;
+        }
         const accel = e.ctrlKey || e.metaKey;
         if (accel && !e.altKey && e.key.toLowerCase() === 'z') {
             e.preventDefault();
@@ -5704,7 +5723,9 @@ function updateHtml() {
         const restoredHtml = restoreMathSegments(parsedHtml, mathSegments);
         htmlOutput.replaceChildren(previewFragmentFromHtml(restoredHtml));
         htmlOutput.querySelectorAll('li input[type="checkbox"]').forEach(input => {
-            if (!input.closest('[data-edimark-footnotes]')) input.disabled = false;
+            if (input.closest('[data-edimark-footnotes]')) return;
+            input.disabled = false;
+            labelTaskCheckbox(input);
         });
         fitWidePreformattedBlocks(htmlOutput);
 
@@ -6248,6 +6269,7 @@ function applyFormatToPreview(format) {
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.disabled = false;
+                    labelTaskCheckbox(checkbox);
                     (li.firstElementChild?.tagName === 'P' ? li.firstElementChild : li).prepend(checkbox, document.createTextNode(' '));
                 }
             });
@@ -8356,6 +8378,16 @@ document.addEventListener('pointerdown', (event) => {
   if (recordarPanelDeTrabajo(event.target)) refrescarPanelActivo();
 });
 
+/*
+  La casilla de una tarea no tiene texto propio: sin nombre, un lector de
+  pantalla solo dice «casilla». El nombre es cosa de la hoja y
+  `buildHtmlWithTex` lo retira antes de que nada salga de ella.
+*/
+function labelTaskCheckbox(input) {
+    input.setAttribute('aria-label', getTranslation('task_checkbox_label', 'Tarea hecha'));
+    input.dataset.edimarkLabel = '';
+}
+
 function buildHtmlWithTex() {
   const htmlOutput = document.getElementById('html-output');
   if (!htmlOutput) return '';
@@ -8366,6 +8398,10 @@ function buildHtmlWithTex() {
     de ella. El índice de verdad lo pone Pandoc al exportar.
   */
   clone.querySelectorAll('[data-edimark-toc], [data-edimark-bibliography]').forEach(nodo => nodo.remove());
+  clone.querySelectorAll('[data-edimark-label]').forEach(nodo => {
+    nodo.removeAttribute('aria-label');
+    nodo.removeAttribute('data-edimark-label');
+  });
   const inlineFallback = tex => `$${tex}$`;
   const displayFallback = tex => `\n\\[\n${tex}\n\\]\n`;
   const replaceNode = (node, fallbackBuilder) => {
@@ -11794,7 +11830,15 @@ window.onload = async () => {
             notifyPreviewEdited();
             capturePreviewSelection();
         });
+        // Dentro de una lista Tab sangra: Escape y Tab sale, igual que en el
+        // editor Markdown.
+        let previewTabLeaves = false;
         htmlOutput.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') { previewTabLeaves = true; return; }
+            if (MODIFIER_KEYS.has(event.key)) return;
+            const leaving = previewTabLeaves;
+            previewTabLeaves = false;
+            if (leaving) return;
             if (event.key !== 'Tab' || event.ctrlKey || event.metaKey || event.altKey) return;
             const block = previewBlockOfSelection();
             const item = block && block.closest('li');

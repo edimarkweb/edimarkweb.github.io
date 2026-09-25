@@ -190,6 +190,7 @@ This is just macOS's usual warning for unsigned software; that command opens it 
 | Open Settings | `Ctrl` + `,` | `Cmd` + `,` |
 | Maximize the editing area | `Ctrl` + `Shift` + `F` | `Cmd` + `Shift` + `F` |
 | Change layout | `Ctrl` + `L` | `Cmd` + `L` |
+| Leave the editor with the keyboard | `Esc` then `Tab` | `Esc` then `Tab` |
 | Find | `Ctrl` + `F` | `Cmd` + `F` |
 | Zoom in / out on the active pane | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | User manual | `Ctrl` + `H` or `F1` | `Cmd` + `H` or `F1` |

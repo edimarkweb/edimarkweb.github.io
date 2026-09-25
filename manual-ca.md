@@ -190,6 +190,7 @@ xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app
 | Obrir Configuració | `Ctrl` + `,` | `Cmd` + `,` |
 | Maximitzar l'àrea d'edició | `Ctrl` + `Maj` + `F` | `Cmd` + `Maj` + `F` |
 | Canviar disposició | `Ctrl` + `L` | `Cmd` + `L` |
+| Sortir de l'editor amb el teclat | `Esc` i després `Tab` | `Esc` i després `Tab` |
 | Cercar | `Ctrl` + `F` | `Cmd` + `F` |
 | Ampliar / reduir el panell en què ets | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
 | Manual d'ús | `Ctrl` + `H` o `F1` | `Cmd` + `H` o `F1` |

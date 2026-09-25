@@ -801,6 +801,41 @@ test('un nombre de documento con marcado no se interpreta como HTML', async (t) 
   assert.equal(await page.evaluate(() => window.__injected === true), false);
 });
 
+test('Escape y Tab sacan el foco de los dos editores, que tienen nombre', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  await page.evaluate(() => newDoc('tareas.md', '- [ ] uno\n- [x] dos\n'));
+  const markdown = page.locator('#markdown-input');
+  assert.equal(await markdown.getAttribute('aria-labelledby'), 'markdown-panel-title');
+  assert.equal(await page.locator('#html-output').getAttribute('aria-labelledby'), 'html-panel-title');
+  await page.locator('#html-output li input[type="checkbox"]').first().waitFor();
+  assert.deepEqual(
+    await page.locator('#html-output li input[type="checkbox"]').evaluateAll(inputs => inputs.map(i => i.getAttribute('aria-label'))),
+    ['Tarea hecha', 'Tarea hecha'],
+  );
+  assert.doesNotMatch(await page.evaluate(() => buildHtmlWithTex()), /aria-label|data-edimark-label/);
+
+  const focused = () => page.evaluate(() => document.activeElement?.id || '');
+  // Tab sangra: sin Escape delante, el foco se queda.
+  await markdown.focus();
+  await page.keyboard.press('Tab');
+  assert.equal(await focused(), 'markdown-input');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Tab');
+  assert.notEqual(await focused(), 'markdown-input');
+  await markdown.focus();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Shift+Tab');
+  assert.notEqual(await focused(), 'markdown-input');
+
+  // En la hoja, dentro de una lista, Tab también sangra.
+  await page.locator('#html-output li').first().click();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Tab');
+  assert.notEqual(await focused(), 'html-output');
+});
+
 test('renombrar una pestaña admite espacios y clics dentro del campo', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
