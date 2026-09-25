@@ -81,13 +81,13 @@ const FORMATS = {
   El comprimido va primero: son 19 MB en lugar de 70 MB para el mismo base64.
   La variante sin comprimir se queda como respaldo porque la descompresión
   necesita DecompressionStream; donde no exista, readResponseAsText devuelve
-  una cadena vacía y el bucle pasa a la fuente siguiente.
+  una cadena vacía y el bucle pasa a la fuente siguiente. No hay copia en
+  otro sitio: la de mdaitex que había de reserva solo entraba si fallaba el
+  propio servidor de la aplicación, y entonces ya no carga nada más.
 */
 const PANDOC_WASM_SOURCES = [
   { url: 'pandoc.b64.gz', gzip: true },
   { url: 'pandoc.b64', gzip: false },
-  { url: 'https://raw.githubusercontent.com/mdaitex/mdaitex.github.io/main/pandoc.b64.gz', gzip: true },
-  { url: 'https://raw.githubusercontent.com/mdaitex/mdaitex.github.io/main/pandoc.b64', gzip: false },
 ];
 const MAX_RETRIES = 3;
 const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
