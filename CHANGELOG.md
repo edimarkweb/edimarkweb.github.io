@@ -4,6 +4,10 @@ Todos los cambios de EdiMarkdown (antes EdiMarkWeb), de la versión más recient
 
 El formato sigue la idea de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y la numeración, [versionado semántico](https://semver.org/lang/es/).
 
+## [3.1.2] - 2026-09-25
+
+- Al renombrar una pestaña con doble clic, el nombre admite espacios. Antes, en Chrome, Edge y la versión de escritorio para Windows, la edición se cortaba al pulsar la barra espaciadora y la pestaña se quedaba con la primera palabra. Pulsar dentro del campo para mover el cursor ya no arrastra la pestaña.
+
 ## [3.1.1] - 2026-09-15
 
 - Figuras con pie: una imagen sola en su párrafo y con texto se muestra en la hoja centrada y con ese texto como pie, igual que ya salía en Word, LibreOffice, LaTeX y HTML. El pie se corrige directamente sobre la hoja, y la figura va centrada en todos los formatos, aunque el texto esté justificado o sangrado.
