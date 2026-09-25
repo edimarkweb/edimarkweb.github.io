@@ -31,7 +31,7 @@ La lupa de la barra d'estat (o `Ctrl` + `+` / `Ctrl` + `-`) amplia o redueix el 
 
 ## Pestanyes i menús
 
-Cada document viu a la seva pestanya. `Ctrl+T` en crea una, `Ctrl+Tab` passa d'una a l'altra, i un punt vermell (`●`) avisa de canvis sense desar. El botó dret sobre una pestanya obre **Reanomena**, **Tanca** i, a **Torna a obrir**, les últimes deu pestanyes tancades.
+Cada document viu a la seva pestanya. `Ctrl+Alt+N` en crea una, `Ctrl+Alt+AvPàg` passa a la següent, i un punt vermell (`●`) avisa de canvis sense desar. El botó dret sobre una pestanya obre **Reanomena**, **Tanca** i, a **Torna a obrir**, les últimes deu pestanyes tancades.
 
 Tot es desa sol a l'equip: si recarregues la pàgina o tornes a obrir el programa, el contingut hi torna a ser. És una xarxa de seguretat, no un substitut de desar l'arxiu.
 
@@ -174,9 +174,9 @@ xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app
 | Fórmula `\[...\]` (en bloc) | `Ctrl` + `M` i després `4` | `Cmd` + `M` i després `4` |
 | Desfer / Refer | `Ctrl` + `Z` / `Ctrl` + `Maj` + `Z` | `Cmd` + `Z` / `Cmd` + `Maj` + `Z` |
 | **Gestió de documents** | | |
-| Pestanya nova | `Ctrl` + `T` | `Cmd` + `T` |
-| Tancar pestanya | `Ctrl` + `W` | `Cmd` + `W` |
-| Pestanya següent / anterior | `Ctrl` + `Tab` / `Ctrl` + `Maj` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Maj` + `Tab` |
+| Pestanya nova | `Ctrl` + `Alt` + `N` | `Cmd` + `Alt` + `N` |
+| Tancar pestanya | `Ctrl` + `Alt` + `W` | `Cmd` + `Alt` + `W` |
+| Pestanya següent / anterior | `Ctrl` + `Alt` + `AvPàg` / `Ctrl` + `Alt` + `RePàg` | `Cmd` + `Alt` + `AvPàg` / `Cmd` + `Alt` + `RePàg` |
 | Desar | `Ctrl` + `S` | `Cmd` + `S` |
 | Desar com a… | `Ctrl` + `Maj` + `S` | `Cmd` + `Maj` + `S` |
 | Obrir arxiu | `Ctrl` + `O` | `Cmd` + `O` |
@@ -193,7 +193,7 @@ xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app
 | Sortir de l'editor amb el teclat | `Esc` i després `Tab` | `Esc` i després `Tab` |
 | Cercar | `Ctrl` + `F` | `Cmd` + `F` |
 | Ampliar / reduir el panell en què ets | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
-| Manual d'ús | `Ctrl` + `H` o `F1` | `Cmd` + `H` o `F1` |
+| Manual d'ús | `Ctrl` + `H` o `F1` | `F1` |
 | Recarregar el manual | `Ctrl` + `Maj` + `H` | `Cmd` + `Maj` + `H` |
 | Imprimir | `Ctrl` + `P` | `Cmd` + `P` |
 

@@ -278,7 +278,7 @@
   "edicuatex_modal_title": "Editor de fórmulas EdiCuaTeX",
   "edicuatex_close_btn_title": "Cerrar EdiCuaTeX",
   "desktop_window_popup_blocked": "Activa las ventanas emergentes en tu navegador para abrir la ventana independiente.",
-  "new_tab_btn_title": "Nueva pestaña (Ctrl+T)",
+  "new_tab_btn_title": "Nueva pestaña (Ctrl+Alt+N)",
   "focus_mode_toggle_title": "Maximizar área de edición (Ctrl+Mayús+F)",
   "reload_from_disk_btn_title": "Releer el documento del disco",
   "reload_from_disk_btn_title_disabled": "La pestaña no está guardada en ningún archivo: no hay nada que releer.",

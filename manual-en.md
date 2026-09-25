@@ -31,7 +31,7 @@ The magnifier in the status bar (or `Ctrl` + `+` / `Ctrl` + `-`) zooms what you 
 
 ## Tabs and menus
 
-Each document lives in its own tab. `Ctrl+T` creates one, `Ctrl+Tab` switches between them, and a red dot (`●`) marks unsaved changes. Right-clicking a tab opens **Rename**, **Close** and, under **Reopen**, the last ten closed tabs.
+Each document lives in its own tab. `Ctrl+Alt+N` creates one, `Ctrl+Alt+PgDn` moves to the next one, and a red dot (`●`) marks unsaved changes. Right-clicking a tab opens **Rename**, **Close** and, under **Reopen**, the last ten closed tabs.
 
 Everything autosaves on your computer: if you reload the page or reopen the app, the content is still there. It's a safety net, not a substitute for saving the file.
 
@@ -174,9 +174,9 @@ This is just macOS's usual warning for unsigned software; that command opens it 
 | Formula `\[...\]` (block) | `Ctrl` + `M` then `4` | `Cmd` + `M` then `4` |
 | Undo / Redo | `Ctrl` + `Z` / `Ctrl` + `Shift` + `Z` | `Cmd` + `Z` / `Cmd` + `Shift` + `Z` |
 | **Document management** | | |
-| New tab | `Ctrl` + `T` | `Cmd` + `T` |
-| Close tab | `Ctrl` + `W` | `Cmd` + `W` |
-| Next / previous tab | `Ctrl` + `Tab` / `Ctrl` + `Shift` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Shift` + `Tab` |
+| New tab | `Ctrl` + `Alt` + `N` | `Cmd` + `Alt` + `N` |
+| Close tab | `Ctrl` + `Alt` + `W` | `Cmd` + `Alt` + `W` |
+| Next / previous tab | `Ctrl` + `Alt` + `PgDn` / `Ctrl` + `Alt` + `PgUp` | `Cmd` + `Alt` + `PgDn` / `Cmd` + `Alt` + `PgUp` |
 | Save | `Ctrl` + `S` | `Cmd` + `S` |
 | Save as… | `Ctrl` + `Shift` + `S` | `Cmd` + `Shift` + `S` |
 | Open file | `Ctrl` + `O` | `Cmd` + `O` |
@@ -193,7 +193,7 @@ This is just macOS's usual warning for unsigned software; that command opens it 
 | Leave the editor with the keyboard | `Esc` then `Tab` | `Esc` then `Tab` |
 | Find | `Ctrl` + `F` | `Cmd` + `F` |
 | Zoom in / out on the active pane | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
-| User manual | `Ctrl` + `H` or `F1` | `Cmd` + `H` or `F1` |
+| User manual | `Ctrl` + `H` or `F1` | `F1` |
 | Reload the manual | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Print | `Ctrl` + `P` | `Cmd` + `P` |
 

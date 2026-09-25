@@ -276,7 +276,7 @@
   "edicuatex_modal_title": "Editor de fórmules EdiCuaTeX",
   "edicuatex_close_btn_title": "Tanca EdiCuaTeX",
   "desktop_window_popup_blocked": "Permet les finestres emergents del navegador per obrir la finestra independent.",
-  "new_tab_btn_title": "Nova pestanya (Ctrl+T)",
+  "new_tab_btn_title": "Nova pestanya (Ctrl+Alt+N)",
   "focus_mode_toggle_title": "Maximitza l'àrea d'edició (Ctrl+Maj+F)",
   "reload_from_disk_btn_title": "Tornar a llegir el document del disc",
   "reload_from_disk_btn_title_disabled": "La pestanya no està desada en cap arxiu: no hi ha res a tornar a llegir.",

@@ -15228,14 +15228,31 @@ window.onload = async () => {
         }
 
         if (document.getElementById('search-wrapper').classList.contains('hidden')) {
-            if (accel && e.key.toLowerCase() === 't') { e.preventDefault(); newTabBtn.click(); }
-            if (accel && e.key.toLowerCase() === 'w') { e.preventDefault(); if (currentId) closeDoc(currentId); }
-            if (accel && e.key === 'Tab') {
+            /*
+              Pestañas. En el navegador, Ctrl+T, Ctrl+W, Ctrl+Tab y
+              Ctrl+AvPág/RePág son del propio navegador y la página nunca los
+              recibe (comprobado con teclas reales en Chromium y Firefox):
+              Ctrl+W cerraba la aplicación entera. Los atajos que funcionan en
+              todas partes llevan Alt; los clásicos se quedan porque en la
+              aplicación de escritorio sí llegan.
+            */
+            const tabKey = e.key.toLowerCase();
+            if (accel && !e.shiftKey && ((tabKey === 'n' && e.altKey) || (tabKey === 't' && !e.altKey))) {
+                e.preventDefault(); newTabBtn.click(); return;
+            }
+            if (accel && !e.shiftKey && tabKey === 'w') {
+                e.preventDefault(); if (currentId) closeDoc(currentId); return;
+            }
+            const tabStep = e.key === 'Tab' ? (e.shiftKey ? -1 : 1)
+                : e.altKey && e.key === 'PageDown' ? 1
+                : e.altKey && e.key === 'PageUp' ? -1
+                : 0;
+            if (accel && tabStep) {
                 e.preventDefault();
-                if(docs.length < 2) return;
+                if (docs.length < 2) return;
                 const currentIndex = docs.findIndex(d => d.id === currentId);
-                const nextIndex = (e.shiftKey ? currentIndex - 1 + docs.length : currentIndex + 1) % docs.length;
-                switchTo(docs[nextIndex].id);
+                switchTo(docs[(currentIndex + tabStep + docs.length) % docs.length].id);
+                return;
             }
 
             if (!accel) return;

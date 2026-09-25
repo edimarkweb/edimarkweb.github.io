@@ -31,7 +31,7 @@ A lupa da barra de estado (ou `Ctrl` + `+` / `Ctrl` + `-`) amplía ou reduce o q
 
 ## Lapelas e menús
 
-Cada documento vive na súa lapela. `Ctrl+T` crea unha, `Ctrl+Tab` pasa dunha a outra, e un punto vermello (`●`) avisa de cambios sen gardar. O botón dereito sobre unha lapela abre **Renomear**, **Pechar** e, en **Reabrir**, as últimas dez lapelas pechadas.
+Cada documento vive na súa lapela. `Ctrl+Alt+N` crea unha, `Ctrl+Alt+AvPáx` pasa á seguinte, e un punto vermello (`●`) avisa de cambios sen gardar. O botón dereito sobre unha lapela abre **Renomear**, **Pechar** e, en **Reabrir**, as últimas dez lapelas pechadas.
 
 Todo se autogarda só no equipo: se recargas a páxina ou volves abrir o programa, o contido reaparece. É unha rede de seguridade, non un substituto de gardar o ficheiro.
 
@@ -174,9 +174,9 @@ xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app
 | Fórmula `\[...\]` (en bloque) | `Ctrl` + `M` logo `4` | `Cmd` + `M` logo `4` |
 | Desfacer / Refacer | `Ctrl` + `Z` / `Ctrl` + `Maiús` + `Z` | `Cmd` + `Z` / `Cmd` + `Maiús` + `Z` |
 | **Xestión de documentos** | | |
-| Nova lapela | `Ctrl` + `T` | `Cmd` + `T` |
-| Pechar lapela | `Ctrl` + `W` | `Cmd` + `W` |
-| Lapela seguinte / anterior | `Ctrl` + `Tab` / `Ctrl` + `Maiús` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Maiús` + `Tab` |
+| Nova lapela | `Ctrl` + `Alt` + `N` | `Cmd` + `Alt` + `N` |
+| Pechar lapela | `Ctrl` + `Alt` + `W` | `Cmd` + `Alt` + `W` |
+| Lapela seguinte / anterior | `Ctrl` + `Alt` + `AvPáx` / `Ctrl` + `Alt` + `RePáx` | `Cmd` + `Alt` + `AvPáx` / `Cmd` + `Alt` + `RePáx` |
 | Gardar | `Ctrl` + `S` | `Cmd` + `S` |
 | Gardar como… | `Ctrl` + `Maiús` + `S` | `Cmd` + `Maiús` + `S` |
 | Abrir ficheiro | `Ctrl` + `O` | `Cmd` + `O` |
@@ -193,7 +193,7 @@ xattr -dr com.apple.quarantine /Applications/EdiMarkdown.app
 | Saír do editor co teclado | `Esc` e despois `Tab` | `Esc` e despois `Tab` |
 | Buscar | `Ctrl` + `F` | `Cmd` + `F` |
 | Ampliar / reducir o panel en que estás | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
-| Manual de uso | `Ctrl` + `H` ou `F1` | `Cmd` + `H` ou `F1` |
+| Manual de uso | `Ctrl` + `H` ou `F1` | `F1` |
 | Recargar o manual | `Ctrl` + `Maiús` + `H` | `Cmd` + `Maiús` + `H` |
 | Imprimir | `Ctrl` + `P` | `Cmd` + `P` |
 

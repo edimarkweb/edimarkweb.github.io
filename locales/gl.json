@@ -276,7 +276,7 @@
   "edicuatex_modal_title": "Editor de fórmulas EdiCuaTeX",
   "edicuatex_close_btn_title": "Pechar EdiCuaTeX",
   "desktop_window_popup_blocked": "Permite as xanelas emerxentes no teu navegador para abrir a xanela independente.",
-  "new_tab_btn_title": "Nova lapela (Ctrl+T)",
+  "new_tab_btn_title": "Nova lapela (Ctrl+Alt+N)",
   "focus_mode_toggle_title": "Maximizar área de edición (Ctrl+Maiús+F)",
   "reload_from_disk_btn_title": "Reler o documento do disco",
   "reload_from_disk_btn_title_disabled": "A lapela non está gardada en ningún ficheiro: non hai nada que reler.",

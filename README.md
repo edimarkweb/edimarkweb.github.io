@@ -50,8 +50,9 @@ Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pu
 | Negrita / Cursiva | `Ctrl+B`, `Ctrl+I` | `Cmd+B`, `Cmd+I` |
 | Encabezados H1–H6 | `Ctrl+1..6` | `Cmd+1..6` |
 | Lista / Lista numerada | `Ctrl+Mayús+L` / `Ctrl+Mayús+O` | `Cmd+Mayús+L` / `Cmd+Mayús+O` |
-| Nueva pestaña / Cerrar | `Ctrl+T` / `Ctrl+W` | `Cmd+T` / `Cmd+W` |
-| Fórmula en línea / en bloque | `Ctrl+M` / `Ctrl+Mayús+M` | `Cmd+M` / `Cmd+Mayús+M` |
+| Nueva pestaña / Cerrar | `Ctrl+Alt+N` / `Ctrl+Alt+W` | `Cmd+Alt+N` / `Cmd+Alt+W` |
+| Pestaña siguiente / anterior | `Ctrl+Alt+AvPág` / `Ctrl+Alt+RePág` | `Cmd+Alt+AvPág` / `Cmd+Alt+RePág` |
+| Fórmula en línea / en bloque | `Ctrl+M` y luego `1` / `2` | `Cmd+M` y luego `1` / `2` |
 | Deshacer / Rehacer | `Ctrl+Z` / `Ctrl+Mayús+Z` | `Cmd+Z` / `Cmd+Mayús+Z` |
 | Abrir / Guardar / Guardar como | `Ctrl+O` / `Ctrl+S` / `Ctrl+Mayús+S` | `Cmd+O` / `Cmd+S` / `Cmd+Mayús+S` |
 | Importar / Exportar | `Ctrl+Alt+O` / `Ctrl+Alt+E` | `Cmd+Alt+O` / `Cmd+Alt+E` |
@@ -59,7 +60,7 @@ Las pestañas muestran un punto rojo (`●`) cuando hay cambios sin guardar y pu
 | Pegar LaTeX | `Ctrl+Mayús+V` | `Cmd+Mayús+V` |
 | Cambiar diseño | `Ctrl+L` | `Cmd+L` |
 | Buscar | `Ctrl+F` | `Cmd+F` |
-| Manual | `Ctrl+H` | `Cmd+H` |
+| Manual | `Ctrl+H` o `F1` | `F1` |
 | Imprimir | `Ctrl+P` | `Cmd+P` |
 
 Consulta la tabla completa en el [manual](manual.md#atajos-de-teclado).

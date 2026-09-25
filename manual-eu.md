@@ -31,7 +31,7 @@ Egoera-barrako luparrak (edo `Ctrl` + `+` / `Ctrl` + `-`) ikusten duzuna handitz
 
 ## Fitxak eta menuak
 
-Dokumentu bakoitza bere fitxan bizi da. `Ctrl+T`k bat sortzen du, `Ctrl+Tab`ek batetik bestera pasatzen du, eta puntu gorri batek (`●`) gorde gabeko aldaketak daudela adierazten du. Fitxa baten gainean eskuineko botoiarekin **Berrizendatu**, **Itxi** eta, **Berriro ireki** atalean, itxitako azken hamar fitxak irekitzen dira.
+Dokumentu bakoitza bere fitxan bizi da. `Ctrl+Alt+N`k bat sortzen du, `Ctrl+Alt+AvPág`ek hurrengora pasatzen du, eta puntu gorri batek (`●`) gorde gabeko aldaketak daudela adierazten du. Fitxa baten gainean eskuineko botoiarekin **Berrizendatu**, **Itxi** eta, **Berriro ireki** atalean, itxitako azken hamar fitxak irekitzen dira.
 
 Dena bakarrik gordetzen da ekipoan: orria birkargatu edo aplikazioa berriro irekitzen baduzu, edukia hor dago berriro. Segurtasun-sarea da, ez fitxategia gordetzearen ordezkoa.
 
@@ -174,9 +174,9 @@ macOSek sinatu gabeko softwarearen aurrean ematen duen ohiko abisua besterik ez 
 | Formula `\[...\]` (blokean) | `Ctrl` + `M` gero `4` | `Cmd` + `M` gero `4` |
 | Desegin / Berregin | `Ctrl` + `Z` / `Ctrl` + `Shift` + `Z` | `Cmd` + `Z` / `Cmd` + `Shift` + `Z` |
 | **Dokumentuen kudeaketa** | | |
-| Fitxa berria | `Ctrl` + `T` | `Cmd` + `T` |
-| Fitxa itxi | `Ctrl` + `W` | `Cmd` + `W` |
-| Hurrengo / aurreko fitxa | `Ctrl` + `Tab` / `Ctrl` + `Shift` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Shift` + `Tab` |
+| Fitxa berria | `Ctrl` + `Alt` + `N` | `Cmd` + `Alt` + `N` |
+| Fitxa itxi | `Ctrl` + `Alt` + `W` | `Cmd` + `Alt` + `W` |
+| Hurrengo / aurreko fitxa | `Ctrl` + `Alt` + `AvPág` / `Ctrl` + `Alt` + `RePág` | `Cmd` + `Alt` + `AvPág` / `Cmd` + `Alt` + `RePág` |
 | Gorde | `Ctrl` + `S` | `Cmd` + `S` |
 | Gorde honela… | `Ctrl` + `Shift` + `S` | `Cmd` + `Shift` + `S` |
 | Fitxategia ireki | `Ctrl` + `O` | `Cmd` + `O` |
@@ -193,7 +193,7 @@ macOSek sinatu gabeko softwarearen aurrean ematen duen ohiko abisua besterik ez 
 | Editoretik teklatuarekin irten | `Esc` eta gero `Tab` | `Esc` eta gero `Tab` |
 | Bilatu | `Ctrl` + `F` | `Cmd` + `F` |
 | Zauden panela handitu / txikitu | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
-| Erabilera-eskuliburua | `Ctrl` + `H` edo `F1` | `Cmd` + `H` edo `F1` |
+| Erabilera-eskuliburua | `Ctrl` + `H` edo `F1` | `F1` |
 | Eskuliburua birkargatu | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Inprimatu | `Ctrl` + `P` | `Cmd` + `P` |
 

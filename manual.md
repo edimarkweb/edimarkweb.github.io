@@ -31,7 +31,7 @@ La lupa de la barra de estado (o `Ctrl` + `+` / `Ctrl` + `-`) agranda o reduce l
 
 ## Pestañas y menús
 
-Cada documento vive en su pestaña. `Ctrl+T` crea una, `Ctrl+Tab` pasa de una a otra, y un punto rojo (`●`) avisa de cambios sin guardar. El botón derecho sobre una pestaña abre **Renombrar**, **Cerrar** y, en **Reabrir**, las últimas diez pestañas cerradas.
+Cada documento vive en su pestaña. `Ctrl+Alt+N` crea una, `Ctrl+Alt+AvPág` pasa a la siguiente, y un punto rojo (`●`) avisa de cambios sin guardar. El botón derecho sobre una pestaña abre **Renombrar**, **Cerrar** y, en **Reabrir**, las últimas diez pestañas cerradas.
 
 Todo se autoguarda solo en el equipo: si recargas la página o vuelves a abrir el programa, el contenido reaparece. Es una red de seguridad, no un sustituto de guardar el archivo.
 
@@ -174,9 +174,9 @@ Es solo el aviso habitual de macOS ante software sin firmar; con ese comando se 
 | Fórmula `\[...\]` (en bloque) | `Ctrl` + `M` luego `4` | `Cmd` + `M` luego `4` |
 | Deshacer / Rehacer | `Ctrl` + `Z` / `Ctrl` + `Shift` + `Z` | `Cmd` + `Z` / `Cmd` + `Shift` + `Z` |
 | **Gestión de documentos** | | |
-| Nueva pestaña | `Ctrl` + `T` | `Cmd` + `T` |
-| Cerrar pestaña | `Ctrl` + `W` | `Cmd` + `W` |
-| Pestaña siguiente / anterior | `Ctrl` + `Tab` / `Ctrl` + `Shift` + `Tab` | `Cmd` + `Tab` / `Cmd` + `Shift` + `Tab` |
+| Nueva pestaña | `Ctrl` + `Alt` + `N` | `Cmd` + `Alt` + `N` |
+| Cerrar pestaña | `Ctrl` + `Alt` + `W` | `Cmd` + `Alt` + `W` |
+| Pestaña siguiente / anterior | `Ctrl` + `Alt` + `AvPág` / `Ctrl` + `Alt` + `RePág` | `Cmd` + `Alt` + `AvPág` / `Cmd` + `Alt` + `RePág` |
 | Guardar | `Ctrl` + `S` | `Cmd` + `S` |
 | Guardar como… | `Ctrl` + `Shift` + `S` | `Cmd` + `Shift` + `S` |
 | Abrir archivo | `Ctrl` + `O` | `Cmd` + `O` |
@@ -193,7 +193,7 @@ Es solo el aviso habitual de macOS ante software sin firmar; con ese comando se 
 | Salir del editor con el teclado | `Esc` y luego `Tab` | `Esc` y luego `Tab` |
 | Buscar | `Ctrl` + `F` | `Cmd` + `F` |
 | Ampliar / reducir el panel en el que estás | `Ctrl` + `+` / `Ctrl` + `-` | `Cmd` + `+` / `Cmd` + `-` |
-| Manual de uso | `Ctrl` + `H` o `F1` | `Cmd` + `H` o `F1` |
+| Manual de uso | `Ctrl` + `H` o `F1` | `F1` |
 | Recargar el manual | `Ctrl` + `Shift` + `H` | `Cmd` + `Shift` + `H` |
 | Imprimir | `Ctrl` + `P` | `Cmd` + `P` |
 

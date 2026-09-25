@@ -276,7 +276,7 @@
   "edicuatex_modal_title": "EdiCuaTeX formula editor",
   "edicuatex_close_btn_title": "Close EdiCuaTeX",
   "desktop_window_popup_blocked": "Allow pop-ups in your browser to open the standalone window.",
-  "new_tab_btn_title": "New tab (Ctrl+T)",
+  "new_tab_btn_title": "New tab (Ctrl+Alt+N)",
   "focus_mode_toggle_title": "Toggle focus mode (Ctrl+Shift+F)",
   "reload_from_disk_btn_title": "Reload the document from disk",
   "reload_from_disk_btn_title_disabled": "This tab is not saved to any file: there is nothing to reload.",

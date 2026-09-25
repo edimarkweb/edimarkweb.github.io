@@ -276,7 +276,7 @@
   "edicuatex_modal_title": "EdiCuaTeX formula-editorea",
   "edicuatex_close_btn_title": "Itxi EdiCuaTeX",
   "desktop_window_popup_blocked": "Leiho independentea irekitzeko, baimendu nabigatzaileko leiho gainerakorrak.",
-  "new_tab_btn_title": "Fitxa berria (Ktrl+T)",
+  "new_tab_btn_title": "Fitxa berria (Ktrl+Alt+N)",
   "focus_mode_toggle_title": "Editatzeko eremua maximizatu (Ctrl+Shift+F)",
   "reload_from_disk_btn_title": "Dokumentua diskotik berriro irakurri",
   "reload_from_disk_btn_title_disabled": "Fitxa ez dago inongo fitxategitan gordeta: ez dago berriro irakurtzeko ezer.",

@@ -801,6 +801,33 @@ test('un nombre de documento con marcado no se interpreta como HTML', async (t) 
   assert.equal(await page.evaluate(() => window.__injected === true), false);
 });
 
+/*
+  Ctrl+T, Ctrl+W y Ctrl+Tab son del navegador y la página no los recibe, así
+  que las pestañas se manejan con Ctrl+Alt. Playwright entrega las teclas
+  directamente a la página: esta prueba confirma lo que hace la aplicación, no
+  lo que el navegador le deja recibir.
+*/
+test('las pestañas se crean, recorren y cierran con Ctrl+Alt', async (t) => {
+  const { context, page } = await openApp();
+  t.after(() => context.close());
+
+  const tabs = page.locator('#tab-bar .tab');
+  const antes = await tabs.count();
+  const activa = () => page.evaluate(() => currentId);
+  await page.locator('#markdown-input').focus();
+  await page.keyboard.press('Control+Alt+n');
+  assert.equal(await tabs.count(), antes + 1);
+  const nueva = await activa();
+
+  await page.keyboard.press('Control+Alt+PageDown');
+  assert.notEqual(await activa(), nueva);
+  await page.keyboard.press('Control+Alt+PageUp');
+  assert.equal(await activa(), nueva);
+
+  await page.keyboard.press('Control+Alt+w');
+  assert.equal(await tabs.count(), antes);
+});
+
 test('Escape y Tab sacan el foco de los dos editores, que tienen nombre', async (t) => {
   const { context, page } = await openApp();
   t.after(() => context.close());
