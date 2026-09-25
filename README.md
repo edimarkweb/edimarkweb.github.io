@@ -154,6 +154,10 @@ que evitan que una exportación rota llegue al usuario como una descarga de 0 by
 
 Para reportar errores o proponer mejoras, utiliza las [incidencias de GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues). El [manual](manual.md) sirve como referencia funcional para validar comportamientos.
 
+## Cómo se ha hecho
+
+EdiMarkdown se programa en el nivel 4 del [MIAE](https://jjdeharo.github.io/miae/?nivel=4), la colaboración avanzada entre la persona y la IA. El código se ha escrito en diálogo con asistentes de IA, entre ellos Claude Code. El autor decide qué hace el programa y cómo se usa, prueba cada cambio en pantalla y corrige lo que no funciona. Cada versión pasa además las pruebas automáticas descritas en [Pruebas](#pruebas), en Chromium y Firefox.
+
 ## Licencia
 
 El código de EdiMarkdown se distribuye bajo la [GNU Affero General Public License v3.0](LICENSE). Puedes usarlo, modificarlo y desplegarlo siempre que mantengas la misma licencia, publiques las mejoras y entregues el código fuente cuando la aplicación se ofrezca como servicio.
