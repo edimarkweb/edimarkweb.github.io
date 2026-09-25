@@ -4,6 +4,13 @@ Todos los cambios de EdiMarkdown (antes EdiMarkWeb), de la versión más recient
 
 El formato sigue la idea de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y la numeración, [versionado semántico](https://semver.org/lang/es/).
 
+## [3.2.1] - 2026-09-25
+
+- Las pestañas se crean, se cierran y se recorren con `Ctrl` + `Alt` + `N`, `Ctrl` + `Alt` + `W` y `Ctrl` + `Alt` + `AvPág` / `RePág`. En el navegador, `Ctrl` + `T`, `Ctrl` + `W` y `Ctrl` + `Tab` son del propio navegador y la aplicación no llega a recibirlos: `Ctrl` + `W` cerraba la aplicación entera. En la aplicación de escritorio siguen funcionando también los de siempre. En macOS, el manual se abre con `F1`.
+- En un móvil estrecho, los menús de la barra superior pasan a una segunda fila en lugar de salirse de la pantalla.
+- «Acerca de» acredita todos los componentes de terceros, y el README indica qué carga la versión web de fuera, cuándo y para qué.
+- Pandoc se carga solo desde el propio sitio: se retira la copia de reserva que había en otro repositorio.
+
 ## [3.2.0] - 2026-09-25
 
 - La versión web deja de contar visitas: ya no avisa a ningún servidor de estadísticas al abrirse, y el aviso de privacidad lo dice. La versión de escritorio nunca lo hizo.
