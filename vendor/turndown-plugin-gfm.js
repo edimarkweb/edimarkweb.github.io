@@ -1,3 +1,8 @@
+/*
+  turndown-plugin-gfm 1.0.2, de Dom Christie. Licencia MIT.
+  https://github.com/domchristie/turndown-plugin-gfm
+  Copia sin cambios de dist/turndown-plugin-gfm.js.
+*/
 var turndownPluginGfm = (function (exports) {
 'use strict';
 
