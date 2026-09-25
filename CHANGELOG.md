@@ -4,6 +4,11 @@ Todos los cambios de EdiMarkdown (antes EdiMarkWeb), de la versión más recient
 
 El formato sigue la idea de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y la numeración, [versionado semántico](https://semver.org/lang/es/).
 
+## [3.2.2] - 2026-09-25
+
+- En la aplicación de escritorio, al pasar el ratón por una pestaña se ve dónde está su archivo: la ruta completa, o que no está guardado en ninguno y solo existe en la copia automática de EdiMarkdown. Si hay cambios sin guardar, lo dice también. El mismo dato encabeza el menú del botón derecho de la pestaña, para quien usa pantalla táctil o teclado.
+- El rótulo «Reabrir» del menú de la pestaña tiene el contraste mínimo, como el resto de textos grises desde la 3.2.0.
+
 ## [3.2.1] - 2026-09-25
 
 - Las pestañas se crean, se cierran y se recorren con `Ctrl` + `Alt` + `N`, `Ctrl` + `Alt` + `W` y `Ctrl` + `Alt` + `AvPág` / `RePág`. En el navegador, `Ctrl` + `T`, `Ctrl` + `W` y `Ctrl` + `Tab` son del propio navegador y la aplicación no llega a recibirlos: `Ctrl` + `W` cerraba la aplicación entera. En la aplicación de escritorio siguen funcionando también los de siempre. En macOS, el manual se abre con `F1`.
