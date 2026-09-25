@@ -2430,9 +2430,12 @@ html.is-tab-dragging * {
         height: 40vh;
     }
 
-    /* Los menús Archivo y Configuración, en su propia fila bajo la marca. */
+    /* Los menús Archivo y Configuración, en su propia fila bajo la marca.
+       En un móvil de 375 px los tres no caben y empujaban la página hacia la
+       derecha: el último baja de línea antes que perder su rótulo. */
     #header-menus {
         width: 100%;
+        flex-wrap: wrap;
     }
     
     /* Regla para que las pestañas también salten de línea */
