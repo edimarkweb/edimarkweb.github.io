@@ -4,6 +4,11 @@ Todos los cambios de EdiMarkdown (antes EdiMarkWeb), de la versión más recient
 
 El formato sigue la idea de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y la numeración, [versionado semántico](https://semver.org/lang/es/).
 
+## [3.2.3] - 2026-09-26
+
+- Siempre queda una pestaña abierta: al cerrar la última, o todas desde el menú del botón derecho, se abre una en blanco en lugar de dejar el editor sin ninguna.
+- Un documento vacío que no está guardado en ningún archivo ya no pasa a «Reabrir» al cerrarse, porque no hay nada que recuperar.
+
 ## [3.2.2] - 2026-09-25
 
 - En la aplicación de escritorio, al pasar el ratón por una pestaña se ve dónde está su archivo: la ruta completa, o que no está guardado en ninguno y solo existe en la copia automática de EdiMarkdown. Si hay cambios sin guardar, lo dice también. El mismo dato encabeza el menú del botón derecho de la pestaña, para quien usa pantalla táctil o teclado.
