@@ -4020,23 +4020,16 @@ async function closeDoc(id) {
     lastAutosavedById.delete(id);
     saveDocsList();
 
-    if (currentId === id) {
-        if (docs.length > 0) {
-            const newIndex = Math.max(0, indiceActual - 1);
-            switchTo(docs[newIndex].id);
-        } else {
-            currentId = null;
-            safeLocalStorageRemove(ACTIVE_DOC_KEY);
-            markdownEditor.setValue('');
-            if (typeof markdownEditor.clearHistory === 'function') {
-                markdownEditor.clearHistory();
-            }
-            updateUndoRedoButtons();
-            // Sin documento abierto no hay nada que releer: el botón se apaga
-            // aquí, porque el indicador de cambios ya no pasa por ninguno.
-            updateReloadFromDiskState();
-            updateHtml();
-        }
+    /*
+      Siempre queda una pestaña: sin ninguna, el editor seguía a la vista y
+      admitía texto que no pertenecía a ningún documento. Al cerrar la última
+      se abre una en blanco, como al empezar una sesión vacía.
+    */
+    if (docs.length === 0) {
+        newDoc();
+    } else if (currentId === id) {
+        const newIndex = Math.max(0, indiceActual - 1);
+        switchTo(docs[newIndex].id);
     }
 }
 

@@ -374,7 +374,9 @@ test('en el escritorio la pestaña con cambios pregunta antes de cerrarse', asyn
   // Y con la respuesta en «sí», se cierra.
   await page.evaluate(() => { window.__edimarkRespuesta = true; });
   await page.locator('.tab').first().locator('.tab-close').click();
-  await page.waitForFunction(() => document.querySelectorAll('.tab').length === 0);
+  // Era la única: en su lugar queda una en blanco, nunca el editor sin pestaña.
+  await page.waitForFunction(() => docs.length === 1 && markdownEditor.getValue() === '');
+  assert.equal(await page.locator('.tab').count(), 1);
   assert.equal((await page.evaluate(() => window.__edimarkPreguntas.length)), 2);
 });
 
@@ -1736,8 +1738,10 @@ test('el menú de la pestaña cierra en grupo y devuelve lo cerrado', async (t) 
     ['Tres', 'Manual'],
   );
   await page.locator('[data-tab-action="close-all"]').click();
-  await page.waitForFunction(() => document.querySelectorAll('.tab').length === 0);
-  assert.deepEqual(await nombres(), []);
+  // Cerrarlas todas deja una en blanco, no el editor sin pestaña.
+  await page.waitForFunction(() => docs.length === 1 && docs[0].md === '');
+  assert.deepEqual(await nombres(), [await page.evaluate(() => getTranslation('untitled_document', 'Documento sin título'))]);
+  assert.equal(await page.locator('.tab[aria-selected="true"]').count(), 1);
 });
 
 test('ocultar la página guarda el documento abierto', async (t) => {
@@ -7607,13 +7611,13 @@ test('el botón de releer trae lo que hay en el disco y avisa antes de descartar
   assert.equal(await boton.isDisabled(), false);
 
   /*
-    Y solo en esa: una pestaña nueva no viene de ningún archivo, y sin ninguna
-    pestaña abierta tampoco hay nada que releer.
+    Y solo en esa: una pestaña nueva no viene de ningún archivo, ni tampoco
+    la que queda en blanco al cerrarlas todas.
   */
   await page.evaluate(() => newDoc('Sin guardar', 'Escrito aquí mismo.'));
   assert.equal(await boton.isDisabled(), true);
   await page.evaluate(() => { const ids = docs.map(d => d.id); return closeDocs(ids); });
-  await page.waitForFunction(() => document.querySelectorAll('.tab').length === 0);
+  await page.waitForFunction(() => docs.length === 1 && !docs[0].filePath && docs[0].md === '');
   assert.equal(await boton.isDisabled(), true);
 
   await page.evaluate(() => window.__edimarkOpenNativePaths(['/tmp/notas.md']));
@@ -7658,7 +7662,7 @@ test('el manual se abre solo hasta que se cierra una vez', async (t) => {
 
   await page.locator('.tab-name', { hasText: 'Manual' }).waitFor();
   await page.locator('.tab', { hasText: 'Manual' }).locator('.tab-close').click();
-  await page.waitForFunction(() => document.querySelectorAll('.tab').length === 0);
+  await page.waitForFunction(() => docs.length === 1 && !docs[0].isManual);
 
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.__edimarkReady === true);
