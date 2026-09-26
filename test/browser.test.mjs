@@ -1742,6 +1742,16 @@ test('el menú de la pestaña cierra en grupo y devuelve lo cerrado', async (t) 
   await page.waitForFunction(() => docs.length === 1 && docs[0].md === '');
   assert.deepEqual(await nombres(), [await page.evaluate(() => getTranslation('untitled_document', 'Documento sin título'))]);
   assert.equal(await page.locator('.tab[aria-selected="true"]').count(), 1);
+
+  // Esa pestaña en blanco, cerrada, no va a «Reabrir»: no hay nada que recuperar.
+  const reabrir = () => page.$$eval('#tab-menu-reopen-list .tab-menu-name', items => items.map(item => item.textContent));
+  await page.locator('.tab').first().click({ button: 'right' });
+  const antes = await reabrir();
+  assert.deepEqual(antes, ['Dos', 'Uno', 'Tres', 'Manual']);
+  await page.locator('[data-tab-action="close"]').click();
+  await page.waitForFunction(() => docs.length === 1 && docs[0].md === '');
+  await page.locator('.tab').first().click({ button: 'right' });
+  assert.deepEqual(await reabrir(), antes);
 });
 
 test('ocultar la página guarda el documento abierto', async (t) => {

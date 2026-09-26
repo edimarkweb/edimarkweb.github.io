@@ -4010,10 +4010,24 @@ async function closeDoc(id) {
     if (indiceActual === -1) return;
 
     if (doc.isManual) safeLocalStorageSet(MANUAL_DISMISSED_KEY, '1');
+    // El texto del documento abierto está en el editor, no en `doc.md`, que
+    // solo se pone al día al guardar la copia automática o al cambiar de pestaña.
+    if (id === currentId && markdownEditor) doc.md = markdownEditor.getValue();
     releaseDocumentAssets(id);
-    // Las imágenes se quedan donde están: el documento aún puede volver desde
-    // el registro de cerradas, y allí es donde se decide cuándo borrarlas.
-    rememberClosedDoc(doc, indiceActual);
+    /*
+      Un documento vacío y sin archivo no tiene nada que recuperar: si pasara a
+      «Reabrir», cerrar una y otra vez la pestaña en blanco que queda al final
+      llenaría la lista de documentos sin título vacíos.
+    */
+    if (doc.md.trim() === '' && !doc.filePath) {
+        deletePersistedDocumentAssets(id).catch(error => {
+            console.warn('No se pudieron borrar las imágenes guardadas del documento:', error);
+        });
+    } else {
+        // Las imágenes se quedan donde están: el documento aún puede volver
+        // desde el registro de cerradas, y allí es donde se decide cuándo borrarlas.
+        rememberClosedDoc(doc, indiceActual);
+    }
     docs.splice(indiceActual, 1);
     document.querySelector(`.tab[data-id="${id}"]`)?.remove();
     safeLocalStorageRemove(`${AUTOSAVE_KEY_PREFIX}-${id}`);
