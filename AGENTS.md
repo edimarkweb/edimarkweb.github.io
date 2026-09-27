@@ -63,4 +63,6 @@ Commit subjects: short, imperative, one behavior change per commit (e.g. `Preser
 
 ## Misc
 
+Decisions that shape future work are recorded as ADRs in `docs/adr` (Spanish, index in its `README.md`; `nuevo-adr "Título"` creates the next one). Earlier decisions are still described only in this file and in comments; moving them to ADRs is pending.
+
 Never commit secrets, personal data, or storage dumps; `dist/`, `src-tauri/target`, and `src-tauri/gen` stay out of git. Use SSH remotes for GitHub operations.

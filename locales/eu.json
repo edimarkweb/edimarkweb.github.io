@@ -430,6 +430,8 @@
   "open_file_error": "Ezin izan da dokumentua ireki.",
   "open_file_already_open_dirty": "Dokumentu hori jada irekita dago eta gorde gabeko aldaketak ditu: dagoen bezala uzten da.",
   "tab_menu_rename": "Berrizendatu",
+  "tab_menu_reveal": "Erakutsi karpetan",
+  "tab_menu_reveal_failed": "Ezin izan da karpeta ireki. Baliteke fitxategia lekuz aldatu edo ezabatu izana.",
   "tab_menu_close": "Itxi",
   "tab_menu_close_others": "Itxi gainerakoak",
   "tab_menu_close_all": "Itxi guztiak",

@@ -2354,6 +2354,49 @@ body.desktop-mode .markdown-textarea {
 }
 
 /*
+  La ruta del archivo encabeza el menú en letra pequeña y, si hay archivo, se
+  pulsa para abrir su carpeta. Sin archivo es solo un aviso: no se ilumina ni
+  lleva el icono.
+*/
+.tab-menu-location {
+    display: flex;
+    width: 100%;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.25rem 0.75rem 0.5rem;
+    text-align: left;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: #64748b;
+    overflow-wrap: anywhere;
+}
+.tab-menu-location.hidden {
+    display: none;
+}
+.tab-menu-location:not([disabled]):hover,
+.tab-menu-location:not([disabled]):focus-visible {
+    background-color: #f1f5f9;
+    color: #334155;
+}
+.tab-menu-location[disabled] {
+    cursor: default;
+}
+.tab-menu-location[disabled] svg {
+    display: none;
+}
+.dark .tab-menu-location {
+    border-bottom-color: #334155;
+    color: #94a3b8;
+}
+.dark .tab-menu-location:not([disabled]):hover,
+.dark .tab-menu-location:not([disabled]):focus-visible {
+    background-color: #334155;
+    color: #e2e8f0;
+}
+
+/*
   La pestaña se recoloca bajo el puntero durante el arrastre. El cursor no debe
   depender entonces del elemento que quede accidentalmente debajo: toda la
   ventana conserva la mano cerrada hasta soltar.

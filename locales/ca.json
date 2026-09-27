@@ -430,6 +430,8 @@
   "open_file_error": "No s'ha pogut obrir el document.",
   "open_file_already_open_dirty": "Aquest document ja és obert i té canvis sense desar: es deixa com està.",
   "tab_menu_rename": "Reanomena",
+  "tab_menu_reveal": "Mostra a la carpeta",
+  "tab_menu_reveal_failed": "No s'ha pogut obrir la carpeta. Pot ser que el fitxer s'hagi mogut o esborrat.",
   "tab_menu_close": "Tanca",
   "tab_menu_close_others": "Tanca les altres",
   "tab_menu_close_all": "Tanca-les totes",

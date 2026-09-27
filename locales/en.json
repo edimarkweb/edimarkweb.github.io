@@ -430,6 +430,8 @@
   "open_file_error": "The document could not be opened.",
   "open_file_already_open_dirty": "That document is already open and has unsaved changes: it is left as it is.",
   "tab_menu_rename": "Rename",
+  "tab_menu_reveal": "Show in folder",
+  "tab_menu_reveal_failed": "The folder could not be opened. The file may have been moved or deleted.",
   "tab_menu_close": "Close",
   "tab_menu_close_others": "Close others",
   "tab_menu_close_all": "Close all",

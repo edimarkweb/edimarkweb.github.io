@@ -4051,7 +4051,8 @@ async function closeDoc(id) {
   En el escritorio cada pestaña dice dónde está su archivo: la ruta completa,
   o que no está en ninguno y solo existe en la copia automática. Se ve al
   pasar el ratón y, para el táctil y el teclado, al principio del menú de la
-  pestaña. En el navegador no se muestra: ninguno deja saber a una página en
+  pestaña. En el menú, además, pulsar la ruta abre su carpeta con el archivo
+  marcado. En el navegador no se muestra: ninguno deja saber a una página en
   qué carpeta está un archivo, y solo se podría dar el nombre.
 */
 function tabLocationText(doc) {
@@ -11578,11 +11579,18 @@ window.onload = async () => {
         tabMenuDocId = tab.dataset.id;
         updateTabMenuReopenList();
         const location = document.getElementById('tab-menu-location');
-        if (location) {
-            const text = tabLocationText(docs.find(d => d.id === tabMenuDocId));
+        const locationText = document.getElementById('tab-menu-location-text');
+        if (location && locationText) {
+            const doc = docs.find(d => d.id === tabMenuDocId);
+            const text = tabLocationText(doc);
             // Una ruta larga se parte detrás de cada barra, no a media palabra.
-            location.replaceChildren(...text.split(/(?<=[/\\])/).flatMap(part => [part, document.createElement('wbr')]));
+            locationText.replaceChildren(...text.split(/(?<=[/\\])/).flatMap(part => [part, document.createElement('wbr')]));
             location.classList.toggle('hidden', !text);
+            // Sin archivo no hay carpeta: el aviso se queda como texto.
+            const canReveal = Boolean(doc?.filePath && window.EdiMarkPlatform?.canRevealInFolder);
+            location.disabled = !canReveal;
+            if (canReveal) location.title = getTranslation('tab_menu_reveal', 'Mostrar en la carpeta');
+            else location.removeAttribute('title');
         }
         // Cerrar las demás no tiene sentido con una sola pestaña abierta.
         const others = tabMenu.querySelector('[data-tab-action="close-others"]');
@@ -11617,6 +11625,18 @@ window.onload = async () => {
             if (action === 'rename') {
                 const tab = document.querySelector(`.tab[data-id="${id}"]`);
                 if (tab) startRename(tab);
+                return;
+            }
+            if (action === 'reveal') {
+                const doc = docs.find(d => d.id === id);
+                if (!doc?.filePath) return;
+                window.EdiMarkPlatform.revealInFolder(doc.filePath).catch((error) => {
+                    console.error('No se pudo abrir la carpeta:', error);
+                    notifyUser(getTranslation(
+                        'tab_menu_reveal_failed',
+                        'No se ha podido abrir la carpeta. Puede que el archivo se haya movido o borrado.'
+                    ));
+                });
                 return;
             }
             if (action === 'close') closeDoc(id);

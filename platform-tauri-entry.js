@@ -1,6 +1,6 @@
 import { ask, message as showMessage, open, save } from '@tauri-apps/plugin-dialog';
 import { BaseDirectory, mkdir, readTextFile, writeFile, writeTextFile } from '@tauri-apps/plugin-fs';
-import { openUrl } from '@tauri-apps/plugin-opener';
+import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -77,7 +77,7 @@ if (window.__TAURI_INTERNALS__) {
         await writeTextFile(name, contents, { baseDir: BaseDirectory.AppConfig });
       },
     },
-    opener: { openUrl },
+    opener: { openUrl, revealItemInDir },
     clipboard: {
       async readImage() {
         const image = await readImage();

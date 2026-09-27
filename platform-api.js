@@ -318,6 +318,22 @@
       },
 
       /*
+        Abre la carpeta de un archivo en el gestor de archivos del sistema, con
+        el archivo marcado: el Explorador en Windows, el Finder en macOS y en
+        Linux el gestor del escritorio (si no admite marcarlo, abre la carpeta
+        sin más). En el navegador no hay ruta que abrir.
+      */
+      canRevealInFolder: Boolean(desktop && opener && typeof opener.revealItemInDir === 'function'),
+
+      async revealInFolder(path) {
+        if (!desktop || !opener || typeof opener.revealItemInDir !== 'function') {
+          throw new Error('Solo la aplicación de escritorio puede abrir carpetas.');
+        }
+        if (!path) throw new Error('El documento no está guardado en ningún archivo.');
+        await opener.revealItemInDir(String(path));
+      },
+
+      /*
         Opciones de la aplicación en el disco. En el navegador no hay dónde
         guardarlas, así que devuelve null y manda `localStorage`; en el
         escritorio, el archivo es la copia buena y `localStorage` solo el

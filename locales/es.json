@@ -430,6 +430,8 @@
   "open_file_error": "No se pudo abrir el documento.",
   "open_file_already_open_dirty": "Ese documento ya está abierto y tiene cambios sin guardar: se deja como está.",
   "tab_menu_rename": "Renombrar",
+  "tab_menu_reveal": "Mostrar en la carpeta",
+  "tab_menu_reveal_failed": "No se ha podido abrir la carpeta. Puede que el archivo se haya movido o borrado.",
   "tab_menu_close": "Cerrar",
   "tab_menu_close_others": "Cerrar las demás",
   "tab_menu_close_all": "Cerrar todas",

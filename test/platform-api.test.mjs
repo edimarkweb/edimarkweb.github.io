@@ -353,6 +353,27 @@ test('abre los enlaces externos con el navegador del sistema en Tauri', async ()
   await assert.rejects(() => platform.openExternalUrl('file:///etc/passwd'));
 });
 
+test('abre la carpeta de un archivo solo en Tauri y con ruta', async () => {
+  const revealed = [];
+  const platform = createPlatformApi({
+    Blob,
+    __EDIMARK_TAURI__: {
+      dialog: {},
+      fs: {},
+      opener: { openUrl: async () => {}, revealItemInDir: async path => { revealed.push(path); } },
+    },
+  });
+
+  assert.equal(platform.canRevealInFolder, true);
+  await platform.revealInFolder('/docs/tema.md');
+  assert.deepEqual(revealed, ['/docs/tema.md']);
+  await assert.rejects(() => platform.revealInFolder(''));
+
+  const web = createPlatformApi({ Blob });
+  assert.equal(web.canRevealInFolder, false);
+  await assert.rejects(() => web.revealInFolder('/docs/tema.md'));
+});
+
 test('abre las rutas Markdown recibidas al iniciar o desde una segunda instancia', async () => {
   let subscriber;
   const platform = createPlatformApi({

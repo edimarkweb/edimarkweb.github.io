@@ -457,6 +457,7 @@ const escritorioConDisco = () => {
   window.__EDIMARK_TAURI__ = {
     dialog: {},
     fs: {},
+    opener: { revealItemInDir: async path => { window.__carpetasAbiertas = [...(window.__carpetasAbiertas || []), path]; } },
     app: {
       initialMarkdownPaths: async () => ['/docs/tema.md'],
       readMarkdownDocument: async path => window.__edimarkDisco[path] ?? '',
@@ -524,8 +525,18 @@ test('en el escritorio cada pestaña dice dónde está su archivo', async (t) =>
 
   // El menú de la pestaña empieza por lo mismo, para el táctil y el teclado.
   await tema.click({ button: 'right' });
-  assert.equal(await page.locator('#tab-menu-location').textContent(), '/docs/tema.md');
+  assert.equal(await page.locator('#tab-menu-location-text').textContent(), '/docs/tema.md');
   assert.equal(await page.locator('#tab-menu-location').isVisible(), true);
+
+  // Pulsar la ruta abre su carpeta y cierra el menú.
+  await page.locator('#tab-menu-location').click();
+  assert.deepEqual(await page.evaluate(() => window.__carpetasAbiertas), ['/docs/tema.md']);
+  assert.equal(await page.locator('#tab-context-menu').isVisible(), false);
+
+  // Sin archivo no hay carpeta: el aviso no se puede pulsar.
+  await page.locator('.tab', { hasText: 'nuevo.md' }).click({ button: 'right' });
+  assert.match(await page.locator('#tab-menu-location-text').textContent(), /Sin guardar en ningún archivo/);
+  assert.equal(await page.locator('#tab-menu-location').isDisabled(), true);
 });
 
 test('en el navegador las pestañas no muestran ubicación', async (t) => {
