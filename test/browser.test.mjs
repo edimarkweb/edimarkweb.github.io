@@ -7115,7 +7115,12 @@ test('el diálogo PDF guía convertir, importar y volver a convertir tras un cam
   await page.waitForFunction(() => !document.querySelector('.pdf-import-dialog'));
 });
 
-test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modificar documentos', { timeout: 180000 }, async (t) => {
+/*
+  La prueba abre el diálogo cuatro veces y cada una arranca el motor de nuevo.
+  El Firefox de Playwright tarda en ello unos 47 s en algunos equipos (un
+  Firefox normal, 10 s; Chromium, 9 s), y la prueba entera llegaba a 207 s.
+*/
+test('PDF real: opciones, columnas, tablas, imágenes y cancelación sin modificar documentos', { timeout: 300000 }, async (t) => {
   const { context, page, requests } = await openApp();
   t.after(() => context.close());
   const initial = await page.evaluate(() => markdownEditor.getValue());
