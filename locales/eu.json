@@ -381,7 +381,7 @@
   "tab_location_unsaved": "Ez dago inolako fitxategitan gordeta: EdiMarkdown-en kopia automatikoan bakarrik dago.",
   "footer_privacy_link": "Pribatutasuna",
   "footer_privacy_notice": "Fitxategiak lokalean prozesatzen dira nabigatzaile honetan. Aplikazioak ez du erabilera-estatistikarik jasotzen, eta ez die fitxategirik edo daturik hirugarrenei bidaltzen.",
-  "footer_privacy_notice_desktop": "Fitxategiak zure ekipoan bertan prozesatzen dira. Aplikazioak ez du erabilera-estatistikarik jasotzen, eta ez die fitxategirik edo daturik hirugarrenei bidaltzen.",
+  "footer_privacy_notice_desktop": "Fitxategiak zure ekipoan bertan prozesatzen dira. Aplikazioak ez du erabilera-estatistikarik jasotzen, eta ez die fitxategirik edo daturik hirugarrenei bidaltzen. Bere kabuz GitHubera bakarrik konektatzen da, bertsio berririk dagoen jakiteko: abiaraztean, eguneratze-oharrean «Egiaztatu abiaraztean» desmarkatzen ez baduzu, eta Laguntzatik eskatzen duzunean.",
   "storage_unavailable": "Ezin da biltegiratze lokala erabili. Aldaketak ez dira gordeko aplikazioa ixtean.",
   "storage_quota_exceeded": "Biltegiratze lokala beteta dago. Gorde dokumentua fitxategi batean aldaketak ez galtzeko.",
   "storage_corrupt_recovered": "Gordetako dokumentuen zerrenda hondatuta zegoen. Saio berri bat hasi da lanean jarrai dezazun.",

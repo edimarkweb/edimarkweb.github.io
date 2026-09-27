@@ -211,4 +211,4 @@ As ampliacións son as fórmulas LaTeX, as notas ao pé `[^nota]`, as citas bibl
 
 ## Licenza e contribucións
 
-EdiMarkdown é software libre baixo a [GNU Affero General Public License v3.0](LICENSE): podes usalo na túa aula, adaptalo e despregalo en servidores propios, sempre que compartas calquera mellora baixo a mesma licenza. Se detectas un problema ou queres propor cambios, abre unha incidencia en [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) ou envía un pull request.
+EdiMarkdown é software libre baixo a [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.html): podes usalo na túa aula, adaptalo e despregalo en servidores propios, sempre que compartas calquera mellora baixo a mesma licenza. Se detectas un problema ou queres propor cambios, abre unha incidencia en [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) ou envía un pull request.

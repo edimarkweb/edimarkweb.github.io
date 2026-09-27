@@ -2110,7 +2110,8 @@ body.desktop-mode .markdown-textarea {
     transition: background-color 0.2s, color 0.2s;
 }
 .list-split-button { display: flex; align-items: center; }
-#list-menu-btn { padding-inline: 4px; }
+/* 24 px de ancho como mínimo: es lo que pide WCAG 2.2 para lo que se pulsa. */
+#list-menu-btn { padding-inline: 4px; min-width: 24px; }
 #list-menu-btn svg { width: 14px; }
 #list-options { position: absolute; top: 100%; left: 0; z-index: 40; width: 190px; max-width: calc(100vw - 24px); padding: 4px; border: 1px solid #94a3b8; border-radius: 8px; background: white; color: #334155; box-shadow: 0 6px 18px #0003; }
 #list-options button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 12px; text-align: left; border-radius: 4px; }
@@ -2692,9 +2693,19 @@ html.is-tab-dragging * {
         font-size: 0.7rem;
     }
 
+    /*
+      Más pequeñas, pero no por debajo de los 24 px de alto que pide WCAG 2.2
+      para lo que se pulsa: el idioma y el formato son botones.
+    */
     .status-bar .panel-counter {
+        min-height: 24px;
         font-size: 0.65rem;
         padding: 0.1rem 0.35rem;
+    }
+    /* Sin pisar el `hidden` del formato, que empata en especificidad. */
+    .status-bar .panel-counter:not(.hidden) {
+        display: inline-flex;
+        align-items: center;
     }
 
     /*

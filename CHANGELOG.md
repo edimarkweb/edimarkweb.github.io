@@ -4,6 +4,13 @@ Todos los cambios de EdiMarkdown (antes EdiMarkWeb), de la versión más recient
 
 El formato sigue la idea de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y la numeración, [versionado semántico](https://semver.org/lang/es/).
 
+## [3.2.5] - 2026-09-27
+
+- «Acerca de» indica de cada componente de terceros quién lo hizo, enlaza a su proyecto y da su licencia. El nombre del autor y la licencia de EdiMarkdown también llevan enlace, y el manual enlaza al texto de la licencia en los cinco idiomas.
+- La aplicación de escritorio incluye el archivo de la licencia, y su aviso de privacidad dice que solo se conecta por su cuenta a GitHub, para buscar actualizaciones, y cómo desactivar la comprobación al arrancar.
+- Tres botones no llegaban a los 24 píxeles que pide la norma de accesibilidad WCAG 2.2 para lo que se pulsa y ahora los alcanzan: el que despliega los tipos de lista y, en el móvil, los de idioma y formato de la barra de estado.
+- El conversor de PDF se descarga con la versión de la aplicación: tras una actualización, el navegador ya no puede seguir usando una copia antigua.
+
 ## [3.2.4] - 2026-09-27
 
 - En la aplicación de escritorio, la ruta que encabeza el menú del botón derecho de una pestaña se puede pulsar: abre la carpeta del archivo en el gestor de archivos del sistema, con el archivo marcado, en Windows, macOS y Linux. Si el documento no está guardado en ningún archivo, el aviso sigue siendo solo texto.

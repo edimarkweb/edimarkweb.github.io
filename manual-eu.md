@@ -211,4 +211,4 @@ Hedapenak LaTeX formulak, `[^oharra]` oin-oharrak, `[@giltza]` bibliografia-aipu
 
 ## Lizentzia eta ekarpenak
 
-EdiMarkdown [GNU Affero General Public License v3.0](LICENSE) lizentziapeko software librea da: zure gelan erabili, egokitu eta zure zerbitzarietan zabaldu dezakezu, edozein hobekuntza lizentzia berarekin partekatzen baduzu. Arazoren bat aurkitzen baduzu edo aldaketak proposatu nahi badituzu, ireki gorabehera bat [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) atalean edo bidali pull request bat.
+EdiMarkdown [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.html) lizentziapeko software librea da: zure gelan erabili, egokitu eta zure zerbitzarietan zabaldu dezakezu, edozein hobekuntza lizentzia berarekin partekatzen baduzu. Arazoren bat aurkitzen baduzu edo aldaketak proposatu nahi badituzu, ireki gorabehera bat [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) atalean edo bidali pull request bat.

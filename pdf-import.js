@@ -428,7 +428,9 @@ export async function importPdf(file, translate, assetFolder = '', accept = null
         }
         function ensureWorker() {
             if (worker) return worker;
-            worker = new Worker(new URL('./pdf-worker.js?v=2.55.0', import.meta.url));
+            // La versión con la que se pidió este módulo (su `?v=`) pasa al worker y de él
+            // al Python, para que una versión nueva no conviva con piezas en caché.
+            worker = new Worker(new URL(`./pdf-worker.js${new URL(import.meta.url).search}`, import.meta.url));
             worker.onerror = () => fail('pdf_error');
             worker.onmessage = async ({ data }) => {
                 if (closed) return;

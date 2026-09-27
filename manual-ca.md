@@ -211,4 +211,4 @@ Les ampliacions són les fórmules LaTeX, les notes al peu `[^nota]`, les cites 
 
 ## Llicència i contribucions
 
-EdiMarkdown és programari lliure sota la [GNU Affero General Public License v3.0](LICENSE): pots fer-lo servir a la teva aula, adaptar-lo i desplegar-lo en servidors propis, sempre que comparteixis qualsevol millora sota la mateixa llicència. Si detectes un problema o vols proposar canvis, obre una incidència a [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) o envia un pull request.
+EdiMarkdown és programari lliure sota la [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.html): pots fer-lo servir a la teva aula, adaptar-lo i desplegar-lo en servidors propis, sempre que comparteixis qualsevol millora sota la mateixa llicència. Si detectes un problema o vols proposar canvis, obre una incidència a [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) o envia un pull request.

@@ -211,4 +211,4 @@ Extensions include LaTeX formulas, footnotes `[^note]`, bibliographic citations 
 
 ## License and contributions
 
-EdiMarkdown is free software under the [GNU Affero General Public License v3.0](LICENSE): you can use it in your classroom, adapt it and deploy it on your own servers, as long as you share any improvement under the same license. If you find a problem or want to propose changes, open an issue on [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) or send a pull request.
+EdiMarkdown is free software under the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.html): you can use it in your classroom, adapt it and deploy it on your own servers, as long as you share any improvement under the same license. If you find a problem or want to propose changes, open an issue on [GitHub](https://github.com/edimarkweb/edimarkweb.github.io/issues) or send a pull request.

@@ -1,5 +1,5 @@
 /* Única copia de la versión en la aplicación; package.json es la otra fuente. */
-const APP_VERSION = '3.2.4';
+const APP_VERSION = '3.2.5';
 const DESKTOP_RELEASE_BANNER_PREFIX = 'edimarkweb-hide-desktop-release-';
 const DESKTOP_RELEASE_BANNER_KEY = `${DESKTOP_RELEASE_BANNER_PREFIX}${APP_VERSION}`;
 const UPDATE_AUTO_CHECK_KEY = 'edimarkweb-update-autocheck';
@@ -7772,7 +7772,7 @@ async function importFileWithPandoc(file, { index = 1, total = 1 } = {}) {
     }
     if (format === 'pdf') {
         try {
-            const { importPdf } = await import('./pdf-import.js?v=3.2.4');
+            const { importPdf } = await import('./pdf-import.js?v=3.2.5');
             const name = getSafeDocumentName(file.name);
             // Crear el documento ocurre dentro del diálogo, que se queda a la
             // vista avisando: con un informe entero no es cosa de un instante.
@@ -9547,17 +9547,18 @@ window.onload = async () => {
     }
     if (nativeMode) {
         /*
-          En el navegador la página cuenta visitas agregadas; la aplicación de
-          escritorio no envía nada. El aviso de privacidad tiene que decir lo
-          que de verdad ocurre donde se está leyendo, así que aquí cambia de
-          texto (y de clave, para que siga traduciéndose al cambiar de idioma).
+          La aplicación de escritorio sí se conecta a algo que la web no toca:
+          GitHub, para buscar actualizaciones. El aviso de privacidad tiene que
+          decir lo que de verdad ocurre donde se está leyendo, así que aquí
+          cambia de texto (y de clave, para que siga traduciéndose al cambiar
+          de idioma).
         */
         const privacyNotice = document.getElementById('about-privacy-notice');
         if (privacyNotice) {
             privacyNotice.setAttribute('data-i18n-key', 'footer_privacy_notice_desktop');
             privacyNotice.textContent = getTranslation(
                 'footer_privacy_notice_desktop',
-                'Los archivos se procesan localmente en tu equipo. La aplicación no recoge estadísticas de uso ni envía archivos o datos a terceros.',
+                'Los archivos se procesan localmente en tu equipo. La aplicación no recoge estadísticas de uso ni envía archivos o datos a terceros. Por su cuenta solo se conecta a GitHub, para saber si hay una versión nueva: al arrancar, salvo que desmarques «Comprobar al iniciar» en el aviso de actualización, y cuando lo pides desde Ayuda.',
             );
         }
     }

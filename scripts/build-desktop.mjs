@@ -17,6 +17,7 @@ const appFiles = [
   'favicon.ico',
   'i18n.js',
   'index.html',
+  'LICENSE',
   'logo_100px.png',
   'logo_256.png',
   'manifest.json',
