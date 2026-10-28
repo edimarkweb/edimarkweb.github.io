@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>EdiMarkdown se ha mudado</title>
+  <link rel="canonical" href="https://edimarkdown.github.io/">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <meta name="robots" content="noindex">
+  <style>
+    :root {
+      --fondo: #f1f5f9;
+      --tarjeta: #ffffff;
+      --texto: #0f172a;
+      --suave: #475569;
+      --borde: #e2e8f0;
+      --acento: #2563eb;
+      --acento-texto: #ffffff;
+      --aviso: #b91c1c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --fondo: #020617;
+        --tarjeta: #0f172a;
+        --texto: #e2e8f0;
+        --suave: #94a3b8;
+        --borde: #1e293b;
+        --acento: #3b82f6;
+        --aviso: #f87171;
+      }
+    }
+    :root[data-theme="dark"] {
+      --fondo: #020617;
+      --tarjeta: #0f172a;
+      --texto: #e2e8f0;
+      --suave: #94a3b8;
+      --borde: #1e293b;
+      --acento: #3b82f6;
+      --aviso: #f87171;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: var(--fondo);
+      color: var(--texto);
+      line-height: 1.5;
+    }
+    main {
+      width: 100%;
+      max-width: 30rem;
+      padding: 2rem 1.5rem;
+      background: var(--tarjeta);
+      border: 1px solid var(--borde);
+      border-radius: 1rem;
+      text-align: center;
+    }
+    main[hidden] { display: none; }
+    img { width: 64px; height: 64px; }
+    h1 { font-size: 1.5rem; margin: 0.75rem 0 0.5rem; }
+    p { margin: 0 0 1rem; }
+    .suave { color: var(--suave); font-size: 0.95rem; }
+    .aviso { color: var(--aviso); }
+    a { color: var(--acento); font-weight: 600; }
+    button {
+      font: inherit;
+      font-weight: 600;
+      padding: 0.7rem 1.4rem;
+      border: 0;
+      border-radius: 0.6rem;
+      background: var(--acento);
+      color: var(--acento-texto);
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; cursor: progress; }
+    button:focus-visible, a:focus-visible { outline: 3px solid var(--acento); outline-offset: 3px; }
+    .acciones { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
+  </style>
+  <script>
+    /*
+      EdiMarkdown vivía aquí hasta la versión 3.4.0. Los documentos abiertos en
+      la web se guardan en el navegador, atados a esta dirección: en la nueva el
+      editor saldría vacío. Si este navegador no guarda ninguno, se salta
+      directamente; si guarda alguno, la página se queda para llevárselos.
+    */
+    (function () {
+      var nueva = 'https://edimarkdown.github.io';
+      var destino = nueva + location.pathname + location.search + location.hash;
+      function leer(clave) {
+        try { return localStorage.getItem(clave); } catch (error) { return null; }
+      }
+      var pendientes = [];
+      if (!leer('edimarkweb-mudanza-hecha')) {
+        try {
+          var lista = JSON.parse(leer('edimarkweb-docslist') || '[]');
+          if (Array.isArray(lista)) {
+            pendientes = lista.filter(function (doc) {
+              return doc && typeof doc.id === 'string' && !doc.isManual
+                && (leer('edimarkweb-autosave-' + doc.id) || '').trim() !== '';
+            });
+          }
+        } catch (error) { pendientes = []; }
+      }
+      if (!pendientes.length) {
+        location.replace(destino);
+        return;
+      }
+      window.__mudanza = { nueva: nueva, destino: destino, pendientes: pendientes };
+      var tema = leer('edimarkweb-theme');
+      if (tema === 'dark' || tema === 'light') document.documentElement.dataset.theme = tema;
+    }());
+  </script>
+</head>
+<body>
+  <main id="mudanza" hidden aria-live="polite">
+    <img src="/logo.png" alt="" width="64" height="64">
+    <h1 data-texto="titulo">EdiMarkdown se ha mudado</h1>
+    <p data-texto="direccion">Ahora está en <a id="enlace-nueva" href="https://edimarkdown.github.io/">edimarkdown.github.io</a>.</p>
+    <p id="explicacion"></p>
+    <div class="acciones">
+      <button type="button" id="llevar" data-texto="llevar">Llevar mis documentos</button>
+      <button type="button" id="descargar" hidden data-texto="descargar">Descargar mis documentos</button>
+      <a id="ir" class="suave" href="https://edimarkdown.github.io/" data-texto="ir">Ir sin llevarlos</a>
+    </div>
+  </main>
+  <noscript>
+    <p>EdiMarkdown se ha mudado a <a href="https://edimarkdown.github.io/">edimarkdown.github.io</a>.</p>
+  </noscript>
+  <script type="module">
+    const estado = window.__mudanza;
+    if (estado) iniciar(estado);
+
+    function iniciar({ nueva, destino, pendientes }) {
+      const textos = {
+        es: {
+          titulo: 'EdiMarkdown se ha mudado',
+          direccion: 'Ahora está en {enlace}.',
+          uno: 'Este navegador guarda 1 documento tuyo de la dirección anterior. Llévatelo a la nueva con un clic.',
+          varios: 'Este navegador guarda {n} documentos tuyos de la dirección anterior. Llévatelos a la nueva con un clic.',
+          llevar: 'Llevar mis documentos',
+          llevando: 'Llevando tus documentos…',
+          hecho: 'Listo: tus documentos ya están en la nueva dirección, abierta en otra pestaña. Puedes cerrar esta.',
+          irNueva: 'Ir a EdiMarkdown',
+          ir: 'Ir sin llevarlos',
+          fallo: 'No se han podido llevar. Siguen guardados aquí: descárgalos y ábrelos en la nueva dirección.',
+          descargar: 'Descargar mis documentos',
+        },
+        ca: {
+          titulo: 'L’EdiMarkdown s’ha traslladat',
+          direccion: 'Ara és a {enlace}.',
+          uno: 'Aquest navegador guarda 1 document teu de l’adreça anterior. Emporta-te’l a la nova amb un clic.',
+          varios: 'Aquest navegador guarda {n} documents teus de l’adreça anterior. Emporta-te’ls a la nova amb un clic.',
+          llevar: 'Emportar els meus documents',
+          llevando: 'S’estan traslladant els teus documents…',
+          hecho: 'Fet: els teus documents ja són a l’adreça nova, oberta en una altra pestanya. Pots tancar aquesta.',
+          irNueva: 'Anar a l’EdiMarkdown',
+          ir: 'Anar-hi sense endur-te’ls',
+          fallo: 'No s’han pogut traslladar. Continuen guardats aquí: descarrega’ls i obre’ls a l’adreça nova.',
+          descargar: 'Descarregar els meus documents',
+        },
+        gl: {
+          titulo: 'EdiMarkdown mudouse',
+          direccion: 'Agora está en {enlace}.',
+          uno: 'Este navegador garda 1 documento teu do enderezo anterior. Lévao ao novo cun clic.',
+          varios: 'Este navegador garda {n} documentos teus do enderezo anterior. Lévaos ao novo cun clic.',
+          llevar: 'Levar os meus documentos',
+          llevando: 'Levando os teus documentos…',
+          hecho: 'Listo: os teus documentos xa están no novo enderezo, aberto noutra lapela. Podes pechar esta.',
+          irNueva: 'Ir a EdiMarkdown',
+          ir: 'Ir sen levalos',
+          fallo: 'Non se puideron levar. Seguen gardados aquí: descárgaos e ábreos no novo enderezo.',
+          descargar: 'Descargar os meus documentos',
+        },
+        eu: {
+          titulo: 'EdiMarkdown lekuz aldatu da',
+          direccion: 'Orain hemen dago: {enlace}.',
+          uno: 'Nabigatzaile honek zure dokumentu bat gordetzen du aurreko helbidekoa. Eraman ezazu berrira klik batekin.',
+          varios: 'Nabigatzaile honek zure {n} dokumentu gordetzen ditu aurreko helbidekoak. Eraman itzazu berrira klik batekin.',
+          llevar: 'Eraman nire dokumentuak',
+          llevando: 'Zure dokumentuak eramaten…',
+          hecho: 'Eginda: zure dokumentuak helbide berrian daude jada, beste fitxa batean irekita. Hau itxi dezakezu.',
+          irNueva: 'Joan EdiMarkdownera',
+          ir: 'Joan eraman gabe',
+          fallo: 'Ezin izan dira eraman. Hemen gordeta jarraitzen dute: deskargatu eta ireki helbide berrian.',
+          descargar: 'Deskargatu nire dokumentuak',
+        },
+        en: {
+          titulo: 'EdiMarkdown has moved',
+          direccion: 'It now lives at {enlace}.',
+          uno: 'This browser keeps 1 of your documents from the old address. Take it to the new one with one click.',
+          varios: 'This browser keeps {n} of your documents from the old address. Take them to the new one with one click.',
+          llevar: 'Take my documents',
+          llevando: 'Taking your documents…',
+          hecho: 'Done: your documents are now at the new address, open in another tab. You can close this one.',
+          irNueva: 'Go to EdiMarkdown',
+          ir: 'Go without them',
+          fallo: 'They could not be moved. They are still stored here: download them and open them at the new address.',
+          descargar: 'Download my documents',
+        },
+      };
+      const idioma = elegirIdioma(Object.keys(textos));
+      const t = textos[idioma];
+      document.documentElement.lang = idioma;
+      document.title = t.titulo;
+
+      const $ = id => document.getElementById(id);
+      const enlace = $('enlace-nueva');
+      enlace.href = destino;
+      $('ir').href = destino;
+      document.querySelectorAll('[data-texto]').forEach(el => {
+        const clave = el.dataset.texto;
+        if (clave === 'direccion') {
+          const [antes, despues] = t.direccion.split('{enlace}');
+          el.replaceChildren(antes, enlace, despues);
+        } else {
+          el.textContent = t[clave];
+        }
+      });
+      $('explicacion').textContent = pendientes.length === 1
+        ? t.uno
+        : t.varios.replace('{n}', pendientes.length);
+      $('mudanza').hidden = false;
+
+      const llevar = $('llevar');
+      llevar.addEventListener('click', () => {
+        // La ventana se abre dentro del clic: después de una espera, el
+        // navegador la tomaría por una ventana emergente y la bloquearía.
+        const ventana = window.open(`${nueva}/mudanza.html`, '_blank');
+        llevar.disabled = true;
+        llevar.textContent = t.llevando;
+        if (!ventana) return fallar();
+        enviar(ventana).then(() => {
+          try { localStorage.setItem('edimarkweb-mudanza-hecha', new Date().toISOString()); } catch (error) { /* la próxima visita volverá a ofrecerlo */ }
+          $('explicacion').textContent = t.hecho;
+          llevar.hidden = true;
+          $('ir').textContent = t.irNueva;
+        }, fallar);
+      });
+      $('descargar').addEventListener('click', descargar);
+
+      function fallar(error) {
+        if (error) console.warn('La mudanza no se completó:', error);
+        $('explicacion').textContent = t.fallo;
+        $('explicacion').classList.add('aviso');
+        llevar.hidden = true;
+        $('descargar').hidden = false;
+      }
+
+      /*
+        Las dos páginas se hablan con postMessage, que copia tal cual los
+        textos y las imágenes guardadas (Blob o bytes). La nueva avisa cuando
+        escucha y confirma cuando lo ha guardado todo; sin confirmación no se
+        da por hecha, y los documentos siguen aquí igualmente.
+      */
+      function enviar(ventana) {
+        // Se escucha desde ya: leer las imágenes lleva un momento, y el aviso
+        // de la nueva página puede llegar antes.
+        const paquete = leerImagenes(new Set(leerLista().map(doc => doc.id))).then(imagenes => ({
+          tipo: 'edimarkdown-mudanza',
+          almacen: leerAlmacen(),
+          imagenes,
+          destino: location.pathname + location.search + location.hash,
+        }));
+        return new Promise((resolve, reject) => {
+          const plazo = setTimeout(() => terminar(reject, new Error('sin_respuesta')), 60000);
+          function terminar(fin, valor) {
+            clearTimeout(plazo);
+            window.removeEventListener('message', escuchar);
+            fin(valor);
+          }
+          function escuchar(event) {
+            if (event.origin !== nueva || event.source !== ventana) return;
+            const tipo = event.data?.tipo;
+            if (tipo === 'edimarkdown-mudanza-lista') paquete.then(datos => ventana.postMessage(datos, nueva)).catch(error => terminar(reject, error));
+            else if (tipo === 'edimarkdown-mudanza-hecha') terminar(resolve);
+            else if (tipo === 'edimarkdown-mudanza-fallida') terminar(reject, new Error(event.data.motivo || 'fallida'));
+          }
+          window.addEventListener('message', escuchar);
+        });
+      }
+
+      async function descargar() {
+        const { createZip } = await import('/zip-writer.js');
+        const imagenes = await leerImagenes(new Set(pendientes.map(doc => doc.id)));
+        const archivos = new Map();
+        const usados = new Set();
+        for (const doc of pendientes) {
+          const base = nombreLibre(limpiar(doc.name).replace(/\.(md|markdown|txt)$/i, '') || 'documento', usados);
+          const suyas = imagenes.filter(imagen => imagen.docId === doc.id);
+          const carpeta = suyas.length ? `${base}/` : '';
+          archivos.set(`${carpeta}${base}.md`, localStorage.getItem(`edimarkweb-autosave-${doc.id}`) || '');
+          for (const imagen of suyas) {
+            archivos.set(`${carpeta}${String(imagen.relativePath).split('/').filter(parte => parte && parte !== '.' && parte !== '..').join('/')}`, await bytes(imagen.file));
+          }
+        }
+        const zip = await createZip(archivos);
+        const url = URL.createObjectURL(new Blob([zip], { type: 'application/zip' }));
+        const a = Object.assign(document.createElement('a'), { href: url, download: 'EdiMarkdown-documentos.zip' });
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      }
+    }
+
+    function elegirIdioma(disponibles) {
+      let guardado = null;
+      try { guardado = localStorage.getItem('language'); } catch (error) { /* sin almacenamiento */ }
+      const candidatos = [guardado, ...(navigator.languages || [navigator.language])];
+      for (const candidato of candidatos) {
+        const corto = String(candidato || '').toLowerCase().split('-')[0];
+        if (disponibles.includes(corto)) return corto;
+      }
+      return 'es';
+    }
+
+    function leerLista() {
+      try {
+        const lista = JSON.parse(localStorage.getItem('edimarkweb-docslist') || '[]');
+        return Array.isArray(lista) ? lista.filter(doc => doc && typeof doc.id === 'string') : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    // Todo lo de la aplicación: documentos, lista de pestañas y preferencias.
+    function leerAlmacen() {
+      const almacen = {};
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const clave = localStorage.key(i);
+        if (clave === 'language' || (clave.startsWith('edimarkweb-') && clave !== 'edimarkweb-mudanza-hecha')) {
+          almacen[clave] = localStorage.getItem(clave);
+        }
+      }
+      return almacen;
+    }
+
+    /*
+      Las imágenes de los documentos viven en IndexedDB. Si la base no existe
+      no se crea: abrirla sin más dejaría una vacía en este navegador.
+    */
+    function leerImagenes(ids) {
+      return new Promise(resolve => {
+        if (!window.indexedDB) return resolve([]);
+        let peticion;
+        try { peticion = indexedDB.open('edimarkweb-assets'); } catch (error) { return resolve([]); }
+        peticion.onupgradeneeded = () => peticion.transaction.abort();
+        peticion.onerror = () => resolve([]);
+        peticion.onsuccess = () => {
+          const base = peticion.result;
+          if (!base.objectStoreNames.contains('document-assets')) {
+            base.close();
+            return resolve([]);
+          }
+          const lectura = base.transaction('document-assets', 'readonly').objectStore('document-assets').getAll();
+          lectura.onsuccess = () => {
+            base.close();
+            resolve((lectura.result || []).filter(registro => ids.has(registro?.docId)));
+          };
+          lectura.onerror = () => {
+            base.close();
+            resolve([]);
+          };
+        };
+      });
+    }
+
+    async function bytes(contenido) {
+      if (contenido instanceof Blob) return new Uint8Array(await contenido.arrayBuffer());
+      if (contenido instanceof ArrayBuffer) return new Uint8Array(contenido);
+      if (ArrayBuffer.isView(contenido)) return new Uint8Array(contenido.buffer, contenido.byteOffset, contenido.byteLength);
+      return new TextEncoder().encode(String(contenido ?? ''));
+    }
+
+    function limpiar(nombre) {
+      return String(nombre || '').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '-').trim();
+    }
+
+    function nombreLibre(base, usados) {
+      let nombre = base;
+      for (let n = 2; usados.has(nombre.toLowerCase()); n += 1) nombre = `${base} (${n})`;
+      usados.add(nombre.toLowerCase());
+      return nombre;
+    }
+  </script>
+</body>
+</html>
